@@ -120,7 +120,47 @@ impl Default for Config {
     }
 }
 
+/// Local servers hold a handful of requests at once; more than this only queues.
+pub const LOCAL_MAX_CONCURRENCY: u16 = 4;
+/// Local servers start conservatively; AIMD may grow to [`LOCAL_MAX_CONCURRENCY`].
+pub const LOCAL_INITIAL_CONCURRENCY: u16 = 2;
+/// A local model can legitimately take minutes on a long section under load.
+pub const LOCAL_MIN_TIMEOUT_SECS: u64 = 300;
+
 impl Config {
+    /// `(initial, max)` worker concurrency for the selected backend. The local backend is
+    /// capped at [`LOCAL_MAX_CONCURRENCY`] whatever `concurrency` says: a single model on one
+    /// GPU gains nothing from a deeper queue.
+    #[must_use]
+    pub fn pool_bounds(&self) -> (u16, u16) {
+        match self.backend {
+            Backend::Local => {
+                let max = self
+                    .concurrency
+                    .unwrap_or(LOCAL_MAX_CONCURRENCY)
+                    .clamp(1, LOCAL_MAX_CONCURRENCY);
+                let initial = self.concurrency.unwrap_or(LOCAL_INITIAL_CONCURRENCY).clamp(1, max);
+                (initial, max)
+            }
+            Backend::Api | Backend::ClaudeCli => {
+                let initial = self.concurrency.unwrap_or(4).max(1);
+                let max = self.concurrency.unwrap_or(16).max(1);
+                (initial, max)
+            }
+        }
+    }
+
+    /// Per-call wall-clock timeout for the selected backend. The local backend never goes
+    /// below [`LOCAL_MIN_TIMEOUT_SECS`].
+    #[must_use]
+    pub fn effective_worker_timeout(&self) -> std::time::Duration {
+        let secs = match self.backend {
+            Backend::Local => self.worker_timeout_secs.max(LOCAL_MIN_TIMEOUT_SECS),
+            Backend::Api | Backend::ClaudeCli => self.worker_timeout_secs,
+        };
+        std::time::Duration::from_secs(secs)
+    }
+
     /// Path of the config file for a given watched root.
     pub fn path_for(root: &Path) -> PathBuf {
         root.join(STATE_DIR).join(CONFIG_FILE)
@@ -211,6 +251,20 @@ mod tests {
         );
         assert_eq!(Config::from_toml("backend = \"local\"").unwrap().backend, Backend::Local);
         assert_eq!(Config::default().backend, Backend::Api);
+    }
+
+    #[test]
+    fn local_backend_bounds_and_timeout() {
+        let local = Config { backend: Backend::Local, ..Config::default() };
+        assert_eq!(local.pool_bounds(), (2, 4));
+        assert_eq!(local.effective_worker_timeout().as_secs(), 300);
+        let capped = Config { backend: Backend::Local, concurrency: Some(16), ..Config::default() };
+        assert_eq!(capped.pool_bounds(), (4, 4));
+        let one = Config { backend: Backend::Local, concurrency: Some(1), ..Config::default() };
+        assert_eq!(one.pool_bounds(), (1, 1));
+        let api = Config::default();
+        assert_eq!(api.pool_bounds(), (4, 16));
+        assert_eq!(api.effective_worker_timeout().as_secs(), 90);
     }
 
     #[test]

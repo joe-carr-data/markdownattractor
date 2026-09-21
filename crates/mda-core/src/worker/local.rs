@@ -53,7 +53,7 @@ pub struct LocalBackend {
 impl LocalBackend {
     /// Build from config. Does not contact the server; [`check`] does that.
     pub fn new(cfg: &Config) -> Result<Self> {
-        let timeout = Duration::from_secs(cfg.worker_timeout_secs);
+        let timeout = cfg.effective_worker_timeout();
         Ok(Self {
             client: http::client(timeout)?,
             base_url: cfg.local_base_url.trim_end_matches('/').to_owned(),

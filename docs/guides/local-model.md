@@ -16,6 +16,7 @@ llama-server -hf ggml-org/gpt-oss-20b-GGUF \
   --jinja \
   -fa on \
   -b 2048 -ub 2048 \
+  -np 4 \
   --port 8080
 
 # 3. Point markdownattractor at it
@@ -29,6 +30,7 @@ What the flags do:
 - `--jinja` applies the model's own chat template, which gpt-oss's Harmony format requires.
 - `-fa on` turns on flash attention: faster prefill, less memory at long context.
 - `-b 2048 -ub 2048` raises the batch sizes, which speeds up prefill. Prefill is the bottleneck when summarizing big sections.
+- `-np 4` lets the server hold four requests at once. markdownattractor runs 2 to 4 workers against a local server (never more); decoding several cards at once costs little extra per token on Apple Silicon, so aggregate throughput rises without the per-card latency getting much worse. Use `-np 2` on 16 GB.
 
 The server also serves a chat UI at http://localhost:8080.
 
@@ -66,7 +68,8 @@ LM Studio and Ollama work with the same three lines: set `local_base_url` to the
 - On 16 GB, raise the GPU memory cap. macOS limits GPU memory to roughly 65–75% of RAM by default. `sudo sysctl iogpu.wired_limit_mb=13000` raises it and resets on reboot. Close heavy apps (browsers, Docker) first, or the system swaps and everything slows down.
 - Plug in power, and avoid long runs on a MacBook Air: low-power mode and thermal throttling cut throughput significantly.
 - Keep llama.cpp updated (`brew upgrade llama.cpp`). Metal performance improves often.
-- `mda index --limit 50` paces a big backfill; `concurrency = 2` in the config keeps the server from queueing too deep. A local server handles one request at a time well and several poorly.
+- `mda index --limit 50` paces a big backfill. On the local backend the pool starts at 2 workers and never exceeds 4, whatever `concurrency` says, and each call may take up to 5 minutes before it counts as a timeout. Match `-np` on the server to the concurrency you want.
+- Memory is the thing to watch: the model must stay resident. If `llama-server`'s resident size is far below the model size and the machine is paging, every card is slow; close other apps or use a smaller model.
 
 ## When to prefer the API instead
 

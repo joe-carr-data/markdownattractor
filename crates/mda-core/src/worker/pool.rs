@@ -75,8 +75,8 @@ impl PoolConfig {
     /// `None` means adaptive from 4 up to 16.
     pub fn from_config(cfg: &Config) -> Self {
         Self {
-            initial_concurrency: cfg.concurrency.unwrap_or(DEFAULT_INITIAL_CONCURRENCY).max(1),
-            max_concurrency: cfg.concurrency.unwrap_or(DEFAULT_MAX_CONCURRENCY).max(1),
+            initial_concurrency: cfg.pool_bounds().0,
+            max_concurrency: cfg.pool_bounds().1,
             model: cfg.summarization_model.clone(),
             escalation_model: cfg.escalation_model.clone(),
             ..Self::default()
