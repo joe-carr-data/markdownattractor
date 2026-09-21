@@ -1,4 +1,5 @@
 # STATUS (updated 2026-09-22 by Claude)
+**Start here after compaction: `docs/handoffs/2026-09-22-session-handoff.md` (full session handoff).**
 Phase: 1 — summarization engine (engine + CLI done, daemon next)        Active plan: docs/plans/2026-09-phase1-engine.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 20 s save→card
 
@@ -11,6 +12,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - 165 tests (unit, snapshot, proptest, fixture, mock-backend e2e, CLI e2e), coverage 84%, clippy pedantic clean, CI on three OSes.
 
 ## Next (max 3, in order)
+0. Check GitHub Actions for the first CI results (never verified).
 1. Daemon step (plan row 13): `notify` watcher → debounce → `index_file`, `mda start|stop|watch`, Unix socket status; priority queue (user edits before backfill).
 2. Phase 2: sqlite-vec + fastembed, MCP server (`mda mcp`), `mda timeline|recent|stale|explain`, evals harness with the 30-doc golden set.
 3. Prompt experiment: get Haiku to call StructuredOutput on turn one reliably (halves input tokens).
