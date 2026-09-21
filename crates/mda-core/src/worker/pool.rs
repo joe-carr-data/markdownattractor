@@ -128,7 +128,7 @@ struct State {
 }
 
 /// Runs requests through a backend. See the module docs for the policy.
-pub struct Pool<B: Backend> {
+pub struct Pool<B: Backend + ?Sized> {
     backend: Arc<B>,
     cfg: Arc<PoolConfig>,
     cancel: CancellationToken,
@@ -137,7 +137,7 @@ pub struct Pool<B: Backend> {
     slots: Arc<Notify>,
 }
 
-impl<B: Backend> std::fmt::Debug for Pool<B> {
+impl<B: Backend + ?Sized> std::fmt::Debug for Pool<B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Pool")
             .field("backend", &self.backend.name())
@@ -147,7 +147,7 @@ impl<B: Backend> std::fmt::Debug for Pool<B> {
     }
 }
 
-impl<B: Backend + 'static> Pool<B> {
+impl<B: Backend + ?Sized + 'static> Pool<B> {
     /// Create a pool. `cancel` stops it from outside; the pool also cancels it itself on a
     /// pool-stopping `Fatal`.
     pub fn new(backend: Arc<B>, cfg: PoolConfig, cancel: CancellationToken) -> Self {
@@ -264,7 +264,7 @@ impl Drop for Slot {
 }
 
 /// One request's retry loop. Owns clones of everything it needs so it can be spawned.
-struct Job<B: Backend> {
+struct Job<B: Backend + ?Sized> {
     backend: Arc<B>,
     cfg: Arc<PoolConfig>,
     cancel: CancellationToken,
@@ -286,7 +286,7 @@ enum Step {
     Finish(Outcome),
 }
 
-impl<B: Backend + 'static> Job<B> {
+impl<B: Backend + ?Sized + 'static> Job<B> {
     fn new(pool: &Pool<B>, req: SummarizeRequest) -> Self {
         Self {
             backend: Arc::clone(&pool.backend),

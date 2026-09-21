@@ -128,11 +128,12 @@ pub fn validate(section_text: &str, summary: SectionSummary, caps: &Caps) -> Res
 
     let mut dropped_dates = Vec::new();
     let mut mentioned_dates = Vec::new();
-    for date in summary.mentioned_dates {
+    for mut date in summary.mentioned_dates {
+        date.iso = normalize_iso(&date.iso, date.precision);
         if is_grounded_date(&date, &haystack) {
             mentioned_dates.push(MentionedDate {
                 raw: clip(date.raw.trim(), caps.max_chars),
-                iso: date.iso.trim().to_owned(),
+                iso: date.iso.clone(),
                 precision: date.precision,
                 evidence: clip(date.evidence.trim(), caps.max_chars),
             });
@@ -173,6 +174,29 @@ fn is_grounded_date(date: &MentionedDate, haystack: &str) -> bool {
     haystack.contains(&evidence)
         && evidence.to_lowercase().contains(&raw.to_lowercase())
         && iso_matches(&date.iso, date.precision, &date.raw)
+}
+
+/// Coerce lenient model output to the canonical shape for its precision: strip a time part
+/// (`2026-07-01T00:00:00Z` → `2026-07-01`), then cut to `YYYY-MM` for month precision and
+/// `YYYY` for quarter/year precision. Anything unrecognisable is returned trimmed and left for
+/// [`iso_matches`] to reject.
+fn normalize_iso(iso: &str, precision: DatePrecision) -> String {
+    let s = iso.trim();
+    let date_part = s.split(['T', ' ']).next().unwrap_or(s);
+    let target_len = match precision {
+        DatePrecision::Day | DatePrecision::Relative => 10,
+        DatePrecision::Month => 7,
+        DatePrecision::Quarter | DatePrecision::Year => 4,
+    };
+    if date_part.len() >= target_len
+        && date_part.len() <= 10
+        && (date_part.len() == 10 && is_calendar_day(date_part)
+            || date_part.len() == 7 && is_year_month(date_part)
+            || date_part.len() == 4 && is_year(date_part))
+    {
+        return date_part[..target_len.min(date_part.len())].to_owned();
+    }
+    s.to_owned()
 }
 
 /// `iso` must be a real calendar value of the shape its precision promises, and must agree
@@ -461,6 +485,26 @@ mod tests {
         assert!(!iso_matches("Q4 2026", Year, "Q4 2026"));
         assert!(!iso_matches("2099-03", Month, "March 2026"), "fabricated year");
         assert_eq!(years_in("from 1999 to 2026, not 12345 or 999"), vec!["1999", "2026"]);
+    }
+
+    #[test]
+    fn timestamp_style_iso_is_normalised_to_precision() {
+        use DatePrecision::{Day, Month, Year};
+        assert_eq!(normalize_iso("2026-07-01T00:00:00Z", Month), "2026-07");
+        assert_eq!(normalize_iso("2026-07-28T00:00:00Z", Day), "2026-07-28");
+        assert_eq!(normalize_iso("2026-03-01 00:00", Year), "2026");
+        assert_eq!(normalize_iso("2026-09", Month), "2026-09");
+        assert_eq!(normalize_iso("2026-09", Day), "2026-09", "too short for day: left alone");
+        assert_eq!(normalize_iso("garbage", Day), "garbage");
+        let mut s = base();
+        s.mentioned_dates.push(MentionedDate {
+            raw: "March 2026".into(),
+            iso: "2026-03-01T00:00:00Z".into(),
+            precision: Month,
+            evidence: "Since \"March 2026\" we use".into(),
+        });
+        let v = validate(TEXT, s, &Caps::default()).unwrap();
+        assert_eq!(v.summary.mentioned_dates[0].iso, "2026-03");
     }
 
     #[test]

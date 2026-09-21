@@ -21,6 +21,7 @@ allow = [
     "MPL-2.0",
     "BSL-1.0",
     "OpenSSL",
+    "CDLA-Permissive-2.0", # webpki-root-certs (Mozilla CA bundle data)
 ]
 confidence-threshold = 0.9
 

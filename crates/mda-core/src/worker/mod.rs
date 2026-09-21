@@ -1,13 +1,16 @@
-//! Summarization workers: run section chunks through `claude -p` with retries, timeouts and
-//! adaptive concurrency.
+//! Summarization workers: run section chunks through a model backend with retries, timeouts
+//! and adaptive concurrency.
 //!
 //! Three pieces, each independently testable:
 //!
-//! - A [`Backend`] turns one [`SummarizeRequest`] into an [`Outcome`]. [`ClaudeCli`] spawns the
-//!   user's own `claude -p` per ADR-0001; [`Mock`] replays scripted outcomes for tests.
+//! - A [`Backend`] turns one [`SummarizeRequest`] into an [`Outcome`]. [`ApiBackend`] calls
+//!   the Claude Messages API with the user's key (the default, ADR-0002); [`LocalBackend`]
+//!   posts to an OpenAI-compatible local server; [`ClaudeCli`] spawns the user's own
+//!   `claude -p` (opt-in only); [`Mock`] replays scripted outcomes for tests. [`backend_for`]
+//!   picks one from the config as a [`DynBackend`].
 //! - [`parse_result`] classifies a `claude -p` result document into an [`Outcome`] using the
 //!   guardrail table from plan §4.2. It is pure, so `mda doctor` and the tests can feed it
-//!   captured JSON.
+//!   captured JSON. The HTTP backends have their own tables, in their modules.
 //! - [`Pool`] runs many requests through a backend with AIMD concurrency and the §4.2 retry
 //!   policy, reporting one [`JobResult`] per request.
 //!
@@ -17,21 +20,42 @@
 
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
 use crate::card::SectionSummary;
+use crate::config::{Backend as BackendKind, Config};
 
+pub mod api;
 mod claude_cli;
+mod http;
+pub mod local;
 mod mock;
 mod parse;
 mod pool;
 
+pub use api::ApiBackend;
 pub use claude_cli::ClaudeCli;
+pub use local::LocalBackend;
 pub use mock::Mock;
 pub use parse::{parse_result, parse_result_with_model};
 pub use pool::{JobResult, Pool, PoolConfig, PoolStats};
+
+/// A backend chosen at runtime. [`Pool`] and [`crate::pipeline::Engine::summarize_pending`]
+/// accept it directly.
+pub type DynBackend = Arc<dyn Backend>;
+
+/// Build the backend the config selects. `api` fails here when `$api_key_env` is unset;
+/// `claude-cli` relies on [`Config`] validation having enforced the policy acknowledgement.
+pub fn backend_for(cfg: &Config) -> Result<DynBackend> {
+    Ok(match cfg.backend {
+        BackendKind::Api => Arc::new(ApiBackend::new(cfg)?),
+        BackendKind::Local => Arc::new(LocalBackend::new(cfg)?),
+        BackendKind::ClaudeCli => Arc::new(ClaudeCli::new(cfg)?),
+    })
+}
 
 #[cfg(test)]
 mod tests;
@@ -89,6 +113,14 @@ pub const FATAL_NOT_LOGGED_IN: &str = "claude not logged in";
 /// (HTTP 404). The pool stops when it sees it.
 pub const FATAL_BAD_MODEL: &str = "bad model id";
 
+/// Stable prefix of the [`Outcome::Fatal`] reason that means "the Messages API rejected the
+/// key" (HTTP 401/403 on the `api` backend). The pool stops when it sees it.
+pub const FATAL_NO_API_KEY: &str = "api key rejected";
+
+/// Stable prefix of the [`Outcome::Fatal`] reason that means "the local server refused the
+/// connection" (`local` backend). The pool stops when it sees it.
+pub const FATAL_LOCAL_DOWN: &str = "local model server unreachable";
+
 /// One chunk to summarise. Built by the planner; `id` is the section hash so results can be
 /// attached to every section sharing that content.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -105,23 +137,27 @@ pub struct SummarizeRequest {
     pub token_estimate: u32,
 }
 
-/// What one call cost, as reported by the CLI. Summed in [`PoolStats`].
+/// What one call cost, as reported by the backend. Summed in [`PoolStats`].
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Usage {
-    /// Prompt tokens (`usage.input_tokens`), excluding cache reads.
+    /// Prompt tokens. CLI: `usage.input_tokens` as reported. API: `input_tokens` plus cache
+    /// creation and cache read tokens, so it is the whole prompt. Local: `prompt_tokens`.
     pub input_tokens: u64,
-    /// Completion tokens (`usage.output_tokens`).
+    /// Completion tokens (`usage.output_tokens` / `completion_tokens`).
     pub output_tokens: u64,
-    /// List-price cost (`total_cost_usd`).
+    /// List-price cost: `total_cost_usd` from the CLI, computed from
+    /// [`api::PRICES_PER_MTOK`] for the API, always 0 for a local model.
     pub cost_usd: f64,
-    /// Time spent waiting on the API (`duration_api_ms`).
+    /// Time spent waiting on the API (`duration_api_ms`, or the HTTP round trip).
     pub api_ms: u64,
     /// Wall-clock time of the whole call, process spawn to exit.
     pub wall_ms: u64,
-    /// Model that actually ran (the `modelUsage` key), or the requested model if unknown.
-    /// For a summed [`Usage`] this is the model of the last call added.
+    /// Model that actually ran (the `modelUsage` key or the response's `model`), or the
+    /// requested model if unknown. For a summed [`Usage`] this is the model of the last call
+    /// added.
     pub model: String,
-    /// Number of API turns (`num_turns`). More than one means the CLI sent a reminder.
+    /// Number of API turns (`num_turns`). More than one means the CLI sent a reminder; the
+    /// HTTP backends always report 1.
     pub turns: u32,
 }
 
@@ -174,8 +210,9 @@ pub enum Outcome {
         /// What the CLI said.
         reason: String,
     },
-    /// Never retried. Reasons starting with [`FATAL_NOT_LOGGED_IN`] or [`FATAL_BAD_MODEL`]
-    /// stop the whole pool; anything else (empty input, budget exhausted) fails only that job.
+    /// Never retried. Reasons starting with [`FATAL_NOT_LOGGED_IN`], [`FATAL_BAD_MODEL`],
+    /// [`FATAL_NO_API_KEY`] or [`FATAL_LOCAL_DOWN`] stop the whole pool; anything else
+    /// (empty input, budget exhausted, refusal) fails only that job.
     Fatal {
         /// Why. Begins with a stable prefix for the pool-stopping cases.
         reason: String,
@@ -188,7 +225,9 @@ impl Outcome {
     pub fn stops_pool(&self) -> bool {
         match self {
             Self::Fatal { reason } => {
-                reason.starts_with(FATAL_NOT_LOGGED_IN) || reason.starts_with(FATAL_BAD_MODEL)
+                [FATAL_NOT_LOGGED_IN, FATAL_BAD_MODEL, FATAL_NO_API_KEY, FATAL_LOCAL_DOWN]
+                    .iter()
+                    .any(|p| reason.starts_with(p))
             }
             _ => false,
         }
@@ -231,6 +270,6 @@ pub trait Backend: Send + Sync {
         model: &'a str,
     ) -> BoxFuture<'a, Result<Outcome>>;
 
-    /// Backend name for provenance: `claude-cli`, `mock`.
+    /// Backend name for provenance: `api`, `local`, `claude-cli`, `mock`.
     fn name(&self) -> &'static str;
 }

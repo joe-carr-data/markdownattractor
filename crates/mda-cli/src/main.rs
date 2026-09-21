@@ -41,6 +41,8 @@ enum Command {
     Card(commands::card::Args),
     /// What is indexed, pending, failed, and what it cost.
     Status(commands::status::Args),
+    /// Show or switch the summarization backend (api, local, claude-cli).
+    Backend(commands::backend::Args),
     /// Parse a markdown file and show its sections, line ranges and hashes.
     Parse(commands::parse::Args),
     /// Print the JSON schema handed to the summarization model.
@@ -59,6 +61,7 @@ fn main() -> ExitCode {
         Command::Open(args) => commands::open::run(&args, cli.json),
         Command::Card(args) => commands::card::run(&args, cli.json),
         Command::Status(args) => commands::status::run(&args, cli.json),
+        Command::Backend(args) => commands::backend::run(&args, cli.json),
         Command::Parse(args) => commands::parse::run(&args, cli.json),
         Command::Schema(args) => commands::schema::run(&args),
         Command::Doctor(args) => commands::doctor::run(&args, cli.json),

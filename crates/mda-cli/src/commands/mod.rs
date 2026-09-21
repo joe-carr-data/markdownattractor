@@ -1,6 +1,7 @@
 //! One module per subcommand. Each exposes `Args` and `run`, returns an `ExitCode`, and does
 //! all presentation through [`crate::output`].
 
+pub mod backend;
 pub mod card;
 pub mod doctor;
 pub mod index;

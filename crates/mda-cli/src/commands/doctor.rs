@@ -34,7 +34,11 @@ struct Check {
 /// Run the command. Exit code is non-zero when any check fails.
 #[expect(clippy::unnecessary_wraps, reason = "every command shares the same signature")]
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
-    let checks = vec![check_claude_cli(), check_root(&args.root), check_state_dir(&args.root)];
+    let cfg = mda_core::config::Config::load(&args.root).unwrap_or_default();
+    let mut checks = vec![check_root(&args.root), check_state_dir(&args.root), check_backend(&cfg)];
+    if matches!(cfg.backend, mda_core::config::Backend::ClaudeCli) {
+        checks.push(check_claude_cli());
+    }
     let failed = checks.iter().any(|c| matches!(c.status, Status::Fail));
 
     if json {
@@ -60,6 +64,72 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         }
     }
     Ok(if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS })
+}
+
+fn check_backend(cfg: &mda_core::config::Config) -> Check {
+    use mda_core::config::Backend;
+    let rt = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+        Ok(rt) => rt,
+        Err(e) => {
+            return Check {
+                name: "backend",
+                status: Status::Fail,
+                detail: format!("cannot start runtime: {e}"),
+                fix: None,
+            };
+        }
+    };
+    match cfg.backend {
+        Backend::Api => {
+            if !std::env::var(&cfg.api_key_env).is_ok_and(|v| !v.trim().is_empty()) {
+                return Check {
+                    name: "backend",
+                    status: Status::Fail,
+                    detail: format!("api: ${} is not set", cfg.api_key_env),
+                    fix: Some(
+                        "export ANTHROPIC_API_KEY=… (console.anthropic.com), or `mda backend local` to use a local model",
+                    ),
+                };
+            }
+            match rt.block_on(mda_core::worker::api::check(cfg)) {
+                Ok(model) => Check {
+                    name: "backend",
+                    status: Status::Ok,
+                    detail: format!("api: {} reachable, model {model}", cfg.api_base_url),
+                    fix: None,
+                },
+                Err(e) => Check {
+                    name: "backend",
+                    status: Status::Fail,
+                    detail: format!("api: {e}"),
+                    fix: Some(
+                        "check the key and `summarization_model` in .markdownattractor/config.toml",
+                    ),
+                },
+            }
+        }
+        Backend::Local => match rt.block_on(mda_core::worker::local::check(cfg)) {
+            Ok(model) => Check {
+                name: "backend",
+                status: Status::Ok,
+                detail: format!("local: {} serving {model}", cfg.local_base_url),
+                fix: None,
+            },
+            Err(e) => Check {
+                name: "backend",
+                status: Status::Fail,
+                detail: format!("local: {e}"),
+                fix: Some("start the server (docs/guides/local-model.md) or `mda backend api`"),
+            },
+        },
+        Backend::ClaudeCli => Check {
+            name: "backend",
+            status: Status::Warn,
+            detail: "claude-cli: opt-in backend; routes requests through your Claude subscription"
+                .to_owned(),
+            fix: Some("prefer `mda backend api` or `mda backend local` (ADR-0002)"),
+        },
+    }
 }
 
 fn check_claude_cli() -> Check {

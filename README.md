@@ -6,7 +6,7 @@
 
 <p align="center">
   A Claude Code plugin that turns every folder of markdown into a live, time-aware, searchable knowledge layer.<br>
-  One Rust binary. No API key. Nothing leaves your machine except the summaries you already pay for.
+  One Rust binary. Bring your own API key, or run a local model and pay nothing. Nothing else leaves your machine.
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@ Claude Code reads files whole. On a real project, answering *"how do we roll bac
 
 ## What markdownattractor does
 
-A background daemon watches your folder. Every markdown file is parsed into sections, each section is summarized once into a ~100-token **card** by Haiku through your existing Claude Code login, and everything lands in a local hybrid index. Claude searches the index, reads a card, and opens only the 40 lines it needs.
+A background daemon watches your folder. Every markdown file is parsed into sections, each section is summarized once into a ~100-token **card** by Haiku through your own API key (or by a local model such as gpt-oss-20b), and everything lands in a local hybrid index. Claude searches the index, reads a card, and opens only the 40 lines it needs.
 
 ```
 you save deploy.md
@@ -55,12 +55,20 @@ Every hit carries provenance: **which file, which section, which lines, and when
 
 ```
 /plugin install markdownattractor --marketplace joe-carr-data/markdownattractor
+export ANTHROPIC_API_KEY=…        # or: /mda backend local   (see below)
 /mda start
 ```
 
 That's it. `/mda start` confirms the folder, indexes it with sensible defaults, and finishes by running one real query against your first indexed docs so you see a hit with line ranges before you walk away. Target: **install to first useful answer in under ten minutes.**
 
-No API key. No Python. No Node. No model download blocking first use. Summarization runs through your existing Claude Code login and counts against your plan usage. The README says so, and so does `/mda cost`, which shows tokens spent indexing next to tokens saved on reads.
+No Python. No Node. No model download blocking first use. Two ways to pay for summaries, both visible in `/mda cost`:
+
+| Backend | What you need | Cost | Speed |
+|---|---|---|---|
+| **api** (default) | an [Anthropic API key](https://console.anthropic.com/) | Haiku list price, ≈ $0.006 per section, with a daily cap you set | ≈ 1 section/s at 16 workers |
+| **local** | `brew install llama.cpp` and one command ([guide](docs/guides/local-model.md)) | $0 | depends on your machine |
+
+Why not your Claude subscription? Anthropic's terms don't allow third-party tools to route requests through Pro or Max plan credentials on a user's behalf, and this project won't ship a pattern the terms name. Details in [ADR-0002](docs/adr/0002-backends-and-login-policy.md).
 
 ## What a session looks like
 
@@ -113,7 +121,7 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 ## Guarantees
 
 - **Never writes into your source files.** Identity lives in SQLite; your markdown is read-only to us.
-- **Local only.** No cloud, no hosted service, no telemetry. The only network calls are the summarization requests through your own Claude Code login, and the one-time download of the embedding model.
+- **Local only.** No cloud, no hosted service, no telemetry. The only network calls are the summarization requests to the API with your key (none at all on the local backend), and the one-time download of the embedding model.
 - **Grounded metadata.** 100% of dates and entities in the index are backed by text in the source.
 - **Fallback that works.** Cards are plain markdown on disk. With MCP off, `Grep` over `cards/` still works.
 - **Honest benchmarks.** Token savings are only reported for queries where the with-index answer is at least as correct as the baseline. Corpora are named before results exist, and the small-repo numbers get published even when the gain is nil.
@@ -127,7 +135,7 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 | Time model | — | — | — | **4 clocks, section `updated_at`** |
 | Summaries | LLM concept graph | none | none | **LLM cards + raw-text safety net** |
 | Retrieval | graph traversal | FTS5 symbols | BM25 + vectors + rerank | BM25 + vectors + recency |
-| Auth | provider API keys | none | local models | **Claude Code login, no key** |
+| Auth | provider API keys | none | local models | **your API key, or a local model** |
 | Runtime | Python | Node | Bun | **one Rust binary** |
 
 We don't compete on scope. A code index covers the code; markdownattractor covers the prose around it. Install both.
@@ -138,8 +146,8 @@ We don't compete on scope. A code index covers the code; markdownattractor cover
 
 | Phase | What | State |
 |---|---|---|
-| 0 | Spike: `claude -p` cost and latency, Haiku grounding quality, login-policy confirmation | next |
-| 1 | Summarization engine, cards on disk, FTS5 search, core `/mda` commands | |
+| 0 | Spike: cost and latency, Haiku grounding quality, backend policy | done |
+| 1 | Summarization engine, raw + card search, core `/mda` commands, API and local backends | engine done, daemon next |
 | 2 | Vectors, hybrid ranking, time filters, MCP server, search-first skill, default-on nudge | |
 | 3 | Relationships (`relates_to`, `supersedes`) and wiki index pages | |
 | 4 | Distribution, benchmarks page, design-partner program, launch | |

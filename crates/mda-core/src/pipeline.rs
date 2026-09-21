@@ -283,7 +283,7 @@ impl Engine {
     ///
     /// `on_progress` is called after every finished job. Cancelling `cancel` stops scheduling
     /// new jobs; in-flight ones finish and are recorded.
-    pub async fn summarize_pending<B: Backend + 'static>(
+    pub async fn summarize_pending<B: Backend + ?Sized + 'static>(
         &mut self,
         backend: Arc<B>,
         cancel: CancellationToken,

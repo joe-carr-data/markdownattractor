@@ -86,7 +86,7 @@ Don't compete on scope — graphify will always cover more file types. The pitch
 2. **Progressive disclosure by design.** L0 → L1 → L2 → exact line range. Claude never reads a whole file by accident.
 3. **Temporal provenance at section granularity** — filesystem, git, frontmatter, content dates, and change history, fused into one time model.
 4. **Always fresh.** Background watcher with section-level incremental updates — no rebuild step, ever.
-5. **No API key.** Uses the user's Claude Code login. Optional API-key fast path.
+5. **Bring your own key, or run a local model.** No subscription credentials are ever used on the user's behalf (ADR-0002).
 6. **One Rust binary** is watcher, summarizer orchestrator, index, MCP server and CLI. Sub-second startup, tiny footprint.
 7. **Great UX** — a `/markdownattractor` command family with live status, cost visibility, and a doctor.
 
@@ -152,11 +152,11 @@ Don't compete on scope — graphify will always cover more file types. The pitch
 
 ### 4.1 Authentication
 
-- **Default backend: `claude-cli`.** The daemon spawns the user's `claude -p`. This reuses the subscription login; summarization consumes the user's plan usage and the README says so explicitly.
-- **Not bare mode by default.** `--bare` skips OAuth/keychain, so it only works with an API key.
-- **Optional backend: `api`.** If `ANTHROPIC_API_KEY` (or `apiKeyHelper`) is present and the user opts in, use `claude --bare -p` (faster startup) or a direct Messages API client later.
+- **Default backend: `api`** (ADR-0002, 2026-09-22). The engine calls the Messages API directly with the user's own key: Haiku 4.5 for cards, one Sonnet 5 attempt after two failures, structured outputs in a single turn, cached system prompt. Anthropic's terms do not permit third-party tools to route requests through Pro/Max credentials on a user's behalf (Claude Code *Legal and compliance*; Agent SDK overview), so the original `claude-cli` default is withdrawn.
+- **Second backend: `local`.** Any OpenAI-compatible server; llama.cpp + gpt-oss-20b is the documented setup (`docs/guides/local-model.md`). Zero cost, no policy question.
+- **`claude-cli` is opt-in only** (`claude_cli_policy_ack = true`), unadvertised, kept for personal use and for the case where Anthropic approves the pattern. Spike measurements for it remain valid.
 - **Never** read OAuth tokens from the keychain or `~/.claude` directly.
-- **In Phase 0 (spike exit criterion, not a launch-day check):** get written confirmation from Anthropic that spawning the user's own CLI from an installed plugin is acceptable under the third-party login policy. In parallel, write the **API-key-only pitch** (README variant, onboarding, cost story) so that if the answer is no, the fallback product is already positioned rather than improvised.
+- **Policy question closed by ADR-0002** rather than by an answer from Anthropic: the API is the default, so nothing depends on approval. A request for approval of the opt-in mode can still be sent via the contact-sales form the compliance page names.
 
 ### 4.2 Worker call shape (confirmed by the Phase 0 spike, `docs/plans/2026-09-phase0-spike.md`)
 
@@ -564,7 +564,7 @@ Engineering rules: production-ready, documented code; frequent descriptive commi
 
 | Risk | Mitigation |
 |---|---|
-| Policy on reusing Claude Code login | Written confirmation from Anthropic requested in Phase 0; API-key backend as alternative with its own pitch pre-written; clear README disclosure |
+| Policy on reusing Claude Code login | Resolved: `api` is the default and `local` the alternative (ADR-0002); `claude-cli` requires an explicit acknowledgement and is not advertised |
 | Claude ignores the index and keeps grepping raw files | Default-on `PreToolUse` nudge; index hit rate visible in `/mda status`; skill states the search → card → lines workflow and the recovery rule |
 | Card omitted the detail the user needed (“the answer was in the file”) | Raw-text FTS5 table as lexical safety net; `raw=true` retry; explicit Grep fallback in the skill |
 | Stale card or wrong line range during active editing | Line ranges refreshed on every parse; `mda_open` re-hashes at read time and flags `stale`; pending docs searchable via raw text |

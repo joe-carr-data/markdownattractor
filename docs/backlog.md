@@ -2,6 +2,14 @@
 
 Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we already know, and the exit criterion that would move it into a phase plan. Newest first.
 
+## B-0002 — In-session summarization backend (added 2026-09-22)
+
+**What.** A backend where the user's own Claude Code session produces the cards: the daemon only queues; a `/mda sync` skill (or a `SessionStart` nudge showing "N sections pending") has Claude spawn parallel Haiku subagents that call `mda_next_batch` over MCP and post cards back with `mda_submit_cards`. This is how Understand Anything and llm-wiki-plugin do their model work, and it is unambiguously "ordinary use of Claude Code" under the policy (ADR-0002).
+
+**Why not now.** It only runs while a session is open, consumes that session's context and attention, and needs the MCP server (Phase 2). The `api` and `local` backends cover the daemon case.
+
+**Exit criterion to schedule it.** MCP server shipped, and a design partner who wants zero-key operation without a local model.
+
 ## B-0001 — Ingest non-markdown documents as "virtual markdown" (added 2026-09-22)
 
 **What.** Let the same pipeline summarize Office, web and (optionally) PDF documents by converting them to markdown at intake. v1 stays markdown-only (plan §1 non-goals); this is Phase 2+.

@@ -22,7 +22,7 @@ Arguments: `$ARGUMENTS`
    - `doctor` → the checks with ✓ / ! / ✗ and the fix lines verbatim.
    - `cost`, `timeline`, `recent`, `stale` → a compact table.
    - anything else → the one-line result the binary printed.
-4. If the binary exits non-zero, show the `error` field and, when it mentions `doctor`, offer to run `/mda doctor`.
+4. If the binary exits non-zero, show the `error` field and, when it mentions `doctor`, offer to run `/mda doctor`. If it says the API key is not set, explain the two options in one line each: `export ANTHROPIC_API_KEY=…` (console.anthropic.com) or `/mda backend local` with a llama.cpp server (link `docs/guides/local-model.md`). Never suggest `claude-cli` unprompted; if the user asks for it, show the policy text the binary prints.
 5. If the launcher prints "mda binary not found", tell the user to start a new session (the plugin fetches the binary at session start) or run the `cargo install` line it prints.
 
 ## Commands (short reference)
@@ -32,7 +32,7 @@ Arguments: `$ARGUMENTS`
 | `start [path]` · `stop` · `restart` · `status` · `watch` · `doctor` | lifecycle |
 | `index [path] [--no-summarize]` · `pause` · `resume` · `rebuild` · `ignore <pattern>` · `prune` | indexing |
 | `search <query> [--since 7d] [--until date] [--status current] [--in path] [--raw] [-k 8]` · `open <section_id>` · `card <id>` · `timeline [--since 30d]` · `recent [n]` · `stale` · `explain <query>` | search |
-| `summarization_model <id>` · `escalation_model <id\|off>` · `backend <claude-cli\|api>` · `embeddings <…>` · `concurrency <n\|auto>` · `budget <tokens/day\|off>` · `retention <days\|forever>` · `nudge <on\|off>` · `config` | configuration |
+| `summarization_model <id>` · `escalation_model <id\|off>` · `backend [api\|local\|claude-cli]` · `embeddings <…>` · `concurrency <n\|auto>` · `budget <tokens/day\|off>` · `retention <days\|forever>` · `nudge <on\|off>` · `config` | configuration |
 | `cost [--since 7d]` · `diagnostics` · `export` · `logs [--tail 100]` · `reset` · `version` · `update` · `help` | maintenance |
 
 Commands not yet available in the installed build return an "unknown command" error; report it plainly and suggest `/mda help`.

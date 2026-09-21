@@ -111,7 +111,7 @@ fn summary_from_text(result_text: &str, usage: Usage, reason: String) -> Outcome
 }
 
 /// Strip a ```` ```json ```` … ```` ``` ```` wrapper if the model added one.
-fn strip_fences(text: &str) -> &str {
+pub(super) fn strip_fences(text: &str) -> &str {
     let t = text.trim();
     let Some(rest) = t.strip_prefix("```") else { return t };
     let rest = rest.strip_prefix("json").unwrap_or(rest);

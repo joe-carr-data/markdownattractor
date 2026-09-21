@@ -28,6 +28,7 @@ ignore.workspace = true
 rusqlite.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
+reqwest.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

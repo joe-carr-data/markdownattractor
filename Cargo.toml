@@ -38,6 +38,9 @@ comrak = { version = "0.55", default-features = false }
 blake3 = "1.8"
 ignore = "0.4"
 
+# http (api + local backends)
+reqwest = { version = "0.13", features = ["json"] }
+
 # storage & search
 rusqlite = { version = "0.40", features = ["bundled", "jiff", "functions"] }
 

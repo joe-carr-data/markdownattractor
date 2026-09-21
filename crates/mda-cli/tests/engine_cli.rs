@@ -70,7 +70,7 @@ fn index_then_status_search_open_card() {
     assert_eq!(v["counts"]["docs"], 2);
     assert_eq!(v["counts"]["sections"], 4);
     assert_eq!(v["counts"]["pending"], 4);
-    assert_eq!(v["config"]["summarization_model"], "haiku");
+    assert_eq!(v["config"]["summarization_model"], "claude-haiku-4-5");
 
     // search (raw text, pending)
     let out = mda()
@@ -303,4 +303,73 @@ fn root_is_discovered_from_a_subdirectory() {
         .stdout
         .clone();
     assert_eq!(json_of(&out)["counts"]["docs"], 2);
+}
+
+#[test]
+fn backend_command_switches_and_guards_claude_cli() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+
+    // default
+    let out = mda()
+        .args(["--json", "backend", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    assert_eq!(json_of(&out)["backend"], "api");
+
+    // switch to local, persisted in config.toml
+    mda()
+        .args(["backend", "local", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("backend set to"))
+        .stdout(predicate::str::contains("local"));
+    let cfg = std::fs::read_to_string(root.join(".markdownattractor/config.toml")).unwrap();
+    assert!(cfg.contains("backend = \"local\""), "{cfg}");
+
+    // claude-cli needs the acknowledgement
+    mda()
+        .args(["backend", "claude-cli", "--root"])
+        .arg(root)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("claude_cli_policy_ack"));
+    mda()
+        .args(["backend", "claude-cli", "--i-accept-the-policy", "--root"])
+        .arg(root)
+        .assert()
+        .success();
+    let cfg = std::fs::read_to_string(root.join(".markdownattractor/config.toml")).unwrap();
+    assert!(cfg.contains("claude_cli_policy_ack = true"), "{cfg}");
+
+    // and can switch back even though the config is in the acknowledged claude-cli state
+    mda().args(["backend", "api", "--root"]).arg(root).assert().success();
+    let cfg = std::fs::read_to_string(root.join(".markdownattractor/config.toml")).unwrap();
+    assert!(cfg.contains("backend = \"api\""));
+    assert!(cfg.contains("claude_cli_policy_ack = false"));
+}
+
+#[test]
+fn doctor_reports_missing_api_key() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    let out = mda()
+        .args(["--json", "doctor", "--root"])
+        .arg(root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .assert()
+        .failure()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    let backend = v["checks"].as_array().unwrap().iter().find(|c| c["name"] == "backend").unwrap();
+    assert_eq!(backend["status"], "fail");
+    assert!(backend["detail"].as_str().unwrap().contains("ANTHROPIC_API_KEY"));
 }

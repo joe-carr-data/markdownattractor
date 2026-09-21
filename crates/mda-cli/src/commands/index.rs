@@ -3,11 +3,9 @@
 use std::io::Write as _;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use anyhow::Context;
 use mda_core::pipeline::{Engine, IndexReport, SummarizeOptions, SummarizeReport};
-use mda_core::worker::ClaudeCli;
 use tokio_util::sync::CancellationToken;
 
 use crate::output::{self, Style};
@@ -145,7 +143,12 @@ fn summarize(
     st: &Style,
     opts: SummarizeOptions,
 ) -> anyhow::Result<SummarizeReport> {
-    let backend = Arc::new(ClaudeCli::new(engine.config()).context("preparing the claude worker")?);
+    let backend = mda_core::worker::backend_for(engine.config()).with_context(|| {
+        format!(
+            "preparing the {} backend (run `mda doctor`, or `mda backend local` for a local model)",
+            engine.config().backend.as_str()
+        )
+    })?;
     let cancel = CancellationToken::new();
     let ctrl_c = cancel.clone();
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;

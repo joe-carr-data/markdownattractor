@@ -16,28 +16,64 @@ pub const STATE_DIR: &str = ".markdownattractor";
 /// Name of the config file inside [`STATE_DIR`].
 pub const CONFIG_FILE: &str = "config.toml";
 
-/// Which process produces summaries.
+/// Shown whenever `backend = "claude-cli"` is selected without the acknowledgement.
+pub const CLAUDE_CLI_POLICY: &str = "backend \"claude-cli\" routes requests through your Claude \
+subscription. Anthropic's terms do not permit third-party tools to do that on your behalf \
+(see docs/adr/0002-backends-and-login-policy.md). Use the default `api` backend with an \
+API key, or `local` with a llama.cpp server. To run claude-cli anyway for personal use, set \
+`claude_cli_policy_ack = true` in .markdownattractor/config.toml.";
+
+/// Which process produces summaries. See ADR-0002 for why the API is the default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum Backend {
-    /// Spawn the user's own `claude -p`. Uses their Claude Code login; no API key.
+    /// The Claude Messages API with the user's own API key (`api_key_env`). Default.
     #[default]
-    ClaudeCli,
-    /// Use `claude --bare -p` with `ANTHROPIC_API_KEY`. Faster startup, costs API dollars.
     Api,
+    /// An OpenAI-compatible local server (llama.cpp, LM Studio, Ollama) at `local_base_url`.
+    /// No key, no cost, no policy question; slower per call.
+    Local,
+    /// Spawn the user's own `claude -p`. Anthropic's terms do not permit third-party tools to
+    /// route requests through Pro/Max plan credentials, so this is opt-in only and requires
+    /// `claude_cli_policy_ack = true`.
+    ClaudeCli,
+}
+
+impl Backend {
+    /// Stable name used in provenance and `--json` output.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Api => "api",
+            Self::Local => "local",
+            Self::ClaudeCli => "claude-cli",
+        }
+    }
 }
 
 /// Top-level configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
-    /// Model used for section and document cards. Any id `claude --model` accepts.
+    /// Model used for section and document cards on the `api` and `claude-cli` backends.
     pub summarization_model: String,
     /// Model tried once after the summarization model has failed twice on a section.
-    /// Defaults to `sonnet`; `None` disables escalation.
+    /// Defaults to Sonnet; `None` disables escalation. Ignored by the `local` backend.
     pub escalation_model: Option<String>,
     /// Which process produces summaries.
     pub backend: Backend,
+    /// Base URL of the Messages API (`api` backend).
+    pub api_base_url: String,
+    /// Environment variable holding the API key (`api` backend). Never stored in this file.
+    pub api_key_env: String,
+    /// Base URL of the OpenAI-compatible server (`local` backend), including `/v1`.
+    pub local_base_url: String,
+    /// Model name as the local server reports it (`local` backend).
+    pub local_model: String,
+    /// `reasoning_effort` passed to the local chat template (gpt-oss); `None` sends nothing.
+    pub local_reasoning_effort: Option<String>,
+    /// Acknowledge Anthropic's third-party login policy before `claude-cli` is allowed.
+    pub claude_cli_policy_ack: bool,
     /// Worker pool size. `None` means adaptive (AIMD, starting at 4).
     pub concurrency: Option<u16>,
     /// Daily token cap across all workers. `None` means unlimited.
@@ -58,9 +94,15 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            summarization_model: "haiku".to_owned(),
-            escalation_model: Some("sonnet".to_owned()),
+            summarization_model: "claude-haiku-4-5".to_owned(),
+            escalation_model: Some("claude-sonnet-5".to_owned()),
             backend: Backend::default(),
+            api_base_url: "https://api.anthropic.com".to_owned(),
+            api_key_env: "ANTHROPIC_API_KEY".to_owned(),
+            local_base_url: "http://127.0.0.1:8080/v1".to_owned(),
+            local_model: "gpt-oss-20b".to_owned(),
+            local_reasoning_effort: Some("low".to_owned()),
+            claude_cli_policy_ack: false,
             concurrency: None,
             daily_token_budget: None,
             per_call_budget_usd: 0.05,
@@ -128,6 +170,12 @@ impl Config {
         if self.worker_timeout_secs == 0 {
             return Err(Error::Config("worker_timeout_secs must be positive".into()));
         }
+        if self.backend == Backend::ClaudeCli && !self.claude_cli_policy_ack {
+            return Err(Error::Config(CLAUDE_CLI_POLICY.to_owned()));
+        }
+        if self.api_base_url.trim().is_empty() || self.local_base_url.trim().is_empty() {
+            return Err(Error::Config("api_base_url and local_base_url must not be empty".into()));
+        }
         Ok(())
     }
 }
@@ -152,6 +200,17 @@ mod tests {
     fn rejects_unknown_fields() {
         let err = Config::from_toml("modle = \"haiku\"").unwrap_err();
         assert!(matches!(err, Error::Config(_)), "{err}");
+    }
+
+    #[test]
+    fn claude_cli_requires_acknowledgement() {
+        let err = Config::from_toml("backend = \"claude-cli\"").unwrap_err();
+        assert!(err.to_string().contains("claude_cli_policy_ack"), "{err}");
+        assert!(
+            Config::from_toml("backend = \"claude-cli\"\nclaude_cli_policy_ack = true").is_ok()
+        );
+        assert_eq!(Config::from_toml("backend = \"local\"").unwrap().backend, Backend::Local);
+        assert_eq!(Config::default().backend, Backend::Api);
     }
 
     #[test]

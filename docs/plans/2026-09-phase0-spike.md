@@ -1,6 +1,6 @@
 # Phase 0 — Spike
 
-Status: **done (measurements)** · one exit criterion open (login policy) · 2026-09-21
+Status: **done** · all exit criteria closed (login policy resolved by ADR-0002 on 2026-09-22) · 2026-09-21
 
 Goal: replace guesses in the plan with measurements before writing the engine. Every number below came from real `claude -p` calls on this machine (Apple M3, Claude Code 2.1.278, Max plan, Haiku 4.5), on sections of `docs/project-plan.md`. Raw outputs are in the session scratchpad; the scripts are reproduced under `evals/spike/`.
 
@@ -12,7 +12,7 @@ Goal: replace guesses in the plan with measurements before writing the engine. E
 - [x] Measure parallel behaviour at 4 and 8 workers: rate limits, failure modes.
 - [x] Check date grounding quality on a section with nine dates.
 - [x] Probe guardrail behaviours: budget cap, empty input, bad model, `--bare` without a key.
-- [ ] Login-policy confirmation from Anthropic (§4.1). **Owner action**: email sent? → record date here. API-key-only README variant drafted in `docs/design/distribution.md` when that file is written.
+- [x] Login policy: resolved by ADR-0002 (the compliance page rules out routing through Pro/Max credentials; the API is the default). No approval needed for the shipped defaults.
 
 ## Results
 
@@ -66,7 +66,7 @@ claude -p --model haiku \
 |---|---|
 | Haiku grounding pass-rate ≥ 95% on the test docs | ✅ 100% on 9 dates (single section; expand to the 20-doc set in Phase 1 evals) |
 | Defaults decided | ✅ Haiku, thinking off, concurrency start 4, protocol prompt v1, per-call budget $0.05, timeout 90 s |
-| Policy answer received or dated follow-up + fallback pitch ready | ⏳ open — owner to send; fallback pitch goes in `docs/design/distribution.md` |
+| Policy answer received or dated follow-up + fallback pitch ready | ✅ closed 2026-09-22 by ADR-0002: API key default, local model second, CLI spawn opt-in only |
 
 ## Decisions taken
 
