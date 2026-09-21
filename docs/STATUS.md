@@ -16,7 +16,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 
 ## Blockers / open questions
 - Login-policy confirmation (spike exit criterion) — owner action, not blocking code.
-- Full-`docs/` live run (≈ 150 sections) deferred until the daemon exists; costs ≈ $1 list price / a few minutes.
+- Cost/turn optimisation: most calls still take 2 API turns (enforce reminder); a prompt experiment could halve input tokens.
 - §13 open decisions: default embedding model, commit `cards/` or not, single vs. separate MCP binary, per-root vs. global daemon.
 
 ## Last Codex review: 2026-09-21 (docs/reviews/codex/2026-09-21-pre-mortem.md) — 0 findings open, 2 rejected with reasons

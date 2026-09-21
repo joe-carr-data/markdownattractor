@@ -26,7 +26,7 @@ Every module lives in `crates/mda-core/src/`, has its own tests, and knows nothi
 
 ## Exit criteria
 
-- [x] `mda index` makes every section raw-searchable in < 1 s (docs/plans: 11 sections, 6 ms) and cards available in < 2 min with 4 workers (32 s for 11 sections). Full `docs/` run pending the daemon step.
+- [x] `mda index` makes every section raw-searchable in < 1 s (full `docs/`: 119 sections, 28 ms) and all cards available in < 2 min (113 model calls in 1 min 53 s, AIMD 4→16, 0 failures, $0.63).
 - [x] `mda search` returns the right section with its line range and `--since` filters; `mda open` returns exactly those lines and flags `stale` when the file moved on.
 - [x] Re-running `mda index` after touching one section re-summarizes exactly one section (test `editing_one_section_needs_exactly_one_card` + CLI test).
 - [x] Inserting lines above an unchanged section updates its line range without a job (front-matter test).
