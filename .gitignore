@@ -25,3 +25,8 @@ Thumbs.db
 # Env / secrets
 .env
 .env.*
+
+# coverage & tooling output
+lcov.info
+cov.json
+*.profraw
