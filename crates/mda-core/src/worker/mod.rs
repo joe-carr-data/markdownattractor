@@ -121,6 +121,10 @@ pub const FATAL_NO_API_KEY: &str = "api key rejected";
 /// connection" (`local` backend). The pool stops when it sees it.
 pub const FATAL_LOCAL_DOWN: &str = "local model server unreachable";
 
+/// Reason prefix for account-level API refusals (no credits, missing workspace header): every
+/// job would fail the same way, so the pool stops.
+pub const FATAL_ACCOUNT: &str = "account problem";
+
 /// One chunk to summarise. Built by the planner; `id` is the section hash so results can be
 /// attached to every section sharing that content.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -224,11 +228,15 @@ impl Outcome {
     /// should stop instead of burning through the queue.
     pub fn stops_pool(&self) -> bool {
         match self {
-            Self::Fatal { reason } => {
-                [FATAL_NOT_LOGGED_IN, FATAL_BAD_MODEL, FATAL_NO_API_KEY, FATAL_LOCAL_DOWN]
-                    .iter()
-                    .any(|p| reason.starts_with(p))
-            }
+            Self::Fatal { reason } => [
+                FATAL_NOT_LOGGED_IN,
+                FATAL_BAD_MODEL,
+                FATAL_NO_API_KEY,
+                FATAL_LOCAL_DOWN,
+                FATAL_ACCOUNT,
+            ]
+            .iter()
+            .any(|p| reason.starts_with(p)),
             _ => false,
         }
     }

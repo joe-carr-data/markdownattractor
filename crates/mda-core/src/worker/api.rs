@@ -244,6 +244,7 @@ impl Backend for ApiBackend {
 /// | 401, 403 | `Fatal` starting with [`FATAL_NO_API_KEY`] (stops the pool) |
 /// | 404 | `Fatal` starting with [`FATAL_BAD_MODEL`] (stops the pool) |
 /// | 429, 529 | `RateLimited`, `retry-after` quoted in the reason |
+/// | 400 naming credits or the workspace header | `Fatal`, stops the pool (every job would fail the same way) |
 /// | 400, 413, other 4xx | `Fatal` for this job only |
 /// | 500, 502, 503, anything else | `Retryable` |
 fn classify_error(resp: &http::Response, model: &str) -> Outcome {
@@ -259,6 +260,9 @@ fn classify_error(resp: &http::Response, model: &str) -> Outcome {
         429 | 529 => Outcome::RateLimited {
             reason: format!("HTTP {status}: {msg}{}", resp.retry_after_note()),
         },
+        400..=499 if is_account_problem(&msg) => {
+            Outcome::Fatal { reason: format!("{} (HTTP {status}): {msg}", super::FATAL_ACCOUNT) }
+        }
         400..=499 => Outcome::Fatal { reason: format!("HTTP {status}: {msg}") },
         _ => Outcome::Retryable { reason: format!("HTTP {status}: {msg}") },
     }
@@ -373,4 +377,10 @@ pub async fn check_with_key(cfg: &Config, key: &str) -> Result<String> {
         404 => Err(Error::Worker(format!("model not available: {model} (HTTP 404): {msg}"))),
         s => Err(Error::Worker(format!("HTTP {s} from {url}: {msg}"))),
     }
+}
+
+/// Account-level refusals the API reports as 400: nothing per-section can fix them.
+fn is_account_problem(msg: &str) -> bool {
+    let m = msg.to_ascii_lowercase();
+    m.contains("credit balance") || m.contains("anthropic-workspace-id") || m.contains("billing")
 }

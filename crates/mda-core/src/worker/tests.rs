@@ -1124,6 +1124,27 @@ async fn api_sends_workspace_header_only_when_configured() {
 }
 
 #[tokio::test]
+async fn api_account_level_400_stops_the_pool() {
+    for msg in [
+        "Your credit balance is too low to access the Anthropic API.",
+        "This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header",
+    ] {
+        let server = Server::start(vec![(400, api_error("invalid_request_error", msg))]).await;
+        let out = api(&server.url).summarize(&req("acct"), "claude-haiku-4-5").await.unwrap();
+        assert!(out.stops_pool(), "{msg:?} → {out:?}");
+        let Outcome::Fatal { reason } = out else { panic!("expected Fatal") };
+        assert!(reason.starts_with(FATAL_ACCOUNT), "{reason}");
+    }
+    let server = Server::start(vec![(
+        400,
+        api_error("invalid_request_error", "messages: text content blocks must be non-empty"),
+    )])
+    .await;
+    let out = api(&server.url).summarize(&req("plain"), "claude-haiku-4-5").await.unwrap();
+    assert!(!out.stops_pool(), "an ordinary 400 fails only its job: {out:?}");
+}
+
+#[tokio::test]
 async fn api_max_tokens_stop_is_malformed_truncated() {
     let server = Server::start(vec![(200, api_message("max_tokens", "{\"tldr\": \"cut"))]).await;
     let out = api(&server.url).summarize(&req("a4"), "claude-haiku-4-5").await.unwrap();
