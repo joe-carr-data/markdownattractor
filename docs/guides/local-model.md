@@ -26,7 +26,7 @@ mda backend local
 What the flags do:
 
 - `-hf ggml-org/gpt-oss-20b-GGUF` pulls the official build in native MXFP4, the format the model was trained for, so no quality is lost to requantization.
-- `--ctx-size 0` uses the model's full native context (128K). gpt-oss has a small KV cache, so that fits on 16–24 GB.
+- `--ctx-size 0` uses the model's full native context (128K), split across the `-np` slots. That is the general setting and the right default when memory allows. What markdownattractor actually needs per slot is the largest chunk it sends plus the prompt: chunks are capped at 6K tokens by the planner (`PlanConfig::max_tokens`), so a slot of 16K is safe for every section; `--ctx-size 65536` with `-np 4` gives that and frees several GB for the model weights. If the server logs Metal "command buffer failed" errors or answers HTTP 500 "Compute error", reduce the context or the slots before reaching for a smaller model.
 - `--jinja` applies the model's own chat template, which gpt-oss's Harmony format requires.
 - `-fa on` turns on flash attention: faster prefill, less memory at long context.
 - `-b 2048 -ub 2048` raises the batch sizes, which speeds up prefill. Prefill is the bottleneck when summarizing big sections.
@@ -70,6 +70,20 @@ LM Studio and Ollama work with the same three lines: set `local_base_url` to the
 - Keep llama.cpp updated (`brew upgrade llama.cpp`). Metal performance improves often.
 - `mda index --limit 50` paces a big backfill. On the local backend the pool starts at 2 workers and never exceeds 4, whatever `concurrency` says, and each call may take up to 5 minutes before it counts as a timeout. Match `-np` on the server to the concurrency you want.
 - Memory is the thing to watch: the model must stay resident. If `llama-server`'s resident size is far below the model size and the machine is paging, every card is slow; close other apps or use a smaller model.
+
+## Which model
+
+Measured on an M3 with 24 GB (single request, model fully resident):
+
+| Model | Download | Quality of cards | Decode speed | Notes |
+|---|---|---|---|---|
+| **gpt-oss-20b** (MXFP4) | 12 GB | best of the three: precise tldrs, dates grounded | ≈ 160 tok/s | needs ~14 GB free; first choice on 24 GB+ |
+| **Gemma 3 12B** (Q4_0) | 7 GB | good | not measured yet | the middle option on 16 GB |
+| **Gemma 3 4B** (Q4_0) | 2.5 GB | usable: correct tldrs, some vagueness | ≈ 60 tok/s expected | fits anywhere; use when memory is tight |
+
+`-hf ggml-org/gemma-3-4b-it-GGUF` and `-hf ggml-org/gemma-3-12b-it-GGUF` are drop-in replacements in the server command. Any model works as long as the server honours `response_format: json_schema`; the validator rejects cards that do not match the contract, so a weaker model costs retries rather than bad data.
+
+When the same machine was already swapping (26 GB of swap in use from other apps), both gpt-oss-20b and Gemma 3 4B fell to 6–9 tok/s because the weights were being paged in from disk. Free memory first; model size is the second lever.
 
 ## When to prefer the API instead
 
