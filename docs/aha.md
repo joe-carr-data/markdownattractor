@@ -6,3 +6,9 @@ Dated one-liners. Newest first. Pruned monthly: entries that became rules gradua
 - 2026-09-21 — `codex exec` refuses to run outside a git repo unless `--skip-git-repo-check` is passed. Init the repo before wiring `/codex-review`.
 - 2026-09-21 — Pre-mortem framing ("it's 4 months later and it failed, why?") got sharper findings from Codex than a plain review would. Reuse the frame at each phase gate.
 - 2026-09-21 — Shipping an adoption lever as opt-in is the same as not shipping it. The nudge is now default-on.
+- 2026-09-21 — Haiku 4.5 with default extended thinking spends 7–12K thinking tokens on a 400-word section (20–115 s). `MAX_THINKING_TOKENS=0` → 7–12 s. Thinking, not the model, was the latency problem.
+- 2026-09-21 — `--json-schema` output is a tool call. Without thinking, Haiku often writes the JSON as text first; the CLI's reminder turn then loses the content ~25% of the time. One protocol line in the system prompt ("your ONLY action is to call the StructuredOutput tool… on your first turn") → 0/24 failures.
+- 2026-09-21 — `claude -p` result JSON: `subtype` is unreliable (a 404 came back as `subtype: "success"`). Branch on `is_error`, `api_error_status`, and `structured_output != null`.
+- 2026-09-21 — `claude -p` waits 3 s for stdin when stdin is not a TTY. Always write the chunk and close stdin immediately.
+- 2026-09-21 — Haiku straightens curly quotes in `evidence` strings. Grounding check must fold quotes/dashes and collapse whitespace before substring matching, or 2/9 correct dates fail validation.
+- 2026-09-21 — Passing markdown as the `-p` argument breaks when the chunk starts with `-` (clap sees an option). Use stdin, or `--`.

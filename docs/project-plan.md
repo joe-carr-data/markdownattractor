@@ -18,7 +18,7 @@ Claude Code reads files whole. On real projects that means burning tens of thous
 
 | # | Goal | Success metric |
 |---|---|---|
-| G1 | **Speed** — new file searchable in seconds | p50 < 15 s from save to card available (Haiku, ≤ 10K-token doc) |
+| G1 | **Speed** — new file searchable in seconds | p50 < 1 s from save to raw-text searchable; p50 < 20 s from save to card available (Haiku, thinking off, ≤ 3K-token doc) |
 | G2 | **Zero-config** — `/markdownattractor start` and forget | No API key, no model download prompt blocking first use |
 | G3 | **Token economy** — Claude reads less | ≥ 5× fewer source tokens read per answer on the eval set vs. plain `Read`/`Grep` |
 | G4 | **Temporal provenance** — every hit is dated | 100% of cards have `created_at`, `updated_at`, `first_seen_at`; sections have their own `updated_at` |
@@ -158,22 +158,41 @@ Don't compete on scope — graphify will always cover more file types. The pitch
 - **Never** read OAuth tokens from the keychain or `~/.claude` directly.
 - **In Phase 0 (spike exit criterion, not a launch-day check):** get written confirmation from Anthropic that spawning the user's own CLI from an installed plugin is acceptable under the third-party login policy. In parallel, write the **API-key-only pitch** (README variant, onboarding, cost story) so that if the answer is no, the fallback product is already positioned rather than improvised.
 
-### 4.2 Worker call shape (to be confirmed by the spike)
+### 4.2 Worker call shape (confirmed by the Phase 0 spike, `docs/plans/2026-09-phase0-spike.md`)
 
 ```bash
+MAX_THINKING_TOKENS=0 MARKDOWNATTRACTOR_WORKER=1 \
 claude -p \
-  --model "$MDA_MODEL" \                          # default: haiku
-  --system-prompt "$(cat prompts/section.txt)" \  # replaces Claude Code's default prompt
-  --output-format json --json-schema "$SECTION_SCHEMA" \
-  --tools "" --strict-mcp-config --setting-sources "" \
-  < chunk.txt
-# cwd = empty scratch dir; env MARKDOWNATTRACTOR_WORKER=1
+  --model "$MDA_MODEL" \                                   # default: haiku
+  --system-prompt "$(cat prompts/section.v1.txt)" \        # replaces Claude Code's default prompt (8.5K tokens → ~600)
+  --output-format json --json-schema "$(cat prompts/section.schema.v1.json)" \
+  --tools "" --strict-mcp-config --setting-sources "" --no-session-persistence \
+  --max-budget-usd 0.05 \
+  < chunk.md
+# cwd = empty scratch dir
 ```
 
-- `--json-schema` → conforming result in `structured_output`, no parsing layer.
-- Replacing the system prompt is the biggest per-call token and latency saving.
+- **`MAX_THINKING_TOKENS=0` is mandatory.** With default extended thinking, Haiku spends 7–12K tokens thinking per section and takes 20–115 s. Without it: 7–12 s.
+- `--json-schema` → conforming result in `structured_output`. It is implemented as a tool call; the system prompt ends with a protocol line that makes the model call the tool on its first turn (otherwise ~25% of calls fail after a CLI reminder turn).
+- Replacing the system prompt is the biggest per-call token saving (≈ 8.5K → ≈ 2.5K input tokens per section).
 - All plugin hooks must `exit 0` immediately when `MARKDOWNATTRACTOR_WORKER=1` (recursion guard — workers load the user's plugins, including this one).
-- Content goes over stdin (10 MB cap, far above chunk size).
+- Content goes over stdin, and **stdin is closed immediately** after writing (the CLI waits up to 3 s for more input otherwise).
+
+**Guardrails and retries (worker contract)**
+
+| Signal | Action |
+|---|---|
+| `structured_output == null` | retry once, same prompt → escalate to `escalation_model` if set → mark section `failed`, keep raw `result` for diagnostics |
+| `api_error_status` 401/403 | stop the pool, surface "claude not logged in" via `/mda status` and `doctor` |
+| `api_error_status` 404 | bad model id, stop the pool, surface |
+| 429/529, or `rate_limit`/`overloaded` in events | AIMD: halve concurrency, retry with backoff 1 s → 4 s → 16 s |
+| any other `is_error` | retry once, then fail the job |
+| wall-clock > 90 s | kill the process, count as retryable |
+| `--max-budget-usd` exceeded (`terminal_reason: budget_exhausted`) | fail the job, log cost; the cap is checked after the call so it bounds damage, not spend |
+| empty chunk | never sent (planner invariant); if seen, permanent failure |
+| `subtype` field | **ignored** — it reported `"success"` on a 404 |
+
+Every worker result is validated against the schema *again* in Rust (`jsonschema`) before the evidence check; the CLI's conformance is trusted but verified.
 
 ### 4.3 Pipeline
 
@@ -368,14 +387,16 @@ Alias: `/mda` (all commands accept both). Every command prints a one-line result
 |---|---|
 | Watcher → job enqueued | < 50 ms after debounce |
 | Parse + section diff (100 KB file) | < 20 ms |
-| LLM section call (Haiku, 4K-token chunk) | 3–6 s (warm worker) |
-| Reduce | 2–4 s |
+| Save → raw-text searchable (FTS over section text, no LLM) | **< 1 s** |
+| LLM section call (Haiku 4.5, thinking off, ~1K-token chunk) | **7–12 s API** (measured, spike), + 1.5–3 s CLI overhead |
+| Save → card searchable, ≤ 3K-token doc, p50 | < 20 s |
+| Reduce | 5–10 s |
 | Embed a card (local small model) | < 20 ms |
 | Search (10K sections) | < 30 ms end-to-end |
 | Daemon RSS | < 150 MB with model loaded |
 | Cold start of `mda status` | < 50 ms |
 
-Levers, in order of impact: hashing (never re-summarize unchanged content) → warm pool → replaced system prompt + tool-less worker → compact schemas with string caps → adaptive concurrency → Haiku w/o thinking → priority queue.
+Levers, in order of impact (re-ranked after the spike): **thinking off** (10× on latency) → hashing (never re-summarize unchanged content) → protocol prompt (single API turn, halves input tokens) → replaced system prompt + tool-less worker → compact schema with caps → adaptive concurrency → priority queue → warm pool (hides only the ~2 s CLI startup; lowest impact, build last).
 
 ---
 
