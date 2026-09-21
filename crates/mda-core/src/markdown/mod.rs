@@ -1,0 +1,365 @@
+//! Markdown parsing into heading-delimited sections.
+//!
+//! This is the first stage of the pipeline and the only one that looks at raw markdown. It is
+//! pure: given text, it returns a [`Document`]. It never touches the filesystem except through
+//! [`parse_file`], which only reads.
+//!
+//! ## Section model
+//!
+//! A section starts at a heading and runs to the line before the next heading of *any* level.
+//! Hierarchy is carried by [`Section::heading_path`], not by nesting, so every section has one
+//! contiguous line range that `mda_open` can hand straight to `Read(path, offset, limit)`.
+//! Text before the first heading becomes a preamble section with an empty heading path, if it
+//! has any non-blank content.
+//!
+//! ## Normalisation
+//!
+//! Hashes are computed over text with `\r\n` folded to `\n` and trailing whitespace stripped
+//! from every line. Editor noise (line endings, trailing spaces) therefore never triggers a
+//! re-summarisation. Line numbers always refer to the file as it is on disk.
+
+use std::path::Path;
+
+use comrak::nodes::{AstNode, NodeValue};
+use comrak::{Arena, Options, parse_document};
+use serde::{Deserialize, Serialize};
+
+use crate::{Error, Result};
+
+/// One heading-delimited slice of a document.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Section {
+    /// 0-based position in the document. Stable only until the document changes.
+    pub index: u32,
+    /// Heading level (1–6). `0` for the preamble before the first heading.
+    pub level: u8,
+    /// Headings from the top of the document down to and including this one.
+    pub heading_path: Vec<String>,
+    /// First line, 1-based, inclusive. For headed sections this is the heading line.
+    pub line_start: u32,
+    /// Last non-blank line, 1-based, inclusive.
+    pub line_end: u32,
+    /// Normalised section text (see module docs), including the heading line.
+    pub text: String,
+    /// blake3 hex digest of `text`.
+    pub hash: String,
+    /// Rough token count: `ceil(chars / 4)`.
+    pub token_estimate: u32,
+    /// Languages of fenced code blocks, deduplicated, in order of appearance. Unlabelled
+    /// fences contribute `"text"`.
+    pub code_langs: Vec<String>,
+    /// Whether the section contains a GFM table.
+    pub has_tables: bool,
+}
+
+/// A parsed document.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Document {
+    /// Text of the first level-1 heading, if any.
+    pub title: Option<String>,
+    /// Raw YAML front matter (without the `---` fences), if present.
+    pub frontmatter: Option<String>,
+    /// Sections in document order.
+    pub sections: Vec<Section>,
+    /// Link targets without a scheme (relative paths, anchors).
+    pub links_internal: Vec<String>,
+    /// Link targets with a scheme (`https://…`, `mailto:…`).
+    pub links_external: Vec<String>,
+    /// Number of lines in the file as read.
+    pub line_count: u32,
+    /// Sum of section token estimates.
+    pub token_estimate: u32,
+    /// blake3 hex digest of the whole normalised text.
+    pub hash: String,
+}
+
+/// Read and parse a file. The only I/O in this module.
+pub fn parse_file(path: &Path) -> Result<Document> {
+    let bytes = std::fs::read(path).map_err(|e| Error::io(path, e))?;
+    let text = String::from_utf8(bytes).map_err(|e| Error::parse(path, e.to_string()))?;
+    Ok(parse_str(&text))
+}
+
+/// Parse markdown text. Never fails: any byte sequence that is valid UTF-8 is a document.
+#[must_use]
+pub fn parse_str(text: &str) -> Document {
+    let text = normalize_newlines(text);
+    let lines: Vec<&str> = text.split('\n').collect();
+    // `split` yields a trailing empty element when the text ends with '\n'; that is not a line.
+    let line_count = if text.ends_with('\n') || text.is_empty() {
+        lines.len().saturating_sub(1)
+    } else {
+        lines.len()
+    };
+
+    let arena = Arena::new();
+    let root = parse_document(&arena, &text, &options());
+
+    let mut builder = Builder::new(&lines, line_count);
+    for node in root.children() {
+        builder.visit_top_level(node);
+    }
+    builder.finish()
+}
+
+fn options() -> Options<'static> {
+    let mut o = Options::default();
+    o.extension.front_matter_delimiter = Some("---".to_owned());
+    o.extension.table = true;
+    o.extension.strikethrough = true;
+    o.extension.tasklist = true;
+    o.extension.autolink = false;
+    o.extension.footnotes = true;
+    o.parse.smart = false;
+    o
+}
+
+fn normalize_newlines(text: &str) -> String {
+    if text.contains('\r') {
+        text.replace("\r\n", "\n").replace('\r', "\n")
+    } else {
+        text.to_owned()
+    }
+}
+
+/// Section text with trailing whitespace stripped per line. Hash input.
+fn normalize_block(lines: &[&str]) -> String {
+    let mut out = String::with_capacity(lines.iter().map(|l| l.len() + 1).sum());
+    for (i, line) in lines.iter().enumerate() {
+        if i > 0 {
+            out.push('\n');
+        }
+        out.push_str(line.trim_end());
+    }
+    out
+}
+
+fn blake3_hex(text: &str) -> String {
+    blake3::hash(text.as_bytes()).to_hex().to_string()
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn token_estimate(text: &str) -> u32 {
+    text.chars().count().div_ceil(4) as u32
+}
+
+/// Accumulates sections while walking the top-level AST nodes in order.
+struct Builder<'a> {
+    lines: &'a [&'a str],
+    line_count: u32,
+    /// Heading stack: (level, text).
+    stack: Vec<(u8, String)>,
+    /// Section currently being built.
+    current: Option<Open>,
+    sections: Vec<Section>,
+    title: Option<String>,
+    frontmatter: Option<String>,
+    links_internal: Vec<String>,
+    links_external: Vec<String>,
+    /// First content line after front matter, 1-based.
+    body_start: u32,
+}
+
+/// A section whose end is not yet known.
+struct Open {
+    level: u8,
+    heading_path: Vec<String>,
+    line_start: u32,
+    code_langs: Vec<String>,
+    has_tables: bool,
+}
+
+impl<'a> Builder<'a> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn new(lines: &'a [&'a str], line_count: usize) -> Self {
+        Self {
+            lines,
+            line_count: line_count as u32,
+            stack: Vec::new(),
+            current: None,
+            sections: Vec::new(),
+            title: None,
+            frontmatter: None,
+            links_internal: Vec::new(),
+            links_external: Vec::new(),
+            body_start: 1,
+        }
+    }
+
+    #[allow(clippy::cast_possible_truncation)]
+    fn visit_top_level(&mut self, node: &'a AstNode<'a>) {
+        enum Kind {
+            FrontMatter(String),
+            Heading(u8),
+            Other,
+        }
+        let (start_line, end_line, kind) = {
+            let data = node.data.borrow();
+            let kind = match &data.value {
+                NodeValue::FrontMatter(raw) => Kind::FrontMatter(raw.clone()),
+                NodeValue::Heading(h) => Kind::Heading(h.level),
+                _ => Kind::Other,
+            };
+            (data.sourcepos.start.line as u32, data.sourcepos.end.line as u32, kind)
+        };
+
+        match kind {
+            Kind::FrontMatter(raw) => {
+                self.frontmatter = Some(strip_front_matter_fences(&raw));
+                self.body_start = end_line + 1;
+                return;
+            }
+            Kind::Heading(level) => {
+                let text = inline_text(node);
+                self.close_current(start_line.saturating_sub(1));
+                while self.stack.last().is_some_and(|(l, _)| *l >= level) {
+                    self.stack.pop();
+                }
+                self.stack.push((level, text.clone()));
+                if level == 1 && self.title.is_none() {
+                    self.title = Some(text);
+                }
+                self.current = Some(Open {
+                    level,
+                    heading_path: self.stack.iter().map(|(_, t)| t.clone()).collect(),
+                    line_start: start_line,
+                    code_langs: Vec::new(),
+                    has_tables: false,
+                });
+                return;
+            }
+            Kind::Other => {}
+        }
+
+        // Any other top-level node belongs to the current section, or opens the preamble.
+        if self.current.is_none() {
+            self.current = Some(Open {
+                level: 0,
+                heading_path: Vec::new(),
+                line_start: self.body_start.max(start_line),
+                code_langs: Vec::new(),
+                has_tables: false,
+            });
+        }
+        self.collect_features(node);
+    }
+
+    /// Record code fences, tables and links found anywhere under `node`.
+    fn collect_features(&mut self, node: &'a AstNode<'a>) {
+        for n in node.descendants() {
+            let d = n.data.borrow();
+            match &d.value {
+                NodeValue::CodeBlock(cb) if cb.fenced => {
+                    let lang = cb.info.split_whitespace().next().unwrap_or("text").to_owned();
+                    if let Some(cur) = &mut self.current
+                        && !cur.code_langs.contains(&lang)
+                    {
+                        cur.code_langs.push(lang);
+                    }
+                }
+                NodeValue::Table(_) => {
+                    if let Some(cur) = &mut self.current {
+                        cur.has_tables = true;
+                    }
+                }
+                NodeValue::Link(link) => {
+                    let url = link.url.clone();
+                    if has_scheme(&url) {
+                        self.links_external.push(url);
+                    } else {
+                        self.links_internal.push(url);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Close the open section so that it ends at `end_line` (inclusive), trimming trailing
+    /// blank lines. Sections that would be empty are dropped.
+    #[allow(clippy::cast_possible_truncation)]
+    fn close_current(&mut self, end_line: u32) {
+        let Some(open) = self.current.take() else { return };
+        let mut end = end_line.min(self.line_count);
+        while end >= open.line_start && self.line_at(end).trim().is_empty() {
+            if end == 0 {
+                break;
+            }
+            end -= 1;
+        }
+        if end < open.line_start {
+            return;
+        }
+        let slice = &self.lines[(open.line_start - 1) as usize..end as usize];
+        let text = normalize_block(slice);
+        let section = Section {
+            index: self.sections.len() as u32,
+            level: open.level,
+            heading_path: open.heading_path,
+            line_start: open.line_start,
+            line_end: end,
+            hash: blake3_hex(&text),
+            token_estimate: token_estimate(&text),
+            code_langs: open.code_langs,
+            has_tables: open.has_tables,
+            text,
+        };
+        self.sections.push(section);
+    }
+
+    fn line_at(&self, line: u32) -> &str {
+        if line == 0 {
+            return "";
+        }
+        self.lines.get((line - 1) as usize).copied().unwrap_or("")
+    }
+
+    fn finish(mut self) -> Document {
+        self.close_current(self.line_count);
+        let all_lines: Vec<&str> = self.lines[..self.line_count as usize].to_vec();
+        let whole = normalize_block(&all_lines);
+        Document {
+            title: self.title,
+            frontmatter: self.frontmatter,
+            token_estimate: self.sections.iter().map(|s| s.token_estimate).sum(),
+            hash: blake3_hex(&whole),
+            line_count: self.line_count,
+            sections: self.sections,
+            links_internal: self.links_internal,
+            links_external: self.links_external,
+        }
+    }
+}
+
+/// Concatenate the plain text of all inline descendants of a node.
+fn inline_text<'a>(node: &'a AstNode<'a>) -> String {
+    let mut out = String::new();
+    for n in node.descendants() {
+        let d = n.data.borrow();
+        match &d.value {
+            NodeValue::Text(t) => out.push_str(t),
+            NodeValue::Code(c) => out.push_str(&c.literal),
+            NodeValue::SoftBreak | NodeValue::LineBreak => out.push(' '),
+            _ => {}
+        }
+    }
+    out.trim().to_owned()
+}
+
+fn strip_front_matter_fences(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let inner = trimmed.strip_prefix("---").unwrap_or(trimmed);
+    let inner = inner.strip_suffix("---").unwrap_or(inner);
+    inner.trim().to_owned()
+}
+
+fn has_scheme(url: &str) -> bool {
+    url.split_once(':').is_some_and(|(scheme, rest)| {
+        !scheme.is_empty()
+            && scheme.chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
+            && (rest.starts_with("//") || scheme.eq_ignore_ascii_case("mailto"))
+    })
+}
+
+#[cfg(test)]
+mod tests;

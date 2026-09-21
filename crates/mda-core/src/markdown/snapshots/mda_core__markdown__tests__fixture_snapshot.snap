@@ -1,0 +1,78 @@
+---
+source: crates/mda-core/src/markdown/tests.rs
+expression: doc
+---
+title: Deploy runbook
+frontmatter: "title: Deploy runbook\nstatus: current\nowner: platform"
+sections:
+  - index: 0
+    level: 1
+    heading_path:
+      - Deploy runbook
+    line_start: 7
+    line_end: 9
+    text: "[text]"
+    hash: 4ad655af6542745ebd00bed85e3a00b8440038b7f223f38851d8fc61a5a6ba07
+    token_estimate: 26
+    code_langs: []
+    has_tables: false
+  - index: 1
+    level: 2
+    heading_path:
+      - Deploy runbook
+      - Deploy
+    line_start: 11
+    line_end: 17
+    text: "[text]"
+    hash: a9b116b90841a7f5333a4cd07bc6e6fa07edbecb6ae5756b94cef3e5e7691343
+    token_estimate: 52
+    code_langs: []
+    has_tables: false
+  - index: 2
+    level: 3
+    heading_path:
+      - Deploy runbook
+      - Deploy
+      - Rollback
+    line_start: 19
+    line_end: 28
+    text: "[text]"
+    hash: 2790c7e3348faf9f4a7de9b0e278dfa76713cbb1f3a48a141c9d32cf696f7633
+    token_estimate: 59
+    code_langs:
+      - bash
+    has_tables: false
+  - index: 3
+    level: 4
+    heading_path:
+      - Deploy runbook
+      - Deploy
+      - Rollback
+      - Rollback of a database migration
+    line_start: 30
+    line_end: 33
+    text: "[text]"
+    hash: dbd78e078b84ceca78b5c631d5c5e9cbc7fb2c61659f0ccaab30a17b4bc9138e
+    token_estimate: 40
+    code_langs: []
+    has_tables: false
+  - index: 4
+    level: 2
+    heading_path:
+      - Deploy runbook
+      - Contacts
+    line_start: 35
+    line_end: 40
+    text: "[text]"
+    hash: c67b46a7598bb247a82c4ee77ec653131cb7f3e08643fec961e36e222fccd9ae
+    token_estimate: 24
+    code_langs: []
+    has_tables: true
+links_internal:
+  - "../adr/0007-blue-green.md"
+  - "#contacts"
+links_external:
+  - "https://status.example.com"
+line_count: 43
+token_estimate: 201
+hash: 5e43c6c436ef608eac98a7ab503773316ad6aaabe7f4dacdbbdeddc3af8a0842

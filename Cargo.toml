@@ -1,0 +1,85 @@
+[workspace]
+resolver = "2"
+members = ["crates/mda-core", "crates/mda-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/joe-carr-data/markdownattractor"
+homepage = "https://github.com/joe-carr-data/markdownattractor"
+authors = ["Joe Carr <joe.carr.data@gmail.com>"]
+keywords = ["markdown", "search", "claude", "knowledge", "index"]
+categories = ["command-line-utilities", "text-processing"]
+
+[workspace.dependencies]
+# internal
+mda-core = { path = "crates/mda-core", version = "0.1.0" }
+
+# runtime
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "process", "io-util", "sync", "time", "fs", "signal"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+clap = { version = "4.6", features = ["derive", "env", "wrap_help"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+tracing-appender = "0.2"
+thiserror = "2"
+anyhow = "1"
+
+# serialization & schema
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "1"
+schemars = { version = "1.2", features = ["jiff02"] }
+
+# markdown & files
+comrak = { version = "0.55", default-features = false }
+blake3 = "1.8"
+ignore = "0.4"
+
+# storage & search
+rusqlite = { version = "0.40", features = ["bundled", "jiff", "functions"] }
+
+# time
+jiff = { version = "0.2", features = ["serde"] }
+
+# dev / test
+insta = { version = "1.48", features = ["yaml", "json", "redactions"] }
+proptest = "1.11"
+tempfile = "3.27"
+assert_cmd = "2.2"
+predicates = "3.1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unused_must_use = "deny"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+todo = "warn"
+dbg_macro = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+# pedantic lints we deliberately relax
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+struct_excessive_bools = "allow"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+opt-level = 3
+
+[profile.dev.package."*"]
+opt-level = 2

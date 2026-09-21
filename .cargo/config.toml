@@ -1,0 +1,10 @@
+[alias]
+# the four commands that gate every merge; `make check` runs them all
+lint = "clippy --workspace --all-targets --all-features -- -D warnings"
+t = "nextest run --workspace --all-features"
+cov = "llvm-cov nextest --workspace --all-features --lcov --output-path target/lcov.info"
+docs = "doc --workspace --no-deps --all-features"
+
+[env]
+# tests must never pick up the developer's real Claude Code login by accident
+MARKDOWNATTRACTOR_TEST = "1"

@@ -1,0 +1,187 @@
+---
+source: crates/mda-core/src/card.rs
+expression: "SectionSummary::json_schema()"
+---
+{
+  "$defs": {
+    "DatePrecision": {
+      "description": "How precisely a date in the text pins down a moment.",
+      "oneOf": [
+        {
+          "const": "day",
+          "description": "A full calendar day, e.g. `2026-09-21`.",
+          "type": "string"
+        },
+        {
+          "const": "month",
+          "description": "A month, e.g. `Sept 2026`.",
+          "type": "string"
+        },
+        {
+          "const": "quarter",
+          "description": "A quarter, e.g. `Q4 2026`.",
+          "type": "string"
+        },
+        {
+          "const": "year",
+          "description": "A year, or a vaguer span inside one year (`spring 2026`).",
+          "type": "string"
+        },
+        {
+          "const": "relative",
+          "description": "Relative to the document's own time (`last week`, `next sprint`). Resolved later.",
+          "type": "string"
+        }
+      ]
+    },
+    "Entities": {
+      "additionalProperties": false,
+      "description": "Named things that literally appear in the section. Never inferred.",
+      "properties": {
+        "commands": {
+          "description": "Complete shell commands as written.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "files_paths": {
+          "description": "File paths as written.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "orgs": {
+          "description": "Organisations and teams.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "people": {
+          "description": "People, as written.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "products": {
+          "description": "Products, services, libraries referred to by name.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "technologies": {
+          "description": "Technologies, protocols, formats, algorithms.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "people",
+        "orgs",
+        "products",
+        "technologies",
+        "files_paths",
+        "commands"
+      ],
+      "type": "object"
+    },
+    "MentionedDate": {
+      "additionalProperties": false,
+      "description": "A date the model found in the section, with the evidence that proves it was there.",
+      "properties": {
+        "evidence": {
+          "description": "A verbatim substring of the section, 5 to 15 words, containing the date.",
+          "type": "string"
+        },
+        "iso": {
+          "description": "ISO 8601, as precise as the text allows: `2026`, `2026-09`, or `2026-09-21`.",
+          "type": "string"
+        },
+        "precision": {
+          "$ref": "#/$defs/DatePrecision",
+          "description": "How precise `iso` is."
+        },
+        "raw": {
+          "description": "The date exactly as written in the text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "raw",
+        "iso",
+        "precision",
+        "evidence"
+      ],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "What the model writes about one section. See the module docs for why this is separate\nfrom [`SectionCard`].",
+  "properties": {
+    "action_items": {
+      "description": "Explicit TODOs or future steps, max 3. Empty if none.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "decisions": {
+      "description": "Explicit decisions stated in the section, max 4, one short sentence each.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "entities": {
+      "$ref": "#/$defs/Entities",
+      "description": "Named things that literally appear in the text."
+    },
+    "keywords": {
+      "description": "4 to 8 lowercase keywords or keyphrases.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "mentioned_dates": {
+      "description": "Dates found in the text, each with verbatim evidence.",
+      "items": {
+        "$ref": "#/$defs/MentionedDate"
+      },
+      "type": "array"
+    },
+    "questions_answered": {
+      "description": "2 to 4 questions a developer would type into a search box that this section answers.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "summary": {
+      "description": "Max 3 sentences, max 80 words.",
+      "type": "string"
+    },
+    "tldr": {
+      "description": "One sentence, max 25 words. Does not repeat the heading.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tldr",
+    "summary",
+    "keywords",
+    "questions_answered",
+    "entities",
+    "mentioned_dates",
+    "decisions",
+    "action_items"
+  ],
+  "title": "SectionSummary",
+  "type": "object"
+}
