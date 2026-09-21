@@ -3,13 +3,8 @@
 **/*.rs.bk
 *.pdb
 
-# markdownattractor derived state (when dogfooding on this repo)
-.markdownattractor/index.sqlite*
-.markdownattractor/docs/
-.markdownattractor/models/
-.markdownattractor/logs/
-.markdownattractor/daemon.pid
-.markdownattractor/daemon.sock
+# markdownattractor derived state (when dogfooding on this repo, at any depth)
+.markdownattractor/
 .fastembed_cache/
 
 # Claude Code local overrides
