@@ -64,7 +64,10 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         }
     }
 
-    let summarize = if args.no_summarize || report.pending == 0 {
+    // Pending work includes sections left over from earlier runs (failures, interrupted
+    // runs), not only what this run discovered.
+    let pending_total = engine.store().counts()?.pending;
+    let summarize = if args.no_summarize || pending_total == 0 {
         None
     } else {
         Some(summarize(&mut engine, json, &st)?)
@@ -98,8 +101,11 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
                 st.dim("hint:")
             );
         }
-    } else if report.pending > 0 {
-        println!("  {} run without --no-summarize to produce cards", st.dim("hint:"));
+    } else if pending_total > 0 {
+        println!(
+            "  {} {pending_total} section(s) pending; run without --no-summarize to produce cards",
+            st.dim("hint:")
+        );
     }
 
     let failed =
