@@ -49,6 +49,19 @@ pub enum Error {
         /// Why it failed.
         reason: String,
     },
+
+    /// The summarization worker could not run or returned something unusable.
+    /// Retry classification lives in [`crate::worker`]; this is the terminal form.
+    #[error("worker error: {0}")]
+    Worker(String),
+
+    /// Walking the watched root failed (bad ignore file, unreadable directory).
+    #[error("walk error: {0}")]
+    Walk(#[from] ignore::Error),
+
+    /// A stored record is missing or inconsistent (e.g. unknown `section_id`).
+    #[error("not found: {0}")]
+    NotFound(String),
 }
 
 /// Convenience alias used throughout the crate.

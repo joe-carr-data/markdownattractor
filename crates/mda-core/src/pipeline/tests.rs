@@ -1,0 +1,198 @@
+//! End-to-end tests of the engine with the mock backend. No model, no network.
+
+use std::sync::Arc;
+
+use super::*;
+use crate::worker::Mock;
+
+fn engine_in(dir: &Path) -> Engine {
+    Engine::with_parts(dir.to_path_buf(), Config::default(), Store::open_in_memory().unwrap())
+}
+
+fn write(dir: &Path, rel: &str, text: &str) -> PathBuf {
+    let p = dir.join(rel);
+    std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+    std::fs::write(&p, text).unwrap();
+    p
+}
+
+#[test]
+fn index_file_makes_sections_raw_searchable_immediately() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "docs/deploy.md", "# Deploy\n\n## Rollback\n\nRun deployctl rollback now.\n");
+    let out = e.index_file(&root.join("docs/deploy.md")).unwrap();
+    assert_eq!(out.rel_path, "docs/deploy.md");
+    assert_eq!(out.sections, 2);
+    assert_eq!(out.upsert.new_hashes.len(), 2);
+
+    let hits =
+        crate::search::search(e.store(), "deployctl", &crate::search::SearchOptions::default())
+            .unwrap();
+    assert_eq!(hits.len(), 1);
+    assert!(hits[0].pending);
+    assert_eq!(hits[0].matched, crate::search::Matched::Raw);
+    assert_eq!(hits[0].heading_path, vec!["Deploy", "Rollback"]);
+}
+
+#[test]
+fn index_root_walks_sorts_and_tombstones() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "a.md", "# A\n\nlong ".repeat(50).as_str());
+    write(&root, "b.md", "# B\n\nshort\n");
+    write(&root, "skip.txt", "not markdown");
+    let r = e.index_root().unwrap();
+    assert_eq!(r.files, 2);
+    assert_eq!(r.changed, 2);
+    assert_eq!(r.tombstoned, 0);
+
+    std::fs::remove_file(root.join("b.md")).unwrap();
+    let r2 = e.index_root().unwrap();
+    assert_eq!(r2.files, 1);
+    assert_eq!(r2.changed, 0, "unchanged file is not re-reported");
+    assert_eq!(r2.tombstoned, 1);
+    assert!(e.store().document_by_path("b.md").unwrap().unwrap().deleted_at.is_some());
+}
+
+#[tokio::test]
+async fn summarize_pending_attaches_validated_cards() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "n.md", "# Notes\n\nSince March 2026 we use blue-green.\n\n## Other\n\ntext\n");
+    e.index_file(&root.join("n.md")).unwrap();
+
+    let backend = Arc::new(Mock::new().default_ok());
+    let mut seen = Vec::new();
+    let report = e
+        .summarize_pending(backend.clone(), CancellationToken::new(), |p| seen.push(p.done))
+        .await
+        .unwrap();
+    assert_eq!(report.submitted, 2);
+    assert_eq!(report.ok, 2);
+    assert_eq!(report.failed, 0);
+    assert_eq!(seen, vec![1, 2]);
+    assert_eq!(backend.calls().len(), 2);
+
+    let counts = e.store().counts().unwrap();
+    assert_eq!(counts.summarized, 2);
+    assert_eq!(counts.pending, 0);
+
+    // Cards are now searchable and no longer pending.
+    let hits = crate::search::search(e.store(), "notes", &crate::search::SearchOptions::default())
+        .unwrap();
+    assert!(hits.iter().all(|h| !h.pending));
+    assert!(hits.iter().any(|h| h.tldr.is_some()));
+
+    // Nothing left to do; a second run submits nothing.
+    let again = e.summarize_pending(backend, CancellationToken::new(), |_| {}).await.unwrap();
+    assert_eq!(again.submitted, 0);
+}
+
+#[tokio::test]
+async fn failed_jobs_are_recorded_with_reason() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "f.md", "# F\n\nbody\n");
+    let out = e.index_file(&root.join("f.md")).unwrap();
+    let hash = out.upsert.new_hashes[0].clone();
+
+    let backend =
+        Arc::new(Mock::new().on(&hash, Outcome::Fatal { reason: "budget exhausted".into() }));
+    let report = e.summarize_pending(backend, CancellationToken::new(), |_| {}).await.unwrap();
+    assert_eq!(report.failed, 1);
+    let counts = e.store().counts().unwrap();
+    assert_eq!(counts.failed, 1);
+    let section = e.store().section(&format!("{}#0", out.upsert.doc_id)).unwrap().unwrap();
+    assert_eq!(section.fail_reason.as_deref(), Some("budget exhausted"));
+}
+
+#[test]
+fn editing_one_section_needs_exactly_one_card() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let p = write(&root, "e.md", "# A\n\none\n\n# B\n\ntwo\n");
+    e.index_file(&p).unwrap();
+    write(&root, "e.md", "# A\n\none\n\n# B\n\ntwo changed\n");
+    let out = e.index_file(&p).unwrap();
+    assert_eq!(out.upsert.new_hashes.len(), 1);
+    assert_eq!(out.upsert.unchanged, 1);
+}
+
+#[test]
+fn inserting_lines_above_refreshes_ranges_without_new_hashes() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let p = write(&root, "m.md", "# A\n\none\n\n# B\n\ntwo\n");
+    let first = e.index_file(&p).unwrap();
+    let doc_id = first.upsert.doc_id.clone();
+    let before = e.store().section(&format!("{doc_id}#1")).unwrap().unwrap();
+
+    // Front matter above everything: every section shifts, no section text changes.
+    write(&root, "m.md", "---\nstatus: current\n---\n\n# A\n\none\n\n# B\n\ntwo\n");
+    let out = e.index_file(&p).unwrap();
+    assert!(out.upsert.new_hashes.is_empty(), "no model call needed: {:?}", out.upsert);
+    let after = e.store().section(&format!("{doc_id}#1")).unwrap().unwrap();
+    assert_eq!(after.section_hash, before.section_hash);
+    assert_eq!(after.line_start, before.line_start + 4);
+}
+
+#[test]
+fn open_section_returns_exact_lines_and_detects_staleness() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let p = write(&root, "o.md", "# A\n\none\n\n## B\n\ntwo\nthree\n");
+    let out = e.index_file(&p).unwrap();
+    let id = format!("{}#1", out.upsert.doc_id);
+
+    let o = e.open_section(&id).unwrap();
+    assert!(!o.stale);
+    assert_eq!((o.line_start, o.line_end), (5, 8));
+    assert_eq!(o.text, "## B\n\ntwo\nthree");
+    assert_eq!(o.heading_path, vec!["A", "B"]);
+
+    // Change the file behind the index's back.
+    write(&root, "o.md", "# A\n\nintro\n\none\n\n## B\n\ntwo\nthree\nfour\n");
+    let o2 = e.open_section(&id).unwrap();
+    assert!(o2.stale);
+    assert_eq!(o2.text, "## B\n\ntwo\nthree\nfour", "current lines, not the indexed ones");
+    assert_eq!((o2.line_start, o2.line_end), (7, 11));
+    // And the store was refreshed as a side effect.
+    let refreshed = e.store().section(&id).unwrap().unwrap();
+    assert_eq!(refreshed.line_start, 7);
+}
+
+#[test]
+fn open_unknown_section_is_not_found() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    assert!(matches!(e.open_section("nope#0"), Err(Error::NotFound(_))));
+}
+
+#[test]
+fn rel_path_rejects_outside_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let e = engine_in(&root);
+    assert!(e.rel_path(Path::new("/definitely/elsewhere.md")).is_err());
+    assert_eq!(e.rel_path(&root.join("a/b.md")).unwrap(), "a/b.md");
+}
+
+#[test]
+fn file_times_are_sane() {
+    let dir = tempfile::tempdir().unwrap();
+    let p = write(dir.path(), "t.md", "# T\n");
+    let t = file_times(&p).unwrap();
+    assert!(t.modified_at <= t.now);
+    if let Some(c) = t.created_at {
+        assert!(c <= t.modified_at);
+    }
+}

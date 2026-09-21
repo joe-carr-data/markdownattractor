@@ -138,8 +138,10 @@ fn blake3_hex(text: &str) -> String {
     blake3::hash(text.as_bytes()).to_hex().to_string()
 }
 
+/// Rough token count used everywhere in the crate: `ceil(chars / 4)`.
+#[must_use]
 #[allow(clippy::cast_possible_truncation)]
-fn token_estimate(text: &str) -> u32 {
+pub fn token_estimate(text: &str) -> u32 {
     text.chars().count().div_ceil(4) as u32
 }
 
