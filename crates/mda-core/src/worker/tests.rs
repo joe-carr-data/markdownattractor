@@ -1091,6 +1091,39 @@ async fn api_ok_counts_cache_tokens_and_prices_the_call() {
 }
 
 #[tokio::test]
+async fn api_sends_workspace_header_only_when_configured() {
+    let server = Server::start(vec![(200, api_message("end_turn", &valid_summary_json()))]).await;
+    let cfg = Config {
+        api_base_url: server.url.clone(),
+        api_workspace_id: Some("wrkspc_test123".into()),
+        ..Config::default()
+    };
+    let backend = ApiBackend::with_key(&cfg, "sk-test").unwrap();
+    let _ = backend.summarize(&req("ws"), "claude-haiku-4-5").await.unwrap();
+    let last = server.last();
+    let header = last
+        .headers
+        .iter()
+        .find(|(k, _)| k.eq_ignore_ascii_case("anthropic-workspace-id"))
+        .map(|(_, v)| v.as_str());
+    assert_eq!(header, Some("wrkspc_test123"));
+
+    let server2 = Server::start(vec![(200, api_message("end_turn", &valid_summary_json()))]).await;
+    let cfg2 =
+        Config { api_base_url: server2.url.clone(), api_workspace_id: None, ..Config::default() };
+    let backend2 = ApiBackend::with_key(&cfg2, "sk-test").unwrap();
+    let _ = backend2.summarize(&req("nows"), "claude-haiku-4-5").await.unwrap();
+    assert!(
+        !server2
+            .last()
+            .headers
+            .iter()
+            .any(|(k, _)| k.eq_ignore_ascii_case("anthropic-workspace-id")),
+        "no header without a workspace id (unless ANTHROPIC_WORKSPACE_ID is set in the test env)"
+    );
+}
+
+#[tokio::test]
 async fn api_max_tokens_stop_is_malformed_truncated() {
     let server = Server::start(vec![(200, api_message("max_tokens", "{\"tldr\": \"cut"))]).await;
     let out = api(&server.url).summarize(&req("a4"), "claude-haiku-4-5").await.unwrap();

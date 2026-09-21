@@ -66,6 +66,9 @@ pub struct Config {
     pub api_base_url: String,
     /// Environment variable holding the API key (`api` backend). Never stored in this file.
     pub api_key_env: String,
+    /// Workspace id sent as `anthropic-workspace-id` (`api` backend). Required by keys that are
+    /// not scoped to a workspace; `None` falls back to `$ANTHROPIC_WORKSPACE_ID`, then to no header.
+    pub api_workspace_id: Option<String>,
     /// Base URL of the OpenAI-compatible server (`local` backend), including `/v1`.
     pub local_base_url: String,
     /// Model name as the local server reports it (`local` backend).
@@ -99,6 +102,7 @@ impl Default for Config {
             backend: Backend::default(),
             api_base_url: "https://api.anthropic.com".to_owned(),
             api_key_env: "ANTHROPIC_API_KEY".to_owned(),
+            api_workspace_id: None,
             local_base_url: "http://127.0.0.1:8080/v1".to_owned(),
             local_model: "gpt-oss-20b".to_owned(),
             local_reasoning_effort: Some("low".to_owned()),
@@ -159,6 +163,19 @@ impl Config {
             Backend::Api | Backend::ClaudeCli => self.worker_timeout_secs,
         };
         std::time::Duration::from_secs(secs)
+    }
+
+    /// The workspace id to send, from the config or `$ANTHROPIC_WORKSPACE_ID`.
+    #[must_use]
+    pub fn api_workspace_id(&self) -> Option<String> {
+        self.api_workspace_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_owned)
+            .or_else(|| {
+                std::env::var("ANTHROPIC_WORKSPACE_ID").ok().filter(|s| !s.trim().is_empty())
+            })
     }
 
     /// Path of the config file for a given watched root.

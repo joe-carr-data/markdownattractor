@@ -113,6 +113,7 @@ pub struct ApiBackend {
     base_url: String,
     key: String,
     key_env: String,
+    workspace_id: Option<String>,
     escalation_model: Option<String>,
     schema: Value,
     timeout: Duration,
@@ -151,6 +152,7 @@ impl ApiBackend {
             base_url: cfg.api_base_url.trim_end_matches('/').to_owned(),
             key: key.trim().to_owned(),
             key_env: cfg.api_key_env.clone(),
+            workspace_id: cfg.api_workspace_id(),
             escalation_model: cfg.escalation_model.clone(),
             schema: SectionSummary::json_schema(),
             timeout,
@@ -182,9 +184,14 @@ impl ApiBackend {
     }
 
     fn headers(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
-        req.header("x-api-key", &self.key)
+        let req = req
+            .header("x-api-key", &self.key)
             .header("anthropic-version", ANTHROPIC_VERSION)
-            .header("content-type", "application/json")
+            .header("content-type", "application/json");
+        match &self.workspace_id {
+            Some(ws) => req.header("anthropic-workspace-id", ws),
+            None => req,
+        }
     }
 
     async fn run_once(&self, req: &SummarizeRequest, model: &str) -> Result<Outcome> {

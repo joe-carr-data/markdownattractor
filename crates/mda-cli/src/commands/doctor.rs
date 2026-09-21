@@ -98,14 +98,20 @@ fn check_backend(cfg: &mda_core::config::Config) -> Check {
                     detail: format!("api: {} reachable, model {model}", cfg.api_base_url),
                     fix: None,
                 },
-                Err(e) => Check {
-                    name: "backend",
-                    status: Status::Fail,
-                    detail: format!("api: {e}"),
-                    fix: Some(
-                        "check the key and `summarization_model` in .markdownattractor/config.toml",
-                    ),
-                },
+                Err(e) => {
+                    let msg = e.to_string();
+                    let fix = if msg.contains("anthropic-workspace-id") {
+                        "this key is not scoped to a workspace: set `api_workspace_id = \"wrkspc_…\"` in .markdownattractor/config.toml (or export ANTHROPIC_WORKSPACE_ID); the id is under Settings → Workspaces in the Anthropic console"
+                    } else {
+                        "check the key and `summarization_model` in .markdownattractor/config.toml"
+                    };
+                    Check {
+                        name: "backend",
+                        status: Status::Fail,
+                        detail: format!("api: {msg}"),
+                        fix: Some(fix),
+                    }
+                }
             }
         }
         Backend::Local => match rt.block_on(mda_core::worker::local::check(cfg)) {
