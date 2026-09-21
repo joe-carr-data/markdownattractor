@@ -12,7 +12,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::card::{Entities, MentionedDate, SectionSummary};
+use crate::card::{DatePrecision, Entities, MentionedDate, SectionSummary};
 use crate::{Error, Result};
 
 /// Upper bounds applied to a summary. Defaults match the prompt contract.
@@ -172,30 +172,65 @@ fn is_grounded_date(date: &MentionedDate, haystack: &str) -> bool {
     }
     haystack.contains(&evidence)
         && evidence.to_lowercase().contains(&raw.to_lowercase())
-        && iso_is_well_formed(&date.iso)
+        && iso_matches(&date.iso, date.precision, &date.raw)
 }
 
-/// `YYYY`, `YYYY-MM` or `YYYY-MM-DD` with sane ranges. Anything else is not stored.
-fn iso_is_well_formed(iso: &str) -> bool {
-    let parts: Vec<&str> = iso.trim().split('-').collect();
-    let num = |s: &str, digits: usize| -> Option<u32> {
-        (s.len() == digits && s.bytes().all(|b| b.is_ascii_digit()))
-            .then(|| s.parse().ok())
-            .flatten()
+/// `iso` must be a real calendar value of the shape its precision promises, and must agree
+/// with any four-digit year written in `raw`. This is what stops a card from quoting
+/// "March 2026" as evidence for `2099-03`.
+fn iso_matches(iso: &str, precision: DatePrecision, raw: &str) -> bool {
+    let iso = iso.trim();
+    let shape_ok = match precision {
+        DatePrecision::Day => is_calendar_day(iso),
+        DatePrecision::Month => is_year_month(iso),
+        DatePrecision::Quarter | DatePrecision::Year => is_year(iso),
+        DatePrecision::Relative => is_calendar_day(iso) || is_year_month(iso) || is_year(iso),
     };
-    match parts.as_slice() {
-        [y] => num(y, 4).is_some_and(|y| (1000..=2999).contains(&y)),
-        [y, m] => {
-            num(y, 4).is_some_and(|y| (1000..=2999).contains(&y))
-                && num(m, 2).is_some_and(|m| (1..=12).contains(&m))
-        }
-        [y, m, d] => {
-            num(y, 4).is_some_and(|y| (1000..=2999).contains(&y))
-                && num(m, 2).is_some_and(|m| (1..=12).contains(&m))
-                && num(d, 2).is_some_and(|d| (1..=31).contains(&d))
-        }
-        _ => false,
+    if !shape_ok {
+        return false;
     }
+    let raw_years = years_in(raw);
+    raw_years.is_empty() || raw_years.iter().any(|y| *y == &iso[..4])
+}
+
+fn is_year(s: &str) -> bool {
+    s.len() == 4
+        && s.bytes().all(|b| b.is_ascii_digit())
+        && s.parse::<u32>().is_ok_and(|y| (1000..=2999).contains(&y))
+}
+
+fn is_year_month(s: &str) -> bool {
+    s.len() == 7
+        && is_year(&s[..4])
+        && s.as_bytes()[4] == b'-'
+        && s[5..].parse::<u32>().is_ok_and(|m| (1..=12).contains(&m))
+        && s[5..].bytes().all(|b| b.is_ascii_digit())
+}
+
+/// A valid Gregorian day: `2026-02-31` is rejected.
+fn is_calendar_day(s: &str) -> bool {
+    s.len() == 10 && is_year(&s[..4]) && s.parse::<jiff::civil::Date>().is_ok()
+}
+
+/// Every four-digit run in `s` that looks like a year.
+fn years_in(s: &str) -> Vec<&str> {
+    let bytes = s.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i].is_ascii_digit() {
+            let start = i;
+            while i < bytes.len() && bytes[i].is_ascii_digit() {
+                i += 1;
+            }
+            if i - start == 4 && is_year(&s[start..i]) {
+                out.push(&s[start..i]);
+            }
+        } else {
+            i += 1;
+        }
+    }
+    out
 }
 
 /// Ground every entity category against the section text.
@@ -410,16 +445,36 @@ mod tests {
     }
 
     #[test]
-    fn iso_forms() {
-        assert!(iso_is_well_formed("2026"));
-        assert!(iso_is_well_formed("2026-09"));
-        assert!(iso_is_well_formed("2026-09-21"));
-        assert!(!iso_is_well_formed("26"));
-        assert!(!iso_is_well_formed("2026-9"));
-        assert!(!iso_is_well_formed("2026-00-10"));
-        assert!(!iso_is_well_formed("2026-09-32"));
-        assert!(!iso_is_well_formed("2026-09-21T10:00"));
-        assert!(!iso_is_well_formed("Q4 2026"));
+    fn iso_forms_follow_precision() {
+        use DatePrecision::{Day, Month, Relative, Year};
+        assert!(iso_matches("2026", Year, "2026"));
+        assert!(iso_matches("2026-09", Month, "Sept 2026"));
+        assert!(iso_matches("2026-09-21", Day, "21 September 2026"));
+        assert!(iso_matches("2026-07", Month, "July"), "no year in raw: accept");
+        assert!(iso_matches("2026-09-21", Relative, "last Monday"));
+        assert!(!iso_matches("2026-09", Day, "Sept 2026"), "day precision needs a full date");
+        assert!(!iso_matches("2026-02-31", Day, "31 Feb 2026"), "not a calendar day");
+        assert!(!iso_matches("2026-13", Month, "x 2026"));
+        assert!(!iso_matches("26", Year, "26"));
+        assert!(!iso_matches("2026-9", Month, "Sept 2026"));
+        assert!(!iso_matches("2026-09-21T10:00", Day, "2026-09-21"));
+        assert!(!iso_matches("Q4 2026", Year, "Q4 2026"));
+        assert!(!iso_matches("2099-03", Month, "March 2026"), "fabricated year");
+        assert_eq!(years_in("from 1999 to 2026, not 12345 or 999"), vec!["1999", "2026"]);
+    }
+
+    #[test]
+    fn fabricated_iso_year_is_dropped() {
+        let mut s = base();
+        s.mentioned_dates.push(MentionedDate {
+            raw: "March 2026".into(),
+            iso: "2099-03".into(),
+            precision: DatePrecision::Month,
+            evidence: "Since \"March 2026\" we use blue-green".into(),
+        });
+        let v = validate(TEXT, s, &Caps::default()).unwrap();
+        assert!(v.summary.mentioned_dates.is_empty());
+        assert_eq!(v.dropped_dates.len(), 1);
     }
 
     #[test]

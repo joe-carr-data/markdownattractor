@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use super::{Backend, BoxFuture, Outcome, SummarizeRequest, Usage};
@@ -23,6 +24,11 @@ pub struct Mock {
     default_ok: bool,
     latency: Option<Duration>,
     calls: Mutex<Vec<(String, String)>>,
+    /// Per call, in call order: how many calls (this one included) were in flight when it
+    /// started.
+    in_flight_at_call: Mutex<Vec<usize>>,
+    in_flight: AtomicUsize,
+    peak_in_flight: AtomicUsize,
 }
 
 impl Mock {
@@ -61,6 +67,17 @@ impl Mock {
     /// Every call made so far, as `(request id, model)`, in call order.
     pub fn calls(&self) -> Vec<(String, String)> {
         lock(&self.calls).clone()
+    }
+
+    /// For every call so far, aligned with [`Mock::calls`]: how many calls were in flight
+    /// when it started, counting itself. Only meaningful with [`Mock::with_latency`].
+    pub fn in_flight_at_call(&self) -> Vec<usize> {
+        lock(&self.in_flight_at_call).clone()
+    }
+
+    /// The most calls that were ever in flight at once.
+    pub fn peak_in_flight(&self) -> usize {
+        self.peak_in_flight.load(Ordering::Relaxed)
     }
 
     /// The canned card handed out by [`Mock::default_ok`].
@@ -122,10 +139,14 @@ impl Backend for Mock {
         model: &'a str,
     ) -> BoxFuture<'a, Result<Outcome>> {
         Box::pin(async move {
+            let now = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+            self.peak_in_flight.fetch_max(now, Ordering::SeqCst);
             lock(&self.calls).push((req.id.clone(), model.to_owned()));
+            lock(&self.in_flight_at_call).push(now);
             if let Some(d) = self.latency {
                 tokio::time::sleep(d).await;
             }
+            self.in_flight.fetch_sub(1, Ordering::SeqCst);
             Ok(self.next_outcome(&req.id, model))
         })
     }

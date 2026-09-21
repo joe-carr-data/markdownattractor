@@ -291,8 +291,12 @@ async fn retryable_twice_without_escalation_fails_after_two_attempts() {
 }
 
 #[tokio::test]
-async fn malformed_twice_then_escalation_succeeds() {
-    let malformed = Outcome::Malformed { reason: "null".into(), raw: "text".into(), usage: None };
+async fn malformed_twice_then_escalation_succeeds_and_job_usage_sums_every_attempt() {
+    let malformed = Outcome::Malformed {
+        reason: "null".into(),
+        raw: "text".into(),
+        usage: Some(Mock::canned_usage("haiku")),
+    };
     let mock = Arc::new(
         Mock::new()
             .on_sequence("s0", vec![malformed.clone(), malformed, Mock::ok_for("s0", "sonnet")]),
@@ -307,6 +311,14 @@ async fn malformed_twice_then_escalation_succeeds() {
     let models: Vec<String> = mock.calls().into_iter().map(|(_, m)| m).collect();
     assert_eq!(models, ["haiku", "haiku", "sonnet"]);
     assert_eq!(stats.ok, 1);
+    // Two malformed haiku attempts plus the sonnet one: every attempt's usage is reported.
+    let usage = &done[0].usage;
+    assert_eq!(usage.input_tokens, 300);
+    assert_eq!(usage.output_tokens, 150);
+    assert_eq!(usage.turns, 3);
+    assert_eq!(usage.model, "sonnet", "model of the last attempt");
+    assert!((usage.cost_usd - 0.003).abs() < 1e-12);
+    assert_eq!(stats.usage, *usage, "one job, so pool and job usage agree");
 }
 
 #[tokio::test]
@@ -370,6 +382,43 @@ async fn rate_limit_beyond_backoff_steps_fails_the_job() {
     pool.run(reqs(1), |r| done.push(r)).await;
     assert_eq!(done[0].attempts, 4, "1 + backoff.len() attempts");
     assert!(matches!(done[0].outcome, Outcome::RateLimited { .. }));
+}
+
+#[tokio::test]
+async fn rate_limit_retries_run_under_the_reduced_concurrency() {
+    let mut mock = Mock::new().with_latency(Duration::from_millis(20));
+    for i in 0..4 {
+        let id = format!("s{i}");
+        mock = mock.on_sequence(
+            &id,
+            vec![Outcome::RateLimited { reason: "429".into() }, Mock::ok_for(&id, "haiku")],
+        );
+    }
+    let mock = Arc::new(mock);
+    let pool = Pool::new(Arc::clone(&mock), fast_cfg(), CancellationToken::new());
+    let mut done = Vec::new();
+    let stats = pool.run(reqs(4), |r| done.push(r)).await;
+    assert_eq!(stats.ok, 4);
+    assert_eq!(stats.rate_limit_events, 4);
+    assert!(done.iter().all(|r| r.attempts == 2), "{done:?}");
+
+    let calls = mock.calls();
+    let widths = mock.in_flight_at_call();
+    assert_eq!(calls.len(), 8);
+    // The first wave ran at the initial width of 4 ...
+    let first_wave = widths[..4].iter().copied().max().unwrap();
+    assert_eq!(first_wave, 4, "{widths:?}");
+    // ... and every retry, admitted after the halving, ran at the reduced width.
+    let mut seen = std::collections::HashSet::new();
+    let retry_wave = calls
+        .iter()
+        .zip(&widths)
+        .filter(|((id, _), _)| !seen.insert(id.clone()))
+        .map(|(_, w)| *w)
+        .max()
+        .unwrap();
+    assert!(retry_wave <= 2, "retry wave ran {retry_wave} wide: {widths:?}");
+    assert!(stats.concurrency <= 2, "{}", stats.concurrency);
 }
 
 #[tokio::test]
@@ -472,14 +521,21 @@ async fn on_done_called_exactly_once_per_request_and_stats_sum_usage() {
     let pool = Pool::new(mock, fast_cfg(), CancellationToken::new());
     let count = AtomicUsize::new(0);
     let mut seen = std::collections::HashSet::new();
+    let mut job_usage = Vec::new();
     let stats = pool
         .run(reqs(5), |r| {
             count.fetch_add(1, Ordering::Relaxed);
             assert!(seen.insert(r.id.clone()), "duplicate on_done for {}", r.id);
+            job_usage.push(r.usage);
         })
         .await;
     assert_eq!(count.load(Ordering::Relaxed), 5);
     assert_eq!(stats.usage.input_tokens, 500, "5 ok attempts report usage; the retryable one none");
+    assert_eq!(
+        job_usage.into_iter().map(|u| u.input_tokens).sum::<u64>(),
+        500,
+        "per-job usage sums to the pool total"
+    );
     assert_eq!(stats.usage.output_tokens, 250);
     assert_eq!(stats.usage.turns, 5);
     assert!((stats.usage.cost_usd - 0.005).abs() < 1e-12);
@@ -608,8 +664,17 @@ mod fake_binary {
         assert_eq!(usage.model, "claude-haiku-4-5-20251001");
         assert!(usage.wall_ms < 5_000);
         let received = std::fs::read_to_string(&stdin_copy).unwrap();
-        assert_eq!(received, super::user_message(&request), "stdin carries the delimited section");
-        assert!(received.starts_with("<section path=\""));
+        // `user_message` picks a fresh nonce per call, so compare with the nonces masked.
+        let mask = |s: &str| {
+            let nonce = s.strip_prefix("<section-").and_then(|r| r.get(..8)).unwrap().to_owned();
+            s.replace(&nonce, "NONCE")
+        };
+        assert_eq!(
+            mask(&received),
+            mask(&super::user_message(&request)),
+            "stdin carries the delimited section"
+        );
+        assert!(received.starts_with("<section-"));
         assert!(received.contains(&request.text));
         let env = std::fs::read_to_string(&env_copy).unwrap();
         assert!(env.lines().any(|l| l == "MAX_THINKING_TOKENS=0"), "{env}");
@@ -617,6 +682,32 @@ mod fake_binary {
         assert!(!env.lines().any(|l| l.starts_with("CLAUDECODE=")), "{env}");
         assert!(!env.lines().any(|l| l.starts_with("CLAUDE_CODE_")), "{env}");
         assert_eq!(cli.name(), "claude-cli");
+    }
+
+    #[tokio::test]
+    async fn child_that_floods_stdout_and_stderr_before_reading_stdin_does_not_deadlock() {
+        let dir = tempfile::tempdir().unwrap();
+        let stdin_copy = dir.path().join("stdin.txt");
+        // 1 MiB on stdout and 256 KiB on stderr, both well past any pipe buffer, before the
+        // first read of stdin; then the whole of stdin; then a valid result document.
+        let body = format!(
+            "head -c 1048576 /dev/zero | tr '\\0' x; head -c 262144 /dev/zero | tr '\\0' y >&2; \
+             cat > {}; echo; cat {}success-single-turn.json",
+            stdin_copy.display(),
+            FIXTURES
+        );
+        let cfg = Config { worker_timeout_secs: 20, ..Config::default() };
+        let cli = cli(dir.path(), &body, &cfg).with_timeout(Duration::from_secs(20));
+        let mut request = req("cli-flood");
+        request.text = "line of section text that must be consumed in full\n".repeat(8_000);
+        assert!(request.text.len() > 256 * 1024, "stdin is larger than a pipe buffer");
+        let started = std::time::Instant::now();
+        let out = cli.summarize(&request, "haiku").await.unwrap();
+        let elapsed = started.elapsed();
+        assert!(matches!(out, Outcome::Ok { .. }), "{out:?}");
+        assert!(elapsed < Duration::from_secs(10), "took {elapsed:?}, pipes deadlocked?");
+        let received = std::fs::read_to_string(&stdin_copy).unwrap();
+        assert!(received.contains(&request.text), "stdin was consumed in full");
     }
 
     #[tokio::test]

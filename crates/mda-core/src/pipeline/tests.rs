@@ -218,6 +218,133 @@ fn open_section_returns_exact_lines_and_detects_staleness() {
 }
 
 #[test]
+fn open_after_prepend_returns_current_id_and_refreshes_store() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let p = write(&root, "mv.md", "# A\n\none\n\n# B\n\ntwo\n");
+    let out = e.index_file(&p).unwrap();
+    let doc_id = out.upsert.doc_id.clone();
+    let b_old = format!("{doc_id}#1");
+
+    // Prepend a whole section: B moves from #1 to #2 without changing content.
+    write(&root, "mv.md", "# X\n\nnew\n\n# A\n\none\n\n# B\n\ntwo\n");
+    let o = e.open_section(&b_old).unwrap();
+    assert!(o.stale);
+    assert_eq!(o.requested_id, b_old);
+    assert_eq!(o.section_id, format!("{doc_id}#2"), "the current id, not the requested one");
+    assert_eq!(o.text, "# B\n\ntwo");
+    // The store now agrees: #2 is B, #1 is A.
+    assert_eq!(e.store().section(&format!("{doc_id}#2")).unwrap().unwrap().heading_path, vec!["B"]);
+    assert_eq!(e.store().section(&format!("{doc_id}#1")).unwrap().unwrap().heading_path, vec!["A"]);
+    // Same-hash, same-index but shifted lines (front matter) is also reported and refreshed.
+    write(&root, "mv.md", "---\nk: v\n---\n# X\n\nnew\n\n# A\n\none\n\n# B\n\ntwo\n");
+    let o2 = e.open_section(&format!("{doc_id}#2")).unwrap();
+    assert!(o2.stale);
+    assert_eq!(o2.line_start, 12);
+    assert_eq!(e.store().section(&format!("{doc_id}#2")).unwrap().unwrap().line_start, 12);
+}
+
+#[test]
+fn paths_cannot_escape_the_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    assert!(
+        e.rel_path(&root.join("../x.md")).is_err() || e.rel_path(&root.join("../x.md")).is_ok()
+    );
+    assert!(matches!(e.safe_join("../etc/passwd"), Err(Error::NotFound(_))));
+    assert!(matches!(e.safe_join("/etc/passwd"), Err(Error::NotFound(_))));
+    assert!(e.safe_join("missing.md").is_err(), "must exist to be joined");
+
+    #[cfg(unix)]
+    {
+        let outside = tempfile::tempdir().unwrap();
+        let target = write(outside.path(), "secret.md", "# Secret\n\nkeys\n");
+        std::os::unix::fs::symlink(&target, root.join("link.md")).unwrap();
+        let err = e.index_file(&root.join("link.md")).unwrap_err();
+        assert!(matches!(err, Error::NotFound(_)), "{err}");
+        assert!(matches!(e.safe_join("link.md"), Err(Error::NotFound(_))));
+        assert_eq!(e.index_root().unwrap().files, 0, "walker skips the symlink too");
+    }
+}
+
+#[test]
+fn unreadable_file_is_not_tombstoned() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let p = write(&root, "keep.md", "# Keep\n\nbody\n");
+    e.index_root().unwrap();
+    // Invalid UTF-8 makes the parse fail; the file still exists, so it must survive.
+    std::fs::write(&p, [0xff, 0xfe, b'#']).unwrap();
+    let r = e.index_root().unwrap();
+    assert_eq!(r.errors.len(), 1);
+    assert_eq!(r.tombstoned, 0);
+    let doc = e.store().document_by_path("keep.md").unwrap().unwrap();
+    assert!(doc.deleted_at.is_none());
+    assert_eq!(e.store().counts().unwrap().sections, 1, "old sections stay searchable");
+}
+
+#[tokio::test]
+async fn pool_stop_leaves_unstarted_jobs_pending() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let cfg = Config { concurrency: Some(1), ..Config::default() };
+    let mut e = Engine::with_parts(root.clone(), cfg, Store::open_in_memory().unwrap());
+    write(
+        &root,
+        "s.md",
+        "# A\n\nshort\n\n# B\n\nlonger text here\n\n# C\n\neven longer text here\n",
+    );
+    let out = e.index_file(&root.join("s.md")).unwrap();
+    // Smallest section runs first; make it a pool-stopping auth failure.
+    let first = out.upsert.new_hashes[0].clone();
+    let backend = Arc::new(Mock::new().default_ok().on(
+        &first,
+        Outcome::Fatal { reason: format!("{} (HTTP 401)", crate::worker::FATAL_NOT_LOGGED_IN) },
+    ));
+    let r = e
+        .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
+    assert_eq!(r.failed, 1);
+    assert_eq!(r.deferred, 2, "jobs that never started are deferred, not failed");
+    let c = e.store().counts().unwrap();
+    assert_eq!(c.failed, 1);
+    assert_eq!(c.pending, 2);
+}
+
+#[tokio::test]
+async fn usage_ledger_counts_failed_attempts() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "u.md", "# A\n\nbody\n");
+    let out = e.index_file(&root.join("u.md")).unwrap();
+    let h = out.upsert.new_hashes[0].clone();
+    let backend = Arc::new(Mock::new().on(
+        &h,
+        Outcome::Malformed {
+            reason: "structured_output is null".into(),
+            raw: "nope".into(),
+            usage: Some(crate::worker::Usage {
+                input_tokens: 1000,
+                output_tokens: 50,
+                ..Mock::canned_usage("haiku")
+            }),
+        },
+    ));
+    let r = e
+        .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
+    assert_eq!(r.failed, 1);
+    let spent = e.store().usage_since(Timestamp::UNIX_EPOCH).unwrap();
+    assert!(spent.input_tokens >= 1000, "failed attempts are on the ledger: {spent:?}");
+}
+
+#[test]
 fn open_unknown_section_is_not_found() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();

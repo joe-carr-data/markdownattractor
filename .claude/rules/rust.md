@@ -27,3 +27,9 @@
 - Snapshot tests with `insta` for parser output and card rendering; review snapshots with `cargo insta review`, never accept blind.
 - Property tests with `proptest` for the section differ (idempotence, hash stability, line-range refresh).
 - Test names say what they prove: `parses_nested_headings_into_sections`, not `test1`.
+
+## From the 2026-09-22 Codex review
+- Every path that reaches the filesystem goes through `Engine::rel_path` / `Engine::safe_join`. The walker's exclusions are not a security boundary.
+- Spend is a ledger, not a property of success: anything that calls a model records its usage whatever the outcome.
+- "Not seen this round" is not "deleted". Tombstone only on confirmed absence.
+- Child processes: write stdin, drain stdout and stderr, and wait — concurrently, under a timeout.

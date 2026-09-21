@@ -42,11 +42,27 @@ use crate::{Error, Result};
 
 /// Schema migrations, applied in order. Version `n` is `MIGRATIONS[n - 1]`. To add a
 /// version, append one entry; [`Store::open`] runs whatever the file is missing.
-const MIGRATIONS: &[&str] = &[SCHEMA_V1];
+const MIGRATIONS: &[&str] = &[SCHEMA_V1, SCHEMA_V2];
 
 /// Current schema version: the one a freshly opened store reports.
 #[allow(clippy::cast_possible_truncation)] // a handful of migrations, never 2^32
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
+
+/// v2: an append-only ledger of every model attempt, so the daily budget counts tokens that
+/// bought nothing (retries, malformed replies, validation failures) as well as cards.
+const SCHEMA_V2: &str = r"
+CREATE TABLE usage_log (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    at            TEXT    NOT NULL,
+    section_hash  TEXT    NOT NULL,
+    model         TEXT    NOT NULL,
+    outcome       TEXT    NOT NULL,
+    input_tokens  INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    cost_usd      REAL    NOT NULL
+);
+CREATE INDEX usage_log_at ON usage_log (at);
+";
 
 const SCHEMA_V1: &str = r"
 CREATE TABLE meta (
@@ -688,7 +704,7 @@ impl Store {
             "UPDATE summaries SET state = 'summarized', summary = ?2, provenance = ?3,
                 input_tokens = ?4, output_tokens = ?5, cost_usd = ?6, fail_reason = NULL,
                 summarized_at = ?7
-             WHERE section_hash = ?1",
+             WHERE section_hash = ?1 AND state != 'summarized'",
             params![
                 section_hash,
                 serde_json::to_string(summary)?,
@@ -700,7 +716,13 @@ impl Store {
             ],
         )?;
         if updated == 0 {
-            return Err(Error::NotFound(format!("section hash {section_hash}")));
+            // Already summarized by another writer: keep the existing card untouched.
+            return if row_exists(&tx, section_hash)? {
+                tracing::debug!(section_hash, "attach_summary skipped: already summarized");
+                Ok(0)
+            } else {
+                Err(Error::NotFound(format!("section hash {section_hash}")))
+            };
         }
 
         let rows: Vec<(i64, String, String, String)> = tx
@@ -734,11 +756,18 @@ impl Store {
         let tx = self.conn.transaction()?;
         let now = Timestamp::now();
         let updated = tx.execute(
-            "UPDATE summaries SET state = 'failed', fail_reason = ?2 WHERE section_hash = ?1",
+            "UPDATE summaries SET state = 'failed', fail_reason = ?2
+             WHERE section_hash = ?1 AND state = 'pending'",
             params![section_hash, reason],
         )?;
         if updated == 0 {
-            return Err(Error::NotFound(format!("section hash {section_hash}")));
+            // Another writer already settled this hash (or it was never seen).
+            return if row_exists(&tx, section_hash)? {
+                tracing::debug!(section_hash, "mark_failed skipped: hash no longer pending");
+                Ok(())
+            } else {
+                Err(Error::NotFound(format!("section hash {section_hash}")))
+            };
         }
         let rows: Vec<(String, String)> = tx
             .prepare(
@@ -1228,13 +1257,49 @@ fn to_i64(n: u64) -> i64 {
     i64::try_from(n).unwrap_or(i64::MAX)
 }
 
+/// Does any `summaries` row exist for this hash, in any state?
+fn row_exists(conn: &Connection, section_hash: &str) -> Result<bool> {
+    let n: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM summaries WHERE section_hash = ?1",
+        [section_hash],
+        |r| r.get(0),
+    )?;
+    Ok(n > 0)
+}
+
 impl Store {
-    /// Tokens and cost of every card attached at or after `since`. Backs the daily budget.
+    /// Append one model attempt (or a whole job's attempts) to the usage ledger. Called for
+    /// every job the pool reports, whatever its outcome, so budgets see the real spend.
+    pub fn record_usage(
+        &mut self,
+        section_hash: &str,
+        model: &str,
+        usage: &Usage,
+        outcome: &str,
+    ) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO usage_log (at, section_hash, model, outcome, input_tokens, output_tokens, cost_usd)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                fmt_ts(Timestamp::now()),
+                section_hash,
+                model,
+                outcome,
+                to_i64(usage.input_tokens),
+                to_i64(usage.output_tokens),
+                usage.cost_usd,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Tokens and cost of every attempt logged at or after `since`, successful or not.
+    /// Backs the daily budget.
     pub fn usage_since(&self, since: Timestamp) -> Result<Usage> {
         let (input, output, cost): (i64, i64, f64) = self.conn.query_row(
             "SELECT COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0),
                     COALESCE(SUM(cost_usd), 0.0)
-             FROM summaries WHERE state = 'summarized' AND summarized_at >= ?1",
+             FROM usage_log WHERE at >= ?1",
             [fmt_ts(since)],
             |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )?;

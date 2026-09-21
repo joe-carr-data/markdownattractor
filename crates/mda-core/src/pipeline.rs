@@ -117,7 +117,9 @@ pub struct SummarizeReport {
 /// Exact source lines of a section, re-checked against the file at read time.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Opened {
-    /// The section id that was asked for.
+    /// The id that was asked for.
+    pub requested_id: String,
+    /// The section's *current* id. Differs from `requested_id` when sections moved.
     pub section_id: String,
     /// Path relative to the root.
     pub rel_path: String,
@@ -182,14 +184,40 @@ impl Engine {
                 self.root.display()
             ))
         })?;
+        if rel.components().any(|c| !matches!(c, std::path::Component::Normal(_))) {
+            return Err(Error::NotFound(format!(
+                "refusing {}: path components must stay inside the root",
+                abs.display()
+            )));
+        }
         Ok(rel.components().map(|c| c.as_os_str().to_string_lossy()).collect::<Vec<_>>().join("/"))
+    }
+
+    /// Join a stored relative path onto the root, refusing anything that could leave it:
+    /// absolute paths, `..` components, and symlinks that resolve outside the root.
+    pub fn safe_join(&self, rel_path: &str) -> Result<PathBuf> {
+        use std::path::Component;
+        let rel = Path::new(rel_path);
+        if rel.components().any(|c| !matches!(c, Component::Normal(_) | Component::CurDir)) {
+            return Err(Error::NotFound(format!("refusing {rel_path:?}: not inside the root")));
+        }
+        let joined = self.root.join(rel);
+        let canon = joined.canonicalize().map_err(|e| Error::io(&joined, e))?;
+        if !canon.starts_with(&self.root) {
+            return Err(Error::NotFound(format!(
+                "refusing {rel_path:?}: resolves outside the root"
+            )));
+        }
+        Ok(canon)
     }
 
     /// Parse one file and upsert it. The file is raw-searchable when this returns.
     pub fn index_file(&mut self, abs: &Path) -> Result<IndexOutcome> {
-        let rel_path = self.rel_path(abs)?;
-        let doc = markdown::parse_file(abs)?;
-        let times = file_times(abs)?;
+        // Resolve symlinks first so a link pointing outside the root is rejected by `rel_path`.
+        let abs = abs.canonicalize().map_err(|e| Error::io(abs, e))?;
+        let rel_path = self.rel_path(&abs)?;
+        let doc = markdown::parse_file(&abs)?;
+        let times = file_times(&abs)?;
         let outcome = self.index_parsed(&rel_path, &doc, &times)?;
         Ok(outcome)
     }
@@ -239,7 +267,12 @@ impl Engine {
 
         let now = Timestamp::now();
         for doc in self.store.documents()? {
-            if !seen.contains(&doc.rel_path) && self.store.tombstone(&doc.rel_path, now)? {
+            // A file that failed to read or parse this round is not gone; only tombstone
+            // documents whose file really is missing.
+            if !seen.contains(&doc.rel_path)
+                && !self.root.join(&doc.rel_path).exists()
+                && self.store.tombstone(&doc.rel_path, now)?
+            {
                 report.tombstoned += 1;
             }
         }
@@ -272,6 +305,7 @@ impl Engine {
                 schema_version: SCHEMA_VERSION,
                 backend: "deterministic".to_owned(),
                 summarized_at: Timestamp::now(),
+                truncated: false,
             };
             self.store.attach_summary(
                 &p.section_hash,
@@ -386,6 +420,18 @@ impl Engine {
             tracing::warn!(id = %r.id, "pool returned an unknown job id");
             return Ok(());
         };
+        // Every job's spend goes to the ledger, whatever happened, so budgets see it.
+        let spent = StoredUsage {
+            input_tokens: r.usage.input_tokens,
+            output_tokens: r.usage.output_tokens,
+            cost_usd: r.usage.cost_usd,
+        };
+        self.store.record_usage(&r.id, &r.model_used, &spent, r.outcome.kind())?;
+        if r.attempts == 0 {
+            // Never started (pool stopped or cancelled): stays pending for the next run.
+            report.deferred += 1;
+            return Ok(());
+        }
         match &r.outcome {
             Outcome::Ok { summary, usage } => match validate(&p.text, summary.clone(), caps) {
                 Ok(v) => {
@@ -395,6 +441,7 @@ impl Engine {
                         schema_version: SCHEMA_VERSION,
                         backend: backend_name.to_owned(),
                         summarized_at: Timestamp::now(),
+                        truncated: truncated.contains(&r.id),
                     };
                     let stored_usage = StoredUsage {
                         input_tokens: usage.input_tokens,
@@ -402,9 +449,6 @@ impl Engine {
                         cost_usd: usage.cost_usd,
                     };
                     self.store.attach_summary(&r.id, &v.summary, &provenance, &stored_usage)?;
-                    if truncated.contains(&r.id) {
-                        tracing::debug!(id = %r.id, "card produced from a truncated section");
-                    }
                     report.ok += 1;
                     progress.ok += 1;
                     if v.is_clean() {
@@ -441,42 +485,47 @@ impl Engine {
 
     /// Return the exact source lines of a section, re-checking the file at read time.
     ///
-    /// If the file changed since indexing, the section is looked up again after a re-index
-    /// (by index, then by hash) and the result is flagged `stale`.
+    /// If the file changed since indexing it is re-indexed on the spot, the section is
+    /// located again (by hash, then heading path, then position) and the result is flagged
+    /// `stale`. `section_id` in the result is the section's *current* id, which can differ
+    /// from `requested_id` when sections moved.
     pub fn open_section(&mut self, section_id: &str) -> Result<Opened> {
         let stored = self
             .store
             .section(section_id)?
             .ok_or_else(|| Error::NotFound(format!("section {section_id}")))?;
-        let abs = self.root.join(&stored.rel_path);
+        let stored_doc = self
+            .store
+            .document(&stored.doc_id)?
+            .ok_or_else(|| Error::NotFound(format!("document {}", stored.doc_id)))?;
+        let abs = self.safe_join(&stored.rel_path)?;
         let text = std::fs::read_to_string(&abs).map_err(|e| Error::io(&abs, e))?;
         let doc = markdown::parse_str(&text);
 
-        let fresh =
-            doc.sections.get(stored.index as usize).filter(|s| s.hash == stored.section_hash);
-        let (section, stale) = if let Some(s) = fresh {
-            (s.clone(), false)
-        } else {
-            // Changed on disk: re-index so the store is current, then find the best match.
+        let stale = doc.hash != stored_doc.content_hash;
+        if stale {
             let times = file_times(&abs)?;
             self.index_parsed(&stored.rel_path, &doc, &times)?;
-            let by_hash = doc.sections.iter().find(|s| s.hash == stored.section_hash);
-            let by_index = doc.sections.get(stored.index as usize);
-            let by_heading = doc.sections.iter().find(|s| s.heading_path == stored.heading_path);
-            let s = by_hash.or(by_heading).or(by_index).ok_or_else(|| {
+        }
+        let same_place =
+            doc.sections.get(stored.index as usize).filter(|s| s.hash == stored.section_hash);
+        let section = same_place
+            .or_else(|| doc.sections.iter().find(|s| s.hash == stored.section_hash))
+            .or_else(|| doc.sections.iter().find(|s| s.heading_path == stored.heading_path))
+            .or_else(|| doc.sections.get(stored.index as usize))
+            .ok_or_else(|| {
                 Error::NotFound(format!(
                     "section {section_id} no longer exists in {}",
                     stored.rel_path
                 ))
             })?;
-            (s.clone(), true)
-        };
 
         let lines: Vec<&str> = text.lines().collect();
         let start = (section.line_start as usize).saturating_sub(1).min(lines.len());
         let end = (section.line_end as usize).min(lines.len());
         Ok(Opened {
-            section_id: section_id.to_owned(),
+            requested_id: section_id.to_owned(),
+            section_id: crate::store::section_id_for(&stored.doc_id, section.index),
             rel_path: stored.rel_path,
             heading_path: section.heading_path.clone(),
             line_start: section.line_start,

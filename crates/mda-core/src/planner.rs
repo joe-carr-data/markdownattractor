@@ -108,8 +108,16 @@ fn truncate_at_paragraph(text: &str, max_tokens: u32) -> String {
         last_boundary_line = last_boundary_line.min(open);
     }
     if last_boundary_line == 0 {
-        // No blank line before the limit: keep the heading line at least.
-        last_boundary_line = 1.min(total_lines);
+        // No usable blank line before the limit: keep a hard-capped prefix of the first
+        // line so a single enormous line can never bypass the budget.
+        let budget = max_chars.saturating_sub(MARKER_RESERVE_CHARS).max(16);
+        let mut out: String = text.lines().next().unwrap_or("").chars().take(budget).collect();
+        let dropped = total_lines.saturating_sub(1);
+        let _ = write!(
+            out,
+            "\n\n[… section truncated for summarization: {dropped} more lines not shown]"
+        );
+        return out;
     }
 
     let kept: Vec<&str> = text.lines().take(last_boundary_line).collect();
@@ -120,6 +128,9 @@ fn truncate_at_paragraph(text: &str, max_tokens: u32) -> String {
         write!(out, "\n\n[… section truncated for summarization: {dropped} more lines not shown]");
     out
 }
+
+/// Characters reserved for the truncation marker when hard-capping a single line.
+const MARKER_RESERVE_CHARS: usize = 96;
 
 fn is_fence(line: &str) -> bool {
     let t = line.trim_start();
@@ -178,6 +189,16 @@ mod tests {
         let c = &plan(&doc, &PlanConfig { max_tokens: 10 })[0];
         assert!(c.truncated);
         assert!(c.text.starts_with("# H\n"));
+    }
+
+    #[test]
+    fn single_huge_line_is_hard_capped() {
+        let text = "x".repeat(50_000);
+        let doc = parse_str(&text);
+        let c = &plan(&doc, &PlanConfig { max_tokens: 100 })[0];
+        assert!(c.truncated);
+        assert!(c.text.chars().count() <= 100 * 4 + 8, "{}", c.text.chars().count());
+        assert!(c.text.contains("truncated for summarization"));
     }
 
     #[test]

@@ -11,9 +11,10 @@
 //! ```
 //!
 //! The chunk goes over stdin, which is closed immediately (the CLI otherwise waits 3 s for
-//! more input). Stdout and stderr are drained concurrently so neither pipe can fill and
-//! deadlock the child. The whole call is bounded by `worker_timeout_secs`; on expiry the child
-//! is killed and the call counts as [`Outcome::Retryable`].
+//! more input). The stdin write and the stdout/stderr drains run concurrently so no pipe can
+//! fill and deadlock the child against us. The whole call is bounded by
+//! `worker_timeout_secs`; on expiry the child is killed and the call counts as
+//! [`Outcome::Retryable`].
 
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -177,16 +178,22 @@ impl ClaudeCli {
         let stderr = child.stderr.take();
         let text = super::user_message(req);
 
-        let work = async {
-            // Write the chunk and close stdin straight away; a write error only means the
-            // child exited early, which the exit status will explain.
+        // Write the chunk and close stdin straight away; a write error only means the child
+        // exited early, which the exit status will explain.
+        let feed = async {
             if let Some(mut stdin) = stdin {
                 if let Err(e) = stdin.write_all(text.as_bytes()).await {
                     tracing::debug!(error = %e, "stdin write failed");
                 }
                 drop(stdin);
             }
-            let (out, err, status) = tokio::join!(read_all(stdout), read_all(stderr), child.wait());
+        };
+        // The stdin write and both output drains run concurrently with the wait: a child that
+        // fills stdout or stderr before it reads stdin would otherwise block us in `write_all`
+        // while we block it on the pipe, and only the timeout would break the tie.
+        let work = async {
+            let ((), out, err, status) =
+                tokio::join!(feed, read_all(stdout), read_all(stderr), child.wait());
             (out, err, status)
         };
 

@@ -34,6 +34,7 @@ fn provenance(secs: i64) -> Provenance {
         schema_version: CARD_SCHEMA,
         backend: "mock".into(),
         summarized_at: ts(secs),
+        truncated: false,
     }
 }
 

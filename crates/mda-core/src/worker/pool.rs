@@ -11,15 +11,20 @@
 //! | `Fatal` with [`Outcome::stops_pool`] | cancel the token; every unfinished job reports `Fatal("pool stopped: …")` |
 //! | other `Fatal`, or `Err` from the backend | fail that job only |
 //!
-//! Concurrency changes take effect at the next spawn; in-flight calls are never killed for
-//! a halving. Cancellation is honoured between jobs, during backoff sleeps and while a call
-//! is in flight (dropping the backend future kills the child process).
+//! Concurrency gates two things. A job takes a *job slot* from spawn to completion, so at most
+//! `concurrency` jobs are ever active at once. Every backend attempt, first or retry, then
+//! takes an *in-flight slot* under the concurrency limit current at that moment, so a wave of
+//! rate-limit retries after a halving runs at the reduced width rather than all at once.
+//! Slots are released before the backoff sleep, and a halving never kills an in-flight call.
+//! Cancellation is honoured between jobs, while waiting for a slot, during backoff sleeps and
+//! while a call is in flight (dropping the backend future kills the child process).
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use tokio::sync::Notify;
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 
@@ -90,6 +95,9 @@ pub struct JobResult {
     pub model_used: String,
     /// `Ok`, or the terminal failure. Never `Retryable` or `RateLimited`.
     pub outcome: Outcome,
+    /// What this job cost: the sum over every attempt that reported usage, including failed,
+    /// `Malformed` and escalation attempts. Default when the job never ran.
+    pub usage: Usage,
 }
 
 /// Snapshot of pool counters.
@@ -97,7 +105,8 @@ pub struct JobResult {
 pub struct PoolStats {
     /// Current concurrency limit.
     pub concurrency: u16,
-    /// Jobs running right now.
+    /// Backend calls in flight right now. Jobs sleeping in backoff or waiting for a slot are
+    /// not counted.
     pub in_flight: u16,
     /// Jobs finished, ok or not.
     pub completed: u64,
@@ -124,6 +133,8 @@ pub struct Pool<B: Backend> {
     cfg: Arc<PoolConfig>,
     cancel: CancellationToken,
     state: Arc<Mutex<State>>,
+    /// Woken whenever an in-flight slot may have become free.
+    slots: Arc<Notify>,
 }
 
 impl<B: Backend> std::fmt::Debug for Pool<B> {
@@ -147,6 +158,7 @@ impl<B: Backend + 'static> Pool<B> {
             cfg: Arc::new(cfg),
             cancel,
             state: Arc::new(Mutex::new(State { stats, consecutive_ok: 0, stop_reason: None })),
+            slots: Arc::new(Notify::new()),
         }
     }
 
@@ -167,10 +179,9 @@ impl<B: Backend + 'static> Pool<B> {
         let mut running: HashMap<tokio::task::Id, String> = HashMap::new();
 
         loop {
-            while !self.cancel.is_cancelled() && self.has_capacity() {
+            while !self.cancel.is_cancelled() && self.has_job_slot(set.len()) {
                 let Some(req) = queue.pop_front() else { break };
                 let id = req.id.clone();
-                lock(&self.state).stats.in_flight += 1;
                 let handle = set.spawn(Job::new(self, req).run());
                 running.insert(handle.id(), id);
             }
@@ -204,21 +215,18 @@ impl<B: Backend + 'static> Pool<B> {
                         attempts: 0,
                         model_used: self.cfg.model.clone(),
                         outcome: Outcome::Fatal { reason: format!("worker task failed: {e}") },
+                        usage: Usage::default(),
                     }
                 }
             };
-            {
-                let mut st = lock(&self.state);
-                st.stats.in_flight = st.stats.in_flight.saturating_sub(1);
-            }
             on_done(result);
         }
         self.stats()
     }
 
-    fn has_capacity(&self) -> bool {
-        let st = lock(&self.state);
-        st.stats.in_flight < st.stats.concurrency
+    /// Whether another job may start given `active` jobs already spawned and unfinished.
+    fn has_job_slot(&self, active: usize) -> bool {
+        active < usize::from(lock(&self.state).stats.concurrency)
     }
 
     fn stop_reason(&self) -> String {
@@ -234,7 +242,24 @@ impl<B: Backend + 'static> Pool<B> {
             attempts: 0,
             model_used: self.cfg.model.clone(),
             outcome: Outcome::Fatal { reason: format!("pool stopped: {reason}") },
+            usage: Usage::default(),
         }
+    }
+}
+
+/// An admitted backend attempt. Dropping it frees the in-flight slot and wakes waiters.
+struct Slot {
+    state: Arc<Mutex<State>>,
+    slots: Arc<Notify>,
+}
+
+impl Drop for Slot {
+    fn drop(&mut self) {
+        {
+            let mut st = lock(&self.state);
+            st.stats.in_flight = st.stats.in_flight.saturating_sub(1);
+        }
+        self.slots.notify_waiters();
     }
 }
 
@@ -244,8 +269,10 @@ struct Job<B: Backend> {
     cfg: Arc<PoolConfig>,
     cancel: CancellationToken,
     state: Arc<Mutex<State>>,
+    slots: Arc<Notify>,
     req: SummarizeRequest,
     attempts: u8,
+    usage: Usage,
     retries_used: u8,
     rate_limit_retries: usize,
     escalated: bool,
@@ -266,8 +293,10 @@ impl<B: Backend + 'static> Job<B> {
             cfg: Arc::clone(&pool.cfg),
             cancel: pool.cancel.clone(),
             state: Arc::clone(&pool.state),
+            slots: Arc::clone(&pool.slots),
             req,
             attempts: 0,
+            usage: Usage::default(),
             retries_used: 0,
             rate_limit_retries: 0,
             escalated: false,
@@ -280,12 +309,19 @@ impl<B: Backend + 'static> Job<B> {
             if self.cancel.is_cancelled() {
                 return self.finish(self.stopped());
             }
+            let admit = self.acquire_slot();
+            let slot = tokio::select! {
+                () = self.cancel.cancelled() => return self.finish(self.stopped()),
+                slot = admit => slot,
+            };
             self.attempts = self.attempts.saturating_add(1);
             let call = self.backend.summarize(&self.req, &self.model);
             let outcome = tokio::select! {
                 () = self.cancel.cancelled() => return self.finish(self.stopped()),
                 res = call => res,
             };
+            // Free the slot before classifying: a backoff sleep must not hold it.
+            drop(slot);
             let outcome = match outcome {
                 Ok(o) => o,
                 Err(e) => {
@@ -296,6 +332,7 @@ impl<B: Backend + 'static> Job<B> {
             tracing::debug!(id = %self.req.id, attempt = self.attempts, model = %self.model, kind = outcome.kind(), "attempt done");
             if let Some(u) = outcome.usage() {
                 lock(&self.state).stats.usage += u;
+                self.usage += u;
             }
             match self.classify(outcome).await {
                 Step::Retry => {}
@@ -304,20 +341,47 @@ impl<B: Backend + 'static> Job<B> {
         }
     }
 
+    /// Wait until a backend call may start under the concurrency limit current at that
+    /// moment, then take the slot. Registers for the wake-up before checking, so a release
+    /// between the check and the wait is never missed.
+    async fn acquire_slot(&self) -> Slot {
+        loop {
+            let notified = self.slots.notified();
+            tokio::pin!(notified);
+            notified.as_mut().enable();
+            {
+                let mut st = lock(&self.state);
+                if st.stats.in_flight < st.stats.concurrency {
+                    st.stats.in_flight += 1;
+                    return Slot { state: Arc::clone(&self.state), slots: Arc::clone(&self.slots) };
+                }
+            }
+            notified.await;
+        }
+    }
+
     async fn classify(&mut self, outcome: Outcome) -> Step {
         match outcome {
             Outcome::Ok { .. } => {
-                let mut st = lock(&self.state);
-                st.consecutive_ok += 1;
-                if st.consecutive_ok >= AIMD_SUCCESS_WINDOW {
-                    st.consecutive_ok = 0;
-                    if st.stats.concurrency < self.cfg.max_concurrency {
-                        st.stats.concurrency += 1;
-                        tracing::info!(
-                            concurrency = st.stats.concurrency,
-                            "AIMD: increased concurrency"
-                        );
+                let grew = {
+                    let mut st = lock(&self.state);
+                    st.consecutive_ok += 1;
+                    let mut grew = false;
+                    if st.consecutive_ok >= AIMD_SUCCESS_WINDOW {
+                        st.consecutive_ok = 0;
+                        if st.stats.concurrency < self.cfg.max_concurrency {
+                            st.stats.concurrency += 1;
+                            grew = true;
+                            tracing::info!(
+                                concurrency = st.stats.concurrency,
+                                "AIMD: increased concurrency"
+                            );
+                        }
                     }
+                    grew
+                };
+                if grew {
+                    self.slots.notify_waiters();
                 }
                 Step::Finish(outcome)
             }
@@ -386,6 +450,7 @@ impl<B: Backend + 'static> Job<B> {
             attempts: self.attempts,
             model_used: self.model.clone(),
             outcome,
+            usage: self.usage.clone(),
         }
     }
 }

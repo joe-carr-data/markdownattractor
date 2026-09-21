@@ -117,6 +117,10 @@ pub struct Provenance {
     pub backend: String,
     /// When the summary was produced.
     pub summarized_at: Timestamp,
+    /// `true` when the model saw only a prefix of the section (planner truncation), so the
+    /// card describes the beginning of the section, not all of it.
+    #[serde(default)]
+    pub truncated: bool,
 }
 
 /// A section card: the model's summary plus deterministic metadata.
@@ -216,6 +220,7 @@ mod tests {
                 schema_version: SCHEMA_VERSION,
                 backend: "claude-cli".into(),
                 summarized_at: now,
+                truncated: false,
             },
         };
         let json = serde_json::to_value(&card).unwrap();

@@ -100,7 +100,10 @@ pub fn search(store: &Store, query: &str, opts: &SearchOptions) -> Result<Vec<Hi
     if query.is_empty() {
         return Ok(Vec::new());
     }
-    let fetch = opts.k.saturating_mul(4).max(16);
+    // Filters discard candidates after ranking, so fetch deeper when any filter is set.
+    let filtered = opts.since.is_some() || opts.until.is_some() || opts.path_prefix.is_some();
+    let fetch =
+        if filtered { opts.k.saturating_mul(4).max(200) } else { opts.k.saturating_mul(4).max(16) };
 
     let (hits, via_or) = {
         let and_expr = fts_escape(query);
@@ -120,24 +123,9 @@ pub fn search(store: &Store, query: &str, opts: &SearchOptions) -> Result<Vec<Hi
     let now = Timestamp::now();
     let mut scored: Vec<Hit> = hits
         .into_iter()
-        .filter_map(|(section, matched, rrf)| {
-            if let Some(since) = opts.since
-                && section.updated_at < since
-            {
-                return None;
-            }
-            if let Some(until) = opts.until
-                && section.updated_at > until
-            {
-                return None;
-            }
-            if let Some(prefix) = &opts.path_prefix
-                && !section.rel_path.starts_with(prefix.trim_start_matches("./"))
-            {
-                return None;
-            }
+        .map(|(section, matched, rrf)| {
             let fused = rrf * recency_factor(section.updated_at, now, opts.recency_half_life_days);
-            Some(to_hit(section, matched, fused, via_or))
+            to_hit(section, matched, fused, via_or)
         })
         .collect();
 
@@ -173,6 +161,9 @@ fn run(
     let mut out = Vec::with_capacity(fused.len());
     for (id, (score, in_cards, in_raw)) in fused {
         let Some(section) = store.section(&id)? else { continue };
+        if !passes(&section, opts) {
+            continue;
+        }
         let matched = match (in_cards, in_raw) {
             (true, true) => Matched::Both,
             (true, false) => Matched::Cards,
@@ -181,6 +172,27 @@ fn run(
         out.push((section, matched, score));
     }
     Ok(out)
+}
+
+/// Time and path filters, applied to candidates before fusion results are cut to `k` and
+/// before the OR-fallback decision, so an excluded high-ranked hit never hides an eligible one.
+fn passes(section: &StoredSection, opts: &SearchOptions) -> bool {
+    if let Some(since) = opts.since
+        && section.updated_at < since
+    {
+        return false;
+    }
+    if let Some(until) = opts.until
+        && section.updated_at > until
+    {
+        return false;
+    }
+    if let Some(prefix) = &opts.path_prefix
+        && !section.rel_path.starts_with(prefix.trim_start_matches("./"))
+    {
+        return false;
+    }
+    true
 }
 
 #[allow(clippy::cast_precision_loss)] // ranks are tiny

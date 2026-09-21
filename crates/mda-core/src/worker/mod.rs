@@ -53,12 +53,32 @@ pub const SYSTEM_PROMPT: &str = include_str!("../../../../prompts/section.v2.txt
 #[must_use]
 pub fn user_message(req: &SummarizeRequest) -> String {
     let esc = |s: &str| s.replace('&', "&amp;").replace('"', "&quot;").replace('<', "&lt;");
+    let nonce = delimiter_nonce(req);
     format!(
-        "<section path=\"{}\" heading=\"{}\">\n{}\n</section>",
+        "<section-{nonce} path=\"{}\" heading=\"{}\">\n{}\n</section-{nonce}>",
         esc(&req.rel_path),
         esc(&req.heading_path.join(" › ")),
         req.text.trim_end()
     )
+}
+
+/// Eight hex characters that a document author cannot predict, so a stray `</section>` in
+/// the content cannot close the data delimiter. Keyed by a per-process secret and the
+/// request id: stable within a process (tests can recompute it), unknowable outside it.
+fn delimiter_nonce(req: &SummarizeRequest) -> String {
+    static SECRET: std::sync::OnceLock<[u8; 32]> = std::sync::OnceLock::new();
+    let secret = SECRET.get_or_init(|| {
+        let mut h = blake3::Hasher::new();
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_nanos());
+        h.update(&nanos.to_le_bytes());
+        h.update(&std::process::id().to_le_bytes());
+        *h.finalize().as_bytes()
+    });
+    let mut h = blake3::Hasher::new_keyed(secret);
+    h.update(req.id.as_bytes());
+    h.finalize().to_hex()[..8].to_owned()
 }
 
 /// Stable prefix of the [`Outcome::Fatal`] reason that means "the CLI is not logged in"

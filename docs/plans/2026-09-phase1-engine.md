@@ -31,8 +31,8 @@ Every module lives in `crates/mda-core/src/`, has its own tests, and knows nothi
 - [x] Re-running `mda index` after touching one section re-summarizes exactly one section (test `editing_one_section_needs_exactly_one_card` + CLI test).
 - [x] Inserting lines above an unchanged section updates its line range without a job (front-matter test).
 - [x] Coverage 84% workspace-wide; every module has unit tests; pipeline end-to-end with the mock backend; worker fixture tests for every outcome class; CLI end-to-end tests.
-- [ ] Codex review of `crates/` filed and triaged.
-- [ ] `docs/design/summarization.md` and `docs/design/search.md` written from the code as built.
+- [x] Codex review of `crates/` filed and triaged (`docs/reviews/codex/2026-09-22-crates.md`, 14/14 fixed).
+- [x] `docs/design/summarization.md` and `docs/design/search.md` written from the code as built.
 
 ## Decisions taken in this phase
 
