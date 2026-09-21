@@ -1,0 +1,27 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+
+# markdownattractor derived state (when dogfooding on this repo)
+.markdownattractor/index.sqlite*
+.markdownattractor/docs/
+.markdownattractor/models/
+.markdownattractor/logs/
+.markdownattractor/daemon.pid
+.markdownattractor/daemon.sock
+.fastembed_cache/
+
+# Claude Code local overrides
+.claude/settings.local.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Env / secrets
+.env
+.env.*
