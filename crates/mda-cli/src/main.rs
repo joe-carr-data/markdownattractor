@@ -31,6 +31,16 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Index the root (or one file): parse, make raw-searchable, then summarize.
+    Index(commands::index::Args),
+    /// Search the index: cards and raw text, fused, time-aware.
+    Search(commands::search::Args),
+    /// Print the exact source lines of a section (re-checked against the file).
+    Open(commands::open::Args),
+    /// Show the full card of a section.
+    Card(commands::card::Args),
+    /// What is indexed, pending, failed, and what it cost.
+    Status(commands::status::Args),
     /// Parse a markdown file and show its sections, line ranges and hashes.
     Parse(commands::parse::Args),
     /// Print the JSON schema handed to the summarization model.
@@ -44,6 +54,11 @@ fn main() -> ExitCode {
     output::init_logging(cli.verbose);
 
     let result = match cli.command {
+        Command::Index(args) => commands::index::run(&args, cli.json),
+        Command::Search(args) => commands::search::run(&args, cli.json),
+        Command::Open(args) => commands::open::run(&args, cli.json),
+        Command::Card(args) => commands::card::run(&args, cli.json),
+        Command::Status(args) => commands::status::run(&args, cli.json),
         Command::Parse(args) => commands::parse::run(&args, cli.json),
         Command::Schema(args) => commands::schema::run(&args),
         Command::Doctor(args) => commands::doctor::run(&args, cli.json),
