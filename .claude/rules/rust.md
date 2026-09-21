@@ -1,0 +1,29 @@
+# Rust rules
+
+## Workspace
+- Two crates: `crates/mda-core` (library: parser, differ, index, cards, MCP) and `crates/mda-cli` (binary: CLI, daemon entry, hooks).
+- All logic lives in `mda-core`; `mda-cli` is argument parsing, wiring and output formatting only.
+
+## Errors and diagnostics
+- Library errors: `thiserror` enums per module. No `Box<dyn Error>` in public signatures.
+- `anyhow` only at the binary edge (`mda-cli` `main` and command handlers).
+- No `unwrap()` or `expect()` outside `#[cfg(test)]`. Use `?`, `ok_or`, or a typed error.
+- Diagnostics go through `tracing` (`debug!`, `info!`, `warn!`, `error!`), never `println!`/`eprintln!`.
+  The only `println!` is the CLI's final one-line output (and `--json`).
+
+## Quality gates (all must pass before a commit is proposed)
+- `cargo fmt --check`
+- `cargo clippy --all-targets -- -D warnings`
+- `cargo test` (or `cargo nextest run`)
+- Every public item (`pub fn`, `pub struct`, `pub enum`, `pub mod`) has a doc comment. `#![warn(missing_docs)]` in `mda-core`.
+
+## Dependencies
+- No new dependency without an ADR in `docs/adr/`. Reference the ADR number in the `Cargo.toml` comment.
+- Prefer crates already listed in `docs/project-plan.md` §16.
+
+## Tests
+- Unit tests next to the code in `mod tests`.
+- Integration tests in `crates/<crate>/tests/`.
+- Snapshot tests with `insta` for parser output and card rendering; review snapshots with `cargo insta review`, never accept blind.
+- Property tests with `proptest` for the section differ (idempotence, hash stability, line-range refresh).
+- Test names say what they prove: `parses_nested_headings_into_sections`, not `test1`.
