@@ -100,7 +100,55 @@ impl SectionSummary {
         if let serde_json::Value::Object(map) = &mut schema {
             map.remove("$schema");
         }
+        simplify_enums(&mut schema);
         schema
+    }
+}
+
+/// Rewrite schemars' `oneOf: [{const, description}, …]` encoding of a unit enum into the plain
+/// `{"type": "string", "enum": […]}` that every structured-output engine accepts (the Claude
+/// API rejects `oneOf`; llama.cpp grammars prefer `enum`). Variant descriptions are folded
+/// into the parent description so the model still sees them.
+fn simplify_enums(v: &mut serde_json::Value) {
+    use serde_json::Value;
+    match v {
+        Value::Object(map) => {
+            let as_enum = map.get("oneOf").and_then(Value::as_array).and_then(|items| {
+                let mut values = Vec::new();
+                let mut notes = Vec::new();
+                for item in items {
+                    let obj = item.as_object()?;
+                    let c = obj.get("const")?.as_str()?;
+                    values.push(Value::String(c.to_owned()));
+                    if let Some(d) = obj.get("description").and_then(Value::as_str) {
+                        notes.push(format!("`{c}`: {d}"));
+                    }
+                }
+                Some((values, notes))
+            });
+            if let Some((values, notes)) = as_enum {
+                map.remove("oneOf");
+                map.insert("type".into(), Value::String("string".into()));
+                map.insert("enum".into(), Value::Array(values));
+                if !notes.is_empty() {
+                    let mut desc = map
+                        .get("description")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                        .unwrap_or_default();
+                    if !desc.is_empty() {
+                        desc.push(' ');
+                    }
+                    desc.push_str(&notes.join(" "));
+                    map.insert("description".into(), Value::String(desc));
+                }
+            }
+            for child in map.values_mut() {
+                simplify_enums(child);
+            }
+        }
+        Value::Array(items) => items.iter_mut().for_each(simplify_enums),
+        _ => {}
     }
 }
 
@@ -174,6 +222,16 @@ mod tests {
         }
         assert!(s.get("$schema").is_none());
         assert_eq!(s["additionalProperties"], false);
+    }
+
+    #[test]
+    fn schema_has_no_one_of_and_encodes_enums_plainly() {
+        let s = SectionSummary::json_schema();
+        assert!(!s.to_string().contains("oneOf"), "structured-output APIs reject oneOf");
+        let p = &s["$defs"]["DatePrecision"];
+        assert_eq!(p["type"], "string");
+        assert_eq!(p["enum"], serde_json::json!(["day", "month", "quarter", "year", "relative"]));
+        assert!(p["description"].as_str().unwrap().contains("`day`:"), "variant docs folded in");
     }
 
     #[test]

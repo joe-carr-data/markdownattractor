@@ -5,34 +5,15 @@ expression: "SectionSummary::json_schema()"
 {
   "$defs": {
     "DatePrecision": {
-      "description": "How precisely a date in the text pins down a moment.",
-      "oneOf": [
-        {
-          "const": "day",
-          "description": "A full calendar day, e.g. `2026-09-21`.",
-          "type": "string"
-        },
-        {
-          "const": "month",
-          "description": "A month, e.g. `Sept 2026`.",
-          "type": "string"
-        },
-        {
-          "const": "quarter",
-          "description": "A quarter, e.g. `Q4 2026`.",
-          "type": "string"
-        },
-        {
-          "const": "year",
-          "description": "A year, or a vaguer span inside one year (`spring 2026`).",
-          "type": "string"
-        },
-        {
-          "const": "relative",
-          "description": "Relative to the document's own time (`last week`, `next sprint`). Resolved later.",
-          "type": "string"
-        }
-      ]
+      "description": "How precisely a date in the text pins down a moment. `day`: A full calendar day, e.g. `2026-09-21`. `month`: A month, e.g. `Sept 2026`. `quarter`: A quarter, e.g. `Q4 2026`. `year`: A year, or a vaguer span inside one year (`spring 2026`). `relative`: Relative to the document's own time (`last week`, `next sprint`). Resolved later.",
+      "enum": [
+        "day",
+        "month",
+        "quarter",
+        "year",
+        "relative"
+      ],
+      "type": "string"
     },
     "Entities": {
       "additionalProperties": false,

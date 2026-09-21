@@ -65,19 +65,21 @@ MAX_THINKING_TOKENS=0 MARKDOWNATTRACTOR_WORKER=1 claude -p \
 
 ### Budget and pacing
 
+- Structured outputs on the API (`output_config.format`) make every call a single turn; the CLI path needs the protocol line and still takes a reminder turn on most calls.
 - `daily_token_budget` (config): before a run, tokens recorded today (UTC) are subtracted from the budget and divided by `TOKENS_PER_SECTION_ESTIMATE` (3,500) to cap how many sections are submitted. The rest stay pending; the CLI says so.
 - `mda index --limit N` caps a single run explicitly.
 - `mda index --retry-failed` moves failed hashes back to pending.
 - Everything attached is committed immediately, so an interrupted run resumes where it stopped.
 
-## Measured behaviour (this repo's `docs/plans`, 2 files, 11 sections, Apple M3, Max plan)
+## Measured behaviour (this repo's `docs/plans`, 2 files, 11 sections, Apple M3)
 
-| | |
+| Backend | Result |
 |---|---|
-| parse + raw index | 6 ms |
-| first summarization run, 4 workers | 32 s wall, 8 cards, 3 failures (fixed by v2 prompt + heading-only rule) |
-| second run after fixes | 100 % carded, 0 failures |
-| list-price cost | ≈ $0.10 for 11 sections including retries |
+| `api` (Haiku 4.5, structured outputs, 4→5 workers) | **10/10 cards in 15 s wall**, 1 API turn each, 24K in / 3.9K out tokens, **$0.043** |
+| `claude-cli` (Haiku via `claude -p`, 4 workers) | 32 s wall, 2 turns per call, 3 failures on the first pass until prompt v2; ≈ $0.10 list-equivalent |
+| `local` (gpt-oss-20b, memory-resident) | 9/9 cards, ≈ 40 s per section at 2–4 slots on a swapping machine; 166 tok/s decode when resident |
+| `local` (Gemma 3 4B) | usable cards, 2 min per section while paged |
+| parse + raw index (any backend) | 6 ms |
 
 ## Known limits (v1)
 
