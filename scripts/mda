@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Launcher used by the skills and hooks: finds the right `mda` binary and execs it.
+# Same resolution order as bootstrap.sh. Prints a one-line hint if nothing is found.
+set -u
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
+
+for candidate in "${MDA_BIN:-}" "$DATA/bin/mda" "$ROOT/target/release/mda" "$ROOT/target/debug/mda"; do
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    exec "$candidate" "$@"
+  fi
+done
+
+if command -v mda >/dev/null 2>&1; then
+  exec mda "$@"
+fi
+
+echo "mda binary not found. Start a new session to let the plugin fetch it, or run: cargo install --git https://github.com/joe-carr-data/markdownattractor mda-cli" >&2
+exit 127
