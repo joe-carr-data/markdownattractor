@@ -175,7 +175,7 @@ impl ClaudeCli {
         let stdin = child.stdin.take();
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
-        let text = req.text.as_str();
+        let text = super::user_message(req);
 
         let work = async {
             // Write the chunk and close stdin straight away; a write error only means the

@@ -78,11 +78,28 @@ pub struct Progress {
     pub last: Option<String>,
 }
 
+/// Knobs for one summarization run.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SummarizeOptions {
+    /// Summarize at most this many sections this run (smallest first). `None` = all pending.
+    pub limit: Option<usize>,
+}
+
+/// Average tokens one section costs end to end (input + output), used to turn a token budget
+/// into a section count before the run. Measured in the Phase 0 spike.
+pub const TOKENS_PER_SECTION_ESTIMATE: u64 = 3_500;
+
 /// Result of a summarization run.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SummarizeReport {
-    /// Jobs submitted.
+    /// Jobs submitted to the model.
     pub submitted: usize,
+    /// Heading-only sections carded deterministically, without a model call.
+    pub deterministic: usize,
+    /// Pending sections left for a later run because of `limit` or the daily budget.
+    pub deferred: usize,
+    /// `true` when the daily token budget stopped this run from submitting everything.
+    pub budget_exhausted: bool,
     /// Cards attached.
     pub ok: usize,
     /// Jobs that ended in failure (recorded in the store with a reason).
@@ -237,9 +254,64 @@ impl Engine {
         &mut self,
         backend: Arc<B>,
         cancel: CancellationToken,
+        opts: SummarizeOptions,
         mut on_progress: impl FnMut(&Progress) + Send,
     ) -> Result<SummarizeReport> {
-        let pending = self.store.pending_hashes(usize::MAX)?;
+        let all_pending = self.store.pending_hashes(usize::MAX)?;
+
+        // Heading-only sections have nothing for a model to read; give them a deterministic
+        // card so they are searchable by heading and never cost a call.
+        let (trivial, pending): (Vec<PendingSection>, Vec<PendingSection>) =
+            all_pending.into_iter().partition(|p| is_heading_only(&p.text));
+        let mut trivial_cards = 0usize;
+        for p in &trivial {
+            let summary = synthetic_summary(p);
+            let provenance = Provenance {
+                model: "none".to_owned(),
+                prompt_version: "deterministic".to_owned(),
+                schema_version: SCHEMA_VERSION,
+                backend: "deterministic".to_owned(),
+                summarized_at: Timestamp::now(),
+            };
+            self.store.attach_summary(
+                &p.section_hash,
+                &summary,
+                &provenance,
+                &StoredUsage::default(),
+            )?;
+            trivial_cards += 1;
+        }
+        if trivial_cards > 0 {
+            tracing::info!(
+                count = trivial_cards,
+                "heading-only sections carded without a model call"
+            );
+        }
+
+        // Cap the run: explicit limit, then the daily token budget (tokens already spent
+        // today, divided by the measured per-section cost).
+        let mut cap = opts.limit.unwrap_or(usize::MAX);
+        let mut budget_exhausted = false;
+        if let Some(budget) = self.config.daily_token_budget {
+            let spent = self.store.usage_since(start_of_today())?;
+            let remaining = budget.saturating_sub(spent.input_tokens + spent.output_tokens);
+            let affordable =
+                usize::try_from(remaining / TOKENS_PER_SECTION_ESTIMATE).unwrap_or(usize::MAX);
+            if affordable < pending.len() {
+                budget_exhausted = true;
+                tracing::warn!(
+                    budget,
+                    remaining,
+                    affordable,
+                    pending = pending.len(),
+                    "daily token budget caps this run"
+                );
+            }
+            cap = cap.min(affordable);
+        }
+        let deferred = pending.len().saturating_sub(cap);
+        let pending: Vec<PendingSection> = pending.into_iter().take(cap).collect();
+
         let total = pending.len();
         let plan_cfg = PlanConfig::default();
         let requests: Vec<SummarizeRequest> =
@@ -267,6 +339,9 @@ impl Engine {
 
         let mut report = SummarizeReport {
             submitted: total,
+            deterministic: trivial_cards,
+            deferred,
+            budget_exhausted,
             ok: 0,
             failed: 0,
             clean: 0,
@@ -344,8 +419,13 @@ impl Engine {
                     progress.failed += 1;
                 }
             },
-            Outcome::Malformed { reason, .. }
-            | Outcome::Retryable { reason }
+            Outcome::Malformed { reason, raw, .. } => {
+                let tail: String = raw.chars().take(300).collect();
+                self.store.mark_failed(&r.id, &format!("{reason}; model said: {tail}"))?;
+                report.failed += 1;
+                progress.failed += 1;
+            }
+            Outcome::Retryable { reason }
             | Outcome::RateLimited { reason }
             | Outcome::Fatal { reason } => {
                 self.store.mark_failed(&r.id, reason)?;
@@ -404,6 +484,38 @@ impl Engine {
             text: lines[start..end].join("\n"),
             stale,
         })
+    }
+}
+
+/// Midnight UTC today. The daily budget resets on UTC days so it is the same everywhere.
+fn start_of_today() -> Timestamp {
+    let now = Timestamp::now();
+    let secs = now.as_second();
+    Timestamp::from_second(secs - secs.rem_euclid(86_400)).unwrap_or(now)
+}
+
+/// `true` when the section is a heading with no body (only blank lines after it).
+fn is_heading_only(text: &str) -> bool {
+    let mut lines = text.lines();
+    let Some(first) = lines.next() else { return false };
+    first.trim_start().starts_with('#') && lines.all(|l| l.trim().is_empty())
+}
+
+/// A card for a heading-only section: the heading is the summary.
+fn synthetic_summary(p: &PendingSection) -> crate::card::SectionSummary {
+    let heading = p.heading_path.last().cloned().unwrap_or_else(|| "(untitled)".to_owned());
+    let path = p.heading_path.join(" › ");
+    crate::card::SectionSummary {
+        tldr: format!("Heading only: {heading}."),
+        summary: format!(
+            "The section \"{path}\" contains only its heading; its content lives in the subsections below it."
+        ),
+        keywords: heading.split_whitespace().map(str::to_lowercase).take(8).collect(),
+        questions_answered: vec![format!("Where is the {heading} section?")],
+        entities: crate::card::Entities::default(),
+        mentioned_dates: Vec::new(),
+        decisions: Vec::new(),
+        action_items: Vec::new(),
     }
 }
 

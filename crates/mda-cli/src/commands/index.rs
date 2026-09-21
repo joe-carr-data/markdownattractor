@@ -6,7 +6,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use anyhow::Context;
-use mda_core::pipeline::{Engine, IndexReport, SummarizeReport};
+use mda_core::pipeline::{Engine, IndexReport, SummarizeOptions, SummarizeReport};
 use mda_core::worker::ClaudeCli;
 use tokio_util::sync::CancellationToken;
 
@@ -23,6 +23,12 @@ pub struct Args {
     /// Only parse and index raw text; do not call the model.
     #[arg(long)]
     pub no_summarize: bool,
+    /// Put sections that failed summarization back in the queue before summarizing.
+    #[arg(long)]
+    pub retry_failed: bool,
+    /// Summarize at most this many sections this run (smallest first); the rest stay pending.
+    #[arg(long)]
+    pub limit: Option<usize>,
 }
 
 /// Run the command.
@@ -64,13 +70,19 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         }
     }
 
+    if args.retry_failed {
+        let n = engine.store_mut().retry_failed()?;
+        if !json {
+            println!("{} {n} failed section(s) queued again", st.ok("retry"));
+        }
+    }
     // Pending work includes sections left over from earlier runs (failures, interrupted
     // runs), not only what this run discovered.
     let pending_total = engine.store().counts()?.pending;
     let summarize = if args.no_summarize || pending_total == 0 {
         None
     } else {
-        Some(summarize(&mut engine, json, &st)?)
+        Some(summarize(&mut engine, json, &st, SummarizeOptions { limit: args.limit })?)
     };
 
     if json {
@@ -83,9 +95,14 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     } else if let Some(s) = &summarize {
         let usage = &s.pool.usage;
         println!(
-            "{} {} card(s) · {} failed · {} clean · {} date(s) and {} entit{} dropped by grounding · {} in / {} out tokens · ${:.4}",
+            "{} {} card(s){} · {} failed · {} clean · {} date(s) and {} entit{} dropped by grounding · {} in / {} out tokens · ${:.4}",
             st.ok("summarized"),
             s.ok,
+            if s.deterministic > 0 {
+                format!(" (+{} heading-only)", s.deterministic)
+            } else {
+                String::new()
+            },
             s.failed,
             s.clean,
             s.dropped_dates,
@@ -97,8 +114,17 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         );
         if s.failed > 0 {
             println!(
-                "  {} `mda status` lists failed sections; `mda index` retries them",
-                st.dim("hint:")
+                "  {} {} failed; `mda index --retry-failed` queues them again",
+                st.dim("hint:"),
+                s.failed
+            );
+        }
+        if s.deferred > 0 {
+            let why = if s.budget_exhausted { "daily token budget reached" } else { "--limit" };
+            println!(
+                "  {} {} section(s) still pending ({why}); run `mda index` again later",
+                st.dim("hint:"),
+                s.deferred
             );
         }
     } else if pending_total > 0 {
@@ -113,7 +139,12 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     Ok(if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS })
 }
 
-fn summarize(engine: &mut Engine, json: bool, st: &Style) -> anyhow::Result<SummarizeReport> {
+fn summarize(
+    engine: &mut Engine,
+    json: bool,
+    st: &Style,
+    opts: SummarizeOptions,
+) -> anyhow::Result<SummarizeReport> {
     let backend = Arc::new(ClaudeCli::new(engine.config()).context("preparing the claude worker")?);
     let cancel = CancellationToken::new();
     let ctrl_c = cancel.clone();
@@ -126,7 +157,7 @@ fn summarize(engine: &mut Engine, json: bool, st: &Style) -> anyhow::Result<Summ
 
     let quiet = json;
     let model = engine.config().summarization_model.clone();
-    let report = rt.block_on(engine.summarize_pending(backend, cancel, move |p| {
+    let report = rt.block_on(engine.summarize_pending(backend, cancel, opts, move |p| {
         if quiet {
             return;
         }

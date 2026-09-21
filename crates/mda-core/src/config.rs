@@ -33,7 +33,8 @@ pub enum Backend {
 pub struct Config {
     /// Model used for section and document cards. Any id `claude --model` accepts.
     pub summarization_model: String,
-    /// Model used when a section fails validation twice. `None` disables escalation.
+    /// Model tried once after the summarization model has failed twice on a section.
+    /// Defaults to `sonnet`; `None` disables escalation.
     pub escalation_model: Option<String>,
     /// Which process produces summaries.
     pub backend: Backend,
@@ -58,7 +59,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             summarization_model: "haiku".to_owned(),
-            escalation_model: None,
+            escalation_model: Some("sonnet".to_owned()),
             backend: Backend::default(),
             concurrency: None,
             daily_token_budget: None,

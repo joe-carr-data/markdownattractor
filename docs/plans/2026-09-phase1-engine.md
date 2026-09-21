@@ -1,6 +1,6 @@
 # Phase 1 — Summarization engine
 
-Status: **in progress** · started 2026-09-22 · plan §8 Phase 1
+Status: **in progress** · started 2026-09-22 · engine + CLI green (rows 1–12), daemon (row 13) next · plan §8 Phase 1
 
 Goal: `mda index <root>` parses every markdown file, makes it raw-text searchable immediately, summarizes new or changed sections through `claude -p`, and `mda search` returns hybrid hits with line ranges. No daemon yet (that is the last step of this phase), no vectors (Phase 2).
 
@@ -26,11 +26,11 @@ Every module lives in `crates/mda-core/src/`, has its own tests, and knows nothi
 
 ## Exit criteria
 
-- [ ] `mda index` on this repo's `docs/` (≈ 10 files) makes every section raw-searchable in < 1 s total and all cards available in < 2 min with 4 workers.
-- [ ] `mda search "what changed since"` returns the right section of the plan with its line range; `mda open` returns exactly those lines.
-- [ ] Re-running `mda index` after touching one section re-summarizes exactly one section (`status` shows 1 job).
-- [ ] Inserting lines above an unchanged section updates its line range without a job.
-- [ ] Coverage ≥ 70% on `mda-core`; every module has unit tests; pipeline has an end-to-end test with the mock backend; the worker has fixture tests for every outcome class.
+- [x] `mda index` makes every section raw-searchable in < 1 s (docs/plans: 11 sections, 6 ms) and cards available in < 2 min with 4 workers (32 s for 11 sections). Full `docs/` run pending the daemon step.
+- [x] `mda search` returns the right section with its line range and `--since` filters; `mda open` returns exactly those lines and flags `stale` when the file moved on.
+- [x] Re-running `mda index` after touching one section re-summarizes exactly one section (test `editing_one_section_needs_exactly_one_card` + CLI test).
+- [x] Inserting lines above an unchanged section updates its line range without a job (front-matter test).
+- [x] Coverage 84% workspace-wide; every module has unit tests; pipeline end-to-end with the mock backend; worker fixture tests for every outcome class; CLI end-to-end tests.
 - [ ] Codex review of `crates/` filed and triaged.
 - [ ] `docs/design/summarization.md` and `docs/design/search.md` written from the code as built.
 

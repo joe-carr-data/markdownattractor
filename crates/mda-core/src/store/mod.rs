@@ -1228,5 +1228,23 @@ fn to_i64(n: u64) -> i64 {
     i64::try_from(n).unwrap_or(i64::MAX)
 }
 
+impl Store {
+    /// Tokens and cost of every card attached at or after `since`. Backs the daily budget.
+    pub fn usage_since(&self, since: Timestamp) -> Result<Usage> {
+        let (input, output, cost): (i64, i64, f64) = self.conn.query_row(
+            "SELECT COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0),
+                    COALESCE(SUM(cost_usd), 0.0)
+             FROM summaries WHERE state = 'summarized' AND summarized_at >= ?1",
+            [fmt_ts(since)],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?;
+        Ok(Usage {
+            input_tokens: u64::try_from(input).unwrap_or(0),
+            output_tokens: u64::try_from(output).unwrap_or(0),
+            cost_usd: cost,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests;

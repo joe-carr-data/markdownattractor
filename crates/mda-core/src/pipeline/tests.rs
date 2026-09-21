@@ -68,7 +68,12 @@ async fn summarize_pending_attaches_validated_cards() {
     let backend = Arc::new(Mock::new().default_ok());
     let mut seen = Vec::new();
     let report = e
-        .summarize_pending(backend.clone(), CancellationToken::new(), |p| seen.push(p.done))
+        .summarize_pending(
+            backend.clone(),
+            CancellationToken::new(),
+            SummarizeOptions::default(),
+            |p| seen.push(p.done),
+        )
         .await
         .unwrap();
     assert_eq!(report.submitted, 2);
@@ -88,7 +93,10 @@ async fn summarize_pending_attaches_validated_cards() {
     assert!(hits.iter().any(|h| h.tldr.is_some()));
 
     // Nothing left to do; a second run submits nothing.
-    let again = e.summarize_pending(backend, CancellationToken::new(), |_| {}).await.unwrap();
+    let again = e
+        .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
     assert_eq!(again.submitted, 0);
 }
 
@@ -103,12 +111,52 @@ async fn failed_jobs_are_recorded_with_reason() {
 
     let backend =
         Arc::new(Mock::new().on(&hash, Outcome::Fatal { reason: "budget exhausted".into() }));
-    let report = e.summarize_pending(backend, CancellationToken::new(), |_| {}).await.unwrap();
+    let report = e
+        .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
     assert_eq!(report.failed, 1);
     let counts = e.store().counts().unwrap();
     assert_eq!(counts.failed, 1);
     let section = e.store().section(&format!("{}#0", out.upsert.doc_id)).unwrap().unwrap();
     assert_eq!(section.fail_reason.as_deref(), Some("budget exhausted"));
+}
+
+#[tokio::test]
+async fn limit_and_budget_defer_sections() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "l.md", "# A\n\none\n\n# B\n\ntwo\n\n# C\n\nthree\n");
+    e.index_file(&root.join("l.md")).unwrap();
+
+    let backend = Arc::new(Mock::new().default_ok());
+    let r = e
+        .summarize_pending(
+            backend.clone(),
+            CancellationToken::new(),
+            SummarizeOptions { limit: Some(2) },
+            |_| {},
+        )
+        .await
+        .unwrap();
+    assert_eq!(r.submitted, 2);
+    assert_eq!(r.deferred, 1);
+    assert!(!r.budget_exhausted);
+    assert_eq!(e.store().counts().unwrap().pending, 1);
+
+    // A budget smaller than one section's estimated cost submits nothing.
+    let cfg =
+        Config { daily_token_budget: Some(TOKENS_PER_SECTION_ESTIMATE / 2), ..Config::default() };
+    let mut e2 = Engine::with_parts(root.clone(), cfg, Store::open_in_memory().unwrap());
+    e2.index_file(&root.join("l.md")).unwrap();
+    let r2 = e2
+        .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
+    assert_eq!(r2.submitted, 0);
+    assert_eq!(r2.deferred, 3);
+    assert!(r2.budget_exhausted);
 }
 
 #[test]

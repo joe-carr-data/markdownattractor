@@ -561,7 +561,7 @@ fn command_line_matches_adr_0001() {
         ]
     );
     assert!(cli.scratch_dir().is_dir());
-    assert_eq!(PROMPT_VERSION, "section.v1");
+    assert_eq!(PROMPT_VERSION, "section.v2");
 }
 
 #[test]
@@ -607,7 +607,10 @@ mod fake_binary {
         assert_eq!(usage.input_tokens, 2530);
         assert_eq!(usage.model, "claude-haiku-4-5-20251001");
         assert!(usage.wall_ms < 5_000);
-        assert_eq!(std::fs::read_to_string(&stdin_copy).unwrap(), request.text);
+        let received = std::fs::read_to_string(&stdin_copy).unwrap();
+        assert_eq!(received, super::user_message(&request), "stdin carries the delimited section");
+        assert!(received.starts_with("<section path=\""));
+        assert!(received.contains(&request.text));
         let env = std::fs::read_to_string(&env_copy).unwrap();
         assert!(env.lines().any(|l| l == "MAX_THINKING_TOKENS=0"), "{env}");
         assert!(env.lines().any(|l| l == "MARKDOWNATTRACTOR_WORKER=1"), "{env}");

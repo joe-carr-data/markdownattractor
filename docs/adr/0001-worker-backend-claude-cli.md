@@ -1,6 +1,6 @@
 # ADR-0001 — Summarization workers spawn `claude -p` with thinking disabled and structured output
 
-Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spike.md`
+Status: **Accepted** · 2026-09-22 (amended same day, see §Amendments) · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spike.md`
 
 ## Context
 
@@ -32,6 +32,12 @@ The structured-output failures came from Haiku writing the JSON as text on turn 
 - A future Claude Code release could change flag behaviour; `mda doctor` verifies the flags and the `--version`, and CI runs a smoke test against the latest CLI when a login is available.
 - If Anthropic's policy answer (spike exit criterion, still open) forbids spawning the CLI from a plugin, the `api` backend becomes the default and the README's "no API key" line goes; the code path does not change.
 - Fable-class models cannot have thinking disabled; they are never valid summarization models. `mda summarization_model` rejects them with a message.
+
+## Amendments
+
+- **2026-09-22 — data delimiters and prompt v2.** The first live run showed that a section whose content looks like instructions (a code block with a `claude -p … --json-schema` line) makes Haiku ask for "the section" instead of summarizing it. The user message is now `<section path="…" heading="…">…</section>` and the prompt states that everything inside is data. 6/6 on the failing chunk afterwards; `PROMPT_VERSION = section.v2`.
+- **2026-09-22 — escalation defaults to Sonnet.** `escalation_model` defaults to `sonnet`: after two Haiku failures on a section, one Sonnet attempt. Sonnet costs ~3× per call but only runs on the sections Haiku cannot handle, so the blended cost stays close to Haiku's.
+- **2026-09-22 — heading-only sections never reach the model.** They get a deterministic card (tldr = the heading) so they are searchable and cost nothing.
 
 ## Alternatives considered
 
