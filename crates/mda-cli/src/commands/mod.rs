@@ -3,13 +3,16 @@
 
 pub mod backend;
 pub mod card;
+pub mod cost;
 pub mod daemon;
+pub mod diagnostics;
 pub mod doctor;
 pub mod embeddings;
 pub mod eval;
 pub mod explain;
 pub mod index;
 pub mod mcp;
+pub mod nudge;
 pub mod open;
 pub mod parse;
 pub mod pause;

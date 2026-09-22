@@ -77,6 +77,12 @@ enum Command {
     Mcp(commands::mcp::Args),
     /// Retrieval metrics (recall@k, MRR) on a golden set, offline.
     Eval(commands::eval::Args),
+    /// What summarization cost, per day and per model, from the usage ledger.
+    Cost(commands::cost::Args),
+    /// Write a redacted diagnostics bundle to attach to an issue.
+    Diagnostics(commands::diagnostics::Args),
+    /// Turn the "search first" reminder on or off (per root, or --global).
+    Nudge(commands::nudge::Args),
     /// The daemon process itself (spawned by `start`).
     #[command(hide = true)]
     Daemon(commands::daemon::Args),
@@ -120,6 +126,9 @@ fn main() -> ExitCode {
         Command::Embeddings(args) => commands::embeddings::run(&args, cli.json),
         Command::Mcp(args) => commands::mcp::run(&args, cli.json),
         Command::Eval(args) => commands::eval::run(&args, cli.json),
+        Command::Cost(args) => commands::cost::run(&args, cli.json),
+        Command::Diagnostics(args) => commands::diagnostics::run(&args, cli.json),
+        Command::Nudge(args) => commands::nudge::run(&args, cli.json),
         Command::Daemon(args) => commands::daemon::run(&args, cli.json),
     };
 

@@ -373,3 +373,165 @@ fn doctor_reports_missing_api_key() {
     assert_eq!(backend["status"], "fail");
     assert!(backend["detail"].as_str().unwrap().contains("ANTHROPIC_API_KEY"));
 }
+
+#[test]
+fn index_accepts_a_directory_as_the_root() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    mda()
+        .args(["index", "--no-summarize"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("indexed 2 file(s)"));
+    assert!(root.join(".markdownattractor/index.sqlite").exists());
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .arg(root)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("not both"));
+}
+
+#[test]
+fn cost_reads_the_ledger_and_honours_since() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    let out = mda()
+        .args(["--json", "cost", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    assert_eq!(v["window"]["calls"], 0);
+    assert_eq!(v["rows"].as_array().unwrap().len(), 0);
+    assert!(v["tokens_saved"].is_null());
+    mda()
+        .args(["cost", "--since", "7d", "--root"])
+        .arg(root)
+        .env("NO_COLOR", "1")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("since 7d"))
+        .stdout(predicate::str::contains("nothing in the ledger"))
+        .stdout(predicate::str::contains("not measured yet"));
+    mda().args(["cost", "--since", "nonsense", "--root"]).arg(root).assert().failure();
+}
+
+#[test]
+fn nudge_switches_the_root_and_the_global_marker() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    let marker = root.join("data").join("nudge.off");
+    let mut cmd = mda();
+    cmd.env("MDA_NUDGE_FILE", &marker).env("NO_COLOR", "1");
+    let out = cmd
+        .args(["--json", "nudge", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    assert_eq!(v["nudge"], true);
+    assert_eq!(v["global_off"], false);
+    assert_eq!(v["effective"], true);
+    assert_eq!(v["global_marker"], marker.to_str().unwrap());
+
+    // Per root: config.toml carries it.
+    mda()
+        .env("MDA_NUDGE_FILE", &marker)
+        .env("NO_COLOR", "1")
+        .args(["nudge", "off", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("nudge set for this root: off"));
+    let cfg = std::fs::read_to_string(root.join(".markdownattractor/config.toml")).unwrap();
+    assert!(cfg.contains("nudge = false"), "{cfg}");
+    assert!(!marker.exists());
+
+    // Global: the marker file.
+    let out = mda()
+        .env("MDA_NUDGE_FILE", &marker)
+        .args(["--json", "nudge", "off", "--global", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    assert!(marker.is_file());
+    assert_eq!(v["global_off"], true);
+    assert_eq!(v["effective"], false);
+    mda()
+        .env("MDA_NUDGE_FILE", &marker)
+        .args(["nudge", "on", "--global", "--root"])
+        .arg(root)
+        .assert()
+        .success();
+    assert!(!marker.exists());
+    let out = mda()
+        .env("MDA_NUDGE_FILE", &marker)
+        .args(["--json", "nudge", "on", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    assert_eq!(json_of(&out)["effective"], true);
+}
+
+#[test]
+fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    write(
+        root,
+        ".markdownattractor/config.toml",
+        "api_workspace_id = \"wrkspc_secret\"\nembeddings = \"off\"\n",
+    );
+    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    let out = mda()
+        .args(["diagnostics", "--root"])
+        .arg(root)
+        .env("HOME", root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let text = String::from_utf8(out.clone()).unwrap();
+    assert!(!text.contains("wrkspc_secret"), "workspace id redacted: {text}");
+    assert!(!text.contains(root.to_str().unwrap()), "home redacted: {text}");
+    let v = json_of(&out);
+    assert_eq!(v["config"]["api_workspace_id"], "<redacted>");
+    assert_eq!(v["root"], "~");
+    assert_eq!(v["store"]["counts"]["docs"], 2);
+    assert!(v["doctor"].as_array().unwrap().iter().any(|c| c["name"] == "backend"));
+    assert!(v["daemon"].is_null());
+    assert_eq!(v["mda_version"], env!("CARGO_PKG_VERSION"));
+
+    let out_file = root.join("bundle.json");
+    mda()
+        .args(["diagnostics", "--out"])
+        .arg(&out_file)
+        .arg("--root")
+        .arg(root)
+        .env("NO_COLOR", "1")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("bundle written"));
+    let v: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&out_file).unwrap()).unwrap();
+    assert_eq!(v["os"], std::env::consts::OS);
+}

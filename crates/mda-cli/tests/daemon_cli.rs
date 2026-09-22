@@ -74,8 +74,10 @@ fn start_status_index_pause_resume_stop() {
     assert!(status(&root)["daemon"].is_null());
 
     // Bounded: a `start` whose output never reaches EOF is a bug, not something to wait on.
+    // A first run waits for cards to show an example query; the backend here never answers,
+    // so a short bound is used and the skip reason is reported instead.
     let out = mda()
-        .args(["--json", "start", "--root"])
+        .args(["--json", "start", "--example-timeout", "1", "--root"])
         .arg(&root)
         .timeout(Duration::from_secs(30))
         .assert()
@@ -87,13 +89,20 @@ fn start_status_index_pause_resume_stop() {
     let v = json_of(&out);
     assert_eq!(v["started"], true);
     assert_eq!(v["files"], 1);
+    assert!(v["example"].is_null());
+    assert!(
+        v["example_skipped"].as_str().unwrap().contains("no cards after 1s"),
+        "{}",
+        v["example_skipped"]
+    );
     let pid = v["pid"].as_u64().unwrap();
     assert!(root.join(".markdownattractor/daemon.pid").exists());
     assert!(root.join(".markdownattractor/logs").is_dir());
 
-    // Starting again is idempotent.
+    // Starting again is idempotent (and never waits for an example).
     mda()
         .args(["start", "--root"])
+        .timeout(Duration::from_secs(10))
         .arg(&root)
         .assert()
         .success()
@@ -170,6 +179,28 @@ fn start_status_index_pause_resume_stop() {
         .arg(&root)
         .assert()
         .stdout(predicate::str::contains("running · pid"));
+
+    // diagnostics carries the live daemon and the log tail, with the home directory redacted.
+    let out = mda()
+        .args(["diagnostics", "--root"])
+        .arg(&root)
+        .env("HOME", dir.path())
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let d = json_of(&out);
+    assert_eq!(d["daemon"]["pid"], pid);
+    assert!(
+        d["daemon_log_tail"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|l| l.as_str().unwrap().contains("daemon started"))
+    );
+    assert!(!String::from_utf8_lossy(&out).contains(dir.path().to_str().unwrap()), "home redacted");
+    assert_eq!(d["daemon"]["root"], "~");
 
     // stop: files gone, status shows not running, cards left pending for the next start.
     mda()
