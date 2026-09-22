@@ -67,7 +67,14 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
                 "not downloaded yet (first `mda index` or `mda rebuild --embeddings` fetches it)"
             }
         ),
-        None => println!("{} {} · search is lexical only", st.ok(verb), st.accent("off")),
+        None if cfg.embeddings == Embeddings::Off => {
+            println!("{} {} · search is lexical only", st.ok(verb), st.accent("off"));
+        }
+        None => println!(
+            "{} {} · this binary was built without the `embeddings` feature; search is lexical only",
+            st.ok(verb),
+            st.accent(cfg.embeddings.as_str())
+        ),
     }
     if running {
         println!("  {} the daemon keeps its current setting until `mda restart`", st.warn("note:"));
