@@ -249,24 +249,27 @@ fn open_after_prepend_returns_current_id_and_refreshes_store() {
 fn paths_cannot_escape_the_root() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
-    let mut e = engine_in(&root);
-    assert!(
-        e.rel_path(&root.join("../x.md")).is_err() || e.rel_path(&root.join("../x.md")).is_ok()
-    );
+    let e = engine_in(&root);
+    assert!(matches!(e.rel_path(&root.join("../x.md")), Err(Error::NotFound(_))));
+    assert!(matches!(e.rel_path(Path::new("/x.md")), Err(Error::NotFound(_))));
     assert!(matches!(e.safe_join("../etc/passwd"), Err(Error::NotFound(_))));
     assert!(matches!(e.safe_join("/etc/passwd"), Err(Error::NotFound(_))));
     assert!(e.safe_join("missing.md").is_err(), "must exist to be joined");
+}
 
-    #[cfg(unix)]
-    {
-        let outside = tempfile::tempdir().unwrap();
-        let target = write(outside.path(), "secret.md", "# Secret\n\nkeys\n");
-        std::os::unix::fs::symlink(&target, root.join("link.md")).unwrap();
-        let err = e.index_file(&root.join("link.md")).unwrap_err();
-        assert!(matches!(err, Error::NotFound(_)), "{err}");
-        assert!(matches!(e.safe_join("link.md"), Err(Error::NotFound(_))));
-        assert_eq!(e.index_root().unwrap().files, 0, "walker skips the symlink too");
-    }
+#[cfg(unix)]
+#[test]
+fn symlinks_out_of_the_root_are_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let outside = tempfile::tempdir().unwrap();
+    let target = write(outside.path(), "secret.md", "# Secret\n\nkeys\n");
+    std::os::unix::fs::symlink(&target, root.join("link.md")).unwrap();
+    let err = e.index_file(&root.join("link.md")).unwrap_err();
+    assert!(matches!(err, Error::NotFound(_)), "{err}");
+    assert!(matches!(e.safe_join("link.md"), Err(Error::NotFound(_))));
+    assert_eq!(e.index_root().unwrap().files, 0, "walker skips the symlink too");
 }
 
 #[test]
