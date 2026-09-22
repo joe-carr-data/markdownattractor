@@ -31,3 +31,22 @@ One `Engine` behind a mutex, one optional embedder built from the config. stdout
 ## Tested
 
 `crates/mda-cli/tests/mcp_cli.rs` spawns the real binary through an `rmcp` client, lists the tools and exercises every one on an indexed temporary root.
+
+## Watched live in Claude Code (2026-09-22)
+
+Headless session on a scratch copy of this repository's `docs/` (indexed raw-only first), with the plugin loaded from the checkout:
+
+```
+claude -p "<call mda_status, then mda_search …>" --plugin-dir /Users/jcarr/markdownattractor \
+  --allowedTools "mcp__plugin_markdownattractor_markdownattractor__*" --output-format stream-json --verbose
+```
+
+What the transcript showed:
+
+- The `init` event lists the server as `plugin:markdownattractor:markdownattractor`, status `connected`, and the plugin as `markdownattractor@inline` (the identity of a `--plugin-dir` plugin; its data directory is `~/.claude/plugins/data/markdownattractor-inline/`, a marketplace install gets `markdownattractor-markdownattractor/`). The seven tools are listed as `mcp__plugin_markdownattractor_markdownattractor__mda_{card,open,recent,search,stale,status,timeline}`.
+- The SessionStart hook copied the local release build into `${CLAUDE_PLUGIN_DATA}/bin/mda` (path 3 of `bootstrap.sh`) and, once the `--no-example` flag existed in the binary, started the daemon for the root.
+- Claude loaded the two tools through `ToolSearch` (MCP tools are deferred in that build), called `mda_status`, then `mda_search` with `k=3`, and answered with the hit's `rel_path`, heading path and line range verbatim. Four turns, no file reads.
+- `mda_status.embeddings.ready` was `false`: the plugin's model directory is `${CLAUDE_PLUGIN_DATA}/models`, empty until the first embedding pass (daemon or `mda index`) downloads the model. A query never downloads, as designed; until then the hits are lexical.
+- One first-run bug surfaced on the way: `mda index .` treated `.` as a file and failed with "is a directory". A directory argument is now the root.
+
+The `.mcp.json` placeholders (`${CLAUDE_PLUGIN_ROOT}`, `${CLAUDE_PROJECT_DIR}`, `${CLAUDE_PLUGIN_DATA}`) were substituted as the plugin reference describes; no change was needed there.
