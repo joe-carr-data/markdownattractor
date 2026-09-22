@@ -28,7 +28,7 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] Skill and README updated for the new commands; CHANGELOG.
 - [ ] Codex review of the first-run PR, triaged; merge.
 - [x] ADR-0005 release pipeline; `release.yml`; `check-version.sh` in CI; `bump-version.sh`; `bootstrap.sh` Windows archive; `bootstrap.sh` installs a locally mirrored `mda-darwin-arm64.tar.gz` + `SHA256SUMS` on this machine (`mda --version` matches). Dry run of the workflow itself: see the PR (`workflow_dispatch` on the branch).
-- [ ] A/B protocol: questions with reference answers, runner, grader, first numbers on the golden corpus, benchmarks page updated with the parity gate.
+- [x] A/B protocol: `evals/ab/questions.jsonl` (12, with references), `scripts/eval/ab.sh`, `scripts/eval/grade.sh`, first numbers on the golden corpus in `docs/benchmarks.md` and `evals/ab/results/`: 12/12 parity, index reads *more* source tokens on the tiny corpus (recorded, not hidden).
 - [ ] Docs: STATUS, aha, index, `design/commands.md` (new: the command surface as built), CHANGELOG.
 
 ## Exit criteria
@@ -38,7 +38,7 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] `mda cost`, `mda diagnostics`, `mda nudge` exist, have `--json`, and are covered by CLI tests; `diagnostics` output contains neither the home directory nor the workspace id.
 - [ ] A tag build produces the five archives and `SHA256SUMS` (pending the first `workflow_dispatch` run); `scripts/bootstrap.sh` installed the darwin-arm64 archive on this machine from a local mirror of the release layout and `mda --version` matched `VERSION` (done 2026-09-22).
 - [x] `check-version.sh` runs in CI and fails on a mismatch (verified locally with a wrong tag; the CI job runs the same script).
-- [ ] The A/B table exists in `docs/benchmarks.md` with the parity gate applied, or the page says the protocol has not run yet and why. No token-saving number in the README without it.
+- [x] The A/B table exists in `docs/benchmarks.md` with the parity gate applied (golden corpus: parity 12/12, no saving). The README makes no token-saving number claim.
 
 ## Decisions taken in this phase
 

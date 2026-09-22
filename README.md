@@ -124,7 +124,7 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 - **Local only.** No cloud, no hosted service, no telemetry. The only network calls are the summarization requests to the API with your key (none at all on the local backend), and the one-time download of the embedding model.
 - **Grounded metadata.** 100% of dates and entities in the index are backed by text in the source.
 - **Fallback that works.** Cards are plain markdown on disk. With MCP off, `Grep` over `cards/` still works.
-- **Honest benchmarks.** Token savings are only reported for queries where the with-index answer is at least as correct as the baseline. Corpora are named before results exist, and the small-repo numbers get published even when the gain is nil.
+- **Honest benchmarks.** Token savings are only reported for queries where the with-index answer is at least as correct as the baseline. Corpora are named before results exist, and the small-repo numbers get published even when the gain is nil: the first A/B run, on the 450-line golden corpus, reached parity on 12 of 12 questions and saved nothing ([benchmarks](docs/benchmarks.md)).
 
 ## How it compares
 
