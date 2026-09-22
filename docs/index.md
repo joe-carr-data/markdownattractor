@@ -11,6 +11,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [plans/2026-09-phase1-engine.md](plans/2026-09-phase1-engine.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1 |
 | 2026-09-22 | [plans/2026-09-phase1-daemon.md](plans/2026-09-phase1-daemon.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1, row 13 of `2026-09-phase1-engi… |
 | 2026-09-22 | [plans/2026-09-phase0-spike.md](plans/2026-09-phase0-spike.md) | Status: **done (measurements)** · one exit criterion open (login policy) · 2026-09-21 |
+| 2026-09-22 | [plans/2026-09-benchmarks.md](plans/2026-09-benchmarks.md) | Status: **draft for review** · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchma… |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
