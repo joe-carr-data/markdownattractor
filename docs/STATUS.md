@@ -12,7 +12,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Release pipeline (ADR-0005): `release.yml` (five archives, `SHA256SUMS`, `bootstrap.sh` install gate, conditional notarisation), `check-version.sh` in CI, `bump-version.sh`; local mirror install verified; Codex first-run review 8/8 triaged and fixed.
 
 ## Next (max 3, in order)
-1. Benchmark plan (`docs/plans/2026-09-benchmarks.md`, v3.2, accepted; every model call through the owner's Claude Code login, §0a.3): B0b leaner hit payload, then B0 harness hardening and the B2 DocsQA ingestion gate (the four repos are cloned at their pinned commits under `~/.cache/markdownattractor/bench/`, the dataset under `bench/docsqa-data`).
+1. Benchmark plan (`docs/plans/2026-09-benchmarks.md`, v3.2, accepted; every model call through the owner's Claude Code login, §0a.3): B0 harness hardening (DocsQA adapter `mda eval --dataset docsqa`, split tool, transcript token counts, `FROZEN.md`, `panel.sh`) and the B2 DocsQA ingestion gate (the four repos are cloned at their pinned commits under `~/.cache/markdownattractor/bench/`, the dataset under `bench/docsqa-data`; every qrel maps to a file there).
 2. Launch checklist (plan §8 Phase 4): README leads with the one-line install (`/plugin install markdownattractor --marketplace joe-carr-data/markdownattractor`) and drops the "not released yet" note; short demo; submit to `claude-plugins-community`; recruit design partners.
 3. Owner decisions: Apple notarisation secrets; read ledger (schema v4) for `cost`/`status` savings and hit rate. Follow-ups: subtree `index`, live config reload, socket peer auth, time-filter evals, hybrid latency.
 
