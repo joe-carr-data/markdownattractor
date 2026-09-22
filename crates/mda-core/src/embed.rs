@@ -6,13 +6,17 @@
 //! pipeline decides what to embed and where to put it.
 
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::Arc;
+#[cfg(feature = "embeddings")]
+use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "embeddings")]
+use crate::Error;
+use crate::Result;
 use crate::card::SectionSummary;
 use crate::config::{Config, Embeddings};
-use crate::{Error, Result};
 
 /// Name stored with every vector produced by [`LocalEmbedder`]. Changing the model means
 /// changing this string, which invalidates every stored vector.
