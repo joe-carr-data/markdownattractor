@@ -91,6 +91,28 @@ impl Backend {
     }
 }
 
+/// Which embedding model produces card vectors (ADR-0004).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum Embeddings {
+    /// `bge-small-en-v1.5` quantised through fastembed: 384 dimensions, ~33 MB, CPU. Default.
+    #[default]
+    LocalSmall,
+    /// No vectors: search is lexical only and no model is ever downloaded.
+    Off,
+}
+
+impl Embeddings {
+    /// Stable name used in `--json` output and `mda embeddings`.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::LocalSmall => "local-small",
+            Self::Off => "off",
+        }
+    }
+}
+
 /// Top-level configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -132,6 +154,11 @@ pub struct Config {
     pub retention_days: Option<u32>,
     /// Inject a one-line reminder when Claude is about to `Grep`/`Read` a markdown file.
     pub nudge: bool,
+    /// Which embedding model to use for the vector list, or `off`.
+    pub embeddings: Embeddings,
+    /// Where embedding models are cached. `None` means `$MDA_MODEL_DIR`, then
+    /// `${CLAUDE_PLUGIN_DATA}/models`, then `~/.cache/markdownattractor/models`.
+    pub embedding_cache_dir: Option<PathBuf>,
 }
 
 impl Default for Config {
@@ -160,6 +187,8 @@ impl Default for Config {
             ],
             retention_days: None,
             nudge: true,
+            embeddings: Embeddings::default(),
+            embedding_cache_dir: None,
         }
     }
 }
