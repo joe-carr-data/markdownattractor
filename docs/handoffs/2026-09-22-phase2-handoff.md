@@ -6,15 +6,15 @@ Claude Code session: https://claude.ai/code/session_016dTZj7CmBSJeFLDCwUCxEF · 
 
 ## 0. One-paragraph state
 
-Phase 1 is **complete and merged** (PR #4 daemon/watcher, PR #5 Windows hotfix): `mda start` keeps a folder's index live, with save→raw-searchable in 1.3 s and save→card in 4.6 s measured on this repo's docs with Haiku through the `api` backend. Phase 2 is **built, tested and up as PR #6** (`feat/phase2-search`, head `a8d17ed` at the time of writing): local card embeddings (fastembed bge-small, static ONNX Runtime) fused as a third list, `mda explain|timeline|recent|stale|rebuild|embeddings|eval|mcp`, an MCP server with seven tools declared in the plugin's `.mcp.json`, and a golden set where hybrid success@5 is 0.983 against 0.883 lexical. 256 tests, clippy pedantic clean, cargo-deny clean, CI green on main for all three OSes. The Codex review of Phase 2 is filed and addressed (17 findings); PR #6's CI is the last gate (§9).
+Phase 1 is **complete and merged** (PR #4 daemon/watcher, PR #5 Windows hotfix): `mda start` keeps a folder's index live, with save→raw-searchable in 1.3 s and save→card in 4.6 s measured on this repo's docs with Haiku through the `api` backend. Phase 2 is **merged** (PR #6, main `28fafa6`; Codex review triaged and fixed, CI green on all three OSes): local card embeddings (fastembed bge-small, static ONNX Runtime) fused as a third list, `mda explain|timeline|recent|stale|rebuild|embeddings|eval|mcp`, an MCP server with seven tools declared in the plugin's `.mcp.json`, and a golden set where hybrid success@5 is 0.983 against 0.883 lexical. 256 tests, clippy pedantic clean, cargo-deny clean, CI green on main for all three OSes. The Codex review of Phase 2 is filed and addressed (17 findings); PR #6's CI is the last gate (§9).
 
 ## 1. Repo, branches, PRs
 
 | Item | State |
 |---|---|
 | Repo | https://github.com/joe-carr-data/markdownattractor (private) |
-| `main` | `19b0b0c` = Phase 1 daemon (#4) + Windows hotfix (#5). CI green on ubuntu, macOS, Windows, MSRV 1.89, coverage, deny, rustdoc, shellcheck. |
-| `feat/phase2-search` | PR #6, head `a8d17ed` (+ any review-fix commits after this file). Merge when CI is green and the Codex triage is filed. |
+| `main` | `28fafa6` = Phase 1 daemon (#4) + Windows hotfix (#5) + Phase 2 search layer (#6). CI green on ubuntu, macOS, Windows, MSRV 1.89, coverage, deny, rustdoc, shellcheck. |
+| `feat/phase2-search` | PR #6, merged as `28fafa6`. |
 | Old branches | `feat/daemon`, `fix/windows-start` merged, not deleted. |
 | Codex threads | Daemon review: thread `01a0c77b-6ce4-7712-b2bd-c8baf7221a12` (`docs/reviews/codex/2026-09-22-daemon.md`). Phase 2 review: thread `01a0c7cc-43c4-7452-b6c4-69f819526fd3`, 17 findings triaged and addressed in `docs/reviews/codex/2026-09-22-phase2.md`. |
 | MSRV | **1.89** (`File::try_lock`), `Cargo.toml`, `clippy.toml`, CI `msrv` job. |
@@ -94,7 +94,7 @@ Measurement scripts must be `bash`, not zsh: zsh does not word-split unquoted va
 
 ## 8. Next steps, in order
 
-1. **Finish PR #6**: make CI green on all OSes (first run with ONNX Runtime on Windows/MSRV/coverage: expect surprises), merge. The Codex triage is done.
+1. **Phase 2 is merged.** Watch the plugin load in Claude Code once (`/reload-plugins`, call `mda_search`).
 2. **First-run UX** (plan §9.5): `mda start` runs one example query when the first cards land; `mda cost`, `mda diagnostics`, `mda nudge on|off` (`${CLAUDE_PLUGIN_DATA}/nudge.off`).
 3. **Release pipeline** (Phase 4): cargo-dist, GitHub Releases with `SHA256SUMS` that `scripts/bootstrap.sh` verifies, notarisation; bump `VERSION`, `plugin.json`, `marketplace.json` together.
 4. **A/B parity protocol** (plan §11): with/without index through `claude -p`, Sonnet-graded; only then claim token savings.
