@@ -15,6 +15,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
+| 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
 | 2026-09-22 | [design/distribution.md](design/distribution.md) | As built in Phase 4 (2026-09-22). Decisions: ADR-0005. This document describes *what the pipeline… |
 | 2026-09-22 | [design/daemon.md](design/daemon.md) | As built at the end of Phase 1 (2026-09-22). Decisions and their reasons: ADR-0003. This document… |
 | 2026-09-22 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
@@ -33,7 +34,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [handoffs/2026-09-22-session-handoff.md](handoffs/2026-09-22-session-handoff.md) | Written by Claude (Fable 5.1) at the end of the first build session, for the next session after c… |
 | 2026-09-22 | [handoffs/2026-09-22-phase4-handoff.md](handoffs/2026-09-22-phase4-handoff.md) | Written by Claude (Fable 5.1) at the end of the third build session, for the next session after c… |
 | 2026-09-22 | [handoffs/2026-09-22-phase2-handoff.md](handoffs/2026-09-22-phase2-handoff.md) | Written by Claude (Fable 5.1) at the end of the second build session, for the next session. **Rea… |
-| 2026-09-22 | [handoffs/2026-09-22-2008-auto.md](handoffs/2026-09-22-2008-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-09-22 | [handoffs/2026-09-22-2226-auto.md](handoffs/2026-09-22-2226-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 | 2026-09-22 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |

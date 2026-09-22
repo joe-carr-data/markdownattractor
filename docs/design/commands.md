@@ -19,7 +19,7 @@ As built through Phase 4 (2026-09-22). One line per command: what it does, what 
 |---|---|---|
 | `index [path\|dir] [--no-summarize] [--retry-failed] [--limit n]` | Parses and indexes (a file, or a directory as the root), then summarizes pending sections and embeds new cards. Delegates to a running daemon. | Summarizes a hash twice. |
 | `rebuild --embeddings` | Re-embeds every card with the configured model (downloads it once). | |
-| `parse <file>` · `schema section` | Inspection helpers. | Touches the store. |
+| `parse <file>` · `schema section` | Inspection helpers (`parse` takes `.md`, `.markdown` or `.mdx`; `design/ingestion.md`). | Touches the store. |
 
 ## Search
 

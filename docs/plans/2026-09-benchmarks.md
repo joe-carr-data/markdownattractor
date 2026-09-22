@@ -81,7 +81,8 @@ The benchmark is versioned by `mda` release: axis A reruns in CI on every tag; B
 ## 5. Tasks
 
 - [ ] B0 Harness: dataset adapters (`mda eval --dataset docsqa <dir>` with page-level aggregation and coverage report); `ab.sh` per-arm manifests, fail-loud validation, transcript-counted tokens (rule 0.7), conventional medians, smoke tests with traces; `grade.sh` through `claude -p` (no API key), grounding check and schema validation; `FROZEN.md` writer; dev/test split tool.
-- [ ] B0a `.mdx` ingestion; B0b leaner hit payload (both PRs before B2).
+- [x] B0a `.mdx` ingestion (walker, parser: leading ESM block excluded, headings inside JSX blocks kept, title fallbacks; `docs/design/ingestion.md`; checked on all four DocsQA corpora at the pinned commits).
+- [ ] B0b leaner hit payload (PR before B2).
 - [ ] B1 Own corpora, mda vs grep (axes B, E), break-even size.
 - [ ] B2 DocsQA ingestion gate, then axis A (all four projects, all arms) and axis B on the frozen 25-question test sample per project.
 - [ ] B3 Freshness on Prisma (axis C), three distributions, all arms.
