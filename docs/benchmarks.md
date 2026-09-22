@@ -38,7 +38,23 @@ The MCP server keeps the model loaded, so a tool call pays the ≈ 50 ms embeddi
 | Haiku via `api`, 10 sections | 15 s wall, 1 turn each, $0.043 |
 | Embedding 162 cards with bge-small (first run, includes the 33 MB download) | 38 s |
 
+## Answer-quality A/B with the parity gate (plan §11) — golden corpus, 2026-09-22
+
+`scripts/eval/ab.sh` runs each of the 12 questions in `evals/ab/questions.jsonl` through headless `claude -p` (Sonnet) twice: **baseline** (Read, Grep, Glob over the corpus) and **index** (the same plus the `mda` MCP server and the search-first rules). `scripts/eval/grade.sh` scores both answers against a reference with Sonnet (correctness + completeness, 0–6). Savings count only where the index answer scores at least the baseline. Full table: `evals/ab/results/2026-09-22-golden.md`.
+
+| | baseline | index |
+|---|---|---|
+| Parity (index score ≥ baseline) | | **12 of 12** |
+| Median source tokens read per answer (what the tools returned) | **341** | 1,305 |
+| Median total input tokens per answer (incl. system prompt, tool schemas) | 38,141 | 32,548 |
+| Mean tool calls | 2.4 | 1.6 |
+| Mean wall-clock | 8.2 s | 6.9 s |
+| Total cost, 12 questions | $0.215 | $0.269 |
+
+**The index does not save source tokens on this corpus, and this page says so.** The golden set is 32 files and 450 lines: one `Grep` and one `Read` fetch the answer in a few hundred tokens, while eight search hits with their cards are about 1,300 tokens whatever the corpus size. Answer quality was the same in both arms (the four sub-perfect grades were the same omissions on both sides). Fewer turns and less wall-clock with the index are real but small. G3 (≥ 5× fewer source tokens at parity) is a claim about corpora where grep-and-read costs thousands of tokens per question; it has not been measured on one yet, and the README makes no token-saving claim until it has.
+
+Two levers the numbers point at: a leaner hit payload (`k` and per-hit fields are the whole 1,300), and corpora of realistic size (the plan's ≥ 5 corpora from ~50 to ~5K docs, still to be named).
+
 ## Not measured yet
 
-- The answer-quality A/B parity protocol (plan §11): same question with and without the index through `claude -p`, Sonnet-graded, tokens and tool calls compared. No token-saving claim is made until it runs.
-- Corpora beyond this repository's docs and the golden set.
+- The A/B protocol on corpora beyond the golden set (design-partner repos; this repository's own `docs/` is a candidate at 28 files / 5K lines).

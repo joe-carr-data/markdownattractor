@@ -10,3 +10,17 @@ mda eval --golden evals/golden --record        # summarize the corpus with the c
 Numbers live in `docs/benchmarks.md`. The corpus is fixed: do not edit documents to make a query pass; add a query instead and report it.
 
 `spike/` holds the Phase 0 measurement scripts.
+
+## A/B parity protocol (`ab/`)
+
+Plan §11: the same question through headless `claude -p`, once **without** the index (Claude has `Read`, `Grep`, `Glob` over the corpus) and once **with** it (the same tools plus the `mda` MCP server and the search-first rules), N runs each; every answer is graded against a reference by Sonnet (correctness 0–3, completeness 0–3); token savings are only reported for questions where the with-index score is at least the baseline's.
+
+```
+mda index <corpus>                                    # cards + vectors first; the daemon may run
+scripts/eval/ab.sh <corpus> evals/ab/questions.jsonl <out> [runs=1] [model=sonnet]
+scripts/eval/grade.sh evals/ab/questions.jsonl <out>  # needs ANTHROPIC_API_KEY; writes <out>/parity.md
+```
+
+`ab/questions.jsonl` holds one question per line with a reference answer written from the golden corpus and the sections it comes from. Two numbers per run: **source tokens** (the size of everything the tools returned: file contents in the baseline, cards and sections with the index; the quantity G3 is about) and **total input tokens** (which also count the system prompt and the tool schemas, so the MCP arm starts with a fixed overhead). Runs use the owner's own Claude Code session; that is ordinary use and is not how the product summarizes anything (ADR-0002).
+
+Small corpora are reported even when the index loses. On the golden corpus (32 files, 450 lines) it does: one `Grep` and one `Read` cost fewer source tokens than eight hits. See `docs/benchmarks.md`.
