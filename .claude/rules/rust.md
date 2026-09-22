@@ -33,3 +33,10 @@
 - Spend is a ledger, not a property of success: anything that calls a model records its usage whatever the outcome.
 - "Not seen this round" is not "deleted". Tombstone only on confirmed absence.
 - Child processes: write stdin, drain stdout and stderr, and wait — concurrently, under a timeout.
+
+## From the 2026-09-22 Codex daemon review
+- A watcher event is a hint, never a fact, and reads are not events: filter `Access` at the source, then look at the filesystem.
+- Read-then-write store transactions begin `IMMEDIATE` (`Store::write_tx`); the busy timeout cannot rescue a deferred upgrade.
+- A stopped run is not a failed section: cancel, stop and pool-stopping outcomes defer; only the model's answer or the validator fails a section.
+- Exclusivity is an OS file lock, never "does the socket answer".
+- Every file under `.markdownattractor/` is created through `config::write_private` / `state_dir`, which refuse symlinks.
