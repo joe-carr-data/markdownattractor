@@ -11,8 +11,8 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Plugin watched live in a headless Claude Code session (`--plugin-dir`): MCP server connects, tools answer (`design/mcp.md`). First-run UX: `mda start` example query (5.4 s on a fresh `docs/`), `mda cost`, `mda diagnostics` (redacted), `mda nudge [--global]`, `mda index <dir>`.
 
 ## Next (max 3, in order)
-1. Launch checklist (plan §8 Phase 4): README leads with the one-line install (`/plugin install markdownattractor --marketplace joe-carr-data/markdownattractor`) and drops the "not released yet" note; short demo; submit to `claude-plugins-community`; recruit design partners.
-2. A/B on a realistic corpus (this repo's `docs/`, then a partner's) with a leaner hit payload (`k`, per-hit fields) before any token-saving claim.
+1. Benchmark plan (`docs/plans/2026-09-benchmarks.md`, accepted): B0a `.mdx` ingestion, B0b leaner hit payload, then B0 harness hardening and the DocsQA ingestion gate.
+2. Launch checklist (plan §8 Phase 4): README leads with the one-line install (`/plugin install markdownattractor --marketplace joe-carr-data/markdownattractor`) and drops the "not released yet" note; short demo; submit to `claude-plugins-community`; recruit design partners.
 3. Owner decisions: Apple notarisation secrets; read ledger (schema v4) for `cost`/`status` savings and hit rate. Follow-ups: subtree `index`, live config reload, socket peer auth, time-filter evals, hybrid latency.
 
 ## Blockers / open questions
@@ -21,4 +21,4 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
-## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-first-run.md) — 8 findings, 7 fixed, 1 in part, 0 open
+## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-benchmark-plan.md) — benchmark plan, 13 findings, all resolved over three passes, plan accepted
