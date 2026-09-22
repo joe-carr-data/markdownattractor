@@ -28,6 +28,7 @@
 //! | [`daemon`] | The long-running process: watcher, debounced intake, summarizer loop, control socket. |
 //! | [`mcp`] | The MCP server Claude talks to (`mda mcp`, stdio): search, cards, open, timeline, status. |
 //! | [`timefmt`] | Time parsing (`7d`, dates) and rendering shared by the CLI and MCP. |
+//! | [`eval`] | Dataset adapters for the benchmark plan: page-level metrics, coverage, the seeded split. |
 //!
 //! Two rules hold everywhere in this crate:
 //!
@@ -43,6 +44,7 @@ pub mod daemon;
 pub mod diff;
 pub mod embed;
 pub mod error;
+pub mod eval;
 pub mod markdown;
 pub mod mcp;
 pub mod pipeline;
