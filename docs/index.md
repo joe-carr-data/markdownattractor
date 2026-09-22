@@ -27,7 +27,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-first-run.md](reviews/codex/2026-09-22-first-run.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-daemon.md](reviews/codex/2026-09-22-daemon.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
-| 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \| \| \| |
+| 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
 | 2026-09-22 | [handoffs/2026-09-22-session-handoff.md](handoffs/2026-09-22-session-handoff.md) | Written by Claude (Fable 5.1) at the end of the first build session, for the next session after c… |
 | 2026-09-22 | [handoffs/2026-09-22-phase4-handoff.md](handoffs/2026-09-22-phase4-handoff.md) | Written by Claude (Fable 5.1) at the end of the third build session, for the next session after c… |

@@ -7,7 +7,7 @@
 | Reviewer | Codex CLI 0.155.1 via the shared companion runtime, model `gpt-6-astra`, fresh thread `01a0ca49-d99d-7282-8417-91b5c14ecaaf`, read-only |
 | Pinned to | `2177471` (branch `plan/benchmarks`) |
 | Triaged by | Claude (Fable 5.1), same day |
-| Outcome | 13 findings (7 High, 6 Medium): **13 accepted**, all folded into plan v2. Codex knew of no better public dataset than DocsQA-Repo for real questions over markdown documentation with labels. |
+| Outcome | 13 findings (7 High, 6 Medium): **13 accepted**. Second pass on v2 (same thread): 8 resolved, 5 partly (F3, F4, F6, F7, F12); v3 closes those with a CI-lower-bound quality gate plus absolute floor and grounding gate, an `MDA_NOW` observation-clock override for replay, a sealed holdout split, a 100-card metadata audit, committed cards and a stated cache policy. Codex's verdict on v2: "would not yet accept"; v3 addresses each stated reason. Codex knew of no better public dataset than DocsQA-Repo. |
 
 ## 1. Packet
 
@@ -57,7 +57,17 @@ Answers, condensed: DocsQA is a plausible primary conditional on ingestion and a
 - Never let a harness default hide a failure (`error: false`, missing grade → 0).
 - Our clocks are filesystem clocks: any historical replay must set mtimes deliberately and validate them.
 
-## 5. Follow-ups
+## 5. Second pass (v2, commit `f3a4579`)
 
-- Concurrence pass by Codex on plan v2 (same thread) before implementation starts.
+| # | Verdict | v3 answer |
+|---|---|---|
+| F3 | partly: gate used the observed mean, no floor | rule 0.4: CI lower bound ≥ −0.25, mean ≥ 4.0, grounding ≥ 95% |
+| F4 | partly: `created_at` (birthtime/first-seen) and events (`now`) still replay-time | `MDA_NOW` override pins the observation clock per replay step; first-seen only in replay; validation failure voids the replay |
+| F6 | partly: test reuse across releases | 15% sealed holdout opened once at 1.0; reuse stated on the page |
+| F7 | partly: no grounding threshold, drops ≠ correctness | grounding pass rate gates savings; 100-card human metadata audit per corpus |
+| F12 | partly: generated artifacts and cache state | cards committed per corpus and version; embedding model revision recorded; cold/warm policy stated with a cold column |
+
+## 6. Follow-ups
+
+- Third, short concurrence pass on v3 if the owner wants Codex's explicit acceptance on record.
 - `.mdx` support is a product feature with value beyond the benchmark (Docusaurus, Nextra, Mintlify sites); it gets its own small plan line and tests.
