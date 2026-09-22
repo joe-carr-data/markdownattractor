@@ -20,6 +20,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::card::{Provenance, SCHEMA_VERSION};
 use crate::config::{Config, STATE_DIR};
+use crate::embed::{EMBED_BATCH, Embedder, embed_text};
 use crate::markdown::{self, Document};
 use crate::planner::{PlanConfig, chunk_text};
 use crate::store::{DocTimes, PendingSection, Store, UpsertOutcome, Usage as StoredUsage};
@@ -139,6 +140,67 @@ pub struct SummarizeReport {
     pub dropped_entities: usize,
     /// Pool statistics (usage, concurrency, rate-limit events).
     pub pool: PoolStats,
+}
+
+/// What one embedding pass did.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EmbedReport {
+    /// Model the vectors were made with.
+    pub model: String,
+    /// Cards embedded in this pass.
+    pub embedded: usize,
+    /// Carded hashes still without a vector after the pass.
+    pub remaining: u64,
+    /// Wall-clock milliseconds.
+    pub ms: u128,
+}
+
+/// A document whose index is not final: sections still waiting for a card, failed ones, or a
+/// file whose content on disk no longer matches what was indexed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StaleDoc {
+    /// Path relative to the root.
+    pub rel_path: String,
+    /// Sections waiting for a card.
+    pub pending: u64,
+    /// Sections whose last attempt failed.
+    pub failed: u64,
+    /// The file changed after it was indexed (parsed and compared by hash).
+    pub changed_on_disk: bool,
+    /// The file is gone but the document is still live (no rescan since).
+    pub missing: bool,
+}
+
+/// A recently updated document, for `mda recent`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecentDoc {
+    /// Path relative to the root.
+    pub rel_path: String,
+    /// First level-1 heading, if any.
+    pub title: Option<String>,
+    /// When the content last changed.
+    pub updated_at: Timestamp,
+    /// When the document was created (birth time or first seen).
+    pub created_at: Timestamp,
+    /// Sections in the document.
+    pub sections: usize,
+    /// Sections still without a card.
+    pub pending: usize,
+}
+
+/// One row of `mda timeline`: a store event with its document's path resolved.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TimelineEntry {
+    /// When it happened.
+    pub at: Timestamp,
+    /// What happened.
+    pub kind: crate::store::EventKind,
+    /// Path relative to the root (the current path of the document, tombstoned or not).
+    pub rel_path: String,
+    /// Section concerned, for section-level kinds.
+    pub section_id: Option<String>,
+    /// Free-form detail (old path of a rename, a failure reason).
+    pub detail: Option<String>,
 }
 
 /// Exact source lines of a section, re-checked against the file at read time.
@@ -594,6 +656,169 @@ impl Engine {
         progress.last = Some(format!("{} › {}", p.rel_path, p.heading_path.join(" › ")));
         on_progress(progress);
         Ok(())
+    }
+
+    /// Embed carded sections that have no vector for the embedder's model yet, up to `limit`,
+    /// in batches. Blocking (the model runs on this thread); the daemon wraps it in
+    /// `block_in_place`. A model that cannot be loaded fails the whole pass with
+    /// [`Error::Embed`]; nothing is stored for a batch that failed.
+    pub fn embed_pending(&mut self, embedder: &dyn Embedder, limit: usize) -> Result<EmbedReport> {
+        let started = std::time::Instant::now();
+        let model = embedder.model();
+        let mut done = 0usize;
+        while done < limit {
+            let batch = EMBED_BATCH.min(limit - done);
+            let cards = self.store.cards_without_embedding(model, batch)?;
+            if cards.is_empty() {
+                break;
+            }
+            let texts: Vec<String> = cards
+                .iter()
+                .map(|c| embed_text(c.title.as_deref(), &c.heading_path, &c.summary))
+                .collect();
+            let vectors = embedder.embed(&texts)?;
+            if vectors.len() != cards.len() {
+                return Err(Error::Embed(format!(
+                    "model returned {} vectors for {} texts",
+                    vectors.len(),
+                    cards.len()
+                )));
+            }
+            for (card, vector) in cards.iter().zip(&vectors) {
+                self.store.put_embedding(&card.section_hash, model, vector)?;
+            }
+            done += cards.len();
+        }
+        let counts = self.store.embedding_counts(model)?;
+        let report = EmbedReport {
+            model: model.to_owned(),
+            embedded: done,
+            remaining: counts.carded.saturating_sub(counts.embedded),
+            ms: started.elapsed().as_millis(),
+        };
+        if done > 0 {
+            tracing::info!(
+                model,
+                embedded = done,
+                remaining = report.remaining,
+                ms = report.ms,
+                "embedded cards"
+            );
+        }
+        Ok(report)
+    }
+
+    /// Documents whose index is not final. Files newer on disk than their indexed content are
+    /// parsed and compared by hash, so a `touch` alone does not count.
+    pub fn stale(&self) -> Result<Vec<StaleDoc>> {
+        let mut by_path: std::collections::BTreeMap<String, StaleDoc> =
+            std::collections::BTreeMap::new();
+        for (doc, pending, failed) in self.store.documents_with_open_sections()? {
+            by_path.insert(
+                doc.rel_path.clone(),
+                StaleDoc {
+                    rel_path: doc.rel_path,
+                    pending,
+                    failed,
+                    changed_on_disk: false,
+                    missing: false,
+                },
+            );
+        }
+        for doc in self.store.documents()? {
+            let abs = self.root.join(&doc.rel_path);
+            let (changed, missing) = match std::fs::metadata(&abs) {
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (false, true),
+                Err(_) => (false, false),
+                Ok(meta) => {
+                    let newer = meta
+                        .modified()
+                        .ok()
+                        .and_then(|t| Timestamp::try_from(t).ok())
+                        .is_some_and(|m| m > doc.updated_at);
+                    let changed = newer
+                        && std::fs::read_to_string(&abs)
+                            .is_ok_and(|t| markdown::parse_str(&t).hash != doc.content_hash);
+                    (changed, false)
+                }
+            };
+            if changed || missing {
+                let entry = by_path.entry(doc.rel_path.clone()).or_insert(StaleDoc {
+                    rel_path: doc.rel_path.clone(),
+                    pending: 0,
+                    failed: 0,
+                    changed_on_disk: false,
+                    missing: false,
+                });
+                entry.changed_on_disk = changed;
+                entry.missing = missing;
+            }
+        }
+        Ok(by_path.into_values().collect())
+    }
+
+    /// The `n` most recently updated documents.
+    pub fn recent(&self, n: usize) -> Result<Vec<RecentDoc>> {
+        let mut out = Vec::new();
+        for doc in self.store.recent_documents(n)? {
+            let sections = self.store.sections_of(&doc.doc_id)?;
+            let pending = sections
+                .iter()
+                .filter(|s| s.state != crate::store::SectionState::Summarized)
+                .count();
+            out.push(RecentDoc {
+                rel_path: doc.rel_path,
+                title: doc.title,
+                updated_at: doc.updated_at,
+                created_at: doc.created_at,
+                sections: sections.len(),
+                pending,
+            });
+        }
+        Ok(out)
+    }
+
+    /// Store events in a window, oldest first, with document paths resolved and an optional
+    /// path prefix filter applied.
+    pub fn timeline(
+        &self,
+        since: Option<Timestamp>,
+        until: Option<Timestamp>,
+        path_prefix: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<TimelineEntry>> {
+        // Fetch deeper when filtering by path, since the filter runs after the store's limit.
+        let fetch = if path_prefix.is_some() { limit.saturating_mul(8).max(500) } else { limit };
+        let mut paths: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut out = Vec::new();
+        for ev in self.store.timeline(since, until, fetch)? {
+            let rel_path = if let Some(p) = paths.get(&ev.doc_id) {
+                p.clone()
+            } else {
+                let p = self
+                    .store
+                    .document(&ev.doc_id)?
+                    .map_or_else(|| ev.doc_id.clone(), |d| d.rel_path);
+                paths.insert(ev.doc_id.clone(), p.clone());
+                p
+            };
+            if let Some(prefix) = path_prefix
+                && !rel_path.starts_with(prefix.trim_start_matches("./"))
+            {
+                continue;
+            }
+            out.push(TimelineEntry {
+                at: ev.at,
+                kind: ev.kind,
+                rel_path,
+                section_id: ev.section_id,
+                detail: ev.detail,
+            });
+            if out.len() == limit {
+                break;
+            }
+        }
+        Ok(out)
     }
 
     /// Return the exact source lines of a section, re-checking the file at read time.

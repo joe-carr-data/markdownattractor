@@ -22,6 +22,11 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let counts = engine.store().counts()?;
     let cfg = engine.config();
     let live = super::live_status(engine.root());
+    let embed_check = mda_core::embed::check(cfg);
+    let embed_counts = match &embed_check.model {
+        Some(m) => Some(engine.store().embedding_counts(m)?),
+        None => None,
+    };
 
     if json {
         output::json(&serde_json::json!({
@@ -30,6 +35,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "config": cfg,
             "schema_version": engine.store().schema_version()?,
             "daemon": live,
+            "embeddings": { "check": embed_check, "counts": embed_counts },
         }));
         return Ok(ExitCode::SUCCESS);
     }
@@ -61,6 +67,16 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         counts.total_cost_usd,
         counts.tombstoned,
     );
+    match (&embed_check.model, embed_counts) {
+        (Some(m), Some(c)) => println!(
+            "  embeddings {} · {} of {} cards embedded · model {}",
+            if embed_check.cached { st.ok("ready") } else { st.warn("not downloaded") },
+            c.embedded,
+            c.carded,
+            st.accent(m),
+        ),
+        _ => println!("  embeddings {} · search is lexical only", st.dim("off")),
+    }
     if let Some(l) = &live {
         let state = if l.paused {
             st.warn("paused")

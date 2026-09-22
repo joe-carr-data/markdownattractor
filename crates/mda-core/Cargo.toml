@@ -31,6 +31,8 @@ tokio-util.workspace = true
 reqwest.workspace = true
 notify.workspace = true       # ADR-0003
 interprocess.workspace = true # ADR-0003
+fastembed.workspace = true    # ADR-0004
+rmcp.workspace = true         # ADR-0004
 
 [dev-dependencies]
 insta.workspace = true

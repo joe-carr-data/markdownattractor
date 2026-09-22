@@ -22,9 +22,12 @@
 //! | [`worker`] | Run chunks through `claude -p` with retries, timeouts and adaptive concurrency. |
 //! | [`validate`] | Enforce caps and evidence grounding on what the model returned. |
 //! | [`store`] | SQLite state: documents, sections, summaries keyed by hash, jobs, events, FTS5. |
-//! | [`search`] | Hybrid retrieval over the store: BM25 on cards and raw text, fused, time-aware. |
+//! | [`embed`] | Card embeddings: the local model, the embedded text, vector helpers. |
+//! | [`search`] | Hybrid retrieval over the store: BM25 on cards and raw text plus card vectors, fused, time-aware. |
 //! | [`pipeline`] | The engine that wires the stages together. |
 //! | [`daemon`] | The long-running process: watcher, debounced intake, summarizer loop, control socket. |
+//! | [`mcp`] | The MCP server Claude talks to (`mda mcp`, stdio): search, cards, open, timeline, status. |
+//! | [`timefmt`] | Time parsing (`7d`, dates) and rendering shared by the CLI and MCP. |
 //!
 //! Two rules hold everywhere in this crate:
 //!
@@ -38,12 +41,15 @@ pub mod card;
 pub mod config;
 pub mod daemon;
 pub mod diff;
+pub mod embed;
 pub mod error;
 pub mod markdown;
+pub mod mcp;
 pub mod pipeline;
 pub mod planner;
 pub mod search;
 pub mod store;
+pub mod timefmt;
 pub mod validate;
 pub mod walk;
 pub mod worker;

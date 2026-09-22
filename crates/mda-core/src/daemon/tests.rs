@@ -16,6 +16,13 @@ fn write(root: &Path, rel: &str, text: &str) -> PathBuf {
     p
 }
 
+/// Tests must never download a model: turn embeddings off in the root's config.
+fn embeddings_off(root: &Path) {
+    let cfg =
+        crate::config::Config { embeddings: crate::config::Embeddings::Off, ..Default::default() };
+    cfg.save(root).unwrap();
+}
+
 fn store(root: &Path) -> Store {
     Store::open(&Engine::index_path(root)).unwrap()
 }
@@ -44,6 +51,7 @@ async fn daemon_indexes_summarizes_renames_deletes_and_stops() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
     write(&root, "first.md", "# First\n\nalready here\n");
+    embeddings_off(&root);
 
     let backend: DynBackend = Arc::new(Mock::new().default_ok());
     let cancel = CancellationToken::new();
@@ -165,6 +173,7 @@ async fn second_daemon_on_the_same_root_is_refused_and_failures_back_off() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
     write(&root, "a.md", "# A\n\nbody\n");
+    embeddings_off(&root);
     // Every call fails: the summarizer must back off instead of spinning.
     let backend: DynBackend = Arc::new(Mock::new());
     let cancel = CancellationToken::new();

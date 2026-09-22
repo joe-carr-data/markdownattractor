@@ -45,6 +45,10 @@ reqwest = { version = "0.13", features = ["json"] }
 notify = "8.2"
 interprocess = { version = "2.4", features = ["tokio"] }
 
+# search layer (ADR-0004): local embeddings (pure-rustls tree, static ONNX Runtime) and MCP
+fastembed = { version = "7", default-features = false, features = ["ort-download-binaries-rustls-tls", "hf-hub-rustls-tls"] }
+rmcp = { version = "3.4", features = ["server", "transport-io", "macros", "schemars"] }
+
 # storage & search
 rusqlite = { version = "0.40", features = ["bundled", "jiff", "functions"] }
 

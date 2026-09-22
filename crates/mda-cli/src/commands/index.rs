@@ -91,6 +91,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             SummarizeOptions { limit: args.limit, ..SummarizeOptions::default() },
         )?)
     };
+    // Vectors for whatever has a card and no vector yet; a model that cannot be fetched is
+    // one warning, never a failed run.
+    let embeddings = if args.no_summarize { None } else { embed_after(&mut engine, json, &st) };
 
     if json {
         output::json(&serde_json::json!({
@@ -98,14 +101,47 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "index": report,
             "parse_ms": parse_ms,
             "summarize": summarize,
+            "embeddings": embeddings,
         }));
     } else {
         print_summary(summarize.as_ref(), pending_total, &st);
+        if let Some(r) = &embeddings
+            && r.embedded > 0
+        {
+            println!(
+                "{} {} card(s) with {} · {} ms",
+                st.ok("embedded"),
+                r.embedded,
+                st.accent(&r.model),
+                r.ms
+            );
+        }
     }
 
     let failed =
         !report.errors.is_empty() || summarize.as_ref().is_some_and(|s| s.failed > 0 && s.ok == 0);
     Ok(if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS })
+}
+
+fn embed_after(
+    engine: &mut Engine,
+    json: bool,
+    st: &Style,
+) -> Option<mda_core::pipeline::EmbedReport> {
+    let embedder = super::embedder_for(engine.config())?;
+    match engine.embed_pending(&*embedder, usize::MAX) {
+        Ok(r) => Some(r),
+        Err(e) => {
+            if !json {
+                println!(
+                    "  {} embeddings skipped: {e} (search stays lexical; `mda rebuild --embeddings` retries)",
+                    st.warn("warning:")
+                );
+            }
+            tracing::warn!(error = %e, "embedding pass failed");
+            None
+        }
+    }
 }
 
 fn print_summary(summarize: Option<&SummarizeReport>, pending_total: u64, st: &Style) {

@@ -39,6 +39,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         check_root(&args.root),
         check_state_dir(&args.root),
         check_backend(&cfg),
+        check_embeddings(&cfg),
         check_daemon(&args.root),
     ];
     if matches!(cfg.backend, mda_core::config::Backend::ClaudeCli) {
@@ -139,6 +140,34 @@ fn check_backend(cfg: &mda_core::config::Config) -> Check {
             detail: "claude-cli: opt-in backend; routes requests through your Claude subscription"
                 .to_owned(),
             fix: Some("prefer `mda backend api` or `mda backend local` (ADR-0002)"),
+        },
+    }
+}
+
+fn check_embeddings(cfg: &mda_core::config::Config) -> Check {
+    let c = mda_core::embed::check(cfg);
+    match c.model {
+        None => Check {
+            name: "embeddings",
+            status: Status::Warn,
+            detail: "off: search is lexical only".to_owned(),
+            fix: Some(
+                "`mda embeddings local-small` turns vectors on (33 MB model, downloaded once)",
+            ),
+        },
+        Some(m) if c.cached => Check {
+            name: "embeddings",
+            status: Status::Ok,
+            detail: format!("{m} in {}", c.cache_dir.display()),
+            fix: None,
+        },
+        Some(m) => Check {
+            name: "embeddings",
+            status: Status::Warn,
+            detail: format!("{m} not downloaded yet (cache {})", c.cache_dir.display()),
+            fix: Some(
+                "`mda rebuild --embeddings` downloads it now; otherwise the first index run does",
+            ),
         },
     }
 }
