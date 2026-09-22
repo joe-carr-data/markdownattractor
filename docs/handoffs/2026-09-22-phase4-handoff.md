@@ -63,6 +63,13 @@ gh run view <id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
 - `mda status`'s daemon line counts cards per finished round; the store line is live. They disagree mid-round by design.
 - A/B on tiny corpora: eight hits with cards are ~1.3K tokens regardless of size; `k` and the per-hit payload are the lever if G3 is to be met on mid-size corpora.
 
+## 5b. Addendum (later the same day)
+
+- Repo public; history rewritten (workspace ids); Actions budget: the owner has no payment method, so overage is blocked anyway; public-repo minutes are free.
+- Second release dry run green (fixes: `rustup target add` for the pinned toolchain; Linux builds on ubuntu-24.04). **v0.1.0 tagged and published**; its marketplace install failed to load (`plugin.json` listed `hooks`/`skills`/`mcpServers`, which Claude Code auto-loads → "Duplicate hooks file detected"); **v0.1.1** removes the keys and is published. Verified from a clean state: GitHub marketplace add + install → enabled; SessionStart hook downloaded the Release binary (3.8 s), started the daemon (0.1.1); headless session answered through `mda_search`.
+- Archive sizes: 12.7 MB darwin-arm64, 5.5 MB darwin-x64 (lexical only), 15 MB linux, 13 MB windows.
+- The plugin is installed at user scope on this machine from the GitHub marketplace; the local `--plugin-dir` data dir was removed.
+
 ## 6. Next steps, in order
 
 1. **Owner**: fix GitHub Actions billing / spending limit. Then re-run PR #10's CI, merge on a green job list, `gh workflow run release.yml --ref main`, read the job list. Still unverified there: the Intel cross build (`--no-default-features`; `aws-lc-sys` cross-compiles with Apple's toolchain in theory), the Linux builds on 24.04, and the `publish` job's `bootstrap.sh` gate. Windows packing is verified. Fix what it shows.

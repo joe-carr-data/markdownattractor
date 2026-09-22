@@ -30,8 +30,8 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [handoffs/2026-09-22-session-handoff.md](handoffs/2026-09-22-session-handoff.md) | Written by Claude (Fable 5.1) at the end of the first build session, for the next session after c… |
 | 2026-09-22 | [handoffs/2026-09-22-phase4-handoff.md](handoffs/2026-09-22-phase4-handoff.md) | Written by Claude (Fable 5.1) at the end of the third build session, for the next session after c… |
 | 2026-09-22 | [handoffs/2026-09-22-phase2-handoff.md](handoffs/2026-09-22-phase2-handoff.md) | Written by Claude (Fable 5.1) at the end of the second build session, for the next session. **Rea… |
+| 2026-09-22 | [handoffs/2026-09-22-2008-auto.md](handoffs/2026-09-22-2008-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-22 | [handoffs/2026-09-22-1956-auto.md](handoffs/2026-09-22-1956-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
-| 2026-09-22 | [handoffs/2026-09-22-1954-auto.md](handoffs/2026-09-22-1954-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 | 2026-09-22 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |

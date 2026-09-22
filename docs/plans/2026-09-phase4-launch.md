@@ -1,6 +1,6 @@
 # Phase 4 — Launch: plugin verified live, first-run UX, release pipeline, parity protocol
 
-Status: **in progress** · started 2026-09-22 · plan §8 Phase 4, §9 distribution, §9.5 first run, §11 evals · decisions in ADR-0005 (release pipeline)
+Status: **done** (v0.1.1 released 2026-09-22; launch checklist continues in STATUS) · started 2026-09-22 · plan §8 Phase 4, §9 distribution, §9.5 first run, §11 evals · decisions in ADR-0005 (release pipeline)
 
 Goal: a user installs the plugin with one command, types `/mda start`, and sees a real search hit with a line range before walking away; the binary arrives through the bootstrap hook from a checksummed GitHub Release; the README's token-saving claim, when it appears, is backed by the A/B parity protocol. Nothing here changes how the engine indexes or searches.
 
@@ -26,10 +26,10 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] `mda nudge` + `scripts/nudge.sh` config check + CLI tests.
 - [x] `mda start` example query + `--no-example`; `bootstrap.sh` passes `--no-example`; CLI test (skip reason asserted) and an engine-level test of the picker.
 - [x] Skill and README updated for the new commands; CHANGELOG.
-- [ ] Codex review of the first-run PR, triaged; merge.
+- [x] Codex review of the first-run PR, triaged; merged (#7).
 - [x] ADR-0005 release pipeline; `release.yml`; `check-version.sh` in CI; `bump-version.sh`; `bootstrap.sh` Windows archive; `bootstrap.sh` installs a locally mirrored `mda-darwin-arm64.tar.gz` + `SHA256SUMS` on this machine (`mda --version` matches). Dry run of the workflow itself: see the PR (`workflow_dispatch` on the branch).
 - [x] A/B protocol: `evals/ab/questions.jsonl` (12, with references), `scripts/eval/ab.sh`, `scripts/eval/grade.sh`, first numbers on the golden corpus in `docs/benchmarks.md` and `evals/ab/results/`: 12/12 parity, index reads *more* source tokens on the tiny corpus (recorded, not hidden).
-- [ ] Docs: STATUS, aha, index, `design/commands.md` (new: the command surface as built), CHANGELOG.
+- [x] Docs: STATUS, aha, index, `design/commands.md`, `design/distribution.md`, CHANGELOG.
 
 ## Exit criteria
 
@@ -37,6 +37,7 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] On a fresh copy of `docs/` with the `api` backend, `mda start` prints a real hit with a line range within 60 s of starting: 5.4 s, after the first 10 cards.
 - [x] `mda cost`, `mda diagnostics`, `mda nudge` exist, have `--json`, and are covered by CLI tests; `diagnostics` output contains neither the home directory nor the workspace id.
 - [x] The release workflow dry run on `main` (2026-09-22, second run) built all five archives, wrote `SHA256SUMS`, and `scripts/bootstrap.sh` installed the linux-x64 archive from a mirror of the layout in the `publish` job; the darwin-arm64 archive was also installed by hand on this machine. The tag itself (`v0.1.0`) is the owner's call.
+- [x] **v0.1.0 and v0.1.1 published** (2026-09-22). v0.1.0's marketplace install failed to load (`plugin.json` named the standard hooks/skills/mcp paths); v0.1.1 fixes it. Verified from a clean state: `claude plugin marketplace add joe-carr-data/markdownattractor && claude plugin install markdownattractor@markdownattractor` → enabled; the SessionStart hook downloaded `mda-darwin-arm64.tar.gz` from the Release, verified the checksum, started the daemon; a headless session answered through `mda_search`.
 - [x] `check-version.sh` runs in CI and fails on a mismatch (verified locally with a wrong tag; the CI job runs the same script).
 - [x] The A/B table exists in `docs/benchmarks.md` with the parity gate applied (golden corpus: parity 12/12, no saving). The README makes no token-saving number claim.
 
