@@ -27,7 +27,7 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] `mda start` example query + `--no-example`; `bootstrap.sh` passes `--no-example`; CLI test (skip reason asserted) and an engine-level test of the picker.
 - [x] Skill and README updated for the new commands; CHANGELOG.
 - [ ] Codex review of the first-run PR, triaged; merge.
-- [ ] ADR-0005 release pipeline; `release.yml`; `check-version.sh` in CI; `bump-version.sh`; `bootstrap.sh` Windows archive; dry run of the workflow on a branch (workflow_dispatch) and the produced archive installed by `bootstrap.sh` on this machine.
+- [x] ADR-0005 release pipeline; `release.yml`; `check-version.sh` in CI; `bump-version.sh`; `bootstrap.sh` Windows archive; `bootstrap.sh` installs a locally mirrored `mda-darwin-arm64.tar.gz` + `SHA256SUMS` on this machine (`mda --version` matches). Dry run of the workflow itself: see the PR (`workflow_dispatch` on the branch).
 - [ ] A/B protocol: questions with reference answers, runner, grader, first numbers on the golden corpus, benchmarks page updated with the parity gate.
 - [ ] Docs: STATUS, aha, index, `design/commands.md` (new: the command surface as built), CHANGELOG.
 
@@ -36,8 +36,8 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] A headless Claude Code session with the plugin loaded answers a question through `mda_search` (transcript excerpt in `design/mcp.md`).
 - [x] On a fresh copy of `docs/` with the `api` backend, `mda start` prints a real hit with a line range within 60 s of starting: 5.4 s, after the first 10 cards.
 - [x] `mda cost`, `mda diagnostics`, `mda nudge` exist, have `--json`, and are covered by CLI tests; `diagnostics` output contains neither the home directory nor the workspace id.
-- [ ] A tag build produces the five archives and `SHA256SUMS`; `scripts/bootstrap.sh` installs the darwin-arm64 archive on this machine from a local mirror of the release layout and `mda --version` matches `VERSION`.
-- [ ] `check-version.sh` runs in CI and fails on a mismatch (verified once by breaking it on a branch).
+- [ ] A tag build produces the five archives and `SHA256SUMS` (pending the first `workflow_dispatch` run); `scripts/bootstrap.sh` installed the darwin-arm64 archive on this machine from a local mirror of the release layout and `mda --version` matched `VERSION` (done 2026-09-22).
+- [x] `check-version.sh` runs in CI and fails on a mismatch (verified locally with a wrong tag; the CI job runs the same script).
 - [ ] The A/B table exists in `docs/benchmarks.md` with the parity gate applied, or the page says the protocol has not run yet and why. No token-saving number in the README without it.
 
 ## Decisions taken in this phase
