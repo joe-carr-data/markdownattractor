@@ -29,8 +29,8 @@ with `os ∈ {darwin, linux, windows}`, `arch ∈ {arm64, x64}`, the checksum ve
 |---|---|---|---|
 | `mda-darwin-arm64` | macos-latest | default (embeddings) | signed and notarised when the `APPLE_*` secrets exist |
 | `mda-darwin-x64` | macos-latest, cross | `--no-default-features` | lexical-only: no ONNX Runtime binaries for Intel macOS; not smoke-tested on the arm64 runner |
-| `mda-linux-x64` | ubuntu-22.04 | default | glibc ≥ 2.35 |
-| `mda-linux-arm64` | ubuntu-22.04-arm | default | |
+| `mda-linux-x64` | ubuntu-24.04 | default | glibc ≥ 2.39 (the static ONNX Runtime needs GCC 13's libstdc++) |
+| `mda-linux-arm64` | ubuntu-24.04-arm | default | glibc ≥ 2.39 |
 | `mda-windows-x64` | windows-latest | default | `mda.exe` |
 
 ## Versioning
