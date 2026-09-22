@@ -55,19 +55,19 @@ The MCP server keeps the model loaded, so a tool call pays the ≈ 50 ms embeddi
 
 Two levers the numbers point at: a leaner hit payload (`k` and per-hit fields are the whole 1,300), and corpora of realistic size (the plan's ≥ 5 corpora from ~50 to ~5K docs, still to be named).
 
-### Same run after the lean MCP payload (benchmark plan B0b, 2026-09-22)
+### Same corpus after the lean MCP payload (benchmark plan B0b, 2026-09-22; exploratory)
 
-`mda_search` over MCP now returns five hits without ranking diagnostics and without a snippet when a card exists (`docs/design/mcp.md`). Same corpus, questions and protocol; both arms re-run the same day; grading through `claude -p`. Full table: `evals/ab/results/2026-09-22-golden-lean.md`.
+`mda_search` over MCP now returns five hits without ranking diagnostics and without a snippet when a card exists (`docs/design/mcp.md`). Same corpus and questions; both arms re-run the same day; one run per arm; the grader moved to `claude -p` and the search-first instructions changed with the payload, so the comparison is indicative, not controlled. Tokens are the runner's estimate (chars/4 for source tokens). Full table and the list of what changed: `evals/ab/results/2026-09-22-golden-lean.md`.
 
 | | before | after |
 |---|---|---|
 | Parity (index score ≥ baseline) | 12 of 12 | 11 of 12 (one question 4 vs 5) |
-| Mean score, index / baseline | 5.42 / 5.42 | 5.50 / 5.42 |
-| Median source tokens read, index | 1,305 | **760** |
-| Median total input tokens, index | 32,548 | 48,476 |
-| Mean tool calls, index | 1.6 | 2.8 |
+| Mean score, index / baseline | 5.67 / 5.58 | 5.50 / 5.42 |
+| Median source tokens read, index (all 12 questions) | 1,304.5 | **762.5** |
+| Median total input tokens, index (all 12) | 32,523 | 48,506.5 |
+| Mean tool calls, index | 1.5 | 2.8 |
 
-The search result itself shrank from ≈ 1,400 to ≈ 400 tokens and the source tokens per answer fell 42%, but Claude now opens sections it used to answer from the tldr, so it takes more turns and total input tokens (the whole context, once per turn) went up. On this corpus the index still reads three times the baseline's source tokens; the break-even size is measured on the DocsQA corpora (plan B2).
+The search result itself shrank from ≈ 1,400 to ≈ 400 tokens and the median source tokens per answer fell by 42%, but Claude now opens sections it used to answer from the tldr, so it takes more turns and total input tokens (the whole context, once per turn) went up. On this corpus the index still reads three times the baseline's source tokens; the break-even size will be measured on the DocsQA corpora (plan B2).
 
 ## Not measured yet
 

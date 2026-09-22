@@ -1,18 +1,29 @@
 # A/B parity run — golden corpus, lean MCP payload (B0b), 2026-09-22
 
-Same protocol as `2026-09-22-golden.md` (12 questions, one run per arm, Sonnet answering through `claude -p`, Sonnet grading through `claude -p` with a JSON schema, `scripts/eval/ab.sh` + `scripts/eval/grade.sh`), run after the `mda_search` MCP view was cut to five hits without ranking diagnostics or snippets-when-carded. The corpus, the questions and the baseline arm are unchanged; the baseline was re-run the same day so both arms share the session. Tokens are the runner's estimate (chars/4 for source tokens, the CLI's `usage` for input tokens); the transcript-counted method of plan rule 0.7 lands with B0.
+**Exploratory, estimated measurement.** One run per arm, tokens estimated by the runner (chars/4 for source tokens, the CLI's `usage` for input tokens); the transcript-counted method and the repeated trials of the benchmark plan (rules 0.7 and 0.4) land with B0. Numbers recomputed from the raw `grades.jsonl` of both runs with conventional medians and the same denominator (all 12 questions), after the Codex review of PR #19 found the first version of this table quoted wrong "before" means and a parity-subset median next to an all-question one.
 
-| | before (eight hits, full fields) | after (five hits, lean view) |
+What changed between the two runs, all at once (so the difference cannot be attributed to the payload alone):
+
+1. `mda_search` over MCP: eight hits with every CLI field → five hits, no ranking diagnostics, `snippet` only without a card.
+2. The MCP `initialize` instructions and the search-first skill: "k=8" → "5 hits by default", "call mda_open on the section ids you need" → "on the one or two section ids you need".
+3. The grader: Sonnet through the Messages API → Sonnet through `claude -p` with a JSON schema (owner decision, plan §0a.3). Same rubric text.
+4. Both arms re-run the same day; the corpus, questions, answering model (Sonnet) and preamble are unchanged.
+
+| | before (2026-09-22 morning) | after (lean payload) |
 |---|---|---|
-| Parity (index score ≥ baseline) | 12 of 12 | **11 of 12** (ab07: 4 vs 5) |
-| Mean score 0–6, index / baseline | 5.42 / 5.42 | 5.50 / 5.42 |
-| Median source tokens read, index | 1,305 | **760** |
-| Median source tokens read, baseline | 341 | 234 |
-| Median total input tokens, index | 32,548 | 48,476 |
-| Mean tool calls, index | 1.6 | 2.8 |
-| Total cost (list-price equivalent), index | $0.269 | $0.366 |
+| Parity (index score ≥ baseline), per question | 12 of 12 | **11 of 12** (ab07: 4 vs 5) |
+| Mean score 0–6, index / baseline | 5.67 / 5.58 | 5.50 / 5.42 |
+| Median source tokens read, index (all 12) | 1,304.5 | **762.5** |
+| Median source tokens read, baseline (all 12) | 297.5 | 245.5 |
+| Median total input tokens, index (all 12) | 32,523 | 48,506.5 |
+| Median total input tokens, baseline (all 12) | 37,986.5 | 37,833.5 |
+| Mean tool calls, index / baseline | 1.5 / 2.4 | 2.8 / 2.5 |
+| Mean wall-clock, index / baseline | 6.9 s / 8.2 s | 8.5 s / 9.7 s |
+| Total cost (list-price equivalent), index / baseline | $0.269 / $0.215 | $0.366 / $0.202 |
 
-Reading: the payload change did what it was meant to (a search result is now ≈ 400 tokens instead of ≈ 1,400, and the median source tokens per answer fell 42%), but on this 450-line corpus Claude answered from the tldr alone in half the questions before and now opens one or two sections almost every time (2.8 calls), so total input tokens, which count the whole context once per turn, went up. Source tokens are still three times the baseline's here: the golden corpus is too small for the index to win, as the first run said. The lever that remains is the per-turn context cost (fewer turns, or a smaller system prompt), not the hit payload.
+Reading: the search result itself is now ≈ 400 tokens instead of ≈ 1,400, and the index arm's median source tokens per answer fell from 1,304.5 to 762.5. In the same run Claude opened sections on almost every question (2.8 calls) where it used to answer from the tldr half the time (1.5), so it took more turns and total input tokens, which count the whole context once per turn, went up by half. Whether the extra opens come from the smaller payload (less to answer from) or from the reworded instructions is not separable from this run. On this 450-line corpus the index arm still reads three times the baseline's source tokens; the first run's conclusion stands and the break-even size is a DocsQA (B2) question.
+
+## Per-question table (after)
 
 | id | baseline score | index score | parity | source tokens baseline | source tokens index | input tokens baseline | input tokens index | calls baseline | calls index |
 |---|---|---|---|---|---|---|---|---|---|
