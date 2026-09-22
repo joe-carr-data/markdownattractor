@@ -35,6 +35,10 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let mut engine = Engine::open(&root).with_context(|| format!("opening {}", root.display()))?;
     let st = Style::auto();
 
+    if super::block_on(mda_core::daemon::is_running(engine.root()))? {
+        return delegate(args, &mut engine, json, &st);
+    }
+
     let started = std::time::Instant::now();
     let report = match &args.path {
         Some(p) => {
@@ -80,7 +84,12 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let summarize = if args.no_summarize || pending_total == 0 {
         None
     } else {
-        Some(summarize(&mut engine, json, &st, SummarizeOptions { limit: args.limit })?)
+        Some(summarize(
+            &mut engine,
+            json,
+            &st,
+            SummarizeOptions { limit: args.limit, hot_paths: Vec::new() },
+        )?)
     };
 
     if json {
@@ -90,7 +99,17 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "parse_ms": parse_ms,
             "summarize": summarize,
         }));
-    } else if let Some(s) = &summarize {
+    } else {
+        print_summary(summarize.as_ref(), pending_total, &st);
+    }
+
+    let failed =
+        !report.errors.is_empty() || summarize.as_ref().is_some_and(|s| s.failed > 0 && s.ok == 0);
+    Ok(if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS })
+}
+
+fn print_summary(summarize: Option<&SummarizeReport>, pending_total: u64, st: &Style) {
+    if let Some(s) = summarize {
         let usage = &s.pool.usage;
         println!(
             "{} {} card(s){} · {} failed · {} clean · {} date(s) and {} entit{} dropped by grounding · {} in / {} out tokens · ${:.4}",
@@ -131,10 +150,66 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             st.dim("hint:")
         );
     }
+}
 
-    let failed =
-        !report.errors.is_empty() || summarize.as_ref().is_some_and(|s| s.failed > 0 && s.ok == 0);
-    Ok(if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS })
+/// A running daemon is the single writer for cards: hand the request to it and return once the
+/// raw index is updated. Cards follow in the background.
+fn delegate(args: &Args, engine: &mut Engine, json: bool, st: &Style) -> anyhow::Result<ExitCode> {
+    use mda_core::daemon::{Client, Request, Response};
+    if args.retry_failed {
+        let n = engine.store_mut().retry_failed()?;
+        if !json {
+            println!("{} {n} failed section(s) queued again", st.ok("retry"));
+        }
+    }
+    let path = match &args.path {
+        Some(p) => {
+            let abs = if p.is_absolute() { p.clone() } else { std::env::current_dir()?.join(p) };
+            Some(abs.display().to_string())
+        }
+        None => None,
+    };
+    let started = std::time::Instant::now();
+    let resp = super::block_on(async {
+        let mut c = Client::connect(engine.root()).await?;
+        c.request(&Request::Index { path }).await
+    })??;
+    let report = match resp {
+        Response::Indexed(r) => *r,
+        Response::Error { message } => anyhow::bail!("daemon could not index: {message}"),
+        other => anyhow::bail!("unexpected answer from the daemon: {other:?}"),
+    };
+    let parse_ms = started.elapsed().as_millis();
+    if json {
+        output::json(&serde_json::json!({
+            "root": engine.root(),
+            "daemon": true,
+            "index": report,
+            "parse_ms": parse_ms,
+            "summarize": null,
+        }));
+    } else {
+        println!(
+            "{} {} file(s) · {} changed · {} section(s) queued for cards · {} tombstoned · {} ms · via the daemon",
+            st.ok("indexed"),
+            report.files,
+            report.changed,
+            report.pending,
+            report.tombstoned,
+            parse_ms,
+        );
+        for (path, err) in &report.errors {
+            println!("  {} {path}: {err}", st.warn("skipped"));
+        }
+        if args.limit.is_some() {
+            println!(
+                "  {} --limit is ignored while the daemon runs; it paces itself",
+                st.dim("note:")
+            );
+        }
+        println!("  {} mda watch · mda status", st.dim("follow:"));
+    }
+    Ok(if report.errors.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE })
 }
 
 fn summarize(

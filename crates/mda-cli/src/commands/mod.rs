@@ -3,13 +3,18 @@
 
 pub mod backend;
 pub mod card;
+pub mod daemon;
 pub mod doctor;
 pub mod index;
 pub mod open;
 pub mod parse;
+pub mod pause;
 pub mod schema;
 pub mod search;
+pub mod start;
 pub mod status;
+pub mod stop;
+pub mod watch;
 
 use std::path::{Path, PathBuf};
 
@@ -32,6 +37,36 @@ pub fn resolve_root(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
         dir = d.parent();
     }
     Ok(cwd)
+}
+
+/// Run a short async operation (socket round-trips) on a fresh current-thread runtime.
+pub fn block_on<F: std::future::Future>(f: F) -> anyhow::Result<F::Output> {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+    Ok(rt.block_on(f))
+}
+
+/// The live status of the daemon for `root`, if one answers.
+pub fn live_status(root: &Path) -> Option<mda_core::daemon::LiveStatus> {
+    use mda_core::daemon::{Client, Request, Response};
+    block_on(async {
+        let mut c = Client::connect(root).await.ok()?;
+        match c.request(&Request::Status).await {
+            Ok(Response::Status(s)) => Some(*s),
+            _ => None,
+        }
+    })
+    .ok()
+    .flatten()
+}
+
+/// `1h 02m`, `3d 04h`, `45s`.
+pub fn humanize_secs(secs: u64) -> String {
+    match secs {
+        0..=59 => format!("{secs}s"),
+        60..=3_599 => format!("{}m {:02}s", secs / 60, secs % 60),
+        3_600..=86_399 => format!("{}h {:02}m", secs / 3_600, (secs % 3_600) / 60),
+        _ => format!("{}d {:02}h", secs / 86_400, (secs % 86_400) / 3_600),
+    }
 }
 
 /// Parse `7d`, `24h`, `30m`, `2w`, or an ISO date/time into an absolute timestamp.
@@ -103,6 +138,14 @@ mod tests {
         assert_eq!(parse_time("2026-09-21").unwrap().to_string(), "2026-09-21T00:00:00Z");
         assert!(parse_time("2026-09-21T10:00:00Z").is_ok());
         assert!(parse_time("yesterday").is_err());
+    }
+
+    #[test]
+    fn humanize_secs_forms() {
+        assert_eq!(humanize_secs(45), "45s");
+        assert_eq!(humanize_secs(125), "2m 05s");
+        assert_eq!(humanize_secs(3_720), "1h 02m");
+        assert_eq!(humanize_secs(100_000), "1d 03h");
     }
 
     #[test]
