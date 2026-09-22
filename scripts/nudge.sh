@@ -14,7 +14,7 @@ input="$(cat 2>/dev/null || true)"
 
 # Is the call about markdown? Look at file_path / path / pattern / glob fields.
 case "$input" in
-  *.md\"*|*.md\'*|*.markdown\"*|*'"type":"md"'*) ;;
+  *.md\"*|*.md\'*|*.mdx\"*|*.mdx\'*|*.markdown\"*|*'"type":"md"'*) ;;
   *) exit 0 ;;
 esac
 

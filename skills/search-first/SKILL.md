@@ -2,7 +2,7 @@
 name: search-first
 description: How to answer questions from a project's markdown (ADRs, runbooks, specs, notes) when a markdownattractor index exists — search the index, read a card, open only the lines you need, and fall back safely. Use before reading or grepping any .md file whole.
 user-invocable: false
-paths: "**/*.md, **/*.markdown"
+paths: "**/*.md, **/*.markdown, **/*.mdx"
 ---
 
 # Search first, read less
