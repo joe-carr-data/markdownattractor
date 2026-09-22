@@ -1,0 +1,70 @@
+---
+source: crates/mda-core/src/markdown/tests.rs
+expression: doc
+---
+title: Deploying with Tabs
+frontmatter: "title: \"Deploying with Tabs\"\ndescription: A Docusaurus-style page.\nsidebar_position: 3"
+sections:
+  - index: 0
+    level: 0
+    heading_path: []
+    line_start: 15
+    line_end: 18
+    text: "[text]"
+    hash: b5ab5f8619732d674cfb13e1b15ba4ff3f871d54e858bb3a73802df4944a47ca
+    token_estimate: 23
+    code_langs: []
+    has_tables: false
+  - index: 1
+    level: 2
+    heading_path:
+      - Install with npm
+    line_start: 20
+    line_end: 27
+    text: "[text]"
+    hash: 6a472620627e8afedd5e8ca487cf2ef667ab0f3634b2badecd6d1769841e128f
+    token_estimate: 27
+    code_langs:
+      - bash
+    has_tables: false
+  - index: 2
+    level: 2
+    heading_path:
+      - Install with pnpm
+    line_start: 28
+    line_end: 37
+    text: "[text]"
+    hash: be8ecee6aef261d3bec8e35508829bbc1c32a6ac36a546b003d1db3592d0892b
+    token_estimate: 25
+    code_langs:
+      - bash
+    has_tables: false
+  - index: 3
+    level: 2
+    heading_path:
+      - Rollback
+    line_start: 38
+    line_end: 42
+    text: "[text]"
+    hash: 224d24a11a86ffdb50e428f0817b111a66f3cfe93ba00447845f471c6042c9ce
+    token_estimate: 31
+    code_langs: []
+    has_tables: false
+  - index: 4
+    level: 3
+    heading_path:
+      - Rollback
+      - Verify
+    line_start: 44
+    line_end: 54
+    text: "[text]"
+    hash: bde2f91dfa675bb5ac9cd8c100abed81674d6175729e2c6236fa585dd6d664e1
+    token_estimate: 29
+    code_langs:
+      - text
+    has_tables: false
+links_internal: []
+links_external: []
+line_count: 54
+token_estimate: 135
+hash: 32c8e37df00eb690cb3aef5c408667440d2436ad9e61d625974392c6681ad40c

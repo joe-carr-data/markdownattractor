@@ -209,3 +209,180 @@ proptest! {
         }
     }
 }
+
+// ------------------------------------------------------------------ MDX (docs/design/ingestion.md)
+
+const MDX_FIXTURE: &str = include_str!("../../tests/fixtures/page.mdx");
+
+#[test]
+fn mdx_fixture_snapshot() {
+    let doc = parse_str(MDX_FIXTURE);
+    insta::assert_yaml_snapshot!(doc, {
+        ".sections[].text" => "[text]",
+    });
+}
+
+#[test]
+fn mdx_fixture_keeps_every_heading_and_drops_the_esm_block() {
+    let doc = parse_str(MDX_FIXTURE);
+    assert_eq!(doc.title.as_deref(), Some("Deploying with Tabs"), "front matter title");
+    let paths: Vec<String> = doc.sections.iter().map(|s| s.heading_path.join(" > ")).collect();
+    assert_eq!(
+        paths,
+        vec!["", "Install with npm", "Install with pnpm", "Rollback", "Rollback > Verify"]
+    );
+    // The preamble starts after the imports and the export, at the first prose line.
+    let preamble = &doc.sections[0];
+    assert_eq!(preamble.level, 0);
+    assert_eq!(preamble.line_start, 15);
+    assert!(preamble.text.starts_with("Pick your package manager"), "{}", preamble.text);
+    // A heading right after a JSX tag line (no blank line between) is still a heading.
+    let pnpm = &doc.sections[2];
+    assert_eq!(pnpm.line_start, 28);
+    assert_eq!(pnpm.code_langs, vec!["bash"]);
+    let rollback = &doc.sections[3];
+    assert_eq!(rollback.line_start, 38);
+    assert!(rollback.text.contains("props.window"), "JSX expressions stay as text");
+    // A `#` line inside a fence stays inside its fence.
+    let verify = doc.sections.last().unwrap();
+    assert_eq!(verify.code_langs, vec!["text"]);
+    assert_eq!(verify.line_end, 54);
+}
+
+#[test]
+fn leading_esm_block_is_excluded_like_front_matter() {
+    let doc = parse_str(
+        "import A from 'a'\nimport B from 'b'\n\nexport const x = {\n  y: 1,\n};\n\nHello.\n\n## S\n\nbody\n",
+    );
+    assert_eq!(doc.sections.len(), 2);
+    assert_eq!((doc.sections[0].line_start, doc.sections[0].line_end), (8, 8));
+    assert_eq!(doc.sections[0].text, "Hello.");
+    assert_eq!(doc.sections[1].line_start, 10);
+}
+
+#[test]
+fn esm_block_directly_after_front_matter() {
+    let doc = parse_str("---\ntitle: T\n---\nimport X from 'x'\n\n# H\n\nbody\n");
+    assert_eq!(doc.sections.len(), 1);
+    assert_eq!(doc.sections[0].line_start, 6);
+    assert_eq!(doc.title.as_deref(), Some("H"), "an H1 wins over front matter");
+}
+
+#[test]
+fn esm_block_only_document_has_no_sections() {
+    let doc = parse_str("import X from 'x'\n\nexport const title = \"Only exports\";\n");
+    assert!(doc.sections.is_empty());
+    assert_eq!(doc.title.as_deref(), Some("Only exports"));
+}
+
+#[test]
+fn import_lines_after_content_stay_text() {
+    let doc = parse_str("# H\n\nimport { x } from 'y'\n\ntext\n");
+    assert_eq!(doc.sections.len(), 1);
+    assert!(doc.sections[0].text.contains("import { x }"));
+}
+
+#[test]
+fn title_falls_back_to_front_matter_then_export_const() {
+    assert_eq!(
+        parse_str("---\ntitle: Plain title\n---\n\n## Not an H1\n").title.as_deref(),
+        Some("Plain title")
+    );
+    assert_eq!(
+        parse_str("---\ntitle: 'Single: quoted'\n---\n").title.as_deref(),
+        Some("Single: quoted")
+    );
+    assert_eq!(
+        parse_str("---\ntitle: \"Double\" # comment\n---\n").title.as_deref(),
+        Some("Double")
+    );
+    assert_eq!(
+        parse_str("---\ntitle: bare value # comment\n---\n").title.as_deref(),
+        Some("bare value")
+    );
+    assert_eq!(parse_str("---\ntitle: |\n  block\n---\n").title, None);
+    assert_eq!(
+        parse_str("---\ntitle:\nseo:\n  title: nested\n---\n").title,
+        None,
+        "only a column-0 title"
+    );
+    assert_eq!(
+        parse_str(
+            "export const title = \"Padding\";\nexport const description = \"d\";\n\n## Examples\n"
+        )
+        .title
+        .as_deref(),
+        Some("Padding")
+    );
+    assert_eq!(parse_str("export const title = 'Single';\n").title.as_deref(), Some("Single"));
+    assert_eq!(
+        parse_str("---\ntitle: Front\n---\n\nexport const title = \"Export\";\n\n# Heading\n")
+            .title
+            .as_deref(),
+        Some("Heading"),
+        "H1, then front matter, then export"
+    );
+    assert_eq!(
+        parse_str("---\ntitle: Front\n---\n\nexport const title = \"Export\";\n\n## Sub\n")
+            .title
+            .as_deref(),
+        Some("Front")
+    );
+}
+
+#[test]
+fn heading_inside_html_block_starts_a_section() {
+    let doc =
+        parse_str("<Admonition type=\"note\">\ntext\n</Admonition>\n## How it works\n\nbody\n");
+    let paths: Vec<Vec<&str>> =
+        doc.sections.iter().map(|s| s.heading_path.iter().map(String::as_str).collect()).collect();
+    assert_eq!(paths, vec![Vec::<&str>::new(), vec!["How it works"]]);
+    assert_eq!((doc.sections[0].line_start, doc.sections[0].line_end), (1, 3));
+    assert_eq!((doc.sections[1].line_start, doc.sections[1].line_end), (4, 6));
+    // Indented up to three spaces, with inline code and a closing sequence.
+    let doc = parse_str(
+        "<TabPanel id=\"swift\" label=\"Swift\">\n  ### Deep `link` config ##\n  1. Go there.\n</TabPanel>\n",
+    );
+    assert_eq!(doc.sections[1].heading_path, vec!["Deep link config"]);
+    assert_eq!(doc.sections[1].level, 3);
+    // Four spaces is not a heading; neither is a hash inside <pre>, a comment, or a fence.
+    let doc = parse_str("<div>\n    ## not\n</div>\n");
+    assert_eq!(doc.sections.len(), 1);
+    let doc = parse_str("<pre>\n## not\n</pre>\n\n<!--\n## not\n-->\n\n```\n## not\n```\n");
+    assert_eq!(doc.sections.len(), 1);
+}
+
+#[test]
+fn heading_inside_html_block_sets_the_title_when_level_one() {
+    let doc = parse_str("<div>\n# Big\n</div>\n");
+    assert_eq!(doc.title.as_deref(), Some("Big"));
+    assert_eq!(doc.sections.len(), 2);
+}
+
+#[test]
+fn atx_heading_line_parsing() {
+    assert_eq!(atx_heading("## Two"), Some((2, "Two".to_owned())));
+    assert_eq!(atx_heading("   ###### Six ###"), Some((6, "Six".to_owned())));
+    assert_eq!(atx_heading("#"), Some((1, String::new())));
+    assert_eq!(atx_heading("####### seven"), None);
+    assert_eq!(atx_heading("#hashtag"), None);
+    assert_eq!(atx_heading("    # code"), None);
+    assert_eq!(atx_heading("text # not"), None);
+}
+
+#[test]
+fn export_title_and_front_matter_title_parsing() {
+    assert_eq!(export_title("export const title = \"A \\\"quote\\\"\";"), Some("A \\".to_owned()));
+    assert_eq!(export_title("export const title = `tpl`;"), None);
+    assert_eq!(export_title("export const titles = \"x\";"), None);
+    assert_eq!(export_title("export const title = \"\";"), None);
+    assert_eq!(front_matter_title("a: 1\ntitle: Hello world\n"), Some("Hello world".to_owned()));
+    assert_eq!(front_matter_title("title:   \n"), None);
+    assert_eq!(front_matter_title("title: \"\"\n"), None);
+    assert_eq!(front_matter_title("title: >\n  folded\n"), None);
+    assert_eq!(
+        front_matter_title("title = \"TOML style\"\ntopics = [ \"db\" ]\n"),
+        Some("TOML style".to_owned())
+    );
+    assert_eq!(front_matter_title("titles: no\ntitle: yes\n"), Some("yes".to_owned()));
+}

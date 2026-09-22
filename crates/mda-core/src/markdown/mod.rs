@@ -12,6 +12,17 @@
 //! Text before the first heading becomes a preamble section with an empty heading path, if it
 //! has any non-blank content.
 //!
+//! ## MDX and templated markdown
+//!
+//! `.mdx` files (Docusaurus, Nextra, Mintlify, the Tailwind and Prisma docs) are parsed by the
+//! same rules, with three deterministic additions that `docs/design/ingestion.md` spells out:
+//! a leading block of `import`/`export` statements is excluded from sections like front
+//! matter is; an ATX heading line inside a JSX or HTML block (which `CommonMark` would swallow
+//! because the tag and the heading are not separated by a blank line) still starts a section;
+//! and the title falls back to front matter `title:` and then to `export const title = "…"`.
+//! JSX tags, expressions and template tags (Liquid, MDX comments) stay as text: the section
+//! text is always the source lines of its range.
+//!
 //! ## Normalisation
 //!
 //! Hashes are computed over text with `\r\n` folded to `\n` and trailing whitespace stripped
@@ -55,7 +66,8 @@ pub struct Section {
 /// A parsed document.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Document {
-    /// Text of the first level-1 heading, if any.
+    /// Text of the first level-1 heading; else front matter `title:`; else the MDX
+    /// `export const title = "…"` of the leading ESM block. `None` when the file has none.
     pub title: Option<String>,
     /// Raw YAML front matter (without the `---` fences), if present.
     pub frontmatter: Option<String>,
@@ -95,11 +107,114 @@ pub fn parse_str(text: &str) -> Document {
     let arena = Arena::new();
     let root = parse_document(&arena, &text, &options());
 
-    let mut builder = Builder::new(&lines, line_count);
+    // Front matter ends where comrak says; the leading ESM block, if any, follows it.
+    #[allow(clippy::cast_possible_truncation)]
+    let after_front_matter = root
+        .first_child()
+        .filter(|n| matches!(n.data.borrow().value, NodeValue::FrontMatter(_)))
+        .map_or(1, |n| n.data.borrow().sourcepos.end.line as u32 + 1);
+    let esm = leading_esm_block(&lines, after_front_matter);
+
+    let mut builder = Builder::new(&lines, line_count, esm.body_start, esm.title);
     for node in root.children() {
         builder.visit_top_level(node);
     }
     builder.finish()
+}
+
+/// The MDX ESM block at the top of a document, if any: one or more `import` / `export`
+/// statements, each running to the next blank line (the MDX rule), starting at
+/// `after_front_matter`, possibly after blank lines.
+struct LeadingEsm {
+    /// First line after the block (or `after_front_matter` when there is none), 1-based.
+    body_start: u32,
+    /// The value of `export const title = "…"` inside the block, when present.
+    title: Option<String>,
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn leading_esm_block(lines: &[&str], after_front_matter: u32) -> LeadingEsm {
+    let mut i = (after_front_matter.max(1) - 1) as usize;
+    let mut body_start = after_front_matter;
+    let mut title = None;
+    loop {
+        while i < lines.len() && lines[i].trim().is_empty() {
+            i += 1;
+        }
+        let Some(line) = lines.get(i) else { break };
+        if !(line.starts_with("import ") || line.starts_with("export ")) {
+            break;
+        }
+        while i < lines.len() && !lines[i].trim().is_empty() {
+            if title.is_none() {
+                title = export_title(lines[i]);
+            }
+            i += 1;
+        }
+        body_start = i as u32 + 1;
+    }
+    LeadingEsm { body_start, title }
+}
+
+/// `export const title = "Padding";` → `Padding` (double or single quotes).
+fn export_title(line: &str) -> Option<String> {
+    let rest = line.strip_prefix("export const title")?.trim_start();
+    let rest = rest.strip_prefix('=')?.trim_start();
+    let quote = rest.chars().next().filter(|c| *c == '"' || *c == '\'')?;
+    let inner = &rest[1..];
+    let end = inner.find(quote)?;
+    let value = inner[..end].trim();
+    (!value.is_empty()).then(|| value.to_owned())
+}
+
+/// The `title:` of a YAML front matter block at column 0 (or `title = "…"` when the block
+/// is TOML between the same `---` fences), unquoted. Block scalars (`|`, `>`) and empty
+/// values give `None`.
+fn front_matter_title(front_matter: &str) -> Option<String> {
+    let value = front_matter
+        .lines()
+        .find_map(|l| {
+            let rest = l.strip_prefix("title")?.trim_start();
+            rest.strip_prefix(':').or_else(|| rest.strip_prefix('='))
+        })?
+        .trim();
+    let value = match value.chars().next()? {
+        '|' | '>' => return None,
+        q @ ('"' | '\'') => value[1..].split(q).next().unwrap_or("").trim(),
+        _ => value.split(" #").next().unwrap_or(value).trim(),
+    };
+    (!value.is_empty()).then(|| value.to_owned())
+}
+
+/// `## Text` → `(2, "Text")` for an ATX heading line (up to three spaces of indent, one to
+/// six `#`, then a space or the end of the line); closing `#`s are stripped like `CommonMark`.
+fn atx_heading(line: &str) -> Option<(u8, String)> {
+    let trimmed = line.trim_start_matches(' ');
+    if line.len() - trimmed.len() > 3 {
+        return None;
+    }
+    let hashes = trimmed.chars().take_while(|c| *c == '#').count();
+    if hashes == 0 || hashes > 6 {
+        return None;
+    }
+    let rest = &trimmed[hashes..];
+    if !(rest.is_empty() || rest.starts_with(' ') || rest.starts_with('\t')) {
+        return None;
+    }
+    let text = rest.trim().trim_end_matches('#').trim_end();
+    #[allow(clippy::cast_possible_truncation)]
+    Some((hashes as u8, inline_text_of_line(text)))
+}
+
+/// Plain text of one line of inline markdown (`` `code` ``, emphasis stripped), as
+/// [`inline_text`] would give for a heading node.
+fn inline_text_of_line(text: &str) -> String {
+    let arena = Arena::new();
+    let root = parse_document(&arena, text, &options());
+    match root.first_child() {
+        Some(node) => inline_text(node),
+        None => text.trim().to_owned(),
+    }
 }
 
 fn options() -> Options<'static> {
@@ -154,11 +269,14 @@ struct Builder<'a> {
     /// Section currently being built.
     current: Option<Open>,
     sections: Vec<Section>,
-    title: Option<String>,
+    /// First level-1 heading.
+    h1: Option<String>,
+    /// `export const title` from the leading ESM block.
+    export_title: Option<String>,
     frontmatter: Option<String>,
     links_internal: Vec<String>,
     links_external: Vec<String>,
-    /// First content line after front matter, 1-based.
+    /// First content line after front matter and the leading ESM block, 1-based.
     body_start: u32,
 }
 
@@ -173,18 +291,24 @@ struct Open {
 
 impl<'a> Builder<'a> {
     #[allow(clippy::cast_possible_truncation)]
-    fn new(lines: &'a [&'a str], line_count: usize) -> Self {
+    fn new(
+        lines: &'a [&'a str],
+        line_count: usize,
+        body_start: u32,
+        export_title: Option<String>,
+    ) -> Self {
         Self {
             lines,
             line_count: line_count as u32,
             stack: Vec::new(),
             current: None,
             sections: Vec::new(),
-            title: None,
+            h1: None,
+            export_title,
             frontmatter: None,
             links_internal: Vec::new(),
             links_external: Vec::new(),
-            body_start: 1,
+            body_start,
         }
     }
 
@@ -193,6 +317,9 @@ impl<'a> Builder<'a> {
         enum Kind {
             FrontMatter(String),
             Heading(u8),
+            /// A raw HTML or JSX block of `CommonMark` type 6 or 7: a heading line inside it
+            /// is still a heading (types 1–5 are script/pre/style, comments and the like).
+            HtmlBlock,
             Other,
         }
         let (start_line, end_line, kind) = {
@@ -200,37 +327,28 @@ impl<'a> Builder<'a> {
             let kind = match &data.value {
                 NodeValue::FrontMatter(raw) => Kind::FrontMatter(raw.clone()),
                 NodeValue::Heading(h) => Kind::Heading(h.level),
+                NodeValue::HtmlBlock(b) if b.block_type >= 6 => Kind::HtmlBlock,
                 _ => Kind::Other,
             };
             (data.sourcepos.start.line as u32, data.sourcepos.end.line as u32, kind)
         };
 
+        let html_block = matches!(kind, Kind::HtmlBlock);
         match kind {
             Kind::FrontMatter(raw) => {
                 self.frontmatter = Some(strip_front_matter_fences(&raw));
-                self.body_start = end_line + 1;
+                self.body_start = self.body_start.max(end_line + 1);
                 return;
             }
             Kind::Heading(level) => {
-                let text = inline_text(node);
-                self.close_current(start_line.saturating_sub(1));
-                while self.stack.last().is_some_and(|(l, _)| *l >= level) {
-                    self.stack.pop();
-                }
-                self.stack.push((level, text.clone()));
-                if level == 1 && self.title.is_none() {
-                    self.title = Some(text);
-                }
-                self.current = Some(Open {
-                    level,
-                    heading_path: self.stack.iter().map(|(_, t)| t.clone()).collect(),
-                    line_start: start_line,
-                    code_langs: Vec::new(),
-                    has_tables: false,
-                });
+                self.open_heading(level, inline_text(node), start_line);
                 return;
             }
-            Kind::Other => {}
+            Kind::HtmlBlock | Kind::Other => {}
+        }
+        // The leading ESM block is excluded like front matter.
+        if end_line < self.body_start {
+            return;
         }
 
         // Any other top-level node belongs to the current section, or opens the preamble.
@@ -243,7 +361,33 @@ impl<'a> Builder<'a> {
                 has_tables: false,
             });
         }
+        if html_block {
+            for line in start_line.max(self.body_start)..=end_line {
+                if let Some((level, text)) = atx_heading(self.line_at(line)) {
+                    self.open_heading(level, text, line);
+                }
+            }
+        }
         self.collect_features(node);
+    }
+
+    /// Close the open section and start one at `start_line` for a heading.
+    fn open_heading(&mut self, level: u8, text: String, start_line: u32) {
+        self.close_current(start_line.saturating_sub(1));
+        while self.stack.last().is_some_and(|(l, _)| *l >= level) {
+            self.stack.pop();
+        }
+        self.stack.push((level, text.clone()));
+        if level == 1 && self.h1.is_none() {
+            self.h1 = Some(text);
+        }
+        self.current = Some(Open {
+            level,
+            heading_path: self.stack.iter().map(|(_, t)| t.clone()).collect(),
+            line_start: start_line,
+            code_langs: Vec::new(),
+            has_tables: false,
+        });
     }
 
     /// Record code fences, tables and links found anywhere under `node`.
@@ -320,8 +464,12 @@ impl<'a> Builder<'a> {
         self.close_current(self.line_count);
         let all_lines: Vec<&str> = self.lines[..self.line_count as usize].to_vec();
         let whole = normalize_block(&all_lines);
+        let title = self
+            .h1
+            .or_else(|| self.frontmatter.as_deref().and_then(front_matter_title))
+            .or(self.export_title);
         Document {
-            title: self.title,
+            title,
             frontmatter: self.frontmatter,
             token_estimate: self.sections.iter().map(|s| s.token_estimate).sum(),
             hash: blake3_hex(&whole),

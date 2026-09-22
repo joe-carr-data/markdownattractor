@@ -1,0 +1,54 @@
+---
+title: "Deploying with Tabs"
+description: A Docusaurus-style page.
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { Callout } from "@/components/callout";
+
+export const meta = {
+  updated: "2026-09-01",
+};
+
+Pick your package manager below.
+
+<Tabs groupId="pm">
+  <TabItem value="npm" label="npm">
+
+## Install with npm
+
+```bash
+npm install deployctl
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+## Install with pnpm
+
+```bash
+pnpm add deployctl
+```
+
+  </TabItem>
+</Tabs>
+
+<Callout type="warning">
+## Rollback
+Run `deployctl rollback --to <sha>` within {props.window ?? "30 minutes"}.
+</Callout>
+
+{/* an MDX comment */}
+
+### Verify
+
+<details>
+<summary>Expected output</summary>
+
+```text
+# not a heading: inside a fence
+ok
+```
+
+</details>

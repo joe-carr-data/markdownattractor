@@ -22,10 +22,11 @@ use crate::{Error, Result};
 /// subdirectory.
 pub const IGNORE_FILE: &str = ".markdownattractorignore";
 
-/// Extensions (lower-cased, without the dot) that count as markdown.
-const MARKDOWN_EXTENSIONS: &[&str] = &["md", "markdown"];
+/// Extensions (lower-cased, without the dot) that count as markdown. `.mdx` is markdown
+/// with JSX; the parser tolerates it (`docs/design/ingestion.md`).
+const MARKDOWN_EXTENSIONS: &[&str] = &["md", "markdown", "mdx"];
 
-/// Whether `path` has a markdown extension (`.md` or `.markdown`, any case).
+/// Whether `path` has a markdown extension (`.md`, `.markdown` or `.mdx`, any case).
 pub fn is_markdown(path: &Path) -> bool {
     path.extension()
         .and_then(|e| e.to_str())
@@ -143,11 +144,12 @@ mod tests {
     }
 
     #[test]
-    fn is_markdown_accepts_md_and_markdown_any_case() {
+    fn is_markdown_accepts_md_markdown_and_mdx_any_case() {
         assert!(is_markdown(Path::new("a.md")));
         assert!(is_markdown(Path::new("a.MD")));
         assert!(is_markdown(Path::new("dir/b.markdown")));
-        assert!(!is_markdown(Path::new("a.mdx")));
+        assert!(is_markdown(Path::new("a.mdx")));
+        assert!(is_markdown(Path::new("a.MDX")));
         assert!(!is_markdown(Path::new("a.txt")));
         assert!(!is_markdown(Path::new("md")));
         assert!(!is_markdown(Path::new("README")));
@@ -161,9 +163,10 @@ mod tests {
         write(dir.path(), "a/b/c/deep.md", "# d");
         write(dir.path(), "a/notes.txt", "no");
         write(dir.path(), "a/b/image.png", "no");
-        write(dir.path(), "a/b/page.mdx", "no");
+        write(dir.path(), "a/b/page.mdx", "# mdx");
+        write(dir.path(), "a/b/page.mdx.bak", "no");
         let found = rel_list(dir.path(), &Config::default());
-        assert_eq!(found, vec!["a/b/c/deep.md", "a/one.markdown", "top.md"]);
+        assert_eq!(found, vec!["a/b/c/deep.md", "a/b/page.mdx", "a/one.markdown", "top.md"]);
     }
 
     #[test]
