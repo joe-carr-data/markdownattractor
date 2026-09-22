@@ -622,3 +622,162 @@ fn index_of_a_subdirectory_uses_the_enclosing_root() {
         .stdout(predicate::str::contains("indexed 1 file(s)")); // notes/ stays ignored
     assert!(!root.join("docs/.markdownattractor").exists(), "no second root was created");
 }
+
+/// A three-page DocsQA-shaped fixture: dataset files plus a "checkout" of the source repo.
+fn docsqa_fixture() -> (tempfile::TempDir, PathBuf, PathBuf) {
+    let dir = tempfile::tempdir().unwrap();
+    let data = dir.path().join("docsqa-data");
+    let root = dir.path().join("checkout");
+    write(
+        &root,
+        "docs/rollback.mdx",
+        "---\ntitle: Rollback\n---\n\nimport X from 'x';\n\n## Roll back a deploy\n\nRun deployctl rollback --to the previous sha.\n",
+    );
+    write(
+        &root,
+        "docs/paging.mdx",
+        "---\ntitle: Paging\n---\n\n## Who is paged\n\nPagerDuty pages the primary on-call for SEV1.\n",
+    );
+    write(
+        &root,
+        "docs/other.mdx",
+        "---\ntitle: Other\n---\n\n## Unrelated\n\nNothing about incidents here.\n",
+    );
+    write(
+        &data,
+        "data/questions.jsonl",
+        concat!(
+            r#"{"question_id":"q1","project":"demo","query":"how do I roll back a deploy with deployctl","title":"t","question_modalities":["text"]}"#,
+            "\n",
+            r#"{"question_id":"q2","project":"demo","query":"who gets paged for a SEV1","title":"t","question_modalities":["text"]}"#,
+            "\n",
+            r#"{"question_id":"q3","project":"demo","query":"what does the screenshot show","title":"t","question_modalities":["text","image_derived_text"]}"#,
+            "\n",
+            r#"{"question_id":"q4","project":"demo","query":"a page we never indexed","title":"t","question_modalities":["text"]}"#,
+            "\n",
+            r#"{"question_id":"q9","project":"elsewhere","query":"not this project","title":"t","question_modalities":["text"]}"#,
+            "\n",
+        ),
+    );
+    write(
+        &data,
+        "data/answers.jsonl",
+        concat!(
+            r#"{"question_id":"q1","qrel_ids":["demo::/rollback"],"image_text_evidence_used":[],"requires_multimodal_judgment":false}"#,
+            "\n",
+            r#"{"question_id":"q2","qrel_ids":["demo::/paging"],"image_text_evidence_used":false,"requires_multimodal_judgment":true}"#,
+            "\n",
+            r#"{"question_id":"q3","qrel_ids":["demo::/paging"],"image_text_evidence_used":[{"kind":"image_derived_text"}],"requires_multimodal_judgment":true}"#,
+            "\n",
+            r#"{"question_id":"q4","qrel_ids":["demo::/missing","demo::/nowhere"],"image_text_evidence_used":false,"requires_multimodal_judgment":false}"#,
+            "\n",
+            r#"{"question_id":"q9","qrel_ids":["else::/x"],"image_text_evidence_used":false,"requires_multimodal_judgment":false}"#,
+            "\n",
+        ),
+    );
+    write(
+        &data,
+        "data/corpus.jsonl",
+        concat!(
+            r#"{"doc_id":"demo::/rollback","project":"demo","repository_source_path":"docs/rollback.mdx","local_path":"docs/demo/docs/rollback.mdx"}"#,
+            "\n",
+            r#"{"doc_id":"demo::/paging","project":"demo","repository_source_path":"docs/paging.mdx","local_path":"docs/demo/docs/paging.mdx"}"#,
+            "\n",
+            r#"{"doc_id":"demo::/other","project":"demo","repository_source_path":"docs/other.mdx","local_path":"docs/demo/docs/other.mdx"}"#,
+            "\n",
+            r#"{"doc_id":"demo::/missing","project":"demo","repository_source_path":"docs/missing.mdx","local_path":"docs/demo/docs/missing.mdx"}"#,
+            "\n",
+            r#"{"doc_id":"else::/x","project":"elsewhere","repository_source_path":"x.md","local_path":"docs/elsewhere/x.md"}"#,
+            "\n",
+        ),
+    );
+    (dir, data, root)
+}
+
+#[test]
+fn eval_docsqa_reports_coverage_split_and_page_metrics() {
+    let (dir, data, root) = docsqa_fixture();
+    // Not indexed yet: a clear error, no crash.
+    mda()
+        .args(["eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "demo", "--root"])
+        .arg(&root)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("not indexed yet"));
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+
+    let out = dir.path().join("out");
+    let stdout = mda()
+        .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "demo", "--root"])
+        .arg(&root)
+        .args(["--split", "all", "--seed", "7", "--out"])
+        .arg(&out)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&stdout);
+    let cov = &v["coverage"];
+    assert_eq!(cov["questions"], 4, "{cov}");
+    assert_eq!(cov["corpus_pages"], 4);
+    assert_eq!(cov["corpus_pages_indexed"], 3);
+    assert_eq!(cov["qrels"], 5);
+    assert_eq!(cov["qrels_indexed"], 3);
+    assert_eq!(cov["qrels_unmapped"], 1, "demo::/nowhere has no corpus row");
+    assert_eq!(cov["excluded_image_evidence"], 1);
+    assert_eq!(cov["excluded_missing_page"], 1);
+    assert_eq!(cov["eligible"], 2);
+    assert_eq!(cov["multimodal_judgment"], 1);
+    assert!((cov["qrel_coverage"].as_f64().unwrap() - 0.6).abs() < 1e-9);
+    let runs = v["runs"].as_array().unwrap();
+    assert_eq!(runs.len(), 1, "raw only without cards: {runs:?}");
+    let m = &runs[0]["metrics"];
+    assert_eq!(m["questions"], 2);
+    assert_eq!(m["success_at_5"], 1.0);
+    assert_eq!(m["mrr_at_5"], 1.0);
+    assert_eq!(m["ndcg_at_10"], 1.0);
+    let results = runs[0]["results"].as_array().unwrap();
+    assert_eq!(results[0]["id"], "q1");
+    assert_eq!(results[0]["rank"], 1);
+    assert_eq!(results[0]["top"][0], "docs/rollback.mdx");
+    assert!(
+        out.join("coverage.json").is_file()
+            && out.join("split.json").is_file()
+            && out.join("results.json").is_file()
+    );
+    let split: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(out.join("split.json")).unwrap()).unwrap();
+    assert_eq!(split["seed"], 7);
+    assert_eq!(
+        split["questions"].as_array().unwrap().len(),
+        4,
+        "every question of the project gets a split, eligible or not"
+    );
+
+    // A split that holds no question scores nothing and says so; the same seed gives the same split.
+    let stdout2 = mda()
+        .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "demo", "--root"])
+        .arg(&root)
+        .args(["--split", "all", "--seed", "7"])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    assert_eq!(json_of(&stdout2)["split_counts"], v["split_counts"]);
+    mda()
+        .args(["eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "nope", "--root"])
+        .arg(&root)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("no questions for project"));
+}
