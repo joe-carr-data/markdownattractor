@@ -1,5 +1,5 @@
 # STATUS (updated 2026-09-22 by Claude)
-**Start here after compaction: `docs/handoffs/2026-09-22-phase4-handoff.md`.**
+**Start here after compaction: `docs/handoffs/2026-09-22-session3-final-handoff.md`.**
 Phase: 4 — **v0.1.1 released and verified from a clean install; launch checklist next**; Phases 0–2 merged (#4–#6)        Active plan: docs/plans/2026-09-phase4-launch.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
