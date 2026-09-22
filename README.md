@@ -51,7 +51,7 @@ Every hit carries provenance: **which file, which section, which lines, and when
 
 ## Quick start
 
-> **Not released yet.** The design is done and reviewed; the spike starts next. The commands below are the contract we are building to. Watch the repo or open an issue if you want to be a design partner.
+> **Not released yet.** The engine and the daemon are built and tested (`mda start|index|search|open|card|status|watch|stop`); vectors, the MCP server and the release pipeline are next. The commands below are the contract we are building to. Watch the repo or open an issue if you want to be a design partner.
 
 ```
 /plugin install markdownattractor --marketplace joe-carr-data/markdownattractor
@@ -109,9 +109,9 @@ Watcher ─► Parser ─► Section diff ─► Planner ─► Workers ─► V
 (notify)   (comrak)  (blake3/sect.)  (chunks)   (claude -p)  (evidence)  (doc card)  (FTS5 + sqlite-vec)
 ```
 
-- **Watcher**: FSEvents/inotify, debounced, `.gitignore`-aware. Never touches `.markdownattractor/`.
+- **Daemon** (`mda start`, one per folder): FSEvents/inotify watcher, debounced with a size-stable check, `.gitignore`-aware. A save is raw-searchable in about a second and carded a few seconds later; renames keep their history without a model call. Controlled over a local socket (`status`, `stop`, `pause`, `resume`, `watch`). Never touches anything outside `.markdownattractor/`.
 - **Section diff**: a blake3 hash per section. Unchanged sections never go to the LLM.
-- **Workers**: a warm pool of `claude -p` processes with a replaced system prompt, no tools, and a JSON schema for the output. Adaptive concurrency backs off on rate limits.
+- **Workers**: an adaptive pool against the Messages API (or a local OpenAI-compatible server) with a replaced system prompt, structured output, and a JSON schema. Concurrency ramps up on success and halves on rate limits; failing rounds back off.
 - **Validator**: every extracted date and entity must quote an `evidence` substring that exists in the section, or it is dropped. Metadata is never hallucinated into the index.
 - **Index**: SQLite with FTS5 over cards, FTS5 over raw section text, `sqlite-vec` over card embeddings from a small local ONNX model, fused with reciprocal rank fusion and a recency prior. Search over 10K sections in under 30 ms.
 - **MCP**: `mda_search`, `mda_card`, `mda_open`, `mda_timeline`, `mda_related`, `mda_status`, served by the same binary.

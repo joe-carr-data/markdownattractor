@@ -24,6 +24,7 @@
 //! | [`store`] | SQLite state: documents, sections, summaries keyed by hash, jobs, events, FTS5. |
 //! | [`search`] | Hybrid retrieval over the store: BM25 on cards and raw text, fused, time-aware. |
 //! | [`pipeline`] | The engine that wires the stages together. |
+//! | [`daemon`] | The long-running process: watcher, debounced intake, summarizer loop, control socket. |
 //!
 //! Two rules hold everywhere in this crate:
 //!
@@ -35,6 +36,7 @@
 
 pub mod card;
 pub mod config;
+pub mod daemon;
 pub mod diff;
 pub mod error;
 pub mod markdown;

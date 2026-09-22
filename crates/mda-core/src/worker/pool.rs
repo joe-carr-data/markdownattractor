@@ -100,6 +100,21 @@ pub struct JobResult {
     pub usage: Usage,
 }
 
+/// Prefix of the `Fatal` reason given to jobs the pool did not let finish.
+pub const POOL_STOPPED_PREFIX: &str = "pool stopped: ";
+
+impl JobResult {
+    /// `true` when this job did not get a fair chance: it never ran, the pool was stopped or
+    /// cancelled while it was queued or in flight, or the outcome is one that stops the pool
+    /// (bad key, dead server, no credits). Such jobs are the environment's fault, not the
+    /// section's, and should stay pending for a later run.
+    pub fn was_stopped(&self) -> bool {
+        self.attempts == 0
+            || self.outcome.stops_pool()
+            || matches!(&self.outcome, Outcome::Fatal { reason } if reason.starts_with(POOL_STOPPED_PREFIX))
+    }
+}
+
 /// Snapshot of pool counters.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PoolStats {
@@ -241,7 +256,7 @@ impl<B: Backend + ?Sized + 'static> Pool<B> {
             id,
             attempts: 0,
             model_used: self.cfg.model.clone(),
-            outcome: Outcome::Fatal { reason: format!("pool stopped: {reason}") },
+            outcome: Outcome::Fatal { reason: format!("{POOL_STOPPED_PREFIX}{reason}") },
             usage: Usage::default(),
         }
     }
@@ -432,7 +447,7 @@ impl<B: Backend + ?Sized + 'static> Job<B> {
     fn stopped(&self) -> Outcome {
         let reason =
             lock(&self.state).stop_reason.clone().unwrap_or_else(|| "cancelled".to_owned());
-        Outcome::Fatal { reason: format!("pool stopped: {reason}") }
+        Outcome::Fatal { reason: format!("{POOL_STOPPED_PREFIX}{reason}") }
     }
 
     fn finish(&self, outcome: Outcome) -> JobResult {

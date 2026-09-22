@@ -29,6 +29,7 @@ tokio-util.workspace = true
 jiff.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+tracing-appender.workspace = true # ADR-0003: daemon log file
 
 [dev-dependencies]
 assert_cmd.workspace = true

@@ -35,7 +35,12 @@ struct Check {
 #[expect(clippy::unnecessary_wraps, reason = "every command shares the same signature")]
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let cfg = mda_core::config::Config::load(&args.root).unwrap_or_default();
-    let mut checks = vec![check_root(&args.root), check_state_dir(&args.root), check_backend(&cfg)];
+    let mut checks = vec![
+        check_root(&args.root),
+        check_state_dir(&args.root),
+        check_backend(&cfg),
+        check_daemon(&args.root),
+    ];
     if matches!(cfg.backend, mda_core::config::Backend::ClaudeCli) {
         checks.push(check_claude_cli());
     }
@@ -134,6 +139,35 @@ fn check_backend(cfg: &mda_core::config::Config) -> Check {
             detail: "claude-cli: opt-in backend; routes requests through your Claude subscription"
                 .to_owned(),
             fix: Some("prefer `mda backend api` or `mda backend local` (ADR-0002)"),
+        },
+    }
+}
+
+fn check_daemon(root: &std::path::Path) -> Check {
+    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    match super::live_status(&root) {
+        Some(l) => Check {
+            name: "daemon",
+            status: if l.watching { Status::Ok } else { Status::Warn },
+            detail: format!(
+                "running · pid {} · up {} · {}",
+                l.pid,
+                super::humanize_secs(l.uptime_secs),
+                l.watcher_error.as_deref().unwrap_or("watching")
+            ),
+            fix: (!l.watching).then_some("restart it: `mda restart`"),
+        },
+        None if mda_core::daemon::pid_path(&root).exists() => Check {
+            name: "daemon",
+            status: Status::Warn,
+            detail: "stale pid file: the last daemon did not exit cleanly".to_owned(),
+            fix: Some("`mda start` (stale files are cleaned up)"),
+        },
+        None => Check {
+            name: "daemon",
+            status: Status::Warn,
+            detail: "not running".to_owned(),
+            fix: Some("`mda start` keeps the index live as you edit"),
         },
     }
 }

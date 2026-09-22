@@ -1,6 +1,6 @@
 # Phase 1 — Summarization engine
 
-Status: **in progress** · started 2026-09-22 · engine + CLI green (rows 1–12), daemon (row 13) next · plan §8 Phase 1
+Status: **done** · started 2026-09-22 · rows 1–12 green, row 13 done in `2026-09-phase1-daemon.md` · plan §8 Phase 1
 
 Goal: `mda index <root>` parses every markdown file, makes it raw-text searchable immediately, summarizes new or changed sections through `claude -p`, and `mda search` returns hybrid hits with line ranges. No daemon yet (that is the last step of this phase), no vectors (Phase 2).
 
@@ -22,7 +22,7 @@ Every module lives in `crates/mda-core/src/`, has its own tests, and knows nothi
 | 10 | `pipeline` | me | `Engine { store, backend, config }`. `index_file(path)`: parse → upsert (raw-searchable now) → enqueue new hashes. `index_root()`: walk + index_file each, priority by size (small first). `summarize_pending()`: drain the queue through the pool, validate, attach. `open(section_id) -> Opened { lines, stale }` re-hashes at read time. |
 | 11 | `search` | me | `search(store, query, opts) -> Vec<Hit>`: BM25 from both FTS tables, reciprocal rank fusion, recency prior on `updated_at`; each hit carries `matched: Cards\|Raw\|Both`, `pending`, line range, tldr or raw snippet. |
 | 12 | CLI | me | `mda index [path] [--no-summarize]`, `mda search <q> [--raw] [-k] [--since]`, `mda open <section_id>`, `mda card <id>`, `mda status`. `--json` everywhere. |
-| 13 | watcher + daemon | later this phase | `notify` watcher → debounce → `index_file`; `mda start/stop`; Unix socket for `status`. Separate plan section when 1–12 are green. |
+| 13 | watcher + daemon | done | See `2026-09-phase1-daemon.md` and ADR-0003: `notify` watcher → debouncer → `sync_path`, rename detection, hot-path-first rounds, local-socket control channel; `mda start|stop|restart|watch|pause|resume`. |
 
 ## Exit criteria
 
