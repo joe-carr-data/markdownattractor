@@ -16,7 +16,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 3. Release pipeline (Phase 4): cargo-dist, GitHub Releases + `SHA256SUMS` for bootstrap.sh; the A/B answer-quality parity protocol (plan §11).
 
 ## Blockers / open questions
-- Rotate the API key (it passed through the chat transcript on 2026-09-22); it lives in `~/.config/markdownattractor/env`.
+- API key: the owner decided on 2026-09-22 that it does not need rotating; it lives in `~/.config/markdownattractor/env`.
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
