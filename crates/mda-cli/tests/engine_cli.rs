@@ -504,6 +504,7 @@ fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
         .args(["diagnostics", "--root"])
         .arg(root)
         .env("HOME", root)
+        .env("USERPROFILE", root)
         .env_remove("ANTHROPIC_API_KEY")
         .assert()
         .success()

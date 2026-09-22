@@ -180,11 +180,13 @@ fn start_status_index_pause_resume_stop() {
         .assert()
         .stdout(predicate::str::contains("running · pid"));
 
-    // diagnostics carries the live daemon and the log tail, with the home directory redacted.
+    // diagnostics carries the live daemon and the log tail, with the home directory redacted
+    // (`HOME` on Unix, `USERPROFILE` on Windows).
     let out = mda()
         .args(["diagnostics", "--root"])
         .arg(&root)
         .env("HOME", dir.path())
+        .env("USERPROFILE", dir.path())
         .assert()
         .success()
         .get_output()
