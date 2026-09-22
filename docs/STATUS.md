@@ -11,11 +11,12 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Windows hotfix (#5): the detached daemon inherited the parent's stdout pipe; std handles are made non-inheritable before spawning (one `unsafe` site, lint forbid→deny).
 
 ## Next (max 3, in order)
-1. Merge `docs/phase4-wrap` (release target fix + handoff), re-run `gh workflow run release.yml --ref main`, read the job list, fix until all five builds and `publish` pass.
+1. Owner: raise the Actions spending limit / fix billing. Then re-run CI on PR #10 (`gh run rerun <id>` or push), merge on a green job list, `gh workflow run release.yml --ref main`, read the job list, fix until all five builds and `publish` pass.
 2. Tag `v0.1.0`, confirm the Release (five archives + `SHA256SUMS`), then install the plugin from the marketplace on this machine and watch `bootstrap.sh` fetch the binary.
 3. Owner decisions: repo public, Apple notarisation secrets, read ledger (schema v4). Then A/B on a realistic corpus with a leaner hit payload.
 
 ## Blockers / open questions
+- **GitHub Actions stopped starting jobs on 2026-09-22 ~09:01 UTC**: "The job was not started because recent account payments have failed or your spending limit needs to be increased" (Billing & plans → Actions spending limit; the release dry run's macOS/Windows/arm64 minutes are billed at multipliers). PR #10 (`docs/phase4-wrap`: two release-workflow fixes + handoff) has no CI until that is fixed; merge it after a green job list, then re-run the release dry run.
 - API key: the owner decided on 2026-09-22 that it does not need rotating; it lives in `~/.config/markdownattractor/env`.
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
