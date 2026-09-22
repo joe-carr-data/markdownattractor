@@ -48,16 +48,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # windows-2022 pinned on 2026-09-22: the windows-latest image (windows-2025-vs2026,
-        # 20260907.229.1) cannot start bash for taiki-e/install-action
-        # (actions/partner-runner-images#169); every run failed for hours. Revisit when fixed.
-        os: [ubuntu-latest, macos-latest, windows-2022]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      # taiki-e/install-action cannot start bash on the current Windows images
+      # (actions/partner-runner-images#169, 2026-09-22, windows-2022 and -2025 alike), so
+      # Windows runs the plain cargo test harness instead of nextest.
       - uses: taiki-e/install-action@nextest
+        if: runner.os != 'Windows'
       - run: cargo nextest run --workspace --all-features --profile ci
+        if: runner.os != 'Windows'
+      - name: tests (Windows, cargo test)
+        if: runner.os == 'Windows'
+        run: cargo test --workspace --all-features
       - name: doctests
         run: cargo test --workspace --all-features --doc
 
