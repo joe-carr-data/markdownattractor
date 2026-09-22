@@ -214,9 +214,13 @@ proptest! {
 
 const MDX_FIXTURE: &str = include_str!("../../tests/fixtures/page.mdx");
 
+fn mdx(text: &str) -> Document {
+    parse_str_as(text, Flavor::Mdx)
+}
+
 #[test]
 fn mdx_fixture_snapshot() {
-    let doc = parse_str(MDX_FIXTURE);
+    let doc = mdx(MDX_FIXTURE);
     insta::assert_yaml_snapshot!(doc, {
         ".sections[].text" => "[text]",
     });
@@ -224,7 +228,7 @@ fn mdx_fixture_snapshot() {
 
 #[test]
 fn mdx_fixture_keeps_every_heading_and_drops_the_esm_block() {
-    let doc = parse_str(MDX_FIXTURE);
+    let doc = mdx(MDX_FIXTURE);
     assert_eq!(doc.title.as_deref(), Some("Deploying with Tabs"), "front matter title");
     let paths: Vec<String> = doc.sections.iter().map(|s| s.heading_path.join(" > ")).collect();
     assert_eq!(
@@ -251,7 +255,7 @@ fn mdx_fixture_keeps_every_heading_and_drops_the_esm_block() {
 
 #[test]
 fn leading_esm_block_is_excluded_like_front_matter() {
-    let doc = parse_str(
+    let doc = mdx(
         "import A from 'a'\nimport B from 'b'\n\nexport const x = {\n  y: 1,\n};\n\nHello.\n\n## S\n\nbody\n",
     );
     assert_eq!(doc.sections.len(), 2);
@@ -262,7 +266,7 @@ fn leading_esm_block_is_excluded_like_front_matter() {
 
 #[test]
 fn esm_block_directly_after_front_matter() {
-    let doc = parse_str("---\ntitle: T\n---\nimport X from 'x'\n\n# H\n\nbody\n");
+    let doc = mdx("---\ntitle: T\n---\nimport X from 'x'\n\n# H\n\nbody\n");
     assert_eq!(doc.sections.len(), 1);
     assert_eq!(doc.sections[0].line_start, 6);
     assert_eq!(doc.title.as_deref(), Some("H"), "an H1 wins over front matter");
@@ -270,14 +274,14 @@ fn esm_block_directly_after_front_matter() {
 
 #[test]
 fn esm_block_only_document_has_no_sections() {
-    let doc = parse_str("import X from 'x'\n\nexport const title = \"Only exports\";\n");
+    let doc = mdx("import X from 'x'\n\nexport const title = \"Only exports\";\n");
     assert!(doc.sections.is_empty());
     assert_eq!(doc.title.as_deref(), Some("Only exports"));
 }
 
 #[test]
 fn import_lines_after_content_stay_text() {
-    let doc = parse_str("# H\n\nimport { x } from 'y'\n\ntext\n");
+    let doc = mdx("# H\n\nimport { x } from 'y'\n\ntext\n");
     assert_eq!(doc.sections.len(), 1);
     assert!(doc.sections[0].text.contains("import { x }"));
 }
@@ -307,23 +311,25 @@ fn title_falls_back_to_front_matter_then_export_const() {
         "only a column-0 title"
     );
     assert_eq!(
-        parse_str(
+        mdx(
             "export const title = \"Padding\";\nexport const description = \"d\";\n\n## Examples\n"
         )
         .title
         .as_deref(),
         Some("Padding")
     );
-    assert_eq!(parse_str("export const title = 'Single';\n").title.as_deref(), Some("Single"));
+    assert_eq!(mdx("export const title = 'Single';\n").title.as_deref(), Some("Single"));
+    // Plain markdown never reads `export const title`.
+    assert_eq!(parse_str("export const title = \"Padding\";\n\n## Examples\n").title, None);
     assert_eq!(
-        parse_str("---\ntitle: Front\n---\n\nexport const title = \"Export\";\n\n# Heading\n")
+        mdx("---\ntitle: Front\n---\n\nexport const title = \"Export\";\n\n# Heading\n")
             .title
             .as_deref(),
         Some("Heading"),
         "H1, then front matter, then export"
     );
     assert_eq!(
-        parse_str("---\ntitle: Front\n---\n\nexport const title = \"Export\";\n\n## Sub\n")
+        mdx("---\ntitle: Front\n---\n\nexport const title = \"Export\";\n\n## Sub\n")
             .title
             .as_deref(),
         Some("Front")
@@ -363,6 +369,8 @@ fn heading_inside_html_block_sets_the_title_when_level_one() {
 fn atx_heading_line_parsing() {
     assert_eq!(atx_heading("## Two"), Some((2, "Two".to_owned())));
     assert_eq!(atx_heading("   ###### Six ###"), Some((6, "Six".to_owned())));
+    assert_eq!(atx_heading("# C#"), Some((1, "C#".to_owned())), "closing hashes need a space");
+    assert_eq!(atx_heading("# ---"), Some((1, "---".to_owned())));
     assert_eq!(atx_heading("#"), Some((1, String::new())));
     assert_eq!(atx_heading("####### seven"), None);
     assert_eq!(atx_heading("#hashtag"), None);
@@ -372,7 +380,14 @@ fn atx_heading_line_parsing() {
 
 #[test]
 fn export_title_and_front_matter_title_parsing() {
-    assert_eq!(export_title("export const title = \"A \\\"quote\\\"\";"), Some("A \\".to_owned()));
+    assert_eq!(
+        export_title("export const title = \"A \\\"quote\\\"\";"),
+        Some("A \"quote\"".to_owned())
+    );
+    assert_eq!(export_title("export const title = \"never closed"), None);
+    assert_eq!(front_matter_title("title: 'User''s guide'\n"), Some("User's guide".to_owned()));
+    assert_eq!(front_matter_title("title: \"Say \\\"hi\\\"\"\n"), Some("Say \"hi\"".to_owned()));
+    assert_eq!(front_matter_title("title: 'unterminated\n"), None);
     assert_eq!(export_title("export const title = `tpl`;"), None);
     assert_eq!(export_title("export const titles = \"x\";"), None);
     assert_eq!(export_title("export const title = \"\";"), None);
@@ -385,4 +400,82 @@ fn export_title_and_front_matter_title_parsing() {
         Some("TOML style".to_owned())
     );
     assert_eq!(front_matter_title("titles: no\ntitle: yes\n"), Some("yes".to_owned()));
+}
+
+// ---------------------------------------------------- from the Codex review of the .mdx PR
+
+#[test]
+fn plain_markdown_prose_starting_with_import_or_export_is_not_esm() {
+    // F1: `.md` behaviour is unchanged; `.mdx` needs a real statement.
+    let text = "import duties apply.\n\nFurther guidance.\n";
+    let doc = parse_str(text);
+    assert_eq!(doc.sections.len(), 1);
+    assert_eq!((doc.sections[0].line_start, doc.sections[0].line_end), (1, 3));
+    assert_eq!(doc.sections[0].text, "import duties apply.\n\nFurther guidance.");
+    assert_eq!(mdx(text).sections, doc.sections, "prose is not an ESM statement in MDX either");
+    assert_eq!(mdx("export it now\n\nBody.\n").sections[0].line_start, 1);
+    assert!(is_esm_statement("import { A } from 'a'"));
+    assert!(is_esm_statement("import {"));
+    assert!(is_esm_statement("import * as ns from 'a'"));
+    assert!(is_esm_statement("import 'side-effect'"));
+    assert!(is_esm_statement("import Tabs from '@theme/Tabs';"));
+    assert!(is_esm_statement("export const x = 1"));
+    assert!(is_esm_statement("export default function X() {}"));
+    assert!(is_esm_statement("export { a, b }"));
+    assert!(!is_esm_statement("import duties apply."));
+    assert!(!is_esm_statement("export it now"));
+    assert!(!is_esm_statement(" import { A } from 'a'"));
+}
+
+#[test]
+fn heading_inside_an_esm_template_literal_is_not_a_heading() {
+    // F3
+    let doc = mdx("export const example = `\n# fake\n`;\n\nBody.\n");
+    assert_eq!(doc.sections.len(), 1);
+    assert_eq!(doc.sections[0].level, 0);
+    assert_eq!(doc.sections[0].text, "Body.");
+    assert_eq!(doc.title, None);
+}
+
+#[test]
+fn html_block_scan_ignores_fences_comments_and_pre() {
+    // F2: nested fences (with their length rule), comments and raw elements are content.
+    let text = "<details>\n<summary>Example</summary>\n````md\n```sh\n# fake\n```\n````\n## Real\n</details>\n";
+    for doc in [parse_str(text), mdx(text)] {
+        let paths: Vec<String> = doc.sections.iter().map(|s| s.heading_path.join(">")).collect();
+        assert_eq!(paths, vec!["", "Real"], "{paths:?}");
+        assert_eq!(doc.sections[1].line_start, 8);
+        assert_eq!(doc.title, None);
+        let lines: Vec<&str> = text.split('\n').collect();
+        for s in &doc.sections {
+            let slice = &lines[(s.line_start - 1) as usize..s.line_end as usize];
+            assert_eq!(s.text, normalize_block(slice));
+        }
+    }
+    let doc =
+        parse_str("<details>\n<summary>x</summary>\n```sh\n# not a heading\n```\n</details>\n");
+    assert_eq!(doc.sections.len(), 1);
+    assert_eq!(doc.title, None);
+    let doc = parse_str(
+        "<div>\n<!-- start\n# not\n-->\n<pre>\n# not\n</pre>\n<PRE class=x># not</PRE>\n# yes\n</div>\n",
+    );
+    assert_eq!(doc.sections.len(), 2);
+    assert_eq!(doc.sections[1].heading_path, vec!["yes"]);
+    assert_eq!(doc.sections[1].line_start, 9);
+}
+
+#[test]
+fn recovered_headings_keep_literal_hashes_and_dashes() {
+    // F4
+    assert_eq!(parse_str("<div>\n# C#\n</div>\n").title.as_deref(), Some("C#"));
+    assert_eq!(parse_str("<div>\n# ---\n</div>\n").title.as_deref(), Some("---"));
+    assert_eq!(parse_str("<div>\n# Title ##\n</div>\n").title.as_deref(), Some("Title"));
+}
+
+#[test]
+fn mdx_and_markdown_flavours_agree_outside_the_esm_block() {
+    let text = "---\ntitle: T\n---\n\n<Note>\n## Inside\n</Note>\n\n## After\n\nbody\n";
+    assert_eq!(parse_str(text), mdx(text));
+    assert_eq!(Flavor::of_path(Path::new("a/b.MDX")), Flavor::Mdx);
+    assert_eq!(Flavor::of_path(Path::new("a/b.md")), Flavor::Markdown);
 }

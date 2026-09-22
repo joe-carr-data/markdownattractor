@@ -419,16 +419,18 @@ fn snippet_of(text: &str) -> String {
     let mut in_tag = false;
     let mut words: Vec<&str> = Vec::new();
     for line in text.lines().skip_while(|l| l.trim_start().starts_with('#')) {
-        let t = line.trim();
+        let mut t = line.trim();
         if in_tag {
-            in_tag = !t.ends_with('>');
-            continue;
+            // The tag ends at its first `>`; whatever follows on the line is prose.
+            let Some(end) = t.find('>') else { continue };
+            in_tag = false;
+            t = t[end + 1..].trim();
         }
-        if t.starts_with('<') && !t.contains('>') {
+        if opens_tag(t) && !t.contains('>') {
             in_tag = true;
             continue;
         }
-        if !is_markup_only(t) {
+        if !t.is_empty() && !is_markup_only(t) {
             words.extend(t.split_whitespace());
         }
     }
@@ -440,19 +442,25 @@ fn snippet_of(text: &str) -> String {
     out
 }
 
+/// `<Tag`, `</Tag` or `<!--`: the start of markup, as opposed to `<` in prose ("a < b").
+fn opens_tag(t: &str) -> bool {
+    t.starts_with('<')
+        && t[1..].starts_with(|c: char| c.is_ascii_alphabetic() || c == '/' || c == '!')
+}
+
 /// A trimmed line that carries no prose: nothing but tags (`<Tabs>`, `</TabPanel>
 /// </Tabs>`, `<Figure />`), an MDX `import`/`export` statement, or a bare JSX brace.
 fn is_markup_only(t: &str) -> bool {
     if t.starts_with("import ") || t.starts_with("export ") || t == "{" || t == "}" {
         return true;
     }
-    if !t.starts_with('<') {
+    if !opens_tag(t) {
         return false;
     }
     let mut depth = 0u32;
     t.chars().all(|c| match c {
         '<' => {
-            depth += 1;
+            depth = depth.saturating_add(1);
             true
         }
         '>' => {
@@ -546,6 +554,12 @@ mod tests {
             snippet_of("## T\n\nimport X from 'y'\n\n<Note>with text</Note>\nrun --to <sha>\n"),
             "<Note>with text</Note> run --to <sha>"
         );
+        // A tag closed mid-line keeps the prose after it; `<` in prose is not a tag.
+        assert_eq!(
+            snippet_of("# H\n<Note\n kind=\"tip\">Important prose\nFollowing prose.\na < b > c\n"),
+            "Important prose Following prose. a < b > c"
+        );
+        assert_eq!(snippet_of("# H\n<Note\n kind=\"tip\"\nnever closed\n"), "");
     }
 
     #[test]

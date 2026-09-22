@@ -793,7 +793,12 @@ impl Engine {
             return DiskState::Fresh;
         }
         match std::fs::read_to_string(&abs) {
-            Ok(text) if markdown::parse_str(&text).hash != doc.content_hash => DiskState::Changed,
+            Ok(text)
+                if markdown::parse_str_as(&text, markdown::Flavor::of_path(&abs)).hash
+                    != doc.content_hash =>
+            {
+                DiskState::Changed
+            }
             Ok(_) => DiskState::Fresh,
             Err(_) => DiskState::Unreadable,
         }
@@ -892,7 +897,8 @@ impl Engine {
             .ok_or_else(|| Error::NotFound(format!("document {}", stored.doc_id)))?;
         let abs = self.safe_join(&stored.rel_path)?;
         let text = std::fs::read_to_string(&abs).map_err(|e| Error::io(&abs, e))?;
-        let doc = markdown::parse_str(&text);
+        // Same flavour as `index_file`, or a `.mdx` page would always look stale.
+        let doc = markdown::parse_str_as(&text, markdown::Flavor::of_path(&abs));
 
         let stale = doc.hash != stored_doc.content_hash;
         if stale {
