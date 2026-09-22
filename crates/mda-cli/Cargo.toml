@@ -31,6 +31,9 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true # ADR-0003: daemon log file
 
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true # ADR-0003 amendment: make std handles non-inheritable before spawning the daemon
+
 [dev-dependencies]
 assert_cmd.workspace = true
 predicates.workspace = true
