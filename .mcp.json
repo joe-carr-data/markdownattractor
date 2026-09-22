@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "markdownattractor": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mda",
+      "args": ["mcp"],
+      "env": {
+        "MDA_ROOT": "${CLAUDE_PROJECT_DIR}",
+        "MDA_MODEL_DIR": "${CLAUDE_PLUGIN_DATA}/models"
+      }
+    }
+  }
+}

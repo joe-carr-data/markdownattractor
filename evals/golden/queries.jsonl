@@ -1,0 +1,60 @@
+{"q": "how do we roll back a deploy", "expect": [{"path": "runbooks/deploy.md", "heading": "Rollback"}], "temporal": false}
+{"q": "what does deployctl release do", "expect": [{"path": "runbooks/deploy.md", "heading": "Release"}, {"path": "adr/0002-blue-green-deploys.md", "heading": "Decision"}], "temporal": false}
+{"q": "who gets paged for a SEV1", "expect": [{"path": "runbooks/on-call.md", "heading": "Paging"}], "temporal": false}
+{"q": "when should we fail over the database", "expect": [{"path": "runbooks/database-failover.md", "heading": "When to fail over"}], "temporal": false}
+{"q": "how to renew a TLS certificate manually", "expect": [{"path": "runbooks/certificate-renewal.md", "heading": "Manual renewal"}], "temporal": false}
+{"q": "what to do when the queue backlog alert fires", "expect": [{"path": "runbooks/queue-backlog.md", "heading": "Mitigation"}], "temporal": false}
+{"q": "how often do database passwords rotate", "expect": [{"path": "runbooks/secrets-rotation.md", "heading": "Schedule"}], "temporal": false}
+{"q": "why did we choose PostgreSQL", "expect": [{"path": "adr/0001-postgres-over-mysql.md"}], "temporal": false}
+{"q": "why are sessions cookies instead of Redis", "expect": [{"path": "adr/0003-drop-redis-sessions.md"}, {"path": "postmortems/2025-05-30-redis-failover.md"}], "temporal": false}
+{"q": "why did the workers move out of the monorepo", "expect": [{"path": "adr/0009-split-workers-repo.md"}], "temporal": false}
+{"q": "how do feature flags work", "expect": [{"path": "adr/0005-feature-flags.md"}, {"path": "onboarding/faq.md", "heading": "turn a feature off"}], "temporal": false}
+{"q": "what is the rate limit for public API keys", "expect": [{"path": "specs/rate-limiting.md", "heading": "Limits"}, {"path": "specs/order-api-v2.md", "heading": "Rate limits"}], "temporal": false}
+{"q": "when is the order API v1 deprecated", "expect": [{"path": "specs/order-api-v2.md", "heading": "Deprecation"}], "temporal": true}
+{"q": "what happened in the SEPA incident", "expect": [{"path": "meetings/2026-06-16-incident-review.md"}, {"path": "specs/payments-sepa.md", "heading": "Feature flag"}], "temporal": true}
+{"q": "what is a colour in blue-green", "expect": [{"path": "onboarding/glossary.md"}], "temporal": false}
+{"q": "what should I do on my first day", "expect": [{"path": "onboarding/first-week.md", "heading": "Day 1"}], "temporal": false}
+{"q": "how do I get a database password", "expect": [{"path": "onboarding/faq.md", "heading": "database password"}], "temporal": false}
+{"q": "what caused the split-brain in November 2024", "expect": [{"path": "meetings/2024-11-12-failover-postmortem.md"}, {"path": "runbooks/database-failover.md", "heading": "After the failover"}], "temporal": true}
+{"q": "why did order confirmations get delayed in January 2025", "expect": [{"path": "postmortems/2025-01-14-worker-nack-loop.md"}, {"path": "runbooks/queue-backlog.md", "heading": "Causes"}], "temporal": true}
+{"q": "what shipped in August 2026", "expect": [{"path": "changelog/2026.md", "heading": "2026-08-14"}], "temporal": true}
+{"q": "what are the Q4 2026 roadmap items", "expect": [{"path": "meetings/2026-08-04-platform-sync.md", "heading": "Decisions"}], "temporal": true}
+{"q": "what was committed for Q4 2025", "expect": [{"path": "meetings/2025-10-07-quarterly-planning.md", "heading": "Q4 2025"}], "temporal": true}
+{"q": "when is the MySQL instance switched off", "expect": [{"path": "meetings/2026-09-01-platform-sync.md", "heading": "Decisions"}], "temporal": true}
+{"q": "how long is the previous colour kept warm", "expect": [{"path": "runbooks/deploy.md", "heading": "Rollback"}, {"path": "adr/0002-blue-green-deploys.md", "heading": "Decision"}], "temporal": false}
+{"q": "what is the target for selective CI builds", "expect": [{"path": "specs/selective-ci.md", "heading": "Goal"}, {"path": "meetings/2026-08-04-platform-sync.md", "heading": "Decisions"}], "temporal": true}
+{"q": "how does the search index rewrite work", "expect": [{"path": "specs/search-index-rewrite.md", "heading": "Proposal"}], "temporal": false}
+{"q": "how many tickets about missing products in July 2026", "expect": [{"path": "specs/search-index-rewrite.md", "heading": "Problem"}], "temporal": true}
+{"q": "what happens if the config service is down", "expect": [{"path": "adr/0005-feature-flags.md", "heading": "Consequences"}, {"path": "meetings/2026-06-16-incident-review.md", "heading": "Root cause"}], "temporal": false}
+{"q": "how are database migrations run during a deploy", "expect": [{"path": "runbooks/deploy.md", "heading": "Database migrations"}], "temporal": false}
+{"q": "what does the weekly handover include", "expect": [{"path": "runbooks/on-call.md", "heading": "Handover"}], "temporal": false}
+{"q": "undo the last release", "expect": [{"path": "runbooks/deploy.md", "heading": "Rollback"}], "temporal": false}
+{"q": "ship a new version of the API", "expect": [{"path": "runbooks/deploy.md", "heading": "Release"}], "temporal": false}
+{"q": "escalation policy for outages", "expect": [{"path": "runbooks/on-call.md", "heading": "Paging"}], "temporal": false}
+{"q": "promote the standby database", "expect": [{"path": "runbooks/database-failover.md", "heading": "Procedure"}], "temporal": false}
+{"q": "cert expiring soon what do I do", "expect": [{"path": "runbooks/certificate-renewal.md"}], "temporal": false}
+{"q": "messages piling up in the orders stream", "expect": [{"path": "runbooks/queue-backlog.md"}], "temporal": false}
+{"q": "a credential leaked, what now", "expect": [{"path": "runbooks/secrets-rotation.md", "heading": "Emergency rotation"}], "temporal": false}
+{"q": "reasons for picking postgres over mysql", "expect": [{"path": "adr/0001-postgres-over-mysql.md"}], "temporal": false}
+{"q": "kill switch for a feature without deploying", "expect": [{"path": "adr/0005-feature-flags.md"}, {"path": "onboarding/faq.md", "heading": "turn a feature off"}], "temporal": false}
+{"q": "cost of keeping two API deployments running", "expect": [{"path": "adr/0002-blue-green-deploys.md", "heading": "Consequences"}], "temporal": false}
+{"q": "how quickly does a flag change take effect", "expect": [{"path": "adr/0005-feature-flags.md"}, {"path": "onboarding/faq.md", "heading": "turn a feature off"}], "temporal": false}
+{"q": "throttling rules per client", "expect": [{"path": "specs/rate-limiting.md"}], "temporal": false}
+{"q": "how long until a new product shows up in search today", "expect": [{"path": "specs/search-index-rewrite.md", "heading": "Problem"}], "temporal": false}
+{"q": "SEPA settlement time", "expect": [{"path": "specs/payments-sepa.md", "heading": "Flow"}], "temporal": false}
+{"q": "what does a rejected direct debit do to the order", "expect": [{"path": "specs/payments-sepa.md", "heading": "Failure handling"}], "temporal": false}
+{"q": "mass logout incident", "expect": [{"path": "postmortems/2025-05-30-redis-failover.md"}], "temporal": true}
+{"q": "consumer redelivering the same message forever", "expect": [{"path": "postmortems/2025-01-14-worker-nack-loop.md"}], "temporal": false}
+{"q": "bring the old primary back after failover", "expect": [{"path": "runbooks/database-failover.md", "heading": "After the failover"}], "temporal": false}
+{"q": "new hire reading list", "expect": [{"path": "onboarding/first-week.md"}], "temporal": false}
+{"q": "definition of flip", "expect": [{"path": "onboarding/glossary.md"}], "temporal": false}
+{"q": "who owns the selective CI work", "expect": [{"path": "specs/selective-ci.md", "heading": "Rollout"}, {"path": "meetings/2026-08-04-platform-sync.md", "heading": "Decisions"}], "temporal": false}
+{"q": "idempotency for order creation", "expect": [{"path": "specs/order-api-v2.md", "heading": "Endpoints"}], "temporal": false}
+{"q": "MFA for the secrets store deadline", "expect": [{"path": "meetings/2026-03-03-security-review.md", "heading": "Open"}], "temporal": true}
+{"q": "vault audit retention", "expect": [{"path": "meetings/2026-03-03-security-review.md", "heading": "Findings"}, {"path": "runbooks/secrets-rotation.md", "heading": "Emergency rotation"}], "temporal": false}
+{"q": "what changed in deploys in early 2026", "expect": [{"path": "changelog/2026.md", "heading": "2026-01-20"}], "temporal": true}
+{"q": "when did the checkout redesign reach everyone", "expect": [{"path": "changelog/2025.md", "heading": "2025-06-30"}], "temporal": true}
+{"q": "catalog migration completion date", "expect": [{"path": "changelog/2024.md", "heading": "2024-12-01"}], "temporal": true}
+{"q": "why one repo in 2023", "expect": [{"path": "adr/0004-monorepo.md"}], "temporal": true}
+{"q": "how many engineers to hire for workers", "expect": [{"path": "meetings/2025-10-07-quarterly-planning.md"}], "temporal": false}
+{"q": "warm the flag cache on startup", "expect": [{"path": "meetings/2026-06-16-incident-review.md", "heading": "Actions"}], "temporal": false}

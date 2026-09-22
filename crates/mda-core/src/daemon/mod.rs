@@ -107,6 +107,12 @@ pub struct LiveStatus {
     pub cards: u64,
     /// Sections whose summarization failed since start.
     pub failures: u64,
+    /// Cards embedded since start.
+    pub embedded: u64,
+    /// Embedding model in use, `None` when embeddings are off.
+    pub embedding_model: Option<String>,
+    /// Why the last embedding pass failed, if it did (the model could not be fetched).
+    pub embedding_error: Option<String>,
     /// Spend since start, in US dollars.
     pub cost_usd: f64,
     /// Seconds the summarizer is currently backing off, `0` when it is not.
@@ -169,6 +175,15 @@ pub enum DaemonEvent {
     },
     /// One section finished in the current round.
     Progress(Progress),
+    /// An embedding pass ran.
+    Embedded {
+        /// Cards embedded.
+        count: usize,
+        /// Cards still without a vector.
+        remaining: u64,
+        /// Wall-clock milliseconds.
+        ms: u128,
+    },
     /// A summarization round ended.
     RoundFinished {
         /// Cards attached (model calls).
@@ -212,6 +227,8 @@ struct Live {
     rounds: u64,
     cards: u64,
     failures: u64,
+    embedded: u64,
+    embedding_error: Option<String>,
     cost_usd: f64,
     backoff_secs: u64,
     last_error: Option<String>,
@@ -221,6 +238,7 @@ struct Live {
 /// State every task can reach.
 struct Shared {
     info: DaemonInfo,
+    embedding_model: Option<String>,
     started: Instant,
     live: Mutex<Live>,
     hot: Mutex<HotSet>,
@@ -267,6 +285,9 @@ impl Shared {
             rounds: live.rounds,
             cards: live.cards,
             failures: live.failures,
+            embedded: live.embedded,
+            embedding_model: self.embedding_model.clone(),
+            embedding_error: live.embedding_error.clone(),
             cost_usd: live.cost_usd,
             backoff_secs: live.backoff_secs,
             last_error: live.last_error.clone(),
@@ -309,9 +330,11 @@ pub async fn run(
         socket: server.location().to_string(),
     };
     info.write(&root)?;
+    let embedder = crate::embed::embedder_for(summarizer_engine.config());
     let (events, _) = broadcast::channel(256);
     let shared = Arc::new(Shared {
         info,
+        embedding_model: embedder.as_ref().map(|e| e.model().to_owned()),
         started: Instant::now(),
         live: Mutex::new(Live::default()),
         hot: Mutex::new(HotSet::new(dcfg.hot_ttl)),
@@ -339,8 +362,13 @@ pub async fn run(
         Arc::clone(&shared),
         dcfg.clone(),
     ));
-    let summarizer =
-        tokio::spawn(summarizer_loop(summarizer_engine, backend, Arc::clone(&shared), dcfg));
+    let summarizer = tokio::spawn(summarizer_loop(
+        summarizer_engine,
+        backend,
+        embedder,
+        Arc::clone(&shared),
+        dcfg,
+    ));
     let server_task = tokio::spawn(serve(server, cmd_tx, Arc::clone(&shared)));
     shared.publish(DaemonEvent::Started { root: root.display().to_string() });
     tracing::info!(root = %root.display(), pid = shared.info.pid, "daemon started");
@@ -578,9 +606,58 @@ async fn sleep_cancellable(shared: &Shared, d: Duration) {
     }
 }
 
+/// Embed whatever has a card and no vector. Runs on the summarizer task; the model work is
+/// CPU-bound, so it runs under `block_in_place` to keep the runtime's other workers free. A
+/// failure (model cannot be fetched) is recorded once and retried on the next call.
+/// Cards per embedding step; pause and stop are honoured between steps.
+const EMBED_STEP: usize = 4 * crate::embed::EMBED_BATCH;
+
+fn embed_pass(
+    engine: &mut Engine,
+    embedder: Option<&Arc<dyn crate::embed::Embedder>>,
+    shared: &Shared,
+) {
+    let Some(embedder) = embedder else { return };
+    loop {
+        if shared.cancel.is_cancelled() || shared.paused.load(Ordering::Relaxed) {
+            return;
+        }
+        let result = tokio::task::block_in_place(|| engine.embed_pending(&**embedder, EMBED_STEP));
+        match result {
+            Ok(r) => {
+                {
+                    let mut live = lock(&shared.live);
+                    live.embedded += r.embedded as u64;
+                    live.embedding_error = None;
+                }
+                if r.embedded > 0 {
+                    shared.publish(DaemonEvent::Embedded {
+                        count: r.embedded,
+                        remaining: r.remaining,
+                        ms: r.ms,
+                    });
+                }
+                if r.remaining == 0 || r.embedded == 0 {
+                    return;
+                }
+            }
+            Err(e) => {
+                let msg = e.to_string();
+                let mut live = lock(&shared.live);
+                if live.embedding_error.as_deref() != Some(msg.as_str()) {
+                    tracing::warn!(error = %msg, "embedding pass failed; search stays lexical");
+                    live.embedding_error = Some(msg);
+                }
+                return;
+            }
+        }
+    }
+}
+
 async fn summarizer_loop(
     mut engine: Engine,
     backend: DynBackend,
+    embedder: Option<Arc<dyn crate::embed::Embedder>>,
     shared: Arc<Shared>,
     dcfg: DaemonConfig,
 ) {
@@ -621,6 +698,9 @@ async fn summarizer_loop(
         };
         if pending == 0 {
             backoff = None;
+            // Idle: catch up on vectors (cards from before this daemon started, or a model
+            // that only just became available), then wait.
+            embed_pass(&mut engine, embedder.as_ref(), &shared);
             wait_wake_or(&shared, dcfg.idle_poll).await;
             continue;
         }
@@ -641,6 +721,7 @@ async fn summarizer_loop(
         match result {
             Ok(r) => {
                 record_round(&shared, &r);
+                embed_pass(&mut engine, embedder.as_ref(), &shared);
                 // The pool learned a concurrency this round; start the next one there.
                 carried_concurrency = Some(r.pool.concurrency);
                 let nothing_worked = r.submitted > 0 && r.ok == 0;

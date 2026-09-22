@@ -61,6 +61,22 @@ enum Command {
     Pause(commands::pause::Args),
     /// Resume summarization after `pause`.
     Resume(commands::pause::Args),
+    /// Show the score breakdown behind a query: cards, raw text, vectors, fused.
+    Explain(commands::explain::Args),
+    /// What was created, changed, renamed or deleted, grouped by day.
+    Timeline(commands::timeline::Args),
+    /// The most recently updated documents.
+    Recent(commands::recent::Args),
+    /// Documents whose index is not final (should print nothing).
+    Stale(commands::stale::Args),
+    /// Regenerate derived artefacts (`--embeddings`).
+    Rebuild(commands::rebuild::Args),
+    /// Show or switch the embedding setting (local-small, off).
+    Embeddings(commands::embeddings::Args),
+    /// Serve the index to Claude over MCP (stdio).
+    Mcp(commands::mcp::Args),
+    /// Retrieval metrics (recall@k, MRR) on a golden set, offline.
+    Eval(commands::eval::Args),
     /// The daemon process itself (spawned by `start`).
     #[command(hide = true)]
     Daemon(commands::daemon::Args),
@@ -96,6 +112,14 @@ fn main() -> ExitCode {
         Command::Watch(args) => commands::watch::run(&args, cli.json),
         Command::Pause(args) => commands::pause::pause(&args, cli.json),
         Command::Resume(args) => commands::pause::resume(&args, cli.json),
+        Command::Explain(args) => commands::explain::run(&args, cli.json),
+        Command::Timeline(args) => commands::timeline::run(&args, cli.json),
+        Command::Recent(args) => commands::recent::run(&args, cli.json),
+        Command::Stale(args) => commands::stale::run(&args, cli.json),
+        Command::Rebuild(args) => commands::rebuild::run(&args, cli.json),
+        Command::Embeddings(args) => commands::embeddings::run(&args, cli.json),
+        Command::Mcp(args) => commands::mcp::run(&args, cli.json),
+        Command::Eval(args) => commands::eval::run(&args, cli.json),
         Command::Daemon(args) => commands::daemon::run(&args, cli.json),
     };
 

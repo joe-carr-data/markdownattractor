@@ -42,7 +42,7 @@ use crate::{Error, Result};
 
 /// Schema migrations, applied in order. Version `n` is `MIGRATIONS[n - 1]`. To add a
 /// version, append one entry; [`Store::open`] runs whatever the file is missing.
-const MIGRATIONS: &[&str] = &[SCHEMA_V1, SCHEMA_V2];
+const MIGRATIONS: &[&str] = &[SCHEMA_V1, SCHEMA_V2, SCHEMA_V3];
 
 /// How long a connection waits for another writer before giving up.
 pub const BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
@@ -50,6 +50,19 @@ pub const BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 /// Current schema version: the one a freshly opened store reports.
 #[allow(clippy::cast_possible_truncation)] // a handful of migrations, never 2^32
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
+
+/// v3: card embeddings, keyed by section hash like the cards themselves (ADR-0004). One row
+/// per hash and model; `vector` is little-endian `f32`, L2-normalised, `dim` values long.
+const SCHEMA_V3: &str = r"
+CREATE TABLE embeddings (
+    section_hash TEXT    NOT NULL REFERENCES summaries(section_hash),
+    model        TEXT    NOT NULL,
+    dim          INTEGER NOT NULL,
+    vector       BLOB    NOT NULL,
+    embedded_at  TEXT    NOT NULL,
+    PRIMARY KEY (section_hash, model)
+);
+";
 
 /// v2: an append-only ledger of every model attempt, so the daily budget counts tokens that
 /// bought nothing (retries, malformed replies, validation failures) as well as cards.
@@ -1044,26 +1057,276 @@ impl Store {
         until: Option<Timestamp>,
         limit: usize,
     ) -> Result<Vec<Event>> {
+        Ok(self
+            .timeline_with_paths(since, until, None, limit)?
+            .into_iter()
+            .map(|(e, _)| e)
+            .collect())
+    }
+
+    /// Like [`Store::timeline`], with each event's document path (tombstoned or not) and an
+    /// optional path prefix filter applied in SQL, before the limit.
+    pub fn timeline_with_paths(
+        &self,
+        since: Option<Timestamp>,
+        until: Option<Timestamp>,
+        path_prefix: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<(Event, String)>> {
         let mut stmt = self.conn.prepare(
-            "SELECT at, kind, doc_id, section_id, detail FROM events
-             WHERE (?1 IS NULL OR at >= ?1) AND (?2 IS NULL OR at < ?2)
-             ORDER BY at, id LIMIT ?3",
+            "SELECT e.at, e.kind, e.doc_id, e.section_id, e.detail, COALESCE(d.rel_path, e.doc_id)
+             FROM events e LEFT JOIN docs d ON d.doc_id = e.doc_id
+             WHERE (?1 IS NULL OR e.at >= ?1) AND (?2 IS NULL OR e.at < ?2)
+               AND (?4 IS NULL OR substr(d.rel_path, 1, length(?4)) = ?4)
+             ORDER BY e.at, e.id LIMIT ?3",
         )?;
+        let prefix = path_prefix.map(|p| p.trim_start_matches("./").to_owned());
         let rows = stmt.query_map(
-            params![since.map(fmt_ts), until.map(fmt_ts), to_i64(limit as u64)],
+            params![since.map(fmt_ts), until.map(fmt_ts), to_i64(limit as u64), prefix],
             |r| {
                 let kind: String = r.get(1)?;
-                Ok(Event {
-                    at: r.get(0)?,
-                    kind: EventKind::parse(&kind)
-                        .ok_or_else(|| bad_column(1, format!("unknown event kind {kind}")))?,
-                    doc_id: r.get(2)?,
-                    section_id: r.get(3)?,
-                    detail: r.get(4)?,
-                })
+                Ok((
+                    Event {
+                        at: r.get(0)?,
+                        kind: EventKind::parse(&kind)
+                            .ok_or_else(|| bad_column(1, format!("unknown event kind {kind}")))?,
+                        doc_id: r.get(2)?,
+                        section_id: r.get(3)?,
+                        detail: r.get(4)?,
+                    },
+                    r.get(5)?,
+                ))
             },
         )?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+}
+
+/// The text of a card that gets embedded, with the hash the vector will be stored under.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CardText {
+    /// Hash the embedding is keyed by.
+    pub section_hash: String,
+    /// Document title, if any (first live section carrying the hash).
+    pub title: Option<String>,
+    /// Heading path of that section.
+    pub heading_path: Vec<String>,
+    /// The card.
+    pub summary: SectionSummary,
+}
+
+/// Every vector of one model, laid out contiguously for a brute-force scan.
+#[derive(Debug, Clone, PartialEq)]
+pub struct VectorSet {
+    /// Model the vectors came from.
+    pub model: String,
+    /// Dimension of every vector.
+    pub dim: usize,
+    /// `hashes[i]` owns `data[i * dim .. (i + 1) * dim]`.
+    pub hashes: Vec<String>,
+    /// All vectors, row-major.
+    pub data: Vec<f32>,
+}
+
+impl VectorSet {
+    /// Number of vectors.
+    pub fn len(&self) -> usize {
+        self.hashes.len()
+    }
+
+    /// `true` when there are no vectors.
+    pub fn is_empty(&self) -> bool {
+        self.hashes.is_empty()
+    }
+
+    /// The `i`-th vector.
+    pub fn row(&self, i: usize) -> &[f32] {
+        &self.data[i * self.dim..(i + 1) * self.dim]
+    }
+}
+
+/// How many carded hashes have a vector for a model.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct EmbeddingCounts {
+    /// Live carded hashes with a vector of this model.
+    pub embedded: u64,
+    /// Live carded hashes in total.
+    pub carded: u64,
+}
+
+impl Store {
+    /// Store (or replace) the vector of a carded hash for `model`.
+    pub fn put_embedding(&mut self, section_hash: &str, model: &str, vector: &[f32]) -> Result<()> {
+        let mut blob = Vec::with_capacity(vector.len() * 4);
+        for v in vector {
+            blob.extend_from_slice(&v.to_le_bytes());
+        }
+        let dim = i64::try_from(vector.len()).unwrap_or(i64::MAX);
+        self.conn.execute(
+            "INSERT INTO embeddings (section_hash, model, dim, vector, embedded_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(section_hash, model) DO UPDATE SET dim = excluded.dim,
+                vector = excluded.vector, embedded_at = excluded.embedded_at",
+            params![section_hash, model, dim, blob, fmt_ts(Timestamp::now())],
+        )?;
+        Ok(())
+    }
+
+    /// Every vector of `model` whose hash belongs to at least one live section.
+    pub fn vector_set(&self, model: &str) -> Result<VectorSet> {
+        let mut stmt = self.conn.prepare(
+            "SELECT e.section_hash, e.dim, e.vector FROM embeddings e
+             WHERE e.model = ?1
+               AND EXISTS (SELECT 1 FROM sections s WHERE s.section_hash = e.section_hash)
+             ORDER BY e.section_hash",
+        )?;
+        let rows = stmt.query_map(params![model], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, Vec<u8>>(2)?))
+        })?;
+        let mut set =
+            VectorSet { model: model.to_owned(), dim: 0, hashes: Vec::new(), data: Vec::new() };
+        for row in rows {
+            let (hash, dim, blob) = row?;
+            let dim = usize::try_from(dim).unwrap_or(0);
+            if dim == 0 || blob.len() != dim * 4 {
+                tracing::warn!(hash, dim, bytes = blob.len(), "skipping malformed embedding row");
+                continue;
+            }
+            if set.dim == 0 {
+                set.dim = dim;
+            } else if set.dim != dim {
+                tracing::warn!(
+                    hash,
+                    dim,
+                    expected = set.dim,
+                    "skipping embedding with another dimension"
+                );
+                continue;
+            }
+            set.hashes.push(hash);
+            set.data.extend(blob.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)));
+        }
+        Ok(set)
+    }
+
+    /// Cards of live sections that have no vector for `model` yet, up to `limit`, in
+    /// section-hash order starting after `after` (keyset pagination: a backfill walks the
+    /// corpus once instead of rescanning it for every batch). The context fields come from
+    /// the lowest section id carrying the hash.
+    pub fn cards_without_embedding(
+        &self,
+        model: &str,
+        after: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<CardText>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT m.section_hash, d.title, s.heading_path, m.summary
+             FROM summaries m
+             JOIN sections s ON s.section_id =
+                 (SELECT MIN(section_id) FROM sections WHERE section_hash = m.section_hash)
+             JOIN docs d ON d.doc_id = s.doc_id
+             WHERE m.state = 'summarized' AND m.summary IS NOT NULL
+               AND m.section_hash > ?3
+               AND NOT EXISTS (SELECT 1 FROM embeddings e
+                               WHERE e.section_hash = m.section_hash AND e.model = ?1)
+             ORDER BY m.section_hash
+             LIMIT ?2",
+        )?;
+        let rows =
+            stmt.query_map(params![model, to_i64(limit as u64), after.unwrap_or("")], |r| {
+                Ok(CardText {
+                    section_hash: r.get(0)?,
+                    title: r.get(1)?,
+                    heading_path: json_col(r, 2)?,
+                    summary: json_col(r, 3)?,
+                })
+            })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// Coverage of `model` over the live carded hashes.
+    pub fn embedding_counts(&self, model: &str) -> Result<EmbeddingCounts> {
+        let carded: i64 = self.conn.query_row(
+            "SELECT COUNT(DISTINCT m.section_hash) FROM summaries m
+             JOIN sections s ON s.section_hash = m.section_hash
+             WHERE m.state = 'summarized'",
+            [],
+            |r| r.get(0),
+        )?;
+        let embedded: i64 = self.conn.query_row(
+            "SELECT COUNT(DISTINCT e.section_hash) FROM embeddings e
+             JOIN sections s ON s.section_hash = e.section_hash
+             JOIN summaries m ON m.section_hash = e.section_hash AND m.state = 'summarized'
+             WHERE e.model = ?1",
+            params![model],
+            |r| r.get(0),
+        )?;
+        Ok(EmbeddingCounts {
+            embedded: u64::try_from(embedded).unwrap_or_default(),
+            carded: u64::try_from(carded).unwrap_or_default(),
+        })
+    }
+
+    /// Drop every vector that is not of `model` (after a model change). Returns how many.
+    pub fn delete_embeddings_not(&mut self, model: &str) -> Result<usize> {
+        Ok(self.conn.execute("DELETE FROM embeddings WHERE model != ?1", params![model])?)
+    }
+
+    /// Live section ids carrying each of `hashes`, keyed by hash.
+    pub fn section_ids_by_hashes(
+        &self,
+        hashes: &[&str],
+    ) -> Result<std::collections::HashMap<String, Vec<String>>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT section_id FROM sections WHERE section_hash = ?1 ORDER BY section_id",
+        )?;
+        let mut out = std::collections::HashMap::with_capacity(hashes.len());
+        for hash in hashes {
+            let ids: Vec<String> =
+                stmt.query_map(params![hash], |r| r.get(0))?.collect::<rusqlite::Result<_>>()?;
+            out.insert((*hash).to_owned(), ids);
+        }
+        Ok(out)
+    }
+
+    /// The `n` most recently updated live documents.
+    pub fn recent_documents(&self, n: usize) -> Result<Vec<StoredDocument>> {
+        let sql = format!(
+            "SELECT {DOC_COLUMNS} WHERE deleted_at IS NULL ORDER BY updated_at DESC, rel_path LIMIT ?1"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let rows = stmt.query_map(params![to_i64(n as u64)], row_to_document)?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// Live documents with at least one pending or failed section, with the counts.
+    pub fn documents_with_open_sections(&self) -> Result<Vec<(StoredDocument, u64, u64)>> {
+        let sql = format!(
+            "SELECT {DOC_COLUMNS} WHERE deleted_at IS NULL AND doc_id IN (
+                SELECT s.doc_id FROM sections s JOIN summaries m ON m.section_hash = s.section_hash
+                WHERE m.state != 'summarized') ORDER BY rel_path"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let docs: Vec<StoredDocument> =
+            stmt.query_map([], row_to_document)?.collect::<rusqlite::Result<_>>()?;
+        let mut count = self.conn.prepare(
+            "SELECT
+               SUM(CASE WHEN m.state = 'pending' THEN 1 ELSE 0 END),
+               SUM(CASE WHEN m.state = 'failed' THEN 1 ELSE 0 END)
+             FROM sections s JOIN summaries m ON m.section_hash = s.section_hash
+             WHERE s.doc_id = ?1",
+        )?;
+        let mut out = Vec::with_capacity(docs.len());
+        for doc in docs {
+            let (pending, failed): (i64, i64) =
+                count.query_row(params![doc.doc_id], |r| Ok((r.get(0)?, r.get(1)?)))?;
+            out.push((
+                doc,
+                u64::try_from(pending).unwrap_or_default(),
+                u64::try_from(failed).unwrap_or_default(),
+            ));
+        }
+        Ok(out)
     }
 }
 

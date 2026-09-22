@@ -61,7 +61,7 @@ fn start_status_index_pause_resume_stop() {
     write(
         &root,
         ".markdownattractor/config.toml",
-        "backend = \"local\"\nlocal_base_url = \"http://127.0.0.1:1/v1\"\n",
+        "backend = \"local\"\nlocal_base_url = \"http://127.0.0.1:1/v1\"\nembeddings = \"off\"\n",
     );
 
     // Nothing running yet: stop is a no-op, status says so.

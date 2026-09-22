@@ -543,3 +543,91 @@ fn note_rename_moves_history_and_tombstones_the_old_path() {
     assert!(!store.note_rename("new/path.md", "nowhere.md", ts(12)).unwrap());
     assert!(!store.note_rename("x.md", "x.md", ts(12)).unwrap());
 }
+
+#[test]
+fn embeddings_round_trip_live_filter_and_counts() {
+    let mut store = Store::open_in_memory().unwrap();
+    let doc = parse_str(DOC_A);
+    store.upsert_document("a.md", &doc, &times(0)).unwrap();
+    let h1 = doc.sections[1].hash.clone();
+    let h2 = doc.sections[2].hash.clone();
+    store.attach_summary(&h1, &summary("t1", "b1"), &provenance(1), &Usage::default()).unwrap();
+    assert!(store.vector_set("m").unwrap().is_empty());
+
+    // One card, no vector yet: it is what needs embedding.
+    let todo = store.cards_without_embedding("m", None, 10).unwrap();
+    assert_eq!(todo.len(), 1);
+    assert_eq!(todo[0].section_hash, h1);
+    assert_eq!(todo[0].title.as_deref(), Some("Alpha"));
+    assert_eq!(todo[0].heading_path, vec!["Alpha", "Deploy"]);
+    assert_eq!(todo[0].summary.tldr, "t1");
+
+    store.put_embedding(&h1, "m", &[0.6, 0.8]).unwrap();
+    let set = store.vector_set("m").unwrap();
+    assert_eq!(set.len(), 1);
+    assert_eq!(set.dim, 2);
+    assert_eq!(set.hashes, vec![h1.clone()]);
+    assert!((set.row(0)[0] - 0.6).abs() < 1e-6 && (set.row(0)[1] - 0.8).abs() < 1e-6);
+    assert!(store.cards_without_embedding("m", None, 10).unwrap().is_empty());
+    assert!(store.vector_set("other-model").unwrap().is_empty(), "model filter");
+
+    // Replace is fine; a second card shows up as pending work; counts add up.
+    store.put_embedding(&h1, "m", &[1.0, 0.0]).unwrap();
+    assert_eq!(store.vector_set("m").unwrap().row(0), &[1.0, 0.0]);
+    store.attach_summary(&h2, &summary("t2", "b2"), &provenance(2), &Usage::default()).unwrap();
+    assert_eq!(store.cards_without_embedding("m", None, 10).unwrap()[0].section_hash, h2);
+    assert!(store.cards_without_embedding("m", Some(&h2), 10).unwrap().is_empty(), "cursor");
+    let c = store.embedding_counts("m").unwrap();
+    assert_eq!((c.embedded, c.carded), (1, 2));
+
+    // Vectors of other models can be dropped; tombstoned documents hide their vectors.
+    store.put_embedding(&h2, "old", &[0.0, 1.0]).unwrap();
+    assert_eq!(store.delete_embeddings_not("m").unwrap(), 1);
+    let ids = store.section_ids_by_hashes(&[h1.as_str(), "nope"]).unwrap();
+    assert_eq!(ids[&h1].len(), 1);
+    assert!(ids["nope"].is_empty());
+    store.tombstone("a.md", ts(9)).unwrap();
+    assert!(store.vector_set("m").unwrap().is_empty());
+    assert_eq!(store.embedding_counts("m").unwrap(), EmbeddingCounts::default());
+}
+
+#[test]
+fn recent_documents_and_documents_with_open_sections() {
+    let mut store = Store::open_in_memory().unwrap();
+    let doc = parse_str(DOC_A);
+    store.upsert_document("old.md", &doc, &times(0)).unwrap();
+    store.upsert_document("new.md", &parse_str("# New\n\nfresh\n"), &times(100)).unwrap();
+    let recent = store.recent_documents(5).unwrap();
+    assert_eq!(
+        recent.iter().map(|d| d.rel_path.as_str()).collect::<Vec<_>>(),
+        vec!["new.md", "old.md"]
+    );
+    assert_eq!(store.recent_documents(1).unwrap().len(), 1);
+
+    let open = store.documents_with_open_sections().unwrap();
+    assert_eq!(open.len(), 2);
+    let old = open.iter().find(|(d, _, _)| d.rel_path == "old.md").unwrap();
+    assert_eq!((old.1, old.2), (3, 0));
+    store.mark_failed(&doc.sections[0].hash, "boom").unwrap();
+    for s in &doc.sections[1..] {
+        store
+            .attach_summary(&s.hash, &summary("t", "b"), &provenance(1), &Usage::default())
+            .unwrap();
+    }
+    let open = store.documents_with_open_sections().unwrap();
+    let old = open.iter().find(|(d, _, _)| d.rel_path == "old.md").unwrap();
+    assert_eq!((old.1, old.2), (0, 1));
+    store
+        .attach_summary(
+            &parse_str("# New\n\nfresh\n").sections[0].hash,
+            &summary("t", "b"),
+            &provenance(1),
+            &Usage::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        store.documents_with_open_sections().unwrap().len(),
+        1,
+        "fully carded docs drop out"
+    );
+}
