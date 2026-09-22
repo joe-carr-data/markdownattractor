@@ -42,6 +42,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         )
     };
     println!("{} {:?}", st.bold("explain"), query);
+    if ex.via_or_fallback {
+        println!("{}", st.dim("(no section matched every term; lexical lists use the OR form)"));
+    }
     println!("{} (bm25 over tldr/summary/keywords/questions)", st.accent("cards"));
     for (i, h) in ex.cards.iter().enumerate() {
         println!("  {:>2}. {:>7.3}  {}", i + 1, h.bm25, label(&h.section_id));

@@ -83,7 +83,9 @@ pub fn dot(a: &[f32], b: &[f32]) -> f32 {
 }
 
 /// Where models are cached: the config, then `$MDA_MODEL_DIR`, then
-/// `${CLAUDE_PLUGIN_DATA}/models`, then `~/.cache/markdownattractor/models`.
+/// `~/.cache/markdownattractor/models`. The plugin sets `MDA_MODEL_DIR` to its own data
+/// directory in `.mcp.json` and in the launcher script; `CLAUDE_PLUGIN_DATA` is deliberately
+/// not read here, because in a developer's shell it can belong to another plugin.
 #[must_use]
 pub fn cache_dir(cfg: &Config) -> PathBuf {
     if let Some(d) = &cfg.embedding_cache_dir {
@@ -91,9 +93,6 @@ pub fn cache_dir(cfg: &Config) -> PathBuf {
     }
     if let Some(d) = std::env::var_os("MDA_MODEL_DIR").filter(|s| !s.is_empty()) {
         return PathBuf::from(d);
-    }
-    if let Some(d) = std::env::var_os("CLAUDE_PLUGIN_DATA").filter(|s| !s.is_empty()) {
-        return PathBuf::from(d).join("models");
     }
     std::env::home_dir()
         .unwrap_or_else(std::env::temp_dir)

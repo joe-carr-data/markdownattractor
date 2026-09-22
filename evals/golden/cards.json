@@ -1,0 +1,3877 @@
+{
+  "f3f0c4213ca5291b7fd6440b490a8acf3b39d5e4346466b67d09b68658612c9a": {
+    "tldr": "Search index rebuild frequency changed to hourly; workers moved to separate repo.",
+    "summary": "Search product index now rebuilds hourly rather than nightly. Workers module was relocated to a separate repository following ADR 0009.",
+    "keywords": [
+      "search index",
+      "rebuild frequency",
+      "workers",
+      "repository",
+      "adr 0009"
+    ],
+    "questions_answered": [
+      "when did search index rebuild frequency change?",
+      "where were workers moved to?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Search"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-05-02",
+        "iso": "2026-05-02",
+        "precision": "day",
+        "evidence": "2026-05-02"
+      }
+    ],
+    "decisions": [
+      "Search index rebuilds every hour instead of nightly.",
+      "Workers moved to their own repository per ADR 0009."
+    ],
+    "action_items": []
+  },
+  "b3dd7dc9f118954812c363b723035dd118248e786640eef54644d62af8d02f65": {
+    "tldr": "Heading only: Security review — 2026-03-03.",
+    "summary": "The section \"Security review — 2026-03-03\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "security",
+      "review",
+      "—",
+      "2026-03-03"
+    ],
+    "questions_answered": [
+      "Where is the Security review — 2026-03-03 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "70c17a4822f87eff5ab244e32b52871ab5e477ee51d603af5989ff9992bef600": {
+    "tldr": "Page on-call via PagerDuty for outages; ask #platform for questions.",
+    "summary": "For customer-facing outages, page the primary on-call via PagerDuty. For questions, use the #platform channel.",
+    "keywords": [
+      "pagerduty",
+      "on-call",
+      "escalation",
+      "outage",
+      "platform channel"
+    ],
+    "questions_answered": [
+      "who do i page for a customer-facing outage",
+      "where do i ask platform questions"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PagerDuty"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Customer-facing outages are escalated via PagerDuty to the primary on-call",
+      "General questions are directed to #platform channel"
+    ],
+    "action_items": []
+  },
+  "0d0358736f438b704b6436d6beb6984a8587a82f2d825a8dc5db142538884370": {
+    "tldr": "Heading only: Postmortem — Redis failover logged everyone out (2025-05-30).",
+    "summary": "The section \"Postmortem — Redis failover logged everyone out (2025-05-30)\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "postmortem",
+      "—",
+      "redis",
+      "failover",
+      "logged",
+      "everyone",
+      "out",
+      "(2025-05-30)"
+    ],
+    "questions_answered": [
+      "Where is the Postmortem — Redis failover logged everyone out (2025-05-30) section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "e068c2397156f82089d20f068230b2897f58a30d8f64ec3426e2dc8d0b4b05fd": {
+    "tldr": "Heading only: Rate limiting.",
+    "summary": "The section \"Rate limiting\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "rate",
+      "limiting"
+    ],
+    "questions_answered": [
+      "Where is the Rate limiting section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "318fe921aaa611b99314464ec803707f16e9f5dc9f3d8fe585d85de2b6695bb0": {
+    "tldr": "Leaked secrets require immediate rotation and SEV2 incident creation.",
+    "summary": "When a secret is leaked, immediately rotate it and open a SEV2 incident. The vault's audit log tracks every read of the secret for the last 90 days, helping identify the scope of exposure.",
+    "keywords": [
+      "secret rotation",
+      "emergency response",
+      "audit logs",
+      "incident severity",
+      "vault"
+    ],
+    "questions_answered": [
+      "How do you respond to a leaked secret?",
+      "What does the vault audit log track?",
+      "How long are secret reads logged?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "vault"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Audit logs retain secret read events for 90 days in the vault"
+    ],
+    "action_items": [
+      "Rotate the leaked secret immediately",
+      "Open a SEV2 incident"
+    ]
+  },
+  "841f0cc90813141c052aa5679652268b7257a7ede698f1f197abd0fc03e968f7": {
+    "tldr": "Heading only: Your first week.",
+    "summary": "The section \"Your first week\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "your",
+      "first",
+      "week"
+    ],
+    "questions_answered": [
+      "Where is the Your first week section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "8af13c2c8193e59d46094557d06642d3ad13894696349d700e04a6085417904d": {
+    "tldr": "cert-expiry alert fires 14 days before expiry; ACME fails with expired DNS tokens.",
+    "summary": "The `cert-expiry` alert fires 14 days before TLS certificate expiration. ACME jobs fail with `challenge failed` errors when the DNS provider authentication token has expired, preventing successful certificate renewal.",
+    "keywords": [
+      "tls certificate renewal",
+      "cert-expiry alert",
+      "acme job",
+      "dns provider token",
+      "challenge failed"
+    ],
+    "questions_answered": [
+      "What alerts indicate a TLS certificate needs renewal?",
+      "Why does the ACME job fail during certificate renewal?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "ACME"
+      ],
+      "technologies": [
+        "DNS"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "989485e6284348e741af1e4a9c19dc35ee0e88d63691a4df14887b8aee11978d": {
+    "tldr": "Feature flags use the config service instead of environment variables.",
+    "summary": "This ADR document establishes that feature flags should be managed through a centralized config service rather than environment variables. The decision was accepted on September 23, 2024.",
+    "keywords": [
+      "feature flags",
+      "config service",
+      "decision",
+      "architecture",
+      "environment variables"
+    ],
+    "questions_answered": [
+      "how should feature flags be managed",
+      "should feature flags use environment variables"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "feature flags",
+        "config service",
+        "environment variables"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2024-09-23",
+        "iso": "2024-09-23",
+        "precision": "day",
+        "evidence": "Date: 2024-09-23"
+      }
+    ],
+    "decisions": [
+      "Feature flags are managed through the config service instead of environment variables"
+    ],
+    "action_items": []
+  },
+  "79e49e1bf952403586689c99476c9215c09e587f5aed64fd59408d83e4129ed5": {
+    "tldr": "Primary failover and replica promotion occurred with split-brain recovery through fencing.",
+    "summary": "Primary database became unreachable at 02:14 and replica was promoted at 02:16. The old primary restarted and accepted writes at 02:31, creating a conflict. The old primary was fenced at 02:45 to prevent further writes.",
+    "keywords": [
+      "failover",
+      "primary",
+      "replica",
+      "autoscaler",
+      "fencing"
+    ],
+    "questions_answered": [
+      "what happened during the failover incident",
+      "when was the primary unreachable",
+      "when was the replica promoted"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "a80ffaea017e3d4fbf57dab59abffc309b9a4d1715c386623c4f0bb505f2cc7a": {
+    "tldr": "Tomás to draft search index proposal by 2026-08-18; Marcus to retire legacy MySQL instance.",
+    "summary": "Two action items were assigned: Tomás must write a search index rewrite proposal by August 18, 2026. Marcus needs to retire a read-only MySQL instance that has been running for two years post-migration.",
+    "keywords": [
+      "search index rewrite",
+      "mysql retirement",
+      "action items",
+      "platform sync"
+    ],
+    "questions_answered": [
+      "what are the platform team action items?",
+      "when is the search index proposal due?",
+      "who is retiring the mysql instance?"
+    ],
+    "entities": {
+      "people": [
+        "Tomás",
+        "Marcus"
+      ],
+      "orgs": [],
+      "products": [
+        "MySQL"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-08-18",
+        "iso": "2026-08-18",
+        "precision": "day",
+        "evidence": "write the search index rewrite proposal by 2026-08-18"
+      }
+    ],
+    "decisions": [],
+    "action_items": [
+      "Tomás: write the search index rewrite proposal by 2026-08-18",
+      "Marcus: retire the read-only MySQL instance, which is still running two years after the migration"
+    ]
+  },
+  "d04b8b7150015503a5577299833756a101caf3f732ec28966d38110428e708f8": {
+    "tldr": "Rebuild old primary from fresh backup; do not reuse its data directory.",
+    "summary": "After failover, the old primary must be rebuilt from a fresh base backup before rejoining. Reusing its data directory caused a split-brain incident in November 2024.",
+    "keywords": [
+      "database failover",
+      "recovery",
+      "primary rebuild",
+      "split-brain prevention"
+    ],
+    "questions_answered": [
+      "how do you recover the old primary after database failover",
+      "what happened in the 2024-11-08 incident"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2024-11-08",
+        "iso": "2024-11-08",
+        "precision": "day",
+        "evidence": "split-brain incident of 2024-11-08"
+      }
+    ],
+    "decisions": [
+      "Old primary data directory must not be reused to prevent split-brain incidents"
+    ],
+    "action_items": [
+      "Rebuild the old primary from a fresh base backup before it rejoins the cluster"
+    ]
+  },
+  "05042950498d7908d12ce35e9f6372ab21048420d8d598042a7baf75b5160592": {
+    "tldr": "Defines rate limits for public keys, partner keys, and login endpoints.",
+    "summary": "Specifies rate limits for different API key types and the login endpoint. Public keys allow 1000 requests/minute, partner keys allow 10000 requests/minute, and login attempts are capped at 10 per minute per IP.",
+    "keywords": [
+      "rate limiting",
+      "api keys",
+      "request limits",
+      "partner keys",
+      "login endpoint"
+    ],
+    "questions_answered": [
+      "What are the rate limits for public API keys?",
+      "How many requests per minute are allowed for partner keys?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "API"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Public API keys limited to 1000 requests per minute",
+      "Partner keys limited to 10000 requests per minute",
+      "Login endpoint limited to 10 attempts per minute per IP"
+    ],
+    "action_items": []
+  },
+  "9a36cf135be45f8527050d9236d6829208e3619389613dcdb4ee0f82a9458e92": {
+    "tldr": "Heading only: Database failover.",
+    "summary": "The section \"Database failover\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "database",
+      "failover"
+    ],
+    "questions_answered": [
+      "Where is the Database failover section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "f38aa277a7d15877e105b8461b64064b03c09b499158e276f9b3ac793c7cea15": {
+    "tldr": "Redis sessions caused 41% traffic and a failover logged out all users.",
+    "summary": "Session lookups comprised 41% of Redis traffic. A Redis cluster failover on 2025-05-30 caused all users to be logged out. Sessions contain minimal data: only user id, role, and expiry timestamp.",
+    "keywords": [
+      "session management",
+      "redis traffic",
+      "user logout",
+      "cluster failover",
+      "session state"
+    ],
+    "questions_answered": [
+      "why move sessions from redis",
+      "what caused the redis failover logout issue",
+      "what data is stored in sessions"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "Redis"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-05-30",
+        "iso": "2025-05-30",
+        "precision": "day",
+        "evidence": "Redis cluster failover on 2025-05-30 logged every user out"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "0b03cbcd07e3fe28a7e2dbf9723c56017b61d89e68a83b6b810e0d459c6c224c": {
+    "tldr": "PostgreSQL adopted as primary datastore for new services.",
+    "summary": "PostgreSQL was selected as the primary datastore for new services, documented in ADR 0001.",
+    "keywords": [
+      "postgresql",
+      "primary datastore",
+      "new services",
+      "adr"
+    ],
+    "questions_answered": [
+      "What database is used for new services?",
+      "Why was PostgreSQL chosen as the primary datastore?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PostgreSQL"
+      ],
+      "technologies": [
+        "ADR 0001"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2024-03-11",
+        "iso": "2024-03-11",
+        "precision": "day",
+        "evidence": "2024-03-11"
+      }
+    ],
+    "decisions": [
+      "PostgreSQL chosen as the primary datastore for new services."
+    ],
+    "action_items": []
+  },
+  "4b0681c203ea5f4afaf3ba33af3ea5db9f73abcffd42ba2e5ab3b0372e1f2fee": {
+    "tldr": "Blue-green deployments provide fast rollback but double API capacity costs $340/month.",
+    "summary": "Blue-green deployments enable one-command rollback in under 20 seconds. Trade-off: requires double API capacity for 30 minutes after each release, costing ~$340 monthly. Pending: expand smoke test coverage to include the checkout endpoint.",
+    "keywords": [
+      "blue-green deployment",
+      "rollback",
+      "api tier",
+      "infrastructure costs",
+      "smoke tests"
+    ],
+    "questions_answered": [
+      "how fast is rollback with blue-green deployments",
+      "what is the cost of blue-green deployments for the api"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Blue-green deployments enable sub-20-second rollback",
+      "Double API capacity required for 30 minutes post-release at $340/month cost"
+    ],
+    "action_items": [
+      "extend the smoke suite to cover the checkout endpoint"
+    ]
+  },
+  "3e253eb89c8e8f59538c71964fed8e0490cb80352af33febd2edc65c68c45461": {
+    "tldr": "Heading only: Secrets rotation.",
+    "summary": "The section \"Secrets rotation\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "secrets",
+      "rotation"
+    ],
+    "questions_answered": [
+      "Where is the Secrets rotation section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "e7bce8cae56bc01d36826b973eb9a41800707cfc6328fcef49e8333d40259212": {
+    "tldr": "Background workers are separated due to different shipping cadence and CI overhead; shared types now packaged separately.",
+    "summary": "The workers team operates on a different release schedule than the main codebase, and their Python toolchain significantly increased CI time for the monorepo. Publishing shared types as a versioned package resolves the type drift issues previously addressed in ADR 0004, making a separate repository feasible.",
+    "keywords": [
+      "monorepo",
+      "workers",
+      "ci time",
+      "shared types",
+      "versioned package",
+      "separate repository"
+    ],
+    "questions_answered": [
+      "Why move background workers to a separate repository?",
+      "What problem does publishing shared types as a versioned package solve?",
+      "How did the Python toolchain affect the monorepo?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "Python"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Shared types are now published as a versioned package, removing the drift problem ADR 0004 solved.",
+      "The workers team ships on a different cadence than the main codebase."
+    ],
+    "action_items": []
+  },
+  "0ef2293890f84f812bfb2c4cfab7ee6569354ab9eaf510788551b3cc3de7620f": {
+    "tldr": "Splitting workers repo cuts CI time to 7 minutes but requires releases for type changes.",
+    "summary": "Moving background workers to a separate repository reduces monorepo CI duration from 18 to 7 minutes. However, type changes now require a package release before workers can consume them, adding a deployment step.",
+    "keywords": [
+      "monorepo",
+      "ci performance",
+      "background workers",
+      "package release",
+      "repository split"
+    ],
+    "questions_answered": [
+      "What are the consequences of splitting workers into a separate repo?",
+      "How much faster is CI after moving workers?",
+      "What workflow impact occurs from separating workers?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Monorepo CI time reduced from 18 to 7 minutes by moving background workers to separate repository."
+    ],
+    "action_items": []
+  },
+  "24bb86a0b48e6d6344cdc2badf3c2de70f9fe4e0fa9ba714f170323ed6505e12": {
+    "tldr": "Redis failover unexpectedly logged out all customers and tripled login traffic for 20 minutes.",
+    "summary": "A Redis failover at 14:03 UTC on 2025-05-30 terminated all active customer sessions, forcing a global logout. Login traffic surged to three times normal levels for 20 minutes as users re-authenticated.",
+    "keywords": [
+      "redis failover",
+      "session loss",
+      "logout incident",
+      "login traffic spike"
+    ],
+    "questions_answered": [
+      "what happened during the redis failover incident",
+      "why were customers logged out",
+      "how long did the login traffic spike last"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "5dddb76d21079e409d8fa822fa7f899bf5c9048235c15f85e7a729c874c74592": {
+    "tldr": "Order API v2 provides endpoints to list, create, and cancel orders with idempotency and time-window filtering.",
+    "summary": "Order API v2 exposes three endpoints: GET to list orders with time-window filtering and cursor pagination, POST to create orders with 24-hour idempotency via Idempotency-Key header, and POST to cancel orders before fulfilment.",
+    "keywords": [
+      "order api",
+      "endpoints",
+      "get list orders",
+      "post create order",
+      "cancel order",
+      "cursor pagination"
+    ],
+    "questions_answered": [
+      "What endpoints does Order API v2 provide?",
+      "How do I list orders in a time window?",
+      "How do I create an order idempotently?",
+      "Can I cancel an order after fulfilment?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "GET",
+        "POST",
+        "Idempotency-Key"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Order creation is idempotent on Idempotency-Key header for 24 hours.",
+      "Orders can only be cancelled before fulfilment."
+    ],
+    "action_items": []
+  },
+  "58503753251b970ad7b902524846ba9e4c34395d03f40bd1d202defd8c58eadd": {
+    "tldr": "Sessions migrate to signed encrypted cookies, Redis kept for caching and rate limiting.",
+    "summary": "Sessions are moved from Redis to signed, encrypted cookies named `session_v2` using a platform key rotation service. Redis is retained exclusively for caching and rate limiting functionality.",
+    "keywords": [
+      "sessions",
+      "signed cookies",
+      "encrypted cookies",
+      "redis",
+      "key rotation"
+    ],
+    "questions_answered": [
+      "What is ADR 0003 about?",
+      "Where are sessions stored after this decision?",
+      "What remains in Redis after sessions are moved?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "encrypted cookies",
+        "key rotation service"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Sessions move from Redis to signed, encrypted cookies using the platform's key rotation service.",
+      "Redis retained only for caching and rate limiting."
+    ],
+    "action_items": []
+  },
+  "c05afd720fa389d74bf942417943dac16d9035a016e3ff30e8f9fd7aed51a5b3": {
+    "tldr": "Heading only: FAQ.",
+    "summary": "The section \"FAQ\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "faq"
+    ],
+    "questions_answered": [
+      "Where is the FAQ section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "248592238f6ddc32469ce408b25272425d4b7b9cc3ac7b41864a9ac45941f9d2": {
+    "tldr": "Q4 2026 roadmap prioritizes selective CI builds and search index rewrite only.",
+    "summary": "Q4 2026 roadmap focuses on two initiatives: selective CI builds and search index rewrite, deferring all other work. Lena leads the CI builds effort with a goal of achieving sub-4-minute CI times for web-only changes by October 15, 2026.",
+    "keywords": [
+      "q4 2026 roadmap",
+      "selective ci builds",
+      "search index rewrite",
+      "ci performance",
+      "web-only changes"
+    ],
+    "questions_answered": [
+      "What is the Q4 2026 platform roadmap?",
+      "Who owns CI performance improvements and what is the target deadline?"
+    ],
+    "entities": {
+      "people": [
+        "Lena"
+      ],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "CI"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-10-15",
+        "iso": "2026-10-15",
+        "precision": "day",
+        "evidence": "target is CI under 4 minutes for a web-only change by 2026-10-15"
+      }
+    ],
+    "decisions": [
+      "Q4 2026 roadmap prioritizes selective CI builds and search index rewrite only.",
+      "Lena owns selective CI builds with target of sub-4-minute CI for web changes by 2026-10-15."
+    ],
+    "action_items": []
+  },
+  "2b8bcc66e253ad21c15435cfa261a7138f572f4e9c41f9874fe081ff7de945e7": {
+    "tldr": "Draft proposal for a search index rewrite by Tomás from August 2026.",
+    "summary": "Tomás authored a draft proposal for a search index rewrite, dated August 18, 2026.",
+    "keywords": [
+      "search index",
+      "rewrite",
+      "proposal",
+      "draft"
+    ],
+    "questions_answered": [
+      "who authored the search index rewrite proposal?",
+      "when was the search index rewrite proposal drafted?"
+    ],
+    "entities": {
+      "people": [
+        "Tomás"
+      ],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-08-18",
+        "iso": "2026-08-18",
+        "precision": "day",
+        "evidence": "Draft 2026-08-18."
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "e6f709fea74b800ee6537d306b383cca9b4a0d6545462e1c70eb0f3e0bae7bc9": {
+    "tldr": "Worker consumer raised on new event field, nacking messages in infinite redelivery loop.",
+    "summary": "A worker deploy shipped a consumer that raised an exception on a new event field and nacked the message, causing it to be redelivered immediately and repeatedly without resolution.",
+    "keywords": [
+      "worker deploy",
+      "nack loop",
+      "message redelivery",
+      "event field"
+    ],
+    "questions_answered": [
+      "what caused the worker nack loop",
+      "why were messages being redelivered in a loop"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "consumer",
+        "worker"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "721a06e53b47c11aff06d9338ce10908e2127e920dee421932a20d4f19494659": {
+    "tldr": "Use Vault to create new credentials, restart PgBouncer, and verify with smoke tests.",
+    "summary": "Rotate a database password by writing a new credential via `vault write db/rotate/orders`, reloading PgBouncer pools with `pgbouncerctl reload`, then verifying with `deployctl smoke --suite db` smoke tests.",
+    "keywords": [
+      "database password rotation",
+      "vault credentials",
+      "pgbouncer restart",
+      "smoke tests"
+    ],
+    "questions_answered": [
+      "How do I rotate a database password?",
+      "How do I create new database credentials with Vault?",
+      "How do I verify database changes after rotation?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Vault",
+        "PgBouncer"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "vault write db/rotate/orders",
+        "pgbouncerctl reload",
+        "deployctl smoke --suite db"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "b850eac1714aca095b5acae09797698cf7372f56e07fdd9efbd9c4fdb594cafc": {
+    "tldr": "Config service outage disabled SEPA payments, causing checkout 500 errors.",
+    "summary": "A config service outage on 2026-06-12 from 09:12 to 09:41 UTC caused the payment provider's SEPA flag to be marked as `off`, disabling SEPA payments globally and returning 500 errors for affected checkout customers.",
+    "keywords": [
+      "sepa outage",
+      "config service",
+      "checkout 500 error",
+      "payment provider"
+    ],
+    "questions_answered": [
+      "What caused the SEPA checkout outage?",
+      "When did the checkout return 500 errors?",
+      "Why was SEPA disabled for all customers?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "checkout",
+        "payment provider"
+      ],
+      "technologies": [
+        "SEPA",
+        "config service"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-06-12",
+        "iso": "2026-06-12",
+        "precision": "day",
+        "evidence": "On 2026-06-12 between 09:12 and 09:41 UTC"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "019d50bba420450c35ab9cfcaa02924619ebc10ba22e3ce570787d1e96a7253b": {
+    "tldr": "Promote replica via pgctl, update config service, announce in Slack and schedule primary rebuild.",
+    "summary": "Promote a replica using pgctl (30-90 seconds), update DATABASE_PRIMARY in the config service (PgBouncer reloads in under 10 seconds), and announce the failover in #incidents. A follow-up is needed to rebuild the old primary as a replica.",
+    "keywords": [
+      "database failover",
+      "replica promotion",
+      "pgctl",
+      "pgbouncer",
+      "config service",
+      "primary database"
+    ],
+    "questions_answered": [
+      "How do you promote a PostgreSQL replica during failover?",
+      "What steps follow replica promotion in database failover?",
+      "How long does PostgreSQL replica promotion take?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PgBouncer"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "pgctl promote --replica db-replica-1"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "PgBouncer reloads automatically after config service update"
+    ],
+    "action_items": [
+      "Rebuild the old primary as a replica (follow-up)"
+    ]
+  },
+  "e763637897afc4a3e4c08e5ce080bc3407d929e8f51cf843dadf0800e76579be": {
+    "tldr": "Sessions moved to signed cookies; deny-list now needed for revocation, Redis outage resilience gained.",
+    "summary": "Sessions have been moved from Redis to signed cookies, improving resilience by making logged-in users unaffected by Redis outages. A deny-list is now required to revoke individual sessions on every request. The `sessions` keyspace should be removed after the 90-day expiry window closes.",
+    "keywords": [
+      "sessions",
+      "redis",
+      "signed cookies",
+      "session revocation",
+      "deny-list"
+    ],
+    "questions_answered": [
+      "how does removing Redis from sessions architecture affect system resilience",
+      "what is required to revoke individual sessions after moving to signed cookies",
+      "when should the Redis sessions keyspace be cleaned up"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "deny-list"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-09-16",
+        "iso": "2025-09-16",
+        "precision": "day",
+        "evidence": "90-day expiry window closes on 2025-09-16"
+      }
+    ],
+    "decisions": [
+      "sessions moved from Redis to signed cookies",
+      "deny-list required to revoke individual sessions",
+      "Redis outage no longer impacts logged-in users"
+    ],
+    "action_items": [
+      "remove the `sessions` keyspace after the 90-day expiry window closes on 2025-09-16"
+    ]
+  },
+  "2d15f9d328471c544c90c188e57e9b14101a972a7296079e4b82adc4d3eb6125": {
+    "tldr": "Disable features via config service flags; changes apply within ten seconds.",
+    "summary": "Features can be quickly disabled by flipping their flag in the config service, which takes effect within ten seconds. Flags are no longer environment variables.",
+    "keywords": [
+      "feature flag",
+      "config service",
+      "feature toggle",
+      "runtime control"
+    ],
+    "questions_answered": [
+      "how do i turn a feature off quickly?",
+      "how long does it take for feature flags to take effect?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "config service"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Use config service to toggle features",
+      "Flags take effect within ten seconds"
+    ],
+    "action_items": []
+  },
+  "552a964f8e183c26c9fe953dd3e32ae974e824d05727e9e494975d771c3f4883": {
+    "tldr": "SEPA flag defaulted off on new pods due to empty cache during outage.",
+    "summary": "The outage occurred because the SEPA flag had never been cached on the two newest pods before the config service went down. The flag cache defaults to `off` when empty rather than serving stale values like other caches do.",
+    "keywords": [
+      "flag cache",
+      "stale values",
+      "sepa flag",
+      "cache default",
+      "outage"
+    ],
+    "questions_answered": [
+      "why did the SEPA flag default to off during the outage?",
+      "what happens when flag cache is empty?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "SEPA flag",
+        "config service",
+        "flag cache"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Flag cache defaults to off when empty."
+    ],
+    "action_items": []
+  },
+  "2ee59e8b2c7ba3c9823e670d4d969bf0ec145abf122784ceece312d2650de405": {
+    "tldr": "SEPA orders confirm immediately and settle within 3 business days via webhook confirmation.",
+    "summary": "SEPA orders are confirmed immediately upon creation and settle within 3 business days. The payment_pending state prevents orders from entering fulfilment until the provider webhook confirms successful settlement.",
+    "keywords": [
+      "sepa payments",
+      "order confirmation",
+      "payment settlement",
+      "webhook",
+      "payment pending state",
+      "fulfilment"
+    ],
+    "questions_answered": [
+      "How long does SEPA payment settlement take?",
+      "What is the payment_pending state in SEPA orders?",
+      "When are SEPA orders confirmed?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "SEPA"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "SEPA orders are confirmed immediately",
+      "SEPA orders settle within 3 business days",
+      "payment_pending state hides orders from fulfilment until settlement confirmed"
+    ],
+    "action_items": []
+  },
+  "18a35318247537682aac693a0224e08fe0eb714cbf66cca8b938b588bf194e19": {
+    "tldr": "Heading only: Changelog 2025.",
+    "summary": "The section \"Changelog 2025\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "changelog",
+      "2025"
+    ],
+    "questions_answered": [
+      "Where is the Changelog 2025 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "d8ec11fd90806784a890e139d48408e1e1109a59e4348110423453a62331e948": {
+    "tldr": "PostgreSQL 15 is the standard database for all new services with RDS and PgBouncer pooling.",
+    "summary": "All new services must use PostgreSQL 15 as their primary datastore. Managed database instances are provisioned through the platform team's RDS module. Connection pooling is handled by PgBouncer configured in transaction mode.",
+    "keywords": [
+      "postgresql",
+      "database",
+      "postgres 15",
+      "pgbouncer",
+      "rds",
+      "connection pooling"
+    ],
+    "questions_answered": [
+      "What database should new services use?",
+      "How is PostgreSQL managed in the infrastructure?",
+      "Which connection pooling solution is used?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [
+        "platform team"
+      ],
+      "products": [
+        "PostgreSQL",
+        "RDS",
+        "PgBouncer"
+      ],
+      "technologies": [
+        "PostgreSQL 15",
+        "transaction mode"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Use PostgreSQL 15 for every new service.",
+      "Managed instances via platform team's RDS module.",
+      "Connection pooling through PgBouncer in transaction mode."
+    ],
+    "action_items": []
+  },
+  "70ed4bdeb24a094e6daa7cae66d19b0018054b56d0f0751dbf4541c81675c206": {
+    "tldr": "Heading only: Platform sync — 2026-09-01.",
+    "summary": "The section \"Platform sync — 2026-09-01\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "platform",
+      "sync",
+      "—",
+      "2026-09-01"
+    ],
+    "questions_answered": [
+      "Where is the Platform sync — 2026-09-01 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "b51cfd5d0a19ed8daa7919060bfa024daeed0befe584bf52d52f78b3174c7006": {
+    "tldr": "Access vault and PagerDuty, then run web client locally.",
+    "summary": "Day 1 focuses on gaining system access and getting the development environment running. New team members should obtain credentials for the vault and PagerDuty, clone the monorepo, and start the web client locally using make dev.",
+    "keywords": [
+      "first day",
+      "onboarding",
+      "local setup",
+      "vault access",
+      "pagerduty"
+    ],
+    "questions_answered": [
+      "What should I do on day 1 of onboarding?",
+      "How do I run the web client locally?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PagerDuty"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "make dev"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": [
+      "Get access to the vault, PagerDuty, and the monorepo"
+    ]
+  },
+  "5aecf67846000d2e3ce36458631c04ae24a566f072faa8ef103b9192fefb5ff6": {
+    "tldr": "Ship a small change via deployctl release with a buddy as observer.",
+    "summary": "The day 5 onboarding task requires shipping a small change using the deployctl release command while a buddy observes the process.",
+    "keywords": [
+      "deployctl",
+      "release",
+      "deployment",
+      "first week",
+      "onboarding",
+      "buddy review"
+    ],
+    "questions_answered": [
+      "How do I ship changes using deployctl?",
+      "What is the day 5 onboarding task?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "deployctl release"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": [
+      "Ship a small change through deployctl release with your buddy watching"
+    ]
+  },
+  "27cf7fe5f545189dfd96573abf7262bc803bf0fcf94cd146385d300d673ac896": {
+    "tldr": "Heading only: On-call runbook.",
+    "summary": "The section \"On-call runbook\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "on-call",
+      "runbook"
+    ],
+    "questions_answered": [
+      "Where is the On-call runbook section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "961a76e23277fa50bb77a676a1fa07b583508ac3a887bf8c0ca3e04559b0f13b": {
+    "tldr": "API tier now uses blue-green deployments per ADR 0002.",
+    "summary": "Blue-green deployments were implemented for the API tier as documented in architecture decision record 0002.",
+    "keywords": [
+      "blue-green deployments",
+      "api tier",
+      "adr 0002",
+      "deployment strategy"
+    ],
+    "questions_answered": [
+      "What blue-green deployment changes were made in 2025?",
+      "What architecture decision was made for the API tier?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "Blue-green deployments"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-03-04",
+        "iso": "2025-03-04",
+        "precision": "day",
+        "evidence": "2025-03-04"
+      }
+    ],
+    "decisions": [
+      "Blue-green deployments are adopted for the API tier per ADR 0002."
+    ],
+    "action_items": []
+  },
+  "4e45f1e772100514957058dd2d839ba5c45ec5e4a4450bbdb81df8153332eeff": {
+    "tldr": "Passwords rotate every 90 days, API keys every 180 days, and cookie keys every 30 days.",
+    "summary": "Database passwords, API keys, and cookie signing keys rotate on different schedules (90, 180, and 30 days respectively) through a key rotation service. The service maintains two valid keys simultaneously to ensure sessions survive rotations.",
+    "keywords": [
+      "secrets rotation",
+      "database passwords",
+      "api keys",
+      "cookie signing key",
+      "rotation schedule",
+      "key management"
+    ],
+    "questions_answered": [
+      "How often do database passwords rotate?",
+      "What is the rotation schedule for API keys?",
+      "How is the cookie signing key rotated?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "key rotation service"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Database passwords rotate every 90 days",
+      "API keys for third parties rotate every 180 days",
+      "Cookie signing key rotates every 30 days",
+      "Key rotation service maintains two valid keys to preserve sessions"
+    ],
+    "action_items": []
+  },
+  "3a596c9e4a6e4f4dfd59b27ec090641cd5a525b41bb1fd2fab52e81140b6137a": {
+    "tldr": "Search index rewrite deferred to 2026; hourly rebuild is temporary workaround.",
+    "summary": "The search index rewrite has been postponed to 2026. An hourly rebuild process serves as a temporary solution in the interim.",
+    "keywords": [
+      "search index",
+      "rewrite",
+      "deferred",
+      "stopgap",
+      "hourly rebuild"
+    ],
+    "questions_answered": [
+      "When will the search index rewrite happen?",
+      "What is the current approach to index rebuilding?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "search index"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026",
+        "iso": "2026",
+        "precision": "year",
+        "evidence": "search index rewrite is deferred to 2026"
+      }
+    ],
+    "decisions": [
+      "Search index rewrite deferred to 2026; hourly rebuild used as stopgap."
+    ],
+    "action_items": []
+  },
+  "405b3361ac5487e3595998f437916d9262088efb8a2fe1ac82c9587ead74ebbf": {
+    "tldr": "Selective CI feature gates a two-week rollout with full build validation.",
+    "summary": "Selective CI builds are being rolled out behind a ci-selective feature flag for a two-week period. During this time, skipped jobs are being compared against the full build to validate the changes. Lena is the owner of this initiative.",
+    "keywords": [
+      "selective ci",
+      "rollout",
+      "feature flag",
+      "ci builds"
+    ],
+    "questions_answered": [
+      "What is the selective CI builds rollout strategy?",
+      "Who owns the selective CI builds feature?"
+    ],
+    "entities": {
+      "people": [
+        "Lena"
+      ],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Selective CI builds feature is gated behind ci-selective flag during two-week rollout period."
+    ],
+    "action_items": []
+  },
+  "feff6b0f56c04a94f97e0787cb2e89e4527051ca61427ac5d851c327b6d42711": {
+    "tldr": "Workers move to platform/workers and consume shared types from @acme/types package.",
+    "summary": "The decision moves background workers to the platform/workers repository. Shared types will be consumed from the published @acme/types package with minor version pinning.",
+    "keywords": [
+      "worker separation",
+      "monorepo split",
+      "type sharing",
+      "package versioning",
+      "platform architecture"
+    ],
+    "questions_answered": [
+      "Where should background workers be located?",
+      "How are shared types managed between repositories?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "@acme/types"
+      ],
+      "technologies": [],
+      "files_paths": [
+        "platform/workers"
+      ],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Workers move to platform/workers repository",
+      "Shared types consumed from published @acme/types package pinned by minor version"
+    ],
+    "action_items": []
+  },
+  "ff318b38b27f42e67f4b52a90bbadab2073eb3867b9cbb473e514e897f22b800": {
+    "tldr": "Heading only: Incident review — 2026-06-16.",
+    "summary": "The section \"Incident review — 2026-06-16\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "incident",
+      "review",
+      "—",
+      "2026-06-16"
+    ],
+    "questions_answered": [
+      "Where is the Incident review — 2026-06-16 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "784c82f7456a1901ddba51892a526512ff4faec641f5e83ffa3ae518e7eed03a": {
+    "tldr": "TLS certificates auto-renew via ACME every 60 days; runbook for job failures.",
+    "summary": "TLS certificates are renewed automatically via an ACME job every 60 days. This runbook provides procedures for troubleshooting when the automatic renewal job fails.",
+    "keywords": [
+      "tls certificate renewal",
+      "acme job",
+      "automatic renewal",
+      "runbook"
+    ],
+    "questions_answered": [
+      "how often do TLS certificates renew?",
+      "what happens when certificate renewal fails?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "ACME"
+      ],
+      "technologies": [
+        "TLS",
+        "ACME"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Certificates renew automatically through ACME job every 60 days"
+    ],
+    "action_items": []
+  },
+  "7425116b9fe545fd2616babb395310ba4f020e9d1dd6cce63b095c77aa842d7d": {
+    "tldr": "Order API v1 sunsets January 2027 with header warnings from October 2026.",
+    "summary": "Order API v1 remains operational until 2027-01-31. Starting 2026-10-01, v1 requests include a Sunset header indicating imminent deprecation.",
+    "keywords": [
+      "api deprecation",
+      "v1",
+      "sunset header",
+      "api versioning"
+    ],
+    "questions_answered": [
+      "when is Order API v1 deprecated?",
+      "what is the Sunset header timeline?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2027-01-31",
+        "iso": "2027-01-31",
+        "precision": "day",
+        "evidence": "v1 stays available until 2027-01-31"
+      }
+    ],
+    "decisions": [
+      "v1 API remains available until 2027-01-31",
+      "v1 requests return Sunset header starting 2026-10-01"
+    ],
+    "action_items": []
+  },
+  "ff0c911e992135d982215d5aba08a9119a02528f1c1cec24aa53314bd14f7f74": {
+    "tldr": "Moving feature flags from environment variables to config service enabled sub-second kill switches for the redesign.",
+    "summary": "Feature flags were stored in environment variables, requiring a full deployment to toggle them off. The September 2024 checkout redesign needed a kill switch that could activate within seconds, motivating a shift to a config service-based approach.",
+    "keywords": [
+      "feature flags",
+      "config service",
+      "kill switch",
+      "checkout redesign",
+      "deployment"
+    ],
+    "questions_answered": [
+      "why move feature flags from environment variables to config service?",
+      "what problem did the checkout redesign expose about flags?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "environment variables"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "September 2024",
+        "iso": "2024-09",
+        "precision": "month",
+        "evidence": "The checkout redesign in September 2024 needed a kill switch"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "c36867d99be03a9bc784f902e51ee7e537a02db607adc4ca250ca8d1b0532a15": {
+    "tldr": "PostgreSQL adopted as primary datastore with JSONB indexes, maintaining MySQL until Q1 2025 catalog migration.",
+    "summary": "PostgreSQL was chosen as the primary datastore because JSONB indexes efficiently handle cart payload queries without schema changes. The tradeoff is maintaining two database engines in production until the catalog migration completes in Q1 2025. Migration runbook documentation and dashboard monitoring updates are planned follow-ups.",
+    "keywords": [
+      "postgresql",
+      "database migration",
+      "jsonb indexes",
+      "catalog migration",
+      "production deployment"
+    ],
+    "questions_answered": [
+      "Why PostgreSQL over MySQL for the datastore?",
+      "What are the consequences of using PostgreSQL?",
+      "When is the catalog migration planned?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "JSONB indexes",
+        "pg_stat_statements"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "PostgreSQL chosen as primary datastore with JSONB indexes for cart payload queries",
+      "Dual database engines maintained in production until catalog migration in Q1 2025"
+    ],
+    "action_items": [
+      "Write the migration runbook",
+      "Add pg_stat_statements to the dashboards"
+    ]
+  },
+  "4dcbc97dfe4385cd09b6a3fdf808610c7327ee8df0bc0f11a6c76b45d4835f5a": {
+    "tldr": "Queue-lag alert indicates oldest message in orders.events exceeds 5 minutes.",
+    "summary": "The queue-lag alert fires when the oldest message in orders.events exceeds 5 minutes old. This causes customers to experience delayed order confirmations.",
+    "keywords": [
+      "queue lag",
+      "message delay",
+      "orders.events",
+      "alert",
+      "backlog"
+    ],
+    "questions_answered": [
+      "what triggers the queue-lag alert",
+      "what symptoms occur when queue backlog builds up"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "orders.events"
+      ],
+      "technologies": [
+        "queue-lag"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "c3f37b5756dd4b0c0e7394b0147c1979ac043157acc12659df4f724a1a5f6d6c": {
+    "tldr": "Rolling API deploys caused two incidents; bad builds served traffic despite passing health checks.",
+    "summary": "Rolling deployments of the API tier caused two incidents in February 2025 when a faulty build served traffic for 11 minutes before rollout completion. Health checks passed despite the build returning 500 errors on one endpoint. This context motivates adopting blue-green deployments.",
+    "keywords": [
+      "blue-green deployments",
+      "api tier",
+      "rolling deploys",
+      "health checks",
+      "incidents",
+      "february 2025"
+    ],
+    "questions_answered": [
+      "why did rolling deploys cause incidents in february 2025?",
+      "what is the issue with health checks passing for failing endpoints?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "API tier"
+      ],
+      "technologies": [
+        "health checks",
+        "rolling deploys"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "February 2025",
+        "iso": "2025-02",
+        "precision": "month",
+        "evidence": "two incidents in February 2025 when a bad build"
+      }
+    ],
+    "decisions": [
+      "adopt blue-green deployments to prevent bad builds from serving traffic"
+    ],
+    "action_items": [
+      "investigate health check configuration for API tier"
+    ]
+  },
+  "86e5b0384c34b00960a0102687c7c75371212cfeff0f87f46190b2e13ae1d464": {
+    "tldr": "Migrations must be backward compatible and run before the deployment flip.",
+    "summary": "Migrations execute before the flip via `deployctl migrate` and must remain backward compatible since both colors serve traffic simultaneously. Never drop a column in the release that stops writing to it.",
+    "keywords": [
+      "database migrations",
+      "backward compatible",
+      "deployctl",
+      "column drops",
+      "release coordination"
+    ],
+    "questions_answered": [
+      "When do database migrations run during deployment?",
+      "What backward compatibility requirements apply to migrations?",
+      "Why can't you drop columns in the same release?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "deployctl migrate"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Migrations run before the flip through deployctl migrate",
+      "Migrations must be backward compatible with the previous release",
+      "Never drop a column in the same release that stops writing to it"
+    ],
+    "action_items": []
+  },
+  "1ea0ec19c6e485c3ed7ad003578a86f8b755a28f23166cfaf9b6ebf2b71bd587": {
+    "tldr": "Released Apple Pay in EU and added date filters to GET /orders API.",
+    "summary": "Released updates on 2026-08-14 including Apple Pay support for EU storefronts, new date-range filters (?since= and ?until=) for the GET /orders endpoint, and a fix for delayed order confirmations caused by email provider throttling.",
+    "keywords": [
+      "apple pay",
+      "eu storefronts",
+      "api filters",
+      "order confirmations",
+      "email throttling"
+    ],
+    "questions_answered": [
+      "What payment methods are supported in EU storefronts?",
+      "How do I filter orders by date in the API?",
+      "What bugs were fixed on 2026-08-14?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Apple Pay"
+      ],
+      "technologies": [
+        "GET /orders"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-08-14",
+        "iso": "2026-08-14",
+        "precision": "day",
+        "evidence": "2026-08-14"
+      }
+    ],
+    "decisions": [
+      "Apple Pay is available in EU storefronts",
+      "GET /orders endpoint now supports ?since= and ?until= filters"
+    ],
+    "action_items": []
+  },
+  "98cc056b9e49bbcf33d670c3182d35dfd05eb6ce3aa50c65a87c6616c0fb4e07": {
+    "tldr": "Accepted decision to move sessions from Redis to signed cookies.",
+    "summary": "ADR 0003 documents the decision to migrate session storage from Redis to signed cookies, accepted as of June 18, 2025. This architectural decision replaces the external session store with client-side signed cookie-based authentication.",
+    "keywords": [
+      "sessions",
+      "redis",
+      "signed cookies",
+      "adr",
+      "architecture"
+    ],
+    "questions_answered": [
+      "How should sessions be stored?",
+      "What architecture decision was made about Redis?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "signed cookies"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-06-18",
+        "iso": "2025-06-18",
+        "precision": "day",
+        "evidence": "Date: 2025-06-18"
+      }
+    ],
+    "decisions": [
+      "Move sessions from Redis to signed cookies"
+    ],
+    "action_items": []
+  },
+  "23ee2c3a95bafeb0e933c402e3dc3eac4489c58ff10e562682baa90cbeb71ba0": {
+    "tldr": "Sessions migrated to signed cookies; feature flags now support expiry dates.",
+    "summary": "Sessions changed from Redis storage to signed cookies per ADR 0003. Feature flags now include expiry dates and have a new `flags-audit` CI job for monitoring.",
+    "keywords": [
+      "sessions",
+      "signed cookies",
+      "redis",
+      "feature flags",
+      "expiry",
+      "audit",
+      "ci job"
+    ],
+    "questions_answered": [
+      "How are sessions now stored instead of Redis?",
+      "What changes were made to feature flags?",
+      "What is ADR 0003 about?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "ADR 0003",
+        "signed cookies",
+        "feature flags"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Sessions are now signed cookies instead of Redis-stored.",
+      "Feature flags now have expiry dates."
+    ],
+    "action_items": []
+  },
+  "41441a5ff117c85a395c4202392ab4b0ff4b35781129451b9a5dc738fb47289d": {
+    "tldr": "Heading only: Order API v2.",
+    "summary": "The section \"Order API v2\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "order",
+      "api",
+      "v2"
+    ],
+    "questions_answered": [
+      "Where is the Order API v2 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "2fae5a045deb89d61784b57c8ee79f759682937ec5fdc8a2aba269f9a70eb495": {
+    "tldr": "Heading only: Quarterly planning — 2025-10-07.",
+    "summary": "The section \"Quarterly planning — 2025-10-07\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "quarterly",
+      "planning",
+      "—",
+      "2025-10-07"
+    ],
+    "questions_answered": [
+      "Where is the Quarterly planning — 2025-10-07 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "bbbdc72ae0c112e6c9613bcd441657705dc06810065ae9540968e254182bc322": {
+    "tldr": "Key rotation policies implemented: cookies every 30 days, API keys every 180 days, audit logs retained 90 days.",
+    "summary": "Security review established key rotation policies and audit log retention. Cookie signing keys rotate every 30 days with backward compatibility. Third-party API keys now rotate every 180 days, and vault audit logs are retained for 90 days to support emergency response investigations.",
+    "keywords": [
+      "key rotation",
+      "security",
+      "cookie signing",
+      "api keys",
+      "vault audit",
+      "retention"
+    ],
+    "questions_answered": [
+      "What is the cookie key rotation policy?",
+      "How often do third-party API keys rotate?",
+      "What is the vault audit log retention period?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "vault"
+      ],
+      "technologies": [
+        "cookie signing",
+        "API keys",
+        "audit log"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Cookie signing keys rotate every 30 days with one previous key retained.",
+      "Third-party API keys now rotate every 180 days.",
+      "Vault audit log retention increased from 30 to 90 days."
+    ],
+    "action_items": []
+  },
+  "002f4b40d7c44ab5e9f0cde98beaa53d7f0f6d855d4e2fab86c9ee6879b44ab3": {
+    "tldr": "Move background workers back into their own separate repository.",
+    "summary": "ADR 0009 documents the decision to move background workers back into their own separate repository. This decision supersedes ADR 0004, indicating a reversal of a prior architectural choice to keep workers in the main codebase.",
+    "keywords": [
+      "background workers",
+      "repository split",
+      "adr",
+      "monorepo",
+      "refactoring"
+    ],
+    "questions_answered": [
+      "Why move background workers to a separate repository?",
+      "What ADR supersedes previous worker repository decisions?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-02-10",
+        "iso": "2026-02-10",
+        "precision": "day",
+        "evidence": "Date: 2026-02-10"
+      }
+    ],
+    "decisions": [
+      "Move background workers back into their own repository, superseding ADR 0004."
+    ],
+    "action_items": []
+  },
+  "64717adbbdd541c226357b777883c2515050354cb8b46a677829fc882f263c37": {
+    "tldr": "Rejected SEPA debits trigger payment_failed status and email customer with a 7-day retry link.",
+    "summary": "When a SEPA debit is rejected, the order status changes to payment_failed and the customer receives an email containing a retry link. This retry link remains valid for 7 days.",
+    "keywords": [
+      "sepa payment",
+      "failure handling",
+      "debit rejection",
+      "payment retry",
+      "email notification"
+    ],
+    "questions_answered": [
+      "What happens when a SEPA debit is rejected?",
+      "How long is a payment retry link valid?",
+      "Does the customer get notified of payment failure?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Rejected debits move orders to payment_failed status",
+      "Retry link is valid for 7 days",
+      "Customer is emailed after payment rejection"
+    ],
+    "action_items": []
+  },
+  "148a1b4cedc13b10762fd03de94ccba711841a8cf490bb183c1e0fa68d0cf15c": {
+    "tldr": "Web-only changes must not trigger API builds or tests; target is sub-4-minute builds by 2026-10-15.",
+    "summary": "Selective CI should skip API builds and tests when only the web client changes, targeting completion in under 4 minutes by mid-October 2026. This optimization prevents unnecessary work for frontend-only modifications.",
+    "keywords": [
+      "selective ci",
+      "web client",
+      "build optimization",
+      "api isolation",
+      "ci performance"
+    ],
+    "questions_answered": [
+      "how should selective CI handle web-only changes?",
+      "what is the performance target for web-only CI builds?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-10-15",
+        "iso": "2026-10-15",
+        "precision": "day",
+        "evidence": "under 4 minutes for a web-only change by 2026-10-15"
+      }
+    ],
+    "decisions": [
+      "web-only changes should not build or test the API"
+    ],
+    "action_items": [
+      "achieve sub-4-minute builds for web-only changes by 2026-10-15"
+    ]
+  },
+  "bde4f120c2ee52bb5fc0ec30b2329a4b5d8b766ed233d26db6b46df61ed40fde": {
+    "tldr": "CI optimization in progress; search index rewrite approved and waiting to start.",
+    "summary": "Selective CI dependency graph is complete with job skipping in review; web-only builds currently take 6 minutes, targeting 4 minutes. Search index rewrite proposal was accepted on August 25, 2026, with implementation starting after SEPA follow-ups are closed.",
+    "keywords": [
+      "selective ci",
+      "dependency graph",
+      "job skipping",
+      "build optimization",
+      "search index rewrite",
+      "sepa follow-ups"
+    ],
+    "questions_answered": [
+      "What is the current status of selective CI?",
+      "When will the search index rewrite begin?",
+      "How long do web-only change builds take currently?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [
+        "SEPA"
+      ],
+      "products": [],
+      "technologies": [
+        "CI",
+        "dependency graph",
+        "job skipping",
+        "search index"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-08-25",
+        "iso": "2026-08-25",
+        "precision": "day",
+        "evidence": "proposal accepted on 2026-08-25; implementation starts"
+      }
+    ],
+    "decisions": [
+      "Search index rewrite proposal was accepted",
+      "Selective CI dependency graph is complete with job skipping in review"
+    ],
+    "action_items": [
+      "Begin search index rewrite implementation after SEPA follow-ups close"
+    ]
+  },
+  "22c30a7f0a7e8d00fcb71f772fe8241071aaa4a33601ba51a5c8898b27db6a6f": {
+    "tldr": "Shadow on-call handover and read the deploy runbook on Day 4.",
+    "summary": "On Day 4, shadow the on-call handover occurring Monday at 10:00 UTC and read the deploy runbook to familiarize yourself with deployment procedures.",
+    "keywords": [
+      "on-call handover",
+      "deploy runbook",
+      "shadowing",
+      "monday",
+      "utc"
+    ],
+    "questions_answered": [
+      "What should I do on day 4 of onboarding?",
+      "When is the on-call handover?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": [
+      "Shadow the on-call handover on Monday at 10:00 UTC",
+      "Read the deploy runbook"
+    ]
+  },
+  "53cf4501f7c0f0ee7b705166494b19b202ab4ee466ae50e0d3b1ac20fedfcc8a": {
+    "tldr": "Index incrementally from products.events stream with 30-second searchability and weekly full rebuilds.",
+    "summary": "The proposal recommends incremental indexing from the products.events stream to make products searchable within 30 seconds of being saved. The full rebuild process shifts to a weekly consistency check instead of continuous rebuilds.",
+    "keywords": [
+      "incremental indexing",
+      "search index",
+      "products.events",
+      "consistency check",
+      "30 seconds"
+    ],
+    "questions_answered": [
+      "How should the search index be updated?",
+      "What is the searchability latency target?",
+      "How often should full rebuilds occur?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Use incremental indexing from products.events stream",
+      "Full rebuild becomes weekly consistency check",
+      "Products searchable within 30 seconds of being saved"
+    ],
+    "action_items": []
+  },
+  "e086b238185889be8ead1b71caca66499ab6b82f5c3eaa8d3b18e4ce2e663084": {
+    "tldr": "Q4 2025 priorities include Redis migration, CI flag audit, and backend hiring.",
+    "summary": "Q4 2025 has three key commitments: complete session migration off Redis by November 5, perform a flag expiry audit in CI, and hire two backend engineers for the workers team.",
+    "keywords": [
+      "session migration",
+      "redis",
+      "flag expiry",
+      "backend hiring",
+      "q4 2025",
+      "workers team"
+    ],
+    "questions_answered": [
+      "What are the Q4 2025 commitments?",
+      "When does session migration off Redis complete?",
+      "What hiring is planned for Q4 2025?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "CI"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-11-05",
+        "iso": "2025-11-05",
+        "precision": "day",
+        "evidence": "Session migration off Redis finishes by 2025-11-05"
+      }
+    ],
+    "decisions": [],
+    "action_items": [
+      "Complete session migration off Redis by 2025-11-05",
+      "Run flag expiry audit in CI",
+      "Hire two backend engineers for the workers team"
+    ]
+  },
+  "dcd38aaebe43ac2690892e68b94510d31d0708aedb6196aab49dfe178ca313d8": {
+    "tldr": "Dead-lettering after 5 failures and queuectl pause command added for consumer management.",
+    "summary": "Consumers now dead-letter messages after 5 failed delivery attempts. A new queuectl pause command was added to stop consumer groups without requiring a full redeployment.",
+    "keywords": [
+      "dead-lettering",
+      "message retry",
+      "consumer group",
+      "queuectl",
+      "deployment"
+    ],
+    "questions_answered": [
+      "How many failed attempts before dead-lettering?",
+      "How do you pause a consumer group without redeploying?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "queuectl"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "queuectl pause"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Messages are dead-lettered after 5 failed attempts",
+      "queuectl pause command added to stop consumer groups without redeployment"
+    ],
+    "action_items": [
+      "Verify dead-letter handling works correctly for messages exceeding 5 failed attempts",
+      "Test queuectl pause functionality in staging environment"
+    ]
+  },
+  "6909e3bbb870e30b10dde69693834e42fa3c9bb03b3f0d01a61097ebd4559437": {
+    "tldr": "Read ADRs 0001-0009 to understand datastore, deployment, and architecture decisions.",
+    "summary": "New team members should read ADRs 0001 through 0009 to understand key architectural decisions: PostgreSQL for the datastore, blue-green deployment strategy, and the separate workers repository.",
+    "keywords": [
+      "adr",
+      "architectural decisions",
+      "postgresql",
+      "blue-green deploy",
+      "workers repository",
+      "onboarding"
+    ],
+    "questions_answered": [
+      "What ADRs should I read as a new developer?",
+      "Why is PostgreSQL used as the datastore?",
+      "Why do deploys use blue-green strategy?",
+      "Why are workers in a separate repository?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PostgreSQL"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Datastore is PostgreSQL",
+      "Deploys use blue-green strategy",
+      "Workers live in their own repository"
+    ],
+    "action_items": [
+      "Read ADR 0001 to 0009 in order"
+    ]
+  },
+  "2ed76165e30007fc10879ea86198feef609ae017028f63321ff6590f957a06e3": {
+    "tldr": "Web client, API, and workers consolidated into one monorepo with shared types module.",
+    "summary": "The web client, API, and background workers are consolidated into a single repository with unified CI/CD and a shared `packages/types` module for type definitions. This centralizes development across all application components.",
+    "keywords": [
+      "monorepo",
+      "ci pipeline",
+      "web client",
+      "api",
+      "background workers",
+      "shared types"
+    ],
+    "questions_answered": [
+      "what is the monorepo structure decision",
+      "where do web client and API code live",
+      "how are types shared in the monorepo"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [
+        "packages/types"
+      ],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "web client, API, and background workers move into one monorepo with shared CI pipeline and packages/types module"
+    ],
+    "action_items": []
+  },
+  "9aaf1c5b09aa1054cc384c2ae1ccc098beca342b733214cf96d5863ae11ea8ca": {
+    "tldr": "SEPA feature flag defaults to last known value, not off.",
+    "summary": "SEPA payments are controlled via the `payments.sepa` flag in the config service. The flag must default to its last known value rather than being disabled by default, based on an incident from June 12, 2026.",
+    "keywords": [
+      "sepa",
+      "feature flag",
+      "payments.sepa",
+      "config service",
+      "default value"
+    ],
+    "questions_answered": [
+      "How is SEPA payments enabled?",
+      "What is the default behavior of the SEPA feature flag?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "SEPA"
+      ],
+      "technologies": [
+        "config service"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-06-12",
+        "iso": "2026-06-12",
+        "precision": "day",
+        "evidence": "incident 2026-06-12"
+      }
+    ],
+    "decisions": [
+      "SEPA payments are controlled by payments.sepa config service flag",
+      "Feature flag must default to last known value, not to off"
+    ],
+    "action_items": [
+      "Ensure SEPA feature flag defaults to last known value, not off"
+    ]
+  },
+  "5e4671ee0e2a14c0892aa1145c94ed6236bb0ae7e8933192c132f2533a3cbbfe": {
+    "tldr": "Deploy runbook owned by platform team, last reviewed 2026-07-30.",
+    "summary": "A deploy runbook owned and maintained by the platform team, last reviewed on July 30, 2026. This is a reference document for deployment processes.",
+    "keywords": [
+      "deploy runbook",
+      "platform team",
+      "ownership",
+      "documentation review"
+    ],
+    "questions_answered": [
+      "who owns the deploy runbook?",
+      "when was the deploy runbook last reviewed?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [
+        "platform team"
+      ],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-07-30",
+        "iso": "2026-07-30",
+        "precision": "day",
+        "evidence": "Last reviewed 2026-07-30"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "7aeb3d764f1db743afbef825b5a5e22a70ca7b8b4ecef2040212d00432597bef": {
+    "tldr": "Two actions assigned: warm flag cache on pod start and default unknown flags to cached values.",
+    "summary": "Two action items address flag cache handling: warming the cache on pod startup (assigned to Priya, due June 30, 2026) and defaulting unknown flags to their last known value from the shared cache instead of off.",
+    "keywords": [
+      "flag cache",
+      "pod startup",
+      "unknown flags",
+      "cache warmup",
+      "shared cache"
+    ],
+    "questions_answered": [
+      "what actions were assigned from the incident review",
+      "who owns the flag cache warmup task",
+      "when is the flag cache task due"
+    ],
+    "entities": {
+      "people": [
+        "Priya"
+      ],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "flag cache",
+        "shared cache"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-06-30",
+        "iso": "2026-06-30",
+        "precision": "day",
+        "evidence": "due 2026-06-30"
+      }
+    ],
+    "decisions": [],
+    "action_items": [
+      "Warm the flag cache on pod start (owner: Priya, due 2026-06-30)",
+      "Default unknown flags to their last known value from the shared cache instead of `off`"
+    ]
+  },
+  "5084f74a507f00a9b9f665b9cc6d873b0cfe0a9ef822063699e23867d5fd0ea2": {
+    "tldr": "ADR accepts blue-green deployments for zero-downtime API tier releases.",
+    "summary": "This ADR accepts blue-green deployments as the strategy for the API tier. Blue-green deployments enable zero-downtime releases by running two identical production environments and switching traffic between them.",
+    "keywords": [
+      "blue-green deployments",
+      "api tier",
+      "deployment strategy",
+      "zero downtime"
+    ],
+    "questions_answered": [
+      "What deployment strategy is used for the API tier?",
+      "What does ADR 0002 decide?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "blue-green deployments"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-03-04",
+        "iso": "2025-03-04",
+        "precision": "day",
+        "evidence": "Date: 2025-03-04"
+      }
+    ],
+    "decisions": [
+      "Blue-green deployments are adopted for the API tier."
+    ],
+    "action_items": []
+  },
+  "28797367f7c9ef7296ddfb7f2db33b44d45109283c2f0a4019dc9992a5e1cad6": {
+    "tldr": "Manually renew TLS certificates by rotating DNS tokens, re-running the ACME job, and verifying with OpenSSL.",
+    "summary": "Manual TLS certificate renewal requires three steps: rotate the DNS provider token using vault, re-run the ACME renewal cronjob with kubectl, and verify the new certificate dates using openssl. This process is used when automatic renewal fails or manual intervention is needed.",
+    "keywords": [
+      "tls certificate renewal",
+      "manual renewal process",
+      "dns provider token",
+      "kubernetes cronjob",
+      "openssl verification"
+    ],
+    "questions_answered": [
+      "How do I manually renew a TLS certificate?",
+      "What steps are needed to rotate DNS provider credentials?",
+      "How do I verify a certificate renewal was successful?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "DNS",
+        "OpenSSL",
+        "kubectl",
+        "vault"
+      ],
+      "files_paths": [],
+      "commands": [
+        "kubectl create job --from=cronjob/acme-renew acme-manual",
+        "openssl s_client -connect api.example.com:443 | openssl x509 -noout -dates",
+        "vault write dns/token"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": [
+      "Rotate the DNS provider token in the secrets vault",
+      "Re-run the ACME renewal job using kubectl",
+      "Confirm certificate renewal with openssl command"
+    ]
+  },
+  "671a47936dd05deda78d3f657554c7f793a5473d8826b496b1163e52bd4e2bc9": {
+    "tldr": "Heading only: Changelog 2026.",
+    "summary": "The section \"Changelog 2026\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "changelog",
+      "2026"
+    ],
+    "questions_answered": [
+      "Where is the Changelog 2026 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "df262237778ea24c672b7d12d2ab16adc7e0268df04333c4c36daa25dfe3468c": {
+    "tldr": "Heading only: SEPA payments.",
+    "summary": "The section \"SEPA payments\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "sepa",
+      "payments"
+    ],
+    "questions_answered": [
+      "Where is the SEPA payments section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "56fa9c74d8abbc5b1b63645dd68b933618df575e3dd9f52554d1e477772f0a9c": {
+    "tldr": "Release by merging to main, running deployctl with the image SHA, and monitoring error rates.",
+    "summary": "Merge to main triggers CI to build and push a Docker image tagged with the commit SHA. Run deployctl release with that SHA to provision infrastructure, run smoke tests, and flip traffic to the new version. Monitor error rates for 10 minutes; rollback if errors exceed 1%.",
+    "keywords": [
+      "release",
+      "deployment",
+      "ci/cd",
+      "traffic flip",
+      "rollback"
+    ],
+    "questions_answered": [
+      "how do you release a new version?",
+      "what is the release procedure?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "deployctl"
+      ],
+      "technologies": [
+        "CI",
+        "smoke suite"
+      ],
+      "files_paths": [],
+      "commands": [
+        "deployctl release --sha <sha>"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "error rate above 1% triggers a rollback"
+    ],
+    "action_items": []
+  },
+  "821b1f2e9e791bbca800173e593591c92e774100f2c943cfd07b204324680008": {
+    "tldr": "Sessions migrated to signed cookies per ADR 0003, shipped November 2025.",
+    "summary": "The postmortem follow-up documents that sessions were migrated to signed cookies as specified in ADR 0003, with the change shipped on November 5, 2025.",
+    "keywords": [
+      "sessions",
+      "signed cookies",
+      "adr 0003",
+      "failover mitigation"
+    ],
+    "questions_answered": [
+      "what was the follow-up action for redis failover logout issue",
+      "when were sessions moved to signed cookies"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "ADR 0003"
+      ],
+      "technologies": [
+        "signed cookies"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-11-05",
+        "iso": "2025-11-05",
+        "precision": "day",
+        "evidence": "shipped 2025-11-05"
+      }
+    ],
+    "decisions": [
+      "Sessions moved to signed cookies per ADR 0003"
+    ],
+    "action_items": []
+  },
+  "61458199ae3c168035e0da62487acc20e6ce08e61174442de18f7ff032d42283": {
+    "tldr": "Redis failover promoted a stale replica, losing unreplicated session data.",
+    "summary": "A Redis cluster failover promoted a replica that lagged by 40 seconds, causing session data loss. Sessions were stored in Redis without `wait` semantics, meaning writes weren't guaranteed to replicate before being returned.",
+    "keywords": [
+      "redis",
+      "failover",
+      "session loss",
+      "replication",
+      "data loss"
+    ],
+    "questions_answered": [
+      "why did the redis failover log everyone out",
+      "what was the root cause of the session loss",
+      "how was redis replication configured for sessions"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "Redis",
+        "cluster failover"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Sessions were stored in Redis without wait replication semantics"
+    ],
+    "action_items": []
+  },
+  "63da65c597450818bcdac7c21d229488ded9fe5b9c64952a8e2f7ad702c887fd": {
+    "tldr": "API tier uses blue-green deployments with automated traffic switching and 30-minute rollback safety window.",
+    "summary": "The API tier uses blue-green deployments managed by deployctl behind a load balancer. The deployctl release command provisions the inactive environment, runs smoke tests, and switches traffic in a single operation. Rollbacks via deployctl rollback revert to the previous environment, which stays active for 30 minutes.",
+    "keywords": [
+      "blue-green deployments",
+      "api tier",
+      "load balancer",
+      "deployctl",
+      "traffic switching",
+      "rollback"
+    ],
+    "questions_answered": [
+      "how does the API tier deploy code?",
+      "what is the rollback strategy?",
+      "what smoke tests run during deployment?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "deployctl"
+      ],
+      "technologies": [
+        "load balancer"
+      ],
+      "files_paths": [],
+      "commands": [
+        "deployctl release",
+        "deployctl rollback --to <sha>"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "API tier uses blue-green deployments behind the load balancer.",
+      "deployctl release provisions idle colour, runs smoke tests, and flips traffic in one step.",
+      "deployctl rollback reverts to previous colour kept warm for 30 minutes."
+    ],
+    "action_items": []
+  },
+  "5e9b22ea9655bee34a0eab6798b3596c063390dc3b99f88fd47dab152331f1fa": {
+    "tldr": "Read-only MySQL instance switching off on 2026-09-15 with one-year backup retention.",
+    "summary": "The read-only MySQL instance will be switched off on September 15, 2026, with its final backup retained for one year.",
+    "keywords": [
+      "mysql",
+      "read-only instance",
+      "switchoff",
+      "backup",
+      "retention"
+    ],
+    "questions_answered": [
+      "when will the read-only MySQL instance be turned off?",
+      "what is the backup retention policy for the old MySQL instance?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "MySQL"
+      ],
+      "technologies": [
+        "MySQL"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-09-15",
+        "iso": "2026-09-15",
+        "precision": "day",
+        "evidence": "The read-only MySQL instance is switched off on 2026-09-15"
+      }
+    ],
+    "decisions": [
+      "read-only MySQL instance is switched off on 2026-09-15 with one-year backup retention"
+    ],
+    "action_items": []
+  },
+  "4589cc8b0e0e7ad0b8e9a6be1a5c1baffe8edc028137f446325db6941e602a00": {
+    "tldr": "Heading only: Postmortem — worker nack loop (2025-01-14).",
+    "summary": "The section \"Postmortem — worker nack loop (2025-01-14)\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "postmortem",
+      "—",
+      "worker",
+      "nack",
+      "loop",
+      "(2025-01-14)"
+    ],
+    "questions_answered": [
+      "Where is the Postmortem — worker nack loop (2025-01-14) section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "9b97a91f891fb66426c7db535ec33da69aba2fc66a69da7beb286abbdce1fecf": {
+    "tldr": "deployctl release runs smoke tests before color flip.",
+    "summary": "The deployctl release command now runs the smoke suite against the idle color before performing the flip, ensuring tests pass prior to traffic switchover.",
+    "keywords": [
+      "deployctl",
+      "release",
+      "smoke tests",
+      "deployment"
+    ],
+    "questions_answered": [
+      "what does deployctl release do?",
+      "when are smoke tests run during deployment?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "deployctl"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "deployctl release"
+      ]
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-01-20",
+        "iso": "2026-01-20",
+        "precision": "day",
+        "evidence": "2026-01-20"
+      }
+    ],
+    "decisions": [
+      "deployctl release runs smoke tests before flipping color"
+    ],
+    "action_items": []
+  },
+  "38606e0a67746449e4ff6335b4f1835d718735cd25f00e5a4d3922b997b1b288": {
+    "tldr": "Heading only: Selective CI builds.",
+    "summary": "The section \"Selective CI builds\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "selective",
+      "ci",
+      "builds"
+    ],
+    "questions_answered": [
+      "Where is the Selective CI builds section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "3d3b17ce97d0a173c483a7f64ca42989401e4c01e2b7249e9bd6a3e10e58c49b": {
+    "tldr": "MFA enforcement for vault UI required by 2026-04-30.",
+    "summary": "The open item is to enforce multi-factor authentication (MFA) for the vault UI by April 30, 2026.",
+    "keywords": [
+      "mfa enforcement",
+      "vault ui",
+      "security hardening",
+      "access control"
+    ],
+    "questions_answered": [
+      "when must MFA be enforced for vault UI",
+      "what security improvements are planned for the vault"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "vault UI"
+      ],
+      "technologies": [
+        "MFA"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-04-30",
+        "iso": "2026-04-30",
+        "precision": "day",
+        "evidence": "Enforce MFA for the vault UI by 2026-04-30"
+      }
+    ],
+    "decisions": [],
+    "action_items": [
+      "Enforce MFA for the vault UI by 2026-04-30"
+    ]
+  },
+  "e8feed251b4778791b2cb79656b5c9fc50a34830a159f2270c864b7e52463404": {
+    "tldr": "Heading only: Failover postmortem — 2024-11-12.",
+    "summary": "The section \"Failover postmortem — 2024-11-12\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "failover",
+      "postmortem",
+      "—",
+      "2024-11-12"
+    ],
+    "questions_answered": [
+      "Where is the Failover postmortem — 2024-11-12 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "e9ec956c8fa9ebaac99252d6b2cc21feedb85c4c63e3d21934729c39373f37ab": {
+    "tldr": "Catalog migrated from MySQL to PostgreSQL; MySQL read-only until March 2025.",
+    "summary": "The catalog migration from MySQL to PostgreSQL is complete. The MySQL instance remains in read-only mode until 2025-03-01.",
+    "keywords": [
+      "catalog migration",
+      "mysql to postgresql",
+      "read-only",
+      "database migration"
+    ],
+    "questions_answered": [
+      "When was the catalog migrated to PostgreSQL?",
+      "Until when is the MySQL instance read-only?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "MySQL",
+        "PostgreSQL"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-03-01",
+        "iso": "2025-03-01",
+        "precision": "day",
+        "evidence": "Catalog migration from MySQL to PostgreSQL completed; the MySQL instance is read-only until 2025-03-01"
+      },
+      {
+        "raw": "2024-12-01",
+        "iso": "2024-12-01",
+        "precision": "day",
+        "evidence": "2024-12-01"
+      }
+    ],
+    "decisions": [
+      "Catalog migrated from MySQL to PostgreSQL",
+      "MySQL instance set to read-only until 2025-03-01"
+    ],
+    "action_items": []
+  },
+  "2b2989d0181c4cd5a155f7065ec83fabd0d49c0a756ac1cdbfc475516b824aae": {
+    "tldr": "Scale workers to 12 replicas; pause consumer group if messages nack repeatedly.",
+    "summary": "Mitigate queue backlog by scaling the orders-worker deployment to 12 replicas using kubectl. If messages are being nacked repeatedly, pause the consumer group with queuectl, deploy the fix, then resume.",
+    "keywords": [
+      "queue backlog",
+      "worker scaling",
+      "consumer group",
+      "kubernetes",
+      "message nacking"
+    ],
+    "questions_answered": [
+      "How to scale the orders worker deployment",
+      "What to do when messages are stuck nacking",
+      "How to pause and resume a consumer group"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "kubectl",
+        "queuectl"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "kubectl scale deploy/orders-worker --replicas=12",
+        "queuectl pause orders-events"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Use kubectl scale to adjust worker replicas",
+      "Pause consumer group during deployments with nacked messages"
+    ],
+    "action_items": [
+      "Scale orders-worker deployment to 12 replicas",
+      "Deploy fix for nacking messages issue",
+      "Resume consumer group after fix"
+    ]
+  },
+  "cf8cf717c6471ee73d51ed4c0e85b15b5ed22ebe08c14500a765930ad81a2d4c": {
+    "tldr": "Fail over if primary is unreachable >60s or replication lag >5 min with saturation.",
+    "summary": "Failover should be triggered when the primary database is unreachable for more than 60 seconds or replication lag exceeds 5 minutes with a saturated primary. Single slow queries should be terminated rather than triggering a failover.",
+    "keywords": [
+      "database failover",
+      "primary unreachable",
+      "replication lag",
+      "failover criteria"
+    ],
+    "questions_answered": [
+      "when should I fail over a database",
+      "what replication lag threshold triggers failover",
+      "when is it safe to kill a slow query instead of failing over"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "replication"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Fail over when primary is unreachable for >60 seconds",
+      "Fail over when replication lag exceeds 5 minutes with primary saturated",
+      "Kill slow queries instead of failing over"
+    ],
+    "action_items": []
+  },
+  "d5436f02f96de39f38098cd8555234ed36e29b8b37ca0712c3a9d84029361a43": {
+    "tldr": "Rebuild failed primaries from backups and automate old primary fencing during promotion.",
+    "summary": "Two action items from the failover postmortem: rebuild failed primaries using base backups without reusing data directories (with updated runbook), and implement automatic fencing of the old primary during promotion under Marcus's ownership.",
+    "keywords": [
+      "failover",
+      "database recovery",
+      "primary rebuild",
+      "fencing",
+      "postmortem"
+    ],
+    "questions_answered": [
+      "what actions were taken from the failover postmortem?",
+      "how should a failed primary be rebuilt?",
+      "who is responsible for automatic fencing during promotion?"
+    ],
+    "entities": {
+      "people": [
+        "Marcus"
+      ],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "primary",
+        "backup"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": [
+      "Rebuild failed primary from base backup, never reuse data directory (runbook updated)",
+      "Fence old primary automatically during promotion (owner: Marcus)"
+    ]
+  },
+  "869977255f425fb1b4c72a3f6a7249b220c0002dcf9619cce3757b4a21bf054c": {
+    "tldr": "Documentation repository for Acme platform team containing decisions, runbooks, and onboarding materials.",
+    "summary": "This folder contains the Acme platform team's documentation including decisions, runbooks, changelogs, meeting notes, specs, onboarding material, and postmortems. New team members should start with the onboarding/first-week.md file.",
+    "keywords": [
+      "platform documentation",
+      "decisions",
+      "runbooks",
+      "onboarding",
+      "team knowledge"
+    ],
+    "questions_answered": [
+      "where is the platform team documentation?",
+      "how do i onboard to the acme platform?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Acme platform"
+      ],
+      "technologies": [],
+      "files_paths": [
+        "adr/",
+        "onboarding/first-week.md"
+      ],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "2e9b43b7f682a1defa64d26a6ffb76f90173319eb72d618e5900e8a32c331dcc": {
+    "tldr": "Weekly on-call handover at Monday 10:00 UTC with incident and alert status reporting.",
+    "summary": "Weekly on-call handover happens Monday 10:00 UTC. The outgoing on-call engineer posts open incidents, silenced alerts with expiry details, and any flags modified during their week.",
+    "keywords": [
+      "on-call",
+      "handover",
+      "weekly",
+      "incidents",
+      "alerts",
+      "on-call rotation"
+    ],
+    "questions_answered": [
+      "When does the weekly on-call handover occur?",
+      "What does the outgoing on-call person report during handover?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Weekly handover occurs Monday 10:00 UTC",
+      "Outgoing on-call reports open incidents, silenced alerts with expiry times, and flag changes"
+    ],
+    "action_items": []
+  },
+  "a74b6ccdb577155b8e7fcdd9407373d1072ed9300e7b894906b4ce8e91f90c8b": {
+    "tldr": "Definitions of deployment, tooling, and infrastructure concepts for the platform.",
+    "summary": "Glossary defining key deployment and infrastructure terms: Colour refers to one of two API tier deployments in blue-green architecture; Flip switches traffic between them. deployctl is the CLI for releases and rollbacks. Config service provides feature flags with 10-second caching; Vault stores secrets with 90-day audit logs. Incidents are categorized as SEV1/2/3 levels.",
+    "keywords": [
+      "blue-green deployment",
+      "colour flip",
+      "feature flags",
+      "load balancer",
+      "incident severity",
+      "secrets management"
+    ],
+    "questions_answered": [
+      "what is colour in blue-green deployments",
+      "how do you flip between colours",
+      "what does deployctl do",
+      "what is the config service cache duration"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "deployctl",
+        "Config service",
+        "Vault"
+      ],
+      "technologies": [
+        "blue-green",
+        "load balancer",
+        "feature flags",
+        "audit log"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "2ed0a1c5888feacbd9cce8d8ca5ad4184fec0ded9fcfc0fbb170907ac3ae66a3": {
+    "tldr": "Order service needs transactional writes, JSON columns, and row-level locking unavailable in current MySQL setup.",
+    "summary": "The order service requires transactional writes, JSON column support for flexible cart payloads, and row-level locking for inventory reservations. The team currently runs MySQL 5.7 for the legacy catalog since 2019, which lacks these transactional requirements.",
+    "keywords": [
+      "postgresql",
+      "mysql",
+      "order service",
+      "transactional writes",
+      "json columns",
+      "inventory reservations"
+    ],
+    "questions_answered": [
+      "why migrate from mysql to postgresql",
+      "what are the requirements for the order service datastore",
+      "what features does postgresql provide that mysql lacks"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "MySQL 5.7"
+      ],
+      "technologies": [
+        "JSON columns",
+        "transactional writes",
+        "row-level locking"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2019",
+        "iso": "2019",
+        "precision": "year",
+        "evidence": "The team has operated MySQL 5.7 for the legacy catalog since 2019"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "61565b51ad391e4ae69e72e07cc0b9a60edc3746e22f8cfa3eeaeacff3d6e010": {
+    "tldr": "Events stream has 7-day retention; weekly rebuild covers gaps and ranking changes need golden query validation.",
+    "summary": "The events stream only retains data for 7 days, with the weekly rebuild process covering data gaps beyond that window. Ranking changes must be validated against a golden query set before being rolled out to production.",
+    "keywords": [
+      "search index",
+      "events stream",
+      "replay limit",
+      "ranking changes",
+      "weekly rebuild",
+      "golden query set"
+    ],
+    "questions_answered": [
+      "What is the event stream retention policy?",
+      "How are ranking changes validated before deployment?",
+      "What handles gaps in the event stream?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "events stream",
+        "golden query set"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Events stream has 7-day retention limit; weekly rebuild handles gaps",
+      "Ranking changes require golden query set validation"
+    ],
+    "action_items": [
+      "Evaluate ranking changes on golden query set before rollout"
+    ]
+  },
+  "bcdeb2471c939a5de6657117158937bf7530b6182b8320c7292f1a2bd28d41cc": {
+    "tldr": "Hourly search index rebuilds hide new products for up to one hour, causing customer complaints.",
+    "summary": "The product search index rebuilds hourly from a full export, taking 40 minutes and causing new products to be invisible for up to an hour. This delay resulted in 23 customer support tickets in July 2026 about missing products.",
+    "keywords": [
+      "search index",
+      "product visibility",
+      "rebuild latency",
+      "hourly export",
+      "customer tickets"
+    ],
+    "questions_answered": [
+      "why is the search index slow to update?",
+      "how long does product search index rebuilding take?",
+      "what customer issues occurred with search index delays?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "product search index"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "July 2026",
+        "iso": "2026-07",
+        "precision": "month",
+        "evidence": "Customers filed 23 tickets in July 2026"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "38251ff246d1db1cf47c6d6ce19581602c05ee34b42a7a144dbc4da0e4321cef": {
+    "tldr": "Feature flags flip fast via config service, but it becomes a critical request-path dependency.",
+    "summary": "Using the config service for feature flags enables rapid flag changes without deployment in under ten seconds. However, the config service now sits on the request path, creating a dependency where stale cache may be served if the service is down.",
+    "keywords": [
+      "feature flags",
+      "config service",
+      "deployment",
+      "request path",
+      "caching"
+    ],
+    "questions_answered": [
+      "What are the consequences of using config service for feature flags?",
+      "How does feature flag deployment time compare with this approach?",
+      "What is the impact on request handling when the config service is unavailable?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "config service"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Feature flags will be managed through the config service rather than environment variables.",
+      "The config service is positioned on the request path."
+    ],
+    "action_items": []
+  },
+  "34e47971014605acb49eb6a9f46eeabe227c907e13d34fe2e324be989d7911d6": {
+    "tldr": "Pipeline skips unaffected packages via git diff and dependency graph analysis.",
+    "summary": "The selective CI pipeline identifies affected packages using git diff against main and the dependency graph in packages/. Jobs for unaffected packages are skipped. A nightly full build serves as a safeguard against graph errors.",
+    "keywords": [
+      "selective ci",
+      "affected packages",
+      "dependency graph",
+      "pipeline optimization"
+    ],
+    "questions_answered": [
+      "How does selective CI determine which packages to build?",
+      "What prevents errors in the dependency graph?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "git diff",
+        "dependency graph"
+      ],
+      "files_paths": [
+        "packages/"
+      ],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Jobs for unaffected packages are skipped in the pipeline.",
+      "A nightly full build guards against dependency graph mistakes."
+    ],
+    "action_items": []
+  },
+  "214d40b37f54ace3a0c3ff556e1859edc74d4da5ce79cdd21511b9547842015d": {
+    "tldr": "3,100 orders delayed up to 50 minutes by worker nack loop.",
+    "summary": "A worker nack loop incident on January 14, 2025 caused order confirmation delays. 3,100 orders experienced delays of up to 50 minutes.",
+    "keywords": [
+      "order confirmations",
+      "delayed delivery",
+      "3100 orders",
+      "50 minutes"
+    ],
+    "questions_answered": [
+      "how many orders were affected by the worker nack loop incident?",
+      "what was the delay duration for order confirmations?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "135e7d81ce56eccb770ec855efb56e555d638dcc1884098b6937bde0e9d76028": {
+    "tldr": "Database failover created 14-minute split-brain due to reused data directory.",
+    "summary": "A database failover on 2024-11-08 caused a 14-minute split-brain incident when the old primary came back online. The issue stemmed from reusing the data directory instead of rebuilding it, allowing the old primary to accept writes.",
+    "keywords": [
+      "database failover",
+      "split-brain",
+      "data directory",
+      "primary reuse",
+      "incident recovery"
+    ],
+    "questions_answered": [
+      "what happened in the database failover on 2024-11-08?",
+      "why did split-brain occur during failover?",
+      "what caused the old primary to accept writes?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [
+        "database"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2024-11-08",
+        "iso": "2024-11-08",
+        "precision": "day",
+        "evidence": "The database failover of 2024-11-08 produced a split-brain"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "01dd8ff24cf356de4152f32bb67443ce3ced1794f7dabd4aa85815ec7de37b8a": {
+    "tldr": "Rollback via deployctl; traffic flips in 20 seconds if within 30 minutes, else takes 6 minutes.",
+    "summary": "Use `deployctl rollback --to <previous-sha>` to revert deployments. Traffic switches back within 20 seconds if rolling back within 30 minutes of release. Otherwise, rollback performs a full release of the old SHA, taking approximately six minutes.",
+    "keywords": [
+      "rollback",
+      "deployctl",
+      "traffic flip",
+      "sha",
+      "previous color"
+    ],
+    "questions_answered": [
+      "How do I rollback a deployment?",
+      "What happens during a rollback?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "deployctl"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "deployctl rollback --to <previous-sha>"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Use deployctl rollback to revert to a previous SHA"
+    ],
+    "action_items": []
+  },
+  "9ce090043f46c98a9d5137e4736004d95b2deebadc6610590f955f9d3b009492": {
+    "tldr": "Rate limit is 1000 requests per minute per API key; exceeds return HTTP 429.",
+    "summary": "Order API v2 enforces a rate limit of 1000 requests per minute per API key. Requests exceeding this limit receive an HTTP 429 response with a Retry-After header.",
+    "keywords": [
+      "rate limiting",
+      "api throttling",
+      "requests per minute",
+      "http 429"
+    ],
+    "questions_answered": [
+      "What is the Order API v2 rate limit?",
+      "What happens when rate limit is exceeded?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "API rate limit is 1000 requests per minute per API key",
+      "Exceeding rate limit returns HTTP 429 with Retry-After header"
+    ],
+    "action_items": []
+  },
+  "febfcec58ae5839218fbe5f9cf87bca64ca26062daec104c921d89f06a9343ad": {
+    "tldr": "Use vault command to get auto-expiring database credentials, never copy from colleagues.",
+    "summary": "Database passwords should be obtained using `vault read db/creds/orders`, which generates credentials that expire after 8 hours. Credentials must never be copied from colleagues.",
+    "keywords": [
+      "database password",
+      "vault",
+      "credentials",
+      "expiring tokens",
+      "access management"
+    ],
+    "questions_answered": [
+      "How do I get a database password?",
+      "What command retrieves database credentials?",
+      "How long are database credentials valid?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": [
+        "vault read db/creds/orders"
+      ]
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Database credentials are obtained via vault read db/creds/orders, valid for 8 hours.",
+      "Credentials must not be copied from colleagues."
+    ],
+    "action_items": []
+  },
+  "edfa04119b3fa90db3f5e4d29426523600e1fee7e56d6af57f4dd63634e8d3e5": {
+    "tldr": "Monorepo allows unified type changes; CI takes 18 minutes, selective builds forthcoming.",
+    "summary": "The monorepo structure enables type changes across producers and consumers in a single pull request. However, CI runs take 18 minutes end-to-end, with selective builds planned as a future improvement.",
+    "keywords": [
+      "monorepo",
+      "ci pipeline",
+      "selective builds",
+      "type safety"
+    ],
+    "questions_answered": [
+      "what are the consequences of using a monorepo?",
+      "how long do CI runs take in this monorepo?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "monorepo structure allows single PR to change types and their producers/consumers"
+    ],
+    "action_items": []
+  },
+  "765ea3553c7a0152cc056773aaa6868ab15e96b3aaa292215da34d65df1c067c": {
+    "tldr": "Primary paged for SEV1/SEV2, secondary after 10 min, manager after 30 min.",
+    "summary": "PagerDuty automatically pages the primary on-call engineer for SEV1 or SEV2 incidents. If not acknowledged within 10 minutes, the secondary is paged. For SEV1 incidents exceeding 30 minutes, escalate to the engineering manager.",
+    "keywords": [
+      "on-call",
+      "pagerduty",
+      "sev1",
+      "sev2",
+      "escalation",
+      "acknowledgement"
+    ],
+    "questions_answered": [
+      "When does PagerDuty page the on-call?",
+      "How long before secondary on-call is paged?",
+      "When should engineering manager be escalated?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PagerDuty"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "PagerDuty pages primary on-call for SEV1 or SEV2",
+      "Secondary is paged after 10 minutes without acknowledgement",
+      "Engineering manager is escalated for SEV1 lasting more than 30 minutes"
+    ],
+    "action_items": []
+  },
+  "d7ce4911fb47dca5d0a33db3cc7ddde09f933bc320a73673e08816d21f9530c4": {
+    "tldr": "Multiple repositories caused CI complexity and type drift between services.",
+    "summary": "Three separate repositories created operational friction: three CI pipelines and a week-long coordinated release process. Shared types between the API and web client drifted twice in October 2023, causing data consistency issues.",
+    "keywords": [
+      "monorepo",
+      "ci pipelines",
+      "release coordination",
+      "shared types",
+      "api",
+      "web client"
+    ],
+    "questions_answered": [
+      "why was a monorepo needed?",
+      "what problems did the multiple repositories cause?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "October 2023",
+        "iso": "2023-10",
+        "precision": "month",
+        "evidence": "Shared types drifted between the API and the web client twice in October 2023"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "5668fb8e8e6a92710e98e6ae9f5cef70b3b172d77b5de2a795370d4b9eee9c1d": {
+    "tldr": "Incident severity classification: SEV1 (checkout/login down), SEV2 (degraded with workaround or >2% errors), SEV3 (single customer or internal tool).",
+    "summary": "The runbook defines three incident severity tiers. SEV1 affects core functionality (checkout/login down). SEV2 involves degraded features with workarounds or error rates exceeding 2%. SEV3 impacts individual customers or internal tools.",
+    "keywords": [
+      "severity levels",
+      "sev1",
+      "sev2",
+      "sev3",
+      "incident classification",
+      "error rate"
+    ],
+    "questions_answered": [
+      "what are severity levels in on-call runbook?",
+      "how do I classify a SEV1 incident?",
+      "when is something a SEV2 vs SEV3?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "SEV1 is checkout or login unavailable for any customer",
+      "SEV2 is degraded feature with workaround or error rate above 2%",
+      "SEV3 is single customer affected or internal tool down"
+    ],
+    "action_items": []
+  },
+  "c3ff577c037d6706a041f239d1a27fe7297938b7677d4357c3557ff407f709e7": {
+    "tldr": "Rate limits enforced at API gateway using Redis-backed token buckets per API key.",
+    "summary": "Rate limits use a token bucket algorithm enforced at the API gateway, with state stored per API key in Redis. Redis is the only stateful component; if it fails, the system fails open allowing unlimited requests and pages on-call.",
+    "keywords": [
+      "rate limiting",
+      "api gateway",
+      "token bucket",
+      "redis",
+      "stateful"
+    ],
+    "questions_answered": [
+      "Where are rate limits enforced",
+      "How are rate limits stored",
+      "What happens when Redis goes down"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "Redis"
+      ],
+      "technologies": [
+        "API gateway",
+        "token bucket"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Rate limits are enforced at the API gateway using a token bucket per API key",
+      "Redis stores the rate limit state",
+      "Redis outage fails open (no limits)"
+    ],
+    "action_items": []
+  },
+  "5e334a1ea3e594de9924919fbd0ec0a57a78c94ea6876df5872e9501ef7cb2ac": {
+    "tldr": "Heading only: Changelog 2024.",
+    "summary": "The section \"Changelog 2024\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "changelog",
+      "2024"
+    ],
+    "questions_answered": [
+      "Where is the Changelog 2024 section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "da3841d15f87c2736e80654b6cc8362c5734f3a5396921085e9d3e969ffe0f69": {
+    "tldr": "Heading only: Queue backlog.",
+    "summary": "The section \"Queue backlog\" contains only its heading; its content lives in the subsections below it.",
+    "keywords": [
+      "queue",
+      "backlog"
+    ],
+    "questions_answered": [
+      "Where is the Queue backlog section?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [],
+    "action_items": []
+  },
+  "7a1905de8f80679936266d6f8b2e5fa551bf4b863c2a60a3cb0d64e811d86696": {
+    "tldr": "ADR proposing monorepo for web, API, and workers; superseded by ADR 0009.",
+    "summary": "ADR 0004 documents a decision to use one repository for web, API, and workers. The decision record was created on November 2, 2023, and is now superseded by ADR 0009.",
+    "keywords": [
+      "adr",
+      "monorepo",
+      "decision record",
+      "superseded",
+      "web api workers"
+    ],
+    "questions_answered": [
+      "What is ADR 0004 about?",
+      "Why was ADR 0004 superseded?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2023-11-02",
+        "iso": "2023-11-02",
+        "precision": "day",
+        "evidence": "Date: 2023-11-02"
+      }
+    ],
+    "decisions": [
+      "This ADR was superseded by ADR 0009."
+    ],
+    "action_items": []
+  },
+  "30986b6fd74a9acef4087abe8cd62e0655db38445dcd967d55d89e68e87b8f50": {
+    "tldr": "PostgreSQL selected as the primary datastore in architecture decision record.",
+    "summary": "ADR 0001 documents the decision to use PostgreSQL as the primary datastore, accepted on 2024-03-11.",
+    "keywords": [
+      "postgres",
+      "datastore",
+      "adr",
+      "database",
+      "decision"
+    ],
+    "questions_answered": [
+      "What is the primary datastore?",
+      "When was PostgreSQL chosen?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "PostgreSQL"
+      ],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2024-03-11",
+        "iso": "2024-03-11",
+        "precision": "day",
+        "evidence": "Date: 2024-03-11"
+      }
+    ],
+    "decisions": [
+      "PostgreSQL chosen as the primary datastore."
+    ],
+    "action_items": []
+  },
+  "ccca11083a36decfd15dad881bc8b35b29264ad38c490364acb50e682857f212": {
+    "tldr": "Two historical causes of queue backlog: broken consumer and email provider throttling.",
+    "summary": "Documents two observed causes of queue backlog: a broken consumer deploy on 2025-01-14 that repeatedly nacked messages, and downstream email provider throttling on 2025-08-02 causing workers to wait on 429 responses.",
+    "keywords": [
+      "queue backlog",
+      "worker deploy",
+      "broken consumer",
+      "throttling",
+      "nacked messages"
+    ],
+    "questions_answered": [
+      "what causes queue backlog",
+      "what incidents have caused queue backlog before",
+      "how did broken consumers cause backlog"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "email provider"
+      ],
+      "technologies": [
+        "consumer",
+        "worker deploy",
+        "429 responses"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2025-01-14",
+        "iso": "2025-01-14",
+        "precision": "day",
+        "evidence": "A worker deploy with a broken consumer (2025-01-14): messages were"
+      },
+      {
+        "raw": "2025-08-02",
+        "iso": "2025-08-02",
+        "precision": "day",
+        "evidence": "Downstream email provider throttling (2025-08-02): workers waited on"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  },
+  "8e40ff022b393b1c572f55fa58a5f9bce77be02ace49951e606e4e972b42734e": {
+    "tldr": "Checkout redesign fully shipped; fixed migration rollback bug affecting database indices.",
+    "summary": "The checkout redesign was deployed to all customers. A bug fix addressed a migration rollback issue that could remove the index from the carts table.",
+    "keywords": [
+      "checkout redesign",
+      "migration rollback",
+      "database index"
+    ],
+    "questions_answered": [
+      "what was shipped on 2025-06-30",
+      "what migration issues were fixed"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [
+        "carts"
+      ],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Checkout redesign shipped to 100% of customers"
+    ],
+    "action_items": []
+  },
+  "7ab75eb398d80b4772acca2a101a07c33918cf39be2e5920622e362bbe505e5e": {
+    "tldr": "Feature flags moved to the config service.",
+    "summary": "Feature flags were moved to the config service as documented in ADR 0005.",
+    "keywords": [
+      "feature flags",
+      "config service",
+      "adr 0005",
+      "architectural decision"
+    ],
+    "questions_answered": [
+      "Where are feature flags now stored?",
+      "What changed on 2024-09-23?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "config service"
+      ],
+      "technologies": [
+        "feature flags"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2024-09-23",
+        "iso": "2024-09-23",
+        "precision": "day",
+        "evidence": "2024-09-23"
+      }
+    ],
+    "decisions": [
+      "Feature flags moved to the config service (ADR 0005)."
+    ],
+    "action_items": []
+  },
+  "920a549de6edc07563542c6e71257fa8d7d9c199b604986f596e8ee4ff98ab14": {
+    "tldr": "Feature flags are cached from config service; expired flags trigger CI failure.",
+    "summary": "Feature flags are retrieved from a config service and cached for 10 seconds. Each flag requires an owner, description, and expiry date. The CI job flags-audit automatically fails if any flag surpasses its expiry date, ensuring flags don't persist indefinitely.",
+    "keywords": [
+      "feature flags",
+      "config service",
+      "caching",
+      "flag expiry",
+      "ci automation"
+    ],
+    "questions_answered": [
+      "Where are feature flags read from?",
+      "How often are feature flags cached?",
+      "What metadata is required for each feature flag?",
+      "How does the system handle expired flags?"
+    ],
+    "entities": {
+      "people": [],
+      "orgs": [],
+      "products": [
+        "config service"
+      ],
+      "technologies": [
+        "CI"
+      ],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [],
+    "decisions": [
+      "Feature flags are read from the config service with a 10-second cache.",
+      "Every flag must have an owner, description, and expiry date.",
+      "CI job flags-audit fails when a flag exceeds its expiry date."
+    ],
+    "action_items": [
+      "Run flags-audit CI job to check for expired flags"
+    ]
+  },
+  "95c8291449ff114f2def4f7e0c5d48a07b9a3e4b6b13f46802a7c88f4968ead8": {
+    "tldr": "Platform sync meeting held with four team members on 2026-08-04.",
+    "summary": "A platform sync meeting was held on August 4, 2026. The attendees were Priya, Tomás, Lena, and Marcus.",
+    "keywords": [
+      "platform sync",
+      "meeting",
+      "attendees"
+    ],
+    "questions_answered": [
+      "who attended the platform sync",
+      "when was the platform sync meeting"
+    ],
+    "entities": {
+      "people": [
+        "Priya",
+        "Tomás",
+        "Lena",
+        "Marcus"
+      ],
+      "orgs": [],
+      "products": [],
+      "technologies": [],
+      "files_paths": [],
+      "commands": []
+    },
+    "mentioned_dates": [
+      {
+        "raw": "2026-08-04",
+        "iso": "2026-08-04",
+        "precision": "day",
+        "evidence": "Platform sync — 2026-08-04"
+      }
+    ],
+    "decisions": [],
+    "action_items": []
+  }
+}

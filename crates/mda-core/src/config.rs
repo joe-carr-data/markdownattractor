@@ -157,7 +157,7 @@ pub struct Config {
     /// Which embedding model to use for the vector list, or `off`.
     pub embeddings: Embeddings,
     /// Where embedding models are cached. `None` means `$MDA_MODEL_DIR`, then
-    /// `${CLAUDE_PLUGIN_DATA}/models`, then `~/.cache/markdownattractor/models`.
+    /// `~/.cache/markdownattractor/models`.
     pub embedding_cache_dir: Option<PathBuf>,
 }
 
