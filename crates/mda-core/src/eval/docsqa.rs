@@ -23,8 +23,11 @@ pub struct Question {
     pub id: String,
     /// The agent input, image transcriptions included.
     pub query: String,
-    /// Relevant pages as repository-relative paths (mapped from `qrel_ids`).
+    /// Relevant pages as repository-relative paths (mapped from `qrel_ids`, deduplicated).
     pub relevant: Vec<String>,
+    /// The dataset's resolved evidence anchors: `(page path, canonical heading)`; a heading
+    /// of `None` means the whole page. Used by the evidence-presence check (plan §2 F1 v).
+    pub anchors: Vec<(String, Option<String>)>,
     /// Labels that could not be mapped to a page of the corpus file.
     pub unmapped_qrels: Vec<String>,
     /// The reference answer needed evidence from image-derived text (excluded, plan §2 iv).
@@ -77,10 +80,21 @@ impl Default for Flag {
 }
 
 #[derive(Deserialize)]
+struct AnchorRow {
+    doc_id: String,
+    #[serde(default)]
+    canonical_anchor: Option<String>,
+    #[serde(default)]
+    canonical_heading: Option<String>,
+}
+
+#[derive(Deserialize)]
 struct AnswerRow {
     question_id: String,
     #[serde(default)]
     qrel_ids: Vec<String>,
+    #[serde(default)]
+    anchor_resolution: Vec<AnchorRow>,
     #[serde(default)]
     image_text_evidence_used: Flag,
     #[serde(default)]
@@ -137,18 +151,32 @@ impl Dataset {
             let a = answers.get(&q.question_id).ok_or_else(|| {
                 Error::NotFound(format!("answers.jsonl has no record for {}", q.question_id))
             })?;
-            let mut relevant = Vec::new();
+            let mut relevant: Vec<String> = Vec::new();
             let mut unmapped = Vec::new();
             for id in &a.qrel_ids {
                 match pages.get(id) {
-                    Some(p) => relevant.push(p.clone()),
+                    Some(p) if !relevant.contains(p) => relevant.push(p.clone()),
+                    Some(_) => {}
                     None => unmapped.push(id.clone()),
                 }
             }
+            let anchors = a
+                .anchor_resolution
+                .iter()
+                .filter_map(|r| {
+                    let page = pages.get(&r.doc_id)?.clone();
+                    let heading = match r.canonical_anchor.as_deref() {
+                        None | Some("document" | "") => None,
+                        Some(_) => r.canonical_heading.clone().filter(|h| !h.trim().is_empty()),
+                    };
+                    Some((page, heading))
+                })
+                .collect();
             questions.push(Question {
                 id: q.question_id,
                 query: q.query,
                 relevant,
+                anchors,
                 unmapped_qrels: unmapped,
                 image_evidence: a.image_text_evidence_used.is_set(),
                 multimodal_judgment: a.requires_multimodal_judgment.is_set(),
@@ -203,12 +231,46 @@ pub struct Coverage {
     pub multimodal_judgment: usize,
     /// Fraction `qrels_indexed / qrels` (the plan's ≥ 0.95 gate).
     pub qrel_coverage: f64,
+    /// Evidence anchors over the eligible questions (plan §2 F1 v): a section-level anchor
+    /// counts as found when a section of that page carries the canonical heading (compared
+    /// after [`normalize_heading`]: case, backticks, Liquid tags and whitespace folded; the
+    /// page title counts as a heading too); a page-level anchor counts when the page is
+    /// indexed.
+    pub anchors: usize,
+    /// Anchors whose heading (or page) was found in the indexed text.
+    pub anchors_found: usize,
+    /// Eligible questions with at least one anchor not found; they stay eligible (the label
+    /// is a page) and are listed so the number is visible, never silent.
+    pub questions_with_missing_anchor: usize,
+    /// Their ids.
+    pub missing_anchor_ids: Vec<String>,
 }
 
 /// Compute the coverage of `dataset` against an indexed store.
-#[allow(clippy::cast_precision_loss)]
+#[allow(clippy::cast_precision_loss, clippy::too_many_lines)]
 pub fn coverage(dataset: &Dataset, store: &Store) -> Result<Coverage> {
-    let indexed: HashSet<String> = store.documents()?.into_iter().map(|d| d.rel_path).collect();
+    let docs = store.documents()?;
+    let indexed: HashSet<String> = docs.iter().map(|d| d.rel_path.clone()).collect();
+    // Lower-cased heading paths per indexed page, loaded once for the evidence check.
+    let mut headings: HashMap<String, Vec<String>> = HashMap::new();
+    let wanted: HashSet<&str> =
+        dataset.questions.iter().flat_map(|q| q.anchors.iter().map(|(p, _)| p.as_str())).collect();
+    for d in &docs {
+        if wanted.contains(d.rel_path.as_str()) {
+            let mut paths: Vec<String> = store
+                .sections_of(&d.doc_id)?
+                .into_iter()
+                .map(|s| normalize_heading(&s.heading_path.join(" > ")))
+                .collect();
+            if let Some(t) = &d.title {
+                paths.push(normalize_heading(t));
+            }
+            headings.insert(d.rel_path.clone(), paths);
+        }
+    }
+    let mut anchors = 0;
+    let mut anchors_found = 0;
+    let mut missing_anchor_ids = Vec::new();
     let corpus_pages_indexed = dataset.pages.values().filter(|p| indexed.contains(*p)).count();
     let mut qrels = 0;
     let mut qrels_indexed = 0;
@@ -234,8 +296,31 @@ pub fn coverage(dataset: &Dataset, store: &Store) -> Result<Coverage> {
             if q.multimodal_judgment {
                 multimodal += 1;
             }
+            let mut missing = false;
+            for (page, heading) in &q.anchors {
+                anchors += 1;
+                let found = match heading {
+                    None => indexed.contains(page),
+                    Some(h) => {
+                        let needle = normalize_heading(h);
+                        !needle.is_empty()
+                            && headings
+                                .get(page)
+                                .is_some_and(|hp| hp.iter().any(|p| p.contains(&needle)))
+                    }
+                };
+                if found {
+                    anchors_found += 1;
+                } else {
+                    missing = true;
+                }
+            }
+            if missing {
+                missing_anchor_ids.push(q.id.clone());
+            }
         }
     }
+    let questions_with_missing_anchor = missing_anchor_ids.len();
     Ok(Coverage {
         project: dataset.project.clone(),
         corpus_pages: dataset.pages.len(),
@@ -249,7 +334,31 @@ pub fn coverage(dataset: &Dataset, store: &Store) -> Result<Coverage> {
         eligible,
         multimodal_judgment: multimodal,
         qrel_coverage: if qrels == 0 { 0.0 } else { qrels_indexed as f64 / qrels as f64 },
+        anchors,
+        anchors_found,
+        questions_with_missing_anchor,
+        missing_anchor_ids,
     })
+}
+
+/// Heading text as the evidence check compares it: lower-cased, backticks removed, Liquid
+/// tags (`{% … %}`) dropped, whitespace collapsed. The dataset's canonical headings come
+/// from rendered pages; ours come from the source.
+#[must_use]
+pub fn normalize_heading(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(start) = rest.find("{%") {
+        out.push_str(&rest[..start]);
+        match rest[start..].find("%}") {
+            Some(end) => rest = &rest[start + end + 2..],
+            None => {
+                rest = "";
+            }
+        }
+    }
+    out.push_str(rest);
+    out.replace('`', "").to_lowercase().split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Whether a question is scored: not image-evidence, every label mapped and indexed.
@@ -271,6 +380,11 @@ pub struct QuestionResult {
     pub rank: Option<usize>,
     /// nDCG@10.
     pub ndcg_at_10: f64,
+    /// Sections fetched to reach ten distinct pages (or exhaust the results).
+    pub fetched: usize,
+    /// `true` when ten distinct pages were not reached within the fetch cap, so a relevant
+    /// page beyond the fetched sections could be missing from `rank`.
+    pub truncated: bool,
     /// The top five pages returned.
     pub top: Vec<String>,
     /// The relevant pages.
@@ -297,9 +411,18 @@ pub struct RunOptions {
     pub name: String,
     /// Skip cards and vectors.
     pub raw_only: bool,
-    /// Sections fetched per query before page deduplication; 30 is plenty for nDCG@10.
+    /// Sections fetched per query at first; doubled until ten distinct pages are in hand,
+    /// the results run out, or [`FETCH_CAP`] is reached.
     pub fetch: usize,
+    /// Score holdout questions too (plan rule 0.2: only at 1.0).
+    pub include_holdout: bool,
 }
+
+/// Upper bound on sections fetched for one question.
+pub const FETCH_CAP: usize = 2000;
+
+/// Pages needed for nDCG@10.
+const PAGES_NEEDED: usize = 10;
 
 /// Score `dataset` on `store` for one configuration, over `split` (or all eligible questions).
 #[allow(clippy::cast_precision_loss, clippy::implicit_hasher)] // `splits` comes from `split_ids`
@@ -325,10 +448,30 @@ pub fn evaluate(
         if !eligible(q, &indexed) || split.is_some_and(|s| s != q_split) {
             continue;
         }
+        if q_split == Split::Holdout && !opts.include_holdout {
+            continue;
+        }
         let started = std::time::Instant::now();
-        let hits = search::search_with(store, &q.query, &search_opts, embedder)?;
+        // Page ranks need ten distinct pages: fetch deeper while one page hogs the list.
+        let mut fetch = opts.fetch.clamp(1, FETCH_CAP);
+        let (ranked, fetched, truncated) = loop {
+            let hits = search::search_with(
+                store,
+                &q.query,
+                &SearchOptions { k: fetch, ..search_opts.clone() },
+                embedder,
+            )?;
+            let ranked = pages_of(hits.iter().map(|h| h.rel_path.as_str()));
+            let exhausted = hits.len() < fetch;
+            if ranked.len() >= PAGES_NEEDED || exhausted {
+                break (ranked, fetch, false);
+            }
+            if fetch >= FETCH_CAP {
+                break (ranked, fetch, true);
+            }
+            fetch = (fetch * 2).min(FETCH_CAP);
+        };
         ms_sum += started.elapsed().as_secs_f64() * 1000.0;
-        let ranked = pages_of(hits.iter().map(|h| h.rel_path.as_str()));
         let (rank, rr, ndcg) = score_pages(&ranked, &q.relevant);
         if rank.is_some_and(|r| r <= 5) {
             hits5 += 1;
@@ -340,6 +483,8 @@ pub fn evaluate(
             split: q_split,
             rank,
             ndcg_at_10: ndcg,
+            fetched,
+            truncated,
             top: ranked.into_iter().take(5).collect(),
             relevant: q.relevant.clone(),
         });
@@ -357,4 +502,26 @@ pub fn evaluate(
         },
         results,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_heading;
+
+    #[test]
+    fn headings_normalise_like_the_dataset_renders_them() {
+        assert_eq!(
+            normalize_heading("Using the `GITHUB_TOKEN` in a workflow"),
+            "using the github_token in a workflow"
+        );
+        assert_eq!(
+            normalize_heading(
+                "Connecting a repository on {% data variables.product.prodname_dotcom %}  today"
+            ),
+            "connecting a repository on today"
+        );
+        assert_eq!(normalize_heading("`PrismaClient`"), "prismaclient");
+        assert_eq!(normalize_heading("open {% tag"), "open");
+        assert_eq!(normalize_heading("   "), "");
+    }
 }

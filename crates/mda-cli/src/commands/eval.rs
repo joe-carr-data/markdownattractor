@@ -55,9 +55,13 @@ pub struct Args {
     /// The indexed checkout of that project's repository at the pinned commit.
     #[arg(long)]
     pub root: Option<PathBuf>,
-    /// Which split to score: `dev`, `test`, `holdout`, or `all` (plan rule 0.2).
+    /// Which split to score: `dev`, `test`, `holdout`, or `all` (plan rule 0.2). The sealed
+    /// holdout is scored only with `--open-holdout`.
     #[arg(long, default_value = "dev")]
     pub split: String,
+    /// Score the sealed holdout too (plan rule 0.2: once, at 1.0).
+    #[arg(long)]
+    pub open_holdout: bool,
     /// Seed of the dev/test/holdout split.
     #[arg(long, default_value_t = 20_260_922)]
     pub seed: u64,
@@ -231,10 +235,16 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             anyhow::anyhow!("--split must be dev, test, holdout or all, not {s:?}")
         })?),
     };
-    if split == Some(Split::Holdout) {
+    if split == Some(Split::Holdout) && !args.open_holdout {
+        anyhow::bail!(
+            "the holdout is sealed until 1.0 (plan rule 0.2); pass --open-holdout to score it"
+        );
+    }
+    if args.open_holdout {
         tracing::warn!("scoring the sealed holdout: plan rule 0.2 opens it once, at 1.0");
     }
     let root = root.canonicalize().with_context(|| format!("root {}", root.display()))?;
+    let out = args.out.as_deref().map(|o| report_dir(o, &root)).transpose()?;
     anyhow::ensure!(
         root.join(mda_core::config::STATE_DIR).join("index.sqlite").is_file(),
         "{} is not indexed yet: run `mda index --no-summarize {}` first",
@@ -268,22 +278,19 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         vectors = engine.embed_pending(&**e, usize::MAX)?.embedded;
     }
     let mut runs = Vec::new();
-    let raw =
-        RunOptions { name: "lexical (raw only)".to_owned(), raw_only: true, fetch: args.fetch };
+    let opts = |name: &str, raw_only: bool| RunOptions {
+        name: name.to_owned(),
+        raw_only,
+        fetch: args.fetch,
+        include_holdout: args.open_holdout,
+    };
+    let raw = opts("lexical (raw only)", true);
     runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &raw)?);
     if engine.store().counts()?.summarized > 0 {
-        let lex = RunOptions {
-            name: "lexical (cards + raw)".to_owned(),
-            raw_only: false,
-            fetch: args.fetch,
-        };
+        let lex = opts("lexical (cards + raw)", false);
         runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &lex)?);
         if embedder.is_some() {
-            let hyb = RunOptions {
-                name: "hybrid (cards + raw + vectors)".to_owned(),
-                raw_only: false,
-                fetch: args.fetch,
-            };
+            let hyb = opts("hybrid (cards + raw + vectors)", false);
             runs.push(docsqa::evaluate(
                 engine.store(),
                 embedder.as_deref(),
@@ -298,9 +305,9 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
 
     let report = serde_json::json!({
         "dataset": "docsqa",
-        "data": data,
+        "data": portable(data),
         "project": project,
-        "root": root,
+        "root": portable(&root),
         "mda_version": mda_core::VERSION,
         "store": counts,
         "cards_attached": attached,
@@ -312,19 +319,18 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         "fetch": args.fetch,
         "runs": runs,
     });
-    if let Some(out) = &args.out {
-        std::fs::create_dir_all(out).with_context(|| out.display().to_string())?;
-        std::fs::write(out.join("coverage.json"), serde_json::to_string_pretty(&coverage)?)?;
+    if let Some(out) = &out {
+        write_report(&out.join("coverage.json"), &serde_json::to_string_pretty(&coverage)?)?;
         let mut split_rows: Vec<(&String, &Split)> = splits.iter().collect();
         split_rows.sort_by(|a, b| a.0.cmp(b.0));
-        std::fs::write(
-            out.join("split.json"),
-            serde_json::to_string_pretty(&serde_json::json!({
+        write_report(
+            &out.join("split.json"),
+            &serde_json::to_string_pretty(&serde_json::json!({
                 "seed": args.seed, "project": project,
                 "questions": split_rows.iter().map(|(id, s)| serde_json::json!({"id": id, "split": s})).collect::<Vec<_>>(),
             }))?,
         )?;
-        std::fs::write(out.join("results.json"), serde_json::to_string_pretty(&report)?)?;
+        write_report(&out.join("results.json"), &serde_json::to_string_pretty(&report)?)?;
     }
     if json {
         output::json(&report);
@@ -343,6 +349,17 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         split_counts.get("dev").copied().unwrap_or(0),
         split_counts.get("test").copied().unwrap_or(0),
         split_counts.get("holdout").copied().unwrap_or(0),
+    );
+    println!(
+        "evidence: {} of {} anchors found in the indexed text; {} eligible question(s) with a missing anchor{}",
+        coverage.anchors_found,
+        coverage.anchors,
+        coverage.questions_with_missing_anchor,
+        if coverage.missing_anchor_ids.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", coverage.missing_anchor_ids.join(", "))
+        }
     );
     println!(
         "coverage: {:.1}% of {} qrels indexed ({} unmapped) · {} of {} corpus pages indexed · {} questions: {} eligible, {} excluded (image evidence), {} excluded (page missing); {} need multimodal grading",
@@ -375,10 +392,44 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             r.metrics.mean_ms
         );
     }
-    if let Some(out) = &args.out {
+    if let Some(out) = &out {
         println!("  {} {}", st.dim("written:"), out.display());
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// The report directory: created, canonicalized, and never inside the checkout being
+/// scored (a report must not land among the source files).
+fn report_dir(out: &Path, root: &Path) -> anyhow::Result<PathBuf> {
+    std::fs::create_dir_all(out).with_context(|| out.display().to_string())?;
+    let out = out.canonicalize().with_context(|| out.display().to_string())?;
+    anyhow::ensure!(
+        !out.starts_with(root),
+        "--out {} is inside the checkout {}; write reports elsewhere",
+        out.display(),
+        root.display()
+    );
+    Ok(out)
+}
+
+/// Write a report file, replacing a previous plain file but never following a symlink.
+fn write_report(path: &Path, text: &str) -> anyhow::Result<()> {
+    if let Ok(meta) = std::fs::symlink_metadata(path) {
+        anyhow::ensure!(meta.is_file(), "{} exists and is not a plain file", path.display());
+    }
+    std::fs::write(path, text).with_context(|| path.display().to_string())
+}
+
+/// A path with the home directory replaced by `~`, so a report can be committed as is.
+fn portable(path: &Path) -> String {
+    let s = path.display().to_string();
+    match std::env::home_dir() {
+        Some(home) if !home.as_os_str().is_empty() => {
+            let home = home.display().to_string();
+            s.strip_prefix(&home).map_or(s.clone(), |rest| format!("~{rest}"))
+        }
+        _ => s,
+    }
 }
 
 /// Summarize the corpus with the configured backend and write `cards.json` next to it.

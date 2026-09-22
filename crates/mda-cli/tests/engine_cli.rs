@@ -663,9 +663,9 @@ fn docsqa_fixture() -> (tempfile::TempDir, PathBuf, PathBuf) {
         &data,
         "data/answers.jsonl",
         concat!(
-            r#"{"question_id":"q1","qrel_ids":["demo::/rollback"],"image_text_evidence_used":[],"requires_multimodal_judgment":false}"#,
+            r#"{"question_id":"q1","qrel_ids":["demo::/rollback","demo::/rollback"],"anchor_resolution":[{"doc_id":"demo::/rollback","canonical_anchor":"roll-back-a-deploy","canonical_heading":"Roll back a `deploy`"},{"doc_id":"demo::/rollback","canonical_anchor":"document"},{"doc_id":"demo::/rollback","canonical_anchor":"title","canonical_heading":"Rollback"}],"image_text_evidence_used":[],"requires_multimodal_judgment":false}"#,
             "\n",
-            r#"{"question_id":"q2","qrel_ids":["demo::/paging"],"image_text_evidence_used":false,"requires_multimodal_judgment":true}"#,
+            r#"{"question_id":"q2","qrel_ids":["demo::/paging"],"anchor_resolution":[{"doc_id":"demo::/paging","canonical_anchor":"gone","canonical_heading":"A heading that is not there"}],"image_text_evidence_used":false,"requires_multimodal_judgment":true}"#,
             "\n",
             r#"{"question_id":"q3","qrel_ids":["demo::/paging"],"image_text_evidence_used":[{"kind":"image_derived_text"}],"requires_multimodal_judgment":true}"#,
             "\n",
@@ -726,8 +726,12 @@ fn eval_docsqa_reports_coverage_split_and_page_metrics() {
     assert_eq!(cov["questions"], 4, "{cov}");
     assert_eq!(cov["corpus_pages"], 4);
     assert_eq!(cov["corpus_pages_indexed"], 3);
-    assert_eq!(cov["qrels"], 5);
+    assert_eq!(cov["qrels"], 5, "a duplicated label counts once");
     assert_eq!(cov["qrels_indexed"], 3);
+    assert_eq!(cov["anchors"], 4, "{cov}");
+    assert_eq!(cov["anchors_found"], 3, "q1's backticked heading, page and title anchors");
+    assert_eq!(cov["questions_with_missing_anchor"], 1);
+    assert_eq!(cov["missing_anchor_ids"], serde_json::json!(["q2"]));
     assert_eq!(cov["qrels_unmapped"], 1, "demo::/nowhere has no corpus row");
     assert_eq!(cov["excluded_image_evidence"], 1);
     assert_eq!(cov["excluded_missing_page"], 1);
@@ -745,6 +749,10 @@ fn eval_docsqa_reports_coverage_split_and_page_metrics() {
     assert_eq!(results[0]["id"], "q1");
     assert_eq!(results[0]["rank"], 1);
     assert_eq!(results[0]["top"][0], "docs/rollback.mdx");
+    assert_eq!(results[0]["relevant"].as_array().unwrap().len(), 1, "deduplicated label");
+    assert_eq!(results[0]["truncated"], false);
+    let root_str = v["root"].as_str().unwrap();
+    assert!(root_str.starts_with('~') || !root_str.contains("/Users/"), "{root_str}");
     assert!(
         out.join("coverage.json").is_file()
             && out.join("split.json").is_file()
@@ -780,4 +788,99 @@ fn eval_docsqa_reports_coverage_split_and_page_metrics() {
         .assert()
         .failure()
         .stderr(predicate::str::contains("no questions for project"));
+}
+
+#[test]
+fn eval_docsqa_fetches_past_a_page_that_hogs_the_list() {
+    let (dir, data, root) = docsqa_fixture();
+    // One page with 40 sections that all match the query terms outranks the relevant page
+    // section-for-section; with `--fetch 4` the adapter must keep fetching until it has ten
+    // distinct pages (or the results run out) before it ranks pages.
+    let mut hog = String::from("---\ntitle: Hog\n---\n");
+    for i in 0..40 {
+        hog.push_str("## Deploy note ");
+        hog.push_str(&i.to_string());
+        hog.push_str("\n\ndeployctl rollback deploy rollback deploy.\n\n");
+    }
+    write(&root, "docs/hog.mdx", &hog);
+    let corpus = std::fs::read_to_string(data.join("data/corpus.jsonl")).unwrap()
+        + r#"{"doc_id":"demo::/hog","project":"demo","repository_source_path":"docs/hog.mdx","local_path":"x"}"#
+        + "\n";
+    write(&data, "data/corpus.jsonl", &corpus);
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let stdout = mda()
+        .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "demo", "--root"])
+        .arg(&root)
+        .args(["--split", "all", "--fetch", "4"])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&stdout);
+    let q1 = &v["runs"][0]["results"][0];
+    assert_eq!(q1["id"], "q1");
+    assert!(q1["fetched"].as_u64().unwrap() > 4, "{q1}");
+    assert_eq!(q1["truncated"], false);
+    assert!(q1["rank"].as_u64().is_some(), "the relevant page is found behind the hog: {q1}");
+    drop(dir);
+}
+
+#[test]
+fn eval_docsqa_keeps_the_holdout_sealed_and_refuses_bad_output_targets() {
+    let (dir, data, root) = docsqa_fixture();
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let base = || {
+        let mut c = mda();
+        c.args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root);
+        c
+    };
+    // Without --open-holdout, `holdout` is refused and `all` scores dev + test only.
+    base()
+        .args(["--split", "holdout"])
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("sealed"));
+    let all = json_of(&base().args(["--split", "all"]).assert().success().get_output().stdout);
+    for r in all["runs"][0]["results"].as_array().unwrap() {
+        assert_ne!(r["split"], "holdout", "{r}");
+    }
+    let opened = json_of(
+        &base().args(["--split", "all", "--open-holdout"]).assert().success().get_output().stdout,
+    );
+    assert!(
+        opened["runs"][0]["metrics"]["questions"].as_u64().unwrap()
+            >= all["runs"][0]["metrics"]["questions"].as_u64().unwrap()
+    );
+    // Reports never land inside the checkout, and never follow a symlink.
+    base()
+        .args(["--split", "all", "--out"])
+        .arg(root.join("reports"))
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("inside the checkout"));
+    #[cfg(unix)]
+    {
+        let out = dir.path().join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        let victim = root.join("docs/rollback.mdx");
+        let before = std::fs::read_to_string(&victim).unwrap();
+        std::os::unix::fs::symlink(&victim, out.join("results.json")).unwrap();
+        base()
+            .args(["--split", "all", "--out"])
+            .arg(&out)
+            .assert()
+            .failure()
+            .stdout(predicate::str::contains("not a plain file"));
+        assert_eq!(
+            std::fs::read_to_string(&victim).unwrap(),
+            before,
+            "the source file is untouched"
+        );
+    }
 }

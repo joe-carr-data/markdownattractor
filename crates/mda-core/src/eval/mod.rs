@@ -101,7 +101,8 @@ pub fn score_pages(ranked: &[String], relevant: &[String]) -> (Option<usize>, f6
         .filter(|(_, p)| relevant.contains(p))
         .map(|(i, _)| 1.0 / ((i + 2) as f64).log2())
         .sum();
-    let ideal: f64 = (0..relevant.len().min(10)).map(|i| 1.0 / ((i + 2) as f64).log2()).sum();
+    let distinct = relevant.iter().collect::<std::collections::HashSet<_>>().len();
+    let ideal: f64 = (0..distinct.min(10)).map(|i| 1.0 / ((i + 2) as f64).log2()).sum();
     let ndcg = if ideal > 0.0 { dcg / ideal } else { 0.0 };
     (rank, rr, ndcg)
 }
@@ -151,6 +152,9 @@ mod tests {
         assert!((perfect - 1.0).abs() < 1e-9);
         assert_eq!(score_pages(&[], &["a.md".to_owned()]), (None, 0.0, 0.0));
         assert_eq!(score_pages(&ranked, &[]).2, 0.0, "no relevant pages: nDCG is 0, not NaN");
+        let (_, _, dup) =
+            score_pages(&["a.md".to_owned()], &["a.md".to_owned(), "a.md".to_owned()]);
+        assert!((dup - 1.0).abs() < 1e-9, "a duplicated label is one page: {dup}");
     }
 
     #[test]
