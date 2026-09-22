@@ -418,11 +418,14 @@ pub struct Explain {
     pub vector: Vec<(String, f32)>,
     /// Why the vector list is empty, when it is.
     pub vector_note: Option<String>,
+    /// The lexical lists come from the OR form of the query because the AND form was empty.
+    pub via_or_fallback: bool,
     /// The fused, recency-weighted, filtered result exactly as `search_with` returns it.
     pub fused: Vec<Hit>,
 }
 
-/// Show every list behind a query. The lexical lists use the AND form of the query.
+/// Show every list behind a query. The lexical lists are the ones the search used: the AND
+/// form, or the OR form when the AND form matched nothing (`via_or_fallback`).
 pub fn explain(
     store: &Store,
     query: &str,
@@ -430,8 +433,8 @@ pub fn explain(
     embedder: Option<&dyn Embedder>,
 ) -> Result<Explain> {
     let query = query.trim();
-    let expr = fts_escape(query);
     let k = opts.k.max(1);
+    let (lexical, via_or_fallback) = lexical_lists(store, query, k, opts)?;
     let vector_note = match embedder {
         _ if !opts.vectors => Some("vectors disabled for this query".to_owned()),
         None => Some("embeddings are off".to_owned()),
@@ -444,10 +447,11 @@ pub fn explain(
         Vec::new()
     };
     Ok(Explain {
-        cards: store.search_cards(&expr, k)?,
-        raw: store.search_raw(&expr, k)?,
+        cards: lexical.cards,
+        raw: lexical.raw,
         vector,
         vector_note,
+        via_or_fallback,
         fused: search_with(store, query, opts, embedder)?,
     })
 }

@@ -4,6 +4,8 @@
 set -u
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
+# Embedding models live in the plugin's own data directory when run through the plugin.
+export MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}"
 
 for candidate in "${MDA_BIN:-}" "$DATA/bin/mda" "$ROOT/target/release/mda" "$ROOT/target/debug/mda"; do
   if [ -n "$candidate" ] && [ -x "$candidate" ]; then

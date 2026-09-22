@@ -20,24 +20,24 @@ Goal: Claude searches through MCP and gets hybrid hits fused from cards, raw tex
 
 ## Tasks
 
-- [ ] ADR-0004 — written.
-- [ ] Store v3 + tests (round trip, model filter, live-only, counts).
-- [ ] `config` embeddings fields; `embed` module with `LocalEmbedder` (ignored live test that downloads the model once) and `embed_text` tests.
-- [ ] `search`: `VectorIndex`, third list, `Matched::Vector`, `explain`; tests with hand-made vectors.
-- [ ] `pipeline`: `embed_pending`, `stale`, `recent`; embedding after cards in `summarize_pending`; tests with a fake embedder.
-- [ ] `daemon`: embed pass + status/event.
-- [ ] `mcp` module + `mda mcp`; stdio round-trip test (rmcp `client` + `transport-child-process` as dev-dependency) covering `mda_search` and `mda_open`.
-- [ ] CLI: `explain`, `timeline`, `recent`, `stale`, `rebuild --embeddings`, `embeddings`, `eval`; `status`/`doctor`/`search` updates; `.mcp.json`, `plugin.json`, skill.
-- [ ] `evals/golden` corpus and queries; `mda eval`; `docs/benchmarks.md` with lexical-only vs hybrid numbers.
-- [ ] Live: model download once, `docs/` embedded, search latency measured; MCP server seen by `claude` through the plugin (manual).
+- [x] ADR-0004 — written.
+- [x] Store v3 + tests (round trip, model filter, live-only, counts).
+- [x] `config` embeddings fields; `embed` module with `LocalEmbedder` (ignored live test that downloads the model once) and `embed_text` tests.
+- [x] `search`: `VectorIndex`, third list, `Matched::Vector`, `explain`; tests with hand-made vectors.
+- [x] `pipeline`: `embed_pending`, `stale`, `recent`; embedding after cards in `summarize_pending`; tests with a fake embedder.
+- [x] `daemon`: embed pass + status/event.
+- [x] `mcp` module + `mda mcp`; stdio round-trip test (rmcp `client` + `transport-child-process` as dev-dependency) covering `mda_search` and `mda_open`.
+- [x] CLI: `explain`, `timeline`, `recent`, `stale`, `rebuild --embeddings`, `embeddings`, `eval`; `status`/`doctor`/`search` updates; `.mcp.json`, `plugin.json`, skill.
+- [x] `evals/golden` corpus and queries; `mda eval`; `docs/benchmarks.md` with lexical-only vs hybrid numbers.
+- [x] Live: model downloaded once (33 MB), 162 `docs/` cards embedded in 38 s, latency measured (`docs/benchmarks.md`). MCP server exercised through an rmcp client in tests; loading through the plugin in Claude Code is still to be seen by hand.
 - [ ] Docs: `design/search.md` updated (vectors, explain), `design/mcp.md`, README, CHANGELOG, STATUS, aha, index.
 - [ ] Codex review of the phase, triaged.
 
 ## Exit criteria
 
-- [ ] recall@5 ≥ 0.85 and MRR reported on the golden set, hybrid; lexical-only reported beside it. If hybrid does not beat lexical-only, say so in `docs/benchmarks.md` and keep vectors off by default.
-- [ ] `mda search` p50 < 30 ms on `docs/` + the golden set including the vector scan; the scan stays under 10 ms at 10K synthetic vectors (unit benchmark).
-- [ ] `mda mcp` answers `tools/list` and `mda_search`/`mda_open` over stdio in a test; the plugin's `.mcp.json` loads in Claude Code.
-- [ ] `embeddings = "off"` never downloads and everything else works; a failed download leaves search lexical with one warning.
-- [ ] `timeline`, `recent`, `stale`, `explain` work on `docs/` with `--json`.
+- [x] recall@5 0.983 / MRR 0.853 hybrid vs 0.883 / 0.747 lexical-only on the golden set (`docs/benchmarks.md`).
+- [ ] **Not met as written**: lexical p50 is 2–3 ms in-process (20 ms as a process); hybrid is ≈ 50–60 ms in-process because of the query embedding, 257 ms as a fresh process (model load). The scan itself is microseconds at this size. Recorded in `docs/benchmarks.md`; the MCP server amortises the load.
+- [x] `mda mcp` answers `tools/list` and every tool over stdio in `mcp_cli.rs`; `.mcp.json` written per the plugin reference (loading in Claude Code to be confirmed by hand).
+- [x] `embeddings = "off"` never downloads (daemon and CLI tests run with it); a failed or absent model leaves search lexical (`Embedder::ready`), `mda index` prints one warning.
+- [x] `timeline`, `recent`, `stale`, `explain` work on `docs/` with `--json` (engine tests + live).
 - [ ] Codex review filed with every finding triaged.
