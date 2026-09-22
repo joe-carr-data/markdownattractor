@@ -20,21 +20,32 @@ say() { printf 'markdownattractor: %s\n' "$*"; }
 
 version_of() { "$1" --version 2>/dev/null | awk '{print $2}'; }
 
+# When this project was indexed before, make sure its daemon is up. `mda start` is idempotent
+# and returns in well under a second when the daemon already answers. Never blocks the session.
+ensure_daemon() {
+  project="${CLAUDE_PROJECT_DIR:-$PWD}"
+  if [ -d "$project/.markdownattractor" ]; then
+    # Detached: the hook returns at once whatever `start` has to wait for.
+    ( "$1" start --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
+  fi
+  exit 0
+}
+
 # 1. explicit override
 if [ -n "${MDA_BIN:-}" ] && [ -x "$MDA_BIN" ]; then
-  exit 0
+  ensure_daemon "$MDA_BIN"
 fi
 
 # 2. fast path
 if [ -x "$BIN" ] && [ "$(version_of "$BIN")" = "$WANTED" ]; then
-  exit 0
+  ensure_daemon "$BIN"
 fi
 
 mkdir -p "$DATA/bin" 2>/dev/null || { say "cannot create $DATA/bin — run /mda doctor"; exit 0; }
 
 # 3. local build (contributors)
 if [ -x "$ROOT/target/release/mda" ]; then
-  cp "$ROOT/target/release/mda" "$BIN" && chmod +x "$BIN" && exit 0
+  cp "$ROOT/target/release/mda" "$BIN" && chmod +x "$BIN" && ensure_daemon "$BIN"
 fi
 
 # 4. download
@@ -79,7 +90,7 @@ fi
 
 if tar -xzf "$tmp/$target.tar.gz" -C "$tmp" && [ -f "$tmp/mda" ]; then
   mv "$tmp/mda" "$BIN" && chmod +x "$BIN"
-  [ "$(version_of "$BIN")" = "$WANTED" ] && exit 0
+  [ "$(version_of "$BIN")" = "$WANTED" ] && ensure_daemon "$BIN"
   say "installed binary reports $(version_of "$BIN"), expected $WANTED — run /mda doctor"
 else
   say "could not extract $target.tar.gz — run /mda doctor"

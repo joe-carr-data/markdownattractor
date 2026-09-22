@@ -35,13 +35,15 @@ pub mod local;
 mod mock;
 mod parse;
 mod pool;
+mod unavailable;
 
 pub use api::ApiBackend;
 pub use claude_cli::ClaudeCli;
 pub use local::LocalBackend;
 pub use mock::Mock;
 pub use parse::{parse_result, parse_result_with_model};
-pub use pool::{JobResult, Pool, PoolConfig, PoolStats};
+pub use pool::{JobResult, POOL_STOPPED_PREFIX, Pool, PoolConfig, PoolStats};
+pub use unavailable::Unavailable;
 
 /// A backend chosen at runtime. [`Pool`] and [`crate::pipeline::Engine::summarize_pending`]
 /// accept it directly.
@@ -104,6 +106,10 @@ fn delimiter_nonce(req: &SummarizeRequest) -> String {
     h.update(req.id.as_bytes());
     h.finalize().to_hex()[..8].to_owned()
 }
+
+/// Stable prefix of the [`Outcome::Fatal`] reason produced by [`Unavailable`]: the
+/// configured backend could not be built at all. The pool stops when it sees it.
+pub const FATAL_BACKEND_UNAVAILABLE: &str = "backend unavailable";
 
 /// Stable prefix of the [`Outcome::Fatal`] reason that means "the CLI is not logged in"
 /// (HTTP 401/403). The pool stops when it sees it.
@@ -234,6 +240,7 @@ impl Outcome {
                 FATAL_NO_API_KEY,
                 FATAL_LOCAL_DOWN,
                 FATAL_ACCOUNT,
+                FATAL_BACKEND_UNAVAILABLE,
             ]
             .iter()
             .any(|p| reason.starts_with(p)),

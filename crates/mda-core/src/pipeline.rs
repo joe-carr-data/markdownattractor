@@ -79,10 +79,37 @@ pub struct Progress {
 }
 
 /// Knobs for one summarization run.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SummarizeOptions {
     /// Summarize at most this many sections this run (smallest first). `None` = all pending.
     pub limit: Option<usize>,
+    /// Relative paths whose sections go first, in this order (most urgent first); the daemon
+    /// puts files the user just saved here so an edit never waits behind a backfill. Within
+    /// a document, and for everything else, smallest sections still go first.
+    pub hot_paths: Vec<String>,
+    /// Start the pool at this concurrency instead of the configured initial value (clamped to
+    /// the configured maximum). The daemon feeds the previous round's final concurrency back
+    /// so AIMD does not restart from scratch every round.
+    pub initial_concurrency: Option<u16>,
+}
+
+/// What [`Engine::sync_path`] did about one path the watcher reported.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SyncOutcome {
+    /// The file exists and was (re)indexed.
+    Indexed(IndexOutcome),
+    /// The file is gone and its document was tombstoned.
+    Tombstoned {
+        /// Path relative to the root.
+        rel_path: String,
+        /// Content hash the document had, for rename detection.
+        content_hash: String,
+    },
+    /// Nothing to do: not markdown, not inside the root, ignored, or never indexed.
+    Ignored {
+        /// Why.
+        reason: String,
+    },
 }
 
 /// Average tokens one section costs end to end (input + output), used to turn a token budget
@@ -141,7 +168,7 @@ impl Engine {
     pub fn open(root: &Path) -> Result<Self> {
         let root = root.canonicalize().map_err(|e| Error::io(root, e))?;
         let config = Config::load(&root)?;
-        let store = Store::open(&Self::index_path(&root))?;
+        let store = Store::open(&crate::config::state_dir(&root)?.join(INDEX_FILE))?;
         Ok(Self { root, config, store })
     }
 
@@ -223,12 +250,31 @@ impl Engine {
     }
 
     /// Upsert an already-parsed document (lets tests and the watcher skip the filesystem).
+    ///
+    /// A live document whose stored content hash equals `doc.hash` is left untouched: same
+    /// content means the same sections at the same lines, so there is nothing to refresh.
     pub fn index_parsed(
         &mut self,
         rel_path: &str,
         doc: &Document,
         times: &DocTimes,
     ) -> Result<IndexOutcome> {
+        if self.store.document_hash(rel_path)?.as_deref() == Some(doc.hash.as_str()) {
+            tracing::debug!(path = rel_path, "unchanged");
+            return Ok(IndexOutcome {
+                rel_path: rel_path.to_owned(),
+                upsert: UpsertOutcome {
+                    doc_id: crate::store::doc_id_for(rel_path),
+                    created: false,
+                    changed: false,
+                    new_hashes: Vec::new(),
+                    reused: 0,
+                    unchanged: doc.sections.len(),
+                    removed: 0,
+                },
+                sections: doc.sections.len(),
+            });
+        }
         let upsert = self.store.upsert_document(rel_path, doc, times)?;
         tracing::info!(
             path = rel_path,
@@ -240,19 +286,62 @@ impl Engine {
         Ok(IndexOutcome { rel_path: rel_path.to_owned(), upsert, sections: doc.sections.len() })
     }
 
+    /// Bring the index in line with one path the watcher reported: index it if it exists and
+    /// the walker would discover it, tombstone it if it is gone, ignore everything else. Never
+    /// trusts the event that named the path; the filesystem is the source of truth.
+    pub fn sync_path(&mut self, abs: &Path) -> Result<SyncOutcome> {
+        let ignored = |reason: &str| Ok(SyncOutcome::Ignored { reason: reason.to_owned() });
+        if !crate::walk::is_markdown(abs) {
+            return ignored("not markdown");
+        }
+        let Ok(rel_path) = self.rel_path(abs) else {
+            return ignored("outside the root");
+        };
+        if rel_path.split('/').any(|c| c == STATE_DIR) {
+            return ignored("state directory");
+        }
+        let known = self.store.document_hash(&rel_path)?;
+        match std::fs::symlink_metadata(abs) {
+            Ok(meta) if meta.file_type().is_file() => {
+                // A file the index has never seen must pass the walker's ignore rules; a
+                // known one already did.
+                if known.is_none() {
+                    let discoverable =
+                        crate::walk::discover(&self.root, &self.config)?.iter().any(|p| p == abs);
+                    if !discoverable {
+                        return ignored("ignored by walker rules");
+                    }
+                }
+                Ok(SyncOutcome::Indexed(self.index_file(abs)?))
+            }
+            Ok(_) => ignored("not a regular file"),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => match known {
+                Some(content_hash) => {
+                    self.store.tombstone(&rel_path, Timestamp::now())?;
+                    Ok(SyncOutcome::Tombstoned { rel_path, content_hash })
+                }
+                None => ignored("never indexed"),
+            },
+            Err(e) => Err(Error::io(abs, e)),
+        }
+    }
+
     /// Walk the root and index every markdown file, smallest first, then tombstone documents
-    /// that are no longer on disk.
+    /// the walker no longer finds: deleted files, and files that an ignore rule now excludes.
+    /// A discovered file that fails to read or parse keeps its previous index.
     pub fn index_root(&mut self) -> Result<IndexReport> {
         let mut files = crate::walk::discover(&self.root, &self.config)?;
         // Small docs first: something is searchable within seconds of `start` (plan §4.3).
         files.sort_by_key(|p| std::fs::metadata(p).map_or(u64::MAX, |m| m.len()));
 
         let mut report = IndexReport { files: files.len(), ..IndexReport::default() };
-        let mut seen = std::collections::HashSet::new();
+        // What the walker found is what the index should hold: membership is decided here,
+        // lexically, so a file that vanishes mid-walk is judged next round, not now.
+        let discovered: std::collections::HashSet<String> =
+            files.iter().filter_map(|p| self.rel_path(p).ok()).collect();
         for path in &files {
             match self.index_file(path) {
                 Ok(out) => {
-                    seen.insert(out.rel_path.clone());
                     if out.upsert.created || out.upsert.changed {
                         report.changed += 1;
                     }
@@ -267,12 +356,8 @@ impl Engine {
 
         let now = Timestamp::now();
         for doc in self.store.documents()? {
-            // A file that failed to read or parse this round is not gone; only tombstone
-            // documents whose file really is missing.
-            if !seen.contains(&doc.rel_path)
-                && !self.root.join(&doc.rel_path).exists()
-                && self.store.tombstone(&doc.rel_path, now)?
-            {
+            if !discovered.contains(&doc.rel_path) && self.store.tombstone(&doc.rel_path, now)? {
+                tracing::info!(path = doc.rel_path, "tombstoned: no longer discovered");
                 report.tombstoned += 1;
             }
         }
@@ -296,55 +381,9 @@ impl Engine {
         // card so they are searchable by heading and never cost a call.
         let (trivial, pending): (Vec<PendingSection>, Vec<PendingSection>) =
             all_pending.into_iter().partition(|p| is_heading_only(&p.text));
-        let mut trivial_cards = 0usize;
-        for p in &trivial {
-            let summary = synthetic_summary(p);
-            let provenance = Provenance {
-                model: "none".to_owned(),
-                prompt_version: "deterministic".to_owned(),
-                schema_version: SCHEMA_VERSION,
-                backend: "deterministic".to_owned(),
-                summarized_at: Timestamp::now(),
-                truncated: false,
-            };
-            self.store.attach_summary(
-                &p.section_hash,
-                &summary,
-                &provenance,
-                &StoredUsage::default(),
-            )?;
-            trivial_cards += 1;
-        }
-        if trivial_cards > 0 {
-            tracing::info!(
-                count = trivial_cards,
-                "heading-only sections carded without a model call"
-            );
-        }
+        let trivial_cards = self.card_heading_only(&trivial)?;
 
-        // Cap the run: explicit limit, then the daily token budget (tokens already spent
-        // today, divided by the measured per-section cost).
-        let mut cap = opts.limit.unwrap_or(usize::MAX);
-        let mut budget_exhausted = false;
-        if let Some(budget) = self.config.daily_token_budget {
-            let spent = self.store.usage_since(start_of_today())?;
-            let remaining = budget.saturating_sub(spent.input_tokens + spent.output_tokens);
-            let affordable =
-                usize::try_from(remaining / TOKENS_PER_SECTION_ESTIMATE).unwrap_or(usize::MAX);
-            if affordable < pending.len() {
-                budget_exhausted = true;
-                tracing::warn!(
-                    budget,
-                    remaining,
-                    affordable,
-                    pending = pending.len(),
-                    "daily token budget caps this run"
-                );
-            }
-            cap = cap.min(affordable);
-        }
-        let deferred = pending.len().saturating_sub(cap);
-        let pending: Vec<PendingSection> = pending.into_iter().take(cap).collect();
+        let Round { pending, deferred, budget_exhausted } = self.select_round(pending, &opts)?;
 
         let total = pending.len();
         let plan_cfg = PlanConfig::default();
@@ -359,7 +398,10 @@ impl Engine {
         let by_hash: std::collections::HashMap<String, PendingSection> =
             pending.into_iter().map(|p| (p.section_hash.clone(), p)).collect();
 
-        let pool_cfg = PoolConfig::from_config(&self.config);
+        let mut pool_cfg = PoolConfig::from_config(&self.config);
+        if let Some(c) = opts.initial_concurrency {
+            pool_cfg.initial_concurrency = c.clamp(1, pool_cfg.max_concurrency);
+        }
         let backend_name = backend.name().to_owned();
         let pool = Pool::new(backend, pool_cfg, cancel);
 
@@ -404,6 +446,75 @@ impl Engine {
         Ok(report)
     }
 
+    /// Attach a deterministic card to every heading-only section. Returns how many.
+    fn card_heading_only(&mut self, trivial: &[PendingSection]) -> Result<usize> {
+        for p in trivial {
+            let summary = synthetic_summary(p);
+            let provenance = Provenance {
+                model: "none".to_owned(),
+                prompt_version: "deterministic".to_owned(),
+                schema_version: SCHEMA_VERSION,
+                backend: "deterministic".to_owned(),
+                summarized_at: Timestamp::now(),
+                truncated: false,
+            };
+            self.store.attach_summary(
+                &p.section_hash,
+                &summary,
+                &provenance,
+                &StoredUsage::default(),
+            )?;
+        }
+        if !trivial.is_empty() {
+            tracing::info!(
+                count = trivial.len(),
+                "heading-only sections carded without a model call"
+            );
+        }
+        Ok(trivial.len())
+    }
+
+    /// Order the pending sections (hot documents first, then smallest first) and cut the
+    /// list to what this run may submit: the explicit limit, then the daily token budget
+    /// (tokens already spent today, divided by the measured per-section cost).
+    fn select_round(
+        &self,
+        mut pending: Vec<PendingSection>,
+        opts: &SummarizeOptions,
+    ) -> Result<Round> {
+        let mut cap = opts.limit.unwrap_or(usize::MAX);
+        let mut budget_exhausted = false;
+        if let Some(budget) = self.config.daily_token_budget {
+            let spent = self.store.usage_since(start_of_today())?;
+            let remaining = budget.saturating_sub(spent.input_tokens + spent.output_tokens);
+            let affordable =
+                usize::try_from(remaining / TOKENS_PER_SECTION_ESTIMATE).unwrap_or(usize::MAX);
+            // The budget "exhausted" a run only when it, not the explicit limit, is what cut
+            // it: a bounded daemon round over a large backlog is not a budget problem.
+            if affordable < pending.len().min(cap) {
+                budget_exhausted = true;
+                tracing::warn!(
+                    budget,
+                    remaining,
+                    affordable,
+                    pending = pending.len(),
+                    "daily token budget caps this run"
+                );
+            }
+            cap = cap.min(affordable);
+        }
+        // `pending_hashes` sorted by size and the sort is stable, so smallest-first holds
+        // inside every tier.
+        if !opts.hot_paths.is_empty() {
+            pending.sort_by_key(|p| {
+                opts.hot_paths.iter().position(|h| *h == p.rel_path).unwrap_or(usize::MAX)
+            });
+        }
+        let deferred = pending.len().saturating_sub(cap);
+        pending.truncate(cap);
+        Ok(Round { pending, deferred, budget_exhausted })
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn apply(
         &mut self,
@@ -427,8 +538,10 @@ impl Engine {
             cost_usd: r.usage.cost_usd,
         };
         self.store.record_usage(&r.id, &r.model_used, &spent, r.outcome.kind())?;
-        if r.attempts == 0 {
-            // Never started (pool stopped or cancelled): stays pending for the next run.
+        if r.was_stopped() {
+            // Never started, cut off by a stop or cancel, or an environment failure that
+            // stopped the pool (bad key, dead server): the section is fine, the run was not.
+            // It stays pending for the next run instead of being marked failed.
             report.deferred += 1;
             return Ok(());
         }
@@ -534,6 +647,13 @@ impl Engine {
             stale,
         })
     }
+}
+
+/// What one summarization run will submit, and what it leaves for later.
+struct Round {
+    pending: Vec<PendingSection>,
+    deferred: usize,
+    budget_exhausted: bool,
 }
 
 /// Midnight UTC today. The daily budget resets on UTC days so it is the same everywhere.

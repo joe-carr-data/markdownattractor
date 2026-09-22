@@ -22,6 +22,7 @@ allow = [
     "BSL-1.0",
     "OpenSSL",
     "CDLA-Permissive-2.0", # webpki-root-certs (Mozilla CA bundle data)
+    "0BSD",                # interprocess and its recvmsg/doctest-file deps (ADR-0003)
 ]
 confidence-threshold = 0.9
 

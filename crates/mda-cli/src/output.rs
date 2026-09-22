@@ -28,9 +28,37 @@ pub fn init_logging(verbosity: u8) {
         .init();
 }
 
+/// Route `tracing` to `daemon.<date>.log` under `dir`, rolled daily, seven files kept (the
+/// daemon has no terminal). Level `info` unless `RUST_LOG` says otherwise.
+pub fn init_file_logging(dir: &std::path::Path) -> anyhow::Result<()> {
+    std::fs::create_dir_all(dir)?;
+    let appender = tracing_appender::rolling::RollingFileAppender::builder()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("daemon")
+        .filename_suffix("log")
+        .max_log_files(7)
+        .build(dir)?;
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(appender)
+        .with_ansi(false)
+        .with_target(false)
+        .init();
+    Ok(())
+}
+
 /// Print a value as pretty JSON on stdout.
 pub fn json<T: Serialize>(value: &T) {
     match serde_json::to_string_pretty(value) {
+        Ok(s) => println!("{s}"),
+        Err(e) => eprintln!("error: could not serialise output: {e}"),
+    }
+}
+
+/// Print a value as one compact JSON line on stdout (event streams).
+pub fn json_line<T: Serialize>(value: &T) {
+    match serde_json::to_string(value) {
         Ok(s) => println!("{s}"),
         Err(e) => eprintln!("error: could not serialise output: {e}"),
     }

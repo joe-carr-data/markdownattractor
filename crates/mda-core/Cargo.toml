@@ -29,6 +29,8 @@ rusqlite.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 reqwest.workspace = true
+notify.workspace = true       # ADR-0003
+interprocess.workspace = true # ADR-0003
 
 [dev-dependencies]
 insta.workspace = true
