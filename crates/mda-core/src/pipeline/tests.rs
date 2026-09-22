@@ -311,11 +311,84 @@ async fn pool_stop_leaves_unstarted_jobs_pending() {
         .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
         .await
         .unwrap();
-    assert_eq!(r.failed, 1);
-    assert_eq!(r.deferred, 2, "jobs that never started are deferred, not failed");
+    // The auth failure is the environment's fault, not the section's: nothing is marked
+    // failed and everything stays pending (the attempt itself is still on the ledger, see
+    // `usage_ledger_counts_failed_attempts`).
+    assert_eq!(r.failed, 0);
+    assert_eq!(r.deferred, 3, "stopped and never-started jobs are deferred, not failed");
     let c = e.store().counts().unwrap();
-    assert_eq!(c.failed, 1);
-    assert_eq!(c.pending, 2);
+    assert_eq!(c.failed, 0);
+    assert_eq!(c.pending, 3);
+}
+
+#[tokio::test]
+async fn cancelled_in_flight_jobs_stay_pending() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let cfg = Config { concurrency: Some(1), ..Config::default() };
+    let mut e = Engine::with_parts(root.clone(), cfg, Store::open_in_memory().unwrap());
+    write(&root, "c.md", "# A\n\none\n\n# B\n\ntwo\n");
+    e.index_file(&root.join("c.md")).unwrap();
+    let backend =
+        Arc::new(Mock::new().default_ok().with_latency(std::time::Duration::from_secs(5)));
+    let cancel = CancellationToken::new();
+    let stopper = cancel.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        stopper.cancel();
+    });
+    let r =
+        e.summarize_pending(backend, cancel, SummarizeOptions::default(), |_| {}).await.unwrap();
+    assert_eq!(r.ok, 0);
+    assert_eq!(r.failed, 0, "a stop is not a failure");
+    assert_eq!(r.deferred, 2);
+    assert_eq!(e.store().counts().unwrap().pending, 2);
+}
+
+#[test]
+fn index_root_tombstones_files_that_ignore_rules_now_exclude() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "keep.md", "# Keep\n\nbody\n");
+    write(&root, "drafts/wip.md", "# WIP\n\nbody\n");
+    assert_eq!(e.index_root().unwrap().files, 2);
+    write(&root, ".markdownattractorignore", "drafts/\n");
+    let r = e.index_root().unwrap();
+    assert_eq!(r.files, 1);
+    assert_eq!(r.tombstoned, 1, "an excluded file leaves the index even though it exists");
+    assert!(e.store().document_by_path("drafts/wip.md").unwrap().unwrap().deleted_at.is_some());
+    assert_eq!(e.store().counts().unwrap().sections, 1);
+}
+
+#[tokio::test]
+async fn budget_only_counts_as_exhausted_when_it_cuts_the_round() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    // Budget for exactly two sections; a round limited to one must not report exhaustion.
+    let cfg =
+        Config { daily_token_budget: Some(TOKENS_PER_SECTION_ESTIMATE * 2), ..Config::default() };
+    let mut e = Engine::with_parts(root.clone(), cfg, Store::open_in_memory().unwrap());
+    write(&root, "b.md", "# A\n\none\n\n# B\n\ntwo\n\n# C\n\nthree\n");
+    e.index_file(&root.join("b.md")).unwrap();
+    let backend = Arc::new(Mock::new().default_ok());
+    let r = e
+        .summarize_pending(
+            backend.clone(),
+            CancellationToken::new(),
+            SummarizeOptions { limit: Some(1), ..SummarizeOptions::default() },
+            |_| {},
+        )
+        .await
+        .unwrap();
+    assert_eq!(r.submitted, 1);
+    assert!(!r.budget_exhausted, "the limit cut the round, not the budget");
+    let r2 = e
+        .summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
+    assert!(r2.submitted <= 2);
+    assert!(r2.budget_exhausted, "now the budget is what stops the run");
 }
 
 #[tokio::test]

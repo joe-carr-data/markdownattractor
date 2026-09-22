@@ -30,8 +30,8 @@ use tokio_util::sync::CancellationToken;
 
 pub use hot::HotSet;
 pub use ipc::{
-    Client, DaemonInfo, Request, Response, Server, SocketLocation, info_path, is_running, pid_path,
-    socket_location,
+    Client, DaemonInfo, Lock, Request, Response, Server, SocketLocation, info_path, is_running,
+    pid_path, socket_location,
 };
 pub use watch::{Batch, Debouncer, Hint, HintKind, Watcher, classify};
 
@@ -292,9 +292,14 @@ pub async fn run(
     cancel: CancellationToken,
 ) -> Result<()> {
     let root = root.canonicalize().map_err(|e| Error::io(root, e))?;
+    // The lock is what makes "one daemon per root" true, whatever the socket says; it is
+    // held until this function returns and released by the OS if the process dies.
+    let root_lock = Lock::acquire(&root).map_err(|e| {
+        Error::Daemon(format!("a daemon is already running for {} ({e})", root.display()))
+    })?;
     let indexer_engine = Engine::open(&root)?;
     let summarizer_engine = Engine::open(&root)?;
-    let server = Server::bind(&root).await?;
+    let server = Server::bind(&root)?;
 
     let info = DaemonInfo {
         pid: std::process::id(),
@@ -347,6 +352,7 @@ pub async fn run(
     server_task.abort();
     drop(watcher);
     DaemonInfo::remove(&root);
+    drop(root_lock);
     tracing::info!("daemon stopped");
     Ok(())
 }
@@ -404,22 +410,27 @@ fn handle_cmd(engine: &mut Engine, cmd: IndexerCmd, shared: &Arc<Shared>) {
             let _ = reply.send(rescan(engine, shared));
         }
         IndexerCmd::Index { path: Some(p), reply } => {
-            let p = PathBuf::from(p);
-            let abs = if p.is_absolute() { p } else { engine.root().join(p) };
-            let result = engine.sync_path(&abs).map(|out| {
+            let abs = normalise_request_path(engine.root(), &p);
+            let result = engine.sync_path(&abs).and_then(|out| {
                 let mut report = IndexReport { files: 1, ..IndexReport::default() };
-                if let SyncOutcome::Indexed(out) = out {
-                    lock(&shared.live).synced += 1;
-                    if out.upsert.created || out.upsert.changed {
-                        report.changed = 1;
-                        lock(&shared.hot).touch(&out.rel_path, Instant::now());
+                match out {
+                    SyncOutcome::Indexed(out) => {
+                        lock(&shared.live).synced += 1;
+                        if out.upsert.created || out.upsert.changed {
+                            report.changed = 1;
+                            lock(&shared.hot).touch(&out.rel_path, Instant::now());
+                        }
+                        report.pending = out.upsert.new_hashes.len();
+                        if report.pending > 0 {
+                            shared.wake.notify_one();
+                        }
                     }
-                    report.pending = out.upsert.new_hashes.len();
-                    if report.pending > 0 {
-                        shared.wake.notify_one();
+                    SyncOutcome::Tombstoned { .. } => report.tombstoned = 1,
+                    SyncOutcome::Ignored { reason } => {
+                        return Err(Error::NotFound(format!("{}: {reason}", abs.display())));
                     }
                 }
-                report
+                Ok(report)
             });
             let _ = reply.send(result);
         }
@@ -456,10 +467,27 @@ fn rescan(engine: &mut Engine, shared: &Arc<Shared>) -> Result<IndexReport> {
     report
 }
 
-fn apply_batch(engine: &mut Engine, batch: Batch, shared: &Arc<Shared>) {
-    if batch.rescan {
-        let _ = rescan(engine, shared);
+/// Resolve a path a client asked to index: relative to the root, `.`/`..` folded lexically
+/// (the file may be gone, so canonicalising is not an option), symlinks left for
+/// `sync_path` to judge.
+fn normalise_request_path(root: &Path, requested: &str) -> PathBuf {
+    use std::path::Component;
+    let p = Path::new(requested);
+    let joined = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
+    let mut out = PathBuf::new();
+    for c in joined.components() {
+        match c {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                out.pop();
+            }
+            other => out.push(other.as_os_str()),
+        }
     }
+    out
+}
+
+fn apply_batch(engine: &mut Engine, batch: Batch, shared: &Arc<Shared>) {
     let now = Instant::now();
     let (present, missing): (Vec<PathBuf>, Vec<PathBuf>) =
         batch.paths.into_iter().partition(|p| p.exists());
@@ -499,13 +527,16 @@ fn apply_batch(engine: &mut Engine, batch: Batch, shared: &Arc<Shared>) {
     }
     for path in missing {
         let Ok(rel) = engine.rel_path(&path) else { continue };
+        // One vanished file may claim one new file with the same content, once: two deleted
+        // copies and one new file are a rename plus a delete, not two renames.
         if let Ok(Some(hash)) = engine.store().document_hash(&rel)
-            && let Some((to, _)) = created.iter().find(|(_, h)| *h == hash)
+            && let Some(i) = created.iter().position(|(_, h)| *h == hash)
         {
-            match engine.store_mut().note_rename(&rel, to, Timestamp::now()) {
+            let (to, _) = created.remove(i);
+            match engine.store_mut().note_rename(&rel, &to, Timestamp::now()) {
                 Ok(true) => {
                     lock(&shared.live).renamed += 1;
-                    shared.publish(DaemonEvent::Renamed { from: rel, to: to.clone() });
+                    shared.publish(DaemonEvent::Renamed { from: rel, to });
                     continue;
                 }
                 Ok(false) => {}
@@ -521,6 +552,11 @@ fn apply_batch(engine: &mut Engine, batch: Batch, shared: &Arc<Shared>) {
             Ok(SyncOutcome::Ignored { .. }) => {}
             Err(e) => shared.error(&format!("syncing {}", path.display()), &e),
         }
+    }
+    // Reconcile last, so a rename inside a moved directory is matched above before the
+    // rescan tombstones its old path.
+    if batch.rescan {
+        let _ = rescan(engine, shared);
     }
     if wake {
         shared.wake.notify_one();
@@ -551,6 +587,10 @@ async fn summarizer_loop(
     let round_size =
         dcfg.round_size.unwrap_or_else(|| usize::from(engine.config().pool_bounds().1) * 2).max(1);
     let mut backoff: Option<Duration> = None;
+    // Set while a backoff sleep is owed; cleared once it has been slept, so that the loop's
+    // pause and cancel checks run again before any model call.
+    let mut sleep_owed = false;
+    let mut carried_concurrency: Option<u16> = None;
     let next_backoff = |b: Option<Duration>| match b {
         None => dcfg.backoff_min,
         Some(b) => (b * 2).min(dcfg.backoff_max),
@@ -563,18 +603,19 @@ async fn summarizer_loop(
             wait_wake_or(&shared, dcfg.idle_poll).await;
             continue;
         }
-        if let Some(b) = backoff.take() {
+        if sleep_owed && let Some(b) = backoff {
             lock(&shared.live).backoff_secs = b.as_secs();
             sleep_cancellable(&shared, b).await;
             lock(&shared.live).backoff_secs = 0;
-            // The doubled value only applies if the next round fails again.
-            backoff = Some(b);
+            sleep_owed = false;
+            continue;
         }
         let pending = match engine.store().counts() {
             Ok(c) => c.pending,
             Err(e) => {
                 shared.error("reading counts", &e);
                 backoff = Some(next_backoff(backoff));
+                sleep_owed = true;
                 continue;
             }
         };
@@ -587,7 +628,11 @@ async fn summarizer_loop(
         shared.publish(DaemonEvent::RoundStarted { pending, hot: hot_paths.len() });
         lock(&shared.live).rounds += 1;
         let events = shared.events.clone();
-        let opts = SummarizeOptions { limit: Some(round_size), hot_paths };
+        let opts = SummarizeOptions {
+            limit: Some(round_size),
+            hot_paths,
+            initial_concurrency: carried_concurrency,
+        };
         let result = engine
             .summarize_pending(Arc::clone(&backend), shared.cancel.child_token(), opts, move |p| {
                 let _ = events.send(DaemonEvent::Progress(p.clone()));
@@ -595,33 +640,29 @@ async fn summarizer_loop(
             .await;
         match result {
             Ok(r) => {
-                {
-                    let mut live = lock(&shared.live);
-                    live.cards += (r.ok + r.deterministic) as u64;
-                    live.failures += r.failed as u64;
-                    live.cost_usd += r.pool.usage.cost_usd;
-                    live.last_round_at = Some(Timestamp::now());
-                }
-                shared.publish(DaemonEvent::RoundFinished {
-                    ok: r.ok,
-                    deterministic: r.deterministic,
-                    failed: r.failed,
-                    deferred: r.deferred,
-                    cost_usd: r.pool.usage.cost_usd,
-                });
+                record_round(&shared, &r);
+                // The pool learned a concurrency this round; start the next one there.
+                carried_concurrency = Some(r.pool.concurrency);
+                let nothing_worked = r.submitted > 0 && r.ok == 0;
                 if r.budget_exhausted {
                     backoff = Some(dcfg.budget_pause);
+                    sleep_owed = true;
                     shared.publish(DaemonEvent::Backoff {
                         secs: dcfg.budget_pause.as_secs(),
                         reason: "daily token budget reached".to_owned(),
                     });
-                } else if r.submitted > 0 && r.ok == 0 && r.failed > 0 {
-                    // Every call failed: a bad key, a dead server, or an outage. Do not spin.
+                } else if nothing_worked {
+                    // Every call failed or was cut off: a bad key, a dead server, an outage.
+                    // Do not spin; the sections stay pending.
                     let b = next_backoff(backoff);
                     backoff = Some(b);
+                    sleep_owed = true;
                     shared.publish(DaemonEvent::Backoff {
                         secs: b.as_secs(),
-                        reason: format!("{} of {} sections failed", r.failed, r.submitted),
+                        reason: format!(
+                            "{} of {} sections failed, {} deferred",
+                            r.failed, r.submitted, r.deferred
+                        ),
                     });
                 } else {
                     backoff = None;
@@ -631,21 +672,55 @@ async fn summarizer_loop(
                 shared.error("summarization round", &e);
                 let b = next_backoff(backoff);
                 backoff = Some(b);
+                sleep_owed = true;
                 shared.publish(DaemonEvent::Backoff { secs: b.as_secs(), reason: e.to_string() });
             }
         }
     }
 }
 
+fn record_round(shared: &Shared, r: &crate::pipeline::SummarizeReport) {
+    {
+        let mut live = lock(&shared.live);
+        live.cards += (r.ok + r.deterministic) as u64;
+        live.failures += r.failed as u64;
+        live.cost_usd += r.pool.usage.cost_usd;
+        live.last_round_at = Some(Timestamp::now());
+    }
+    shared.publish(DaemonEvent::RoundFinished {
+        ok: r.ok,
+        deterministic: r.deterministic,
+        failed: r.failed,
+        deferred: r.deferred,
+        cost_usd: r.pool.usage.cost_usd,
+    });
+}
+
+/// Clients served at once; the rest wait in the accept backlog.
+const MAX_CONNECTIONS: usize = 32;
+/// A client that does not read its answer within this long is dropped.
+const WRITE_TIMEOUT: Duration = Duration::from_secs(10);
+
 async fn serve(server: Server, cmds: mpsc::Sender<IndexerCmd>, shared: Arc<Shared>) {
+    let slots = Arc::new(tokio::sync::Semaphore::new(MAX_CONNECTIONS));
     loop {
+        let permit = tokio::select! {
+            () = shared.cancel.cancelled() => break,
+            p = Arc::clone(&slots).acquire_owned() => p,
+        };
+        let Ok(permit) = permit else { break };
         let conn = tokio::select! {
             () = shared.cancel.cancelled() => break,
             c = server.accept() => c,
         };
         match conn {
             Ok(conn) => {
-                tokio::spawn(handle(conn, cmds.clone(), Arc::clone(&shared)));
+                let shared = Arc::clone(&shared);
+                let cmds = cmds.clone();
+                tokio::spawn(async move {
+                    handle(conn, cmds, shared).await;
+                    drop(permit);
+                });
             }
             Err(e) => {
                 tracing::warn!(error = %e, "accept failed");
@@ -653,6 +728,10 @@ async fn serve(server: Server, cmds: mpsc::Sender<IndexerCmd>, shared: Arc<Share
             }
         }
     }
+}
+
+async fn send(conn: &mut ipc::Connection, resp: &Response) -> bool {
+    matches!(tokio::time::timeout(WRITE_TIMEOUT, conn.write(resp)).await, Ok(Ok(())))
 }
 
 async fn handle(mut conn: ipc::Connection, cmds: mpsc::Sender<IndexerCmd>, shared: Arc<Shared>) {
@@ -665,7 +744,7 @@ async fn handle(mut conn: ipc::Connection, cmds: mpsc::Sender<IndexerCmd>, share
             Ok(Some(r)) => r,
             Ok(None) => return,
             Err(e) => {
-                let _ = conn.write(&Response::Error { message: e.to_string() }).await;
+                send(&mut conn, &Response::Error { message: e.to_string() }).await;
                 return;
             }
         };
@@ -697,21 +776,21 @@ async fn handle(mut conn: ipc::Connection, cmds: mpsc::Sender<IndexerCmd>, share
                 relay(&cmds, IndexerCmd::Rescan { reply }, rx).await
             }
             Request::Watch => {
-                if conn.write(&Response::Ok).await.is_err() {
+                if !send(&mut conn, &Response::Ok).await {
                     return;
                 }
                 let mut rx = shared.events.subscribe();
                 loop {
                     let ev = tokio::select! {
                         () = shared.cancel.cancelled() => {
-                            let _ = conn.write(&Response::Event(DaemonEvent::Stopping)).await;
+                            send(&mut conn, &Response::Event(DaemonEvent::Stopping)).await;
                             return;
                         }
                         ev = rx.recv() => ev,
                     };
                     match ev {
                         Ok(ev) => {
-                            if conn.write(&Response::Event(ev)).await.is_err() {
+                            if !send(&mut conn, &Response::Event(ev)).await {
                                 return;
                             }
                         }
@@ -723,7 +802,7 @@ async fn handle(mut conn: ipc::Connection, cmds: mpsc::Sender<IndexerCmd>, share
                 }
             }
         };
-        if conn.write(&resp).await.is_err() {
+        if !send(&mut conn, &resp).await {
             return;
         }
     }

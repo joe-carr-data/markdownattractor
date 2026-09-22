@@ -25,7 +25,8 @@ version_of() { "$1" --version 2>/dev/null | awk '{print $2}'; }
 ensure_daemon() {
   project="${CLAUDE_PROJECT_DIR:-$PWD}"
   if [ -d "$project/.markdownattractor" ]; then
-    "$1" start --root "$project" >/dev/null 2>&1 || true
+    # Detached: the hook returns at once whatever `start` has to wait for.
+    ( "$1" start --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
   fi
   exit 0
 }

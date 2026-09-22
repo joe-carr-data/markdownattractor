@@ -42,7 +42,7 @@ pub use claude_cli::ClaudeCli;
 pub use local::LocalBackend;
 pub use mock::Mock;
 pub use parse::{parse_result, parse_result_with_model};
-pub use pool::{JobResult, Pool, PoolConfig, PoolStats};
+pub use pool::{JobResult, POOL_STOPPED_PREFIX, Pool, PoolConfig, PoolStats};
 pub use unavailable::Unavailable;
 
 /// A backend chosen at runtime. [`Pool`] and [`crate::pipeline::Engine::summarize_pending`]

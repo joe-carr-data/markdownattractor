@@ -85,6 +85,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
 /// Run `mda restart`: stop if running, then start.
 pub fn restart(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let root = super::resolve_root(args.root.as_deref())?;
+    let root = root.canonicalize().unwrap_or(root);
     if super::block_on(is_running(&root))? {
         let code = run(args, json)?;
         if code != ExitCode::SUCCESS {

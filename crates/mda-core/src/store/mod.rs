@@ -566,7 +566,7 @@ impl Store {
     }
 
     fn migrate(&mut self) -> Result<()> {
-        let tx = self.conn.transaction()?;
+        let tx = self.write_tx()?;
         let has_meta: bool = tx.query_row(
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'meta'",
             [],
@@ -589,6 +589,14 @@ impl Store {
         Ok(())
     }
 
+    /// Start a write transaction that takes the database lock up front. Every transaction
+    /// here reads before it writes; a deferred transaction that upgrades after another
+    /// connection committed fails with `SQLITE_BUSY_SNAPSHOT` no matter the busy timeout, an
+    /// immediate one simply waits for its turn.
+    fn write_tx(&mut self) -> Result<Transaction<'_>> {
+        Ok(self.conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?)
+    }
+
     /// The schema version recorded in `meta`.
     pub fn schema_version(&self) -> Result<u32> {
         read_schema_version(&self.conn)
@@ -609,7 +617,7 @@ impl Store {
     ) -> Result<UpsertOutcome> {
         let rel_path = normalise_rel_path(rel_path);
         let doc_id = doc_id_for(&rel_path);
-        let tx = self.conn.transaction()?;
+        let tx = self.write_tx()?;
 
         let existing: Option<(String, Option<String>)> = tx
             .query_row(
@@ -710,7 +718,7 @@ impl Store {
         provenance: &Provenance,
         usage: &Usage,
     ) -> Result<usize> {
-        let tx = self.conn.transaction()?;
+        let tx = self.write_tx()?;
         let at = provenance.summarized_at;
         let updated = tx.execute(
             "UPDATE summaries SET state = 'summarized', summary = ?2, provenance = ?3,
@@ -765,7 +773,7 @@ impl Store {
     /// [`EventKind::SectionFailed`] per current section carrying the hash. Fails with
     /// [`Error::NotFound`] if the hash has never been seen.
     pub fn mark_failed(&mut self, section_hash: &str, reason: &str) -> Result<()> {
-        let tx = self.conn.transaction()?;
+        let tx = self.write_tx()?;
         let now = Timestamp::now();
         let updated = tx.execute(
             "UPDATE summaries SET state = 'failed', fail_reason = ?2
@@ -898,7 +906,7 @@ impl Store {
         if old_id == new_id {
             return Ok(false);
         }
-        let tx = self.conn.transaction()?;
+        let tx = self.write_tx()?;
         let history: Option<(String, String, String)> = tx
             .query_row(
                 "SELECT created_at, created_at_source, first_seen_at FROM docs
@@ -942,7 +950,7 @@ impl Store {
     /// [`EventKind::DocDeleted`]. Returns `false` if there was no live document at that path.
     pub fn tombstone(&mut self, rel_path: &str, at: Timestamp) -> Result<bool> {
         let doc_id = doc_id_for(rel_path);
-        let tx = self.conn.transaction()?;
+        let tx = self.write_tx()?;
         let updated = tx.execute(
             "UPDATE docs SET deleted_at = ?2 WHERE doc_id = ?1 AND deleted_at IS NULL",
             params![doc_id, fmt_ts(at)],

@@ -18,10 +18,10 @@ use interprocess::local_socket::tokio::{RecvHalf, SendHalf};
 use interprocess::local_socket::{GenericFilePath, GenericNamespaced, ListenerOptions, Name};
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 
 use super::{DaemonEvent, LiveStatus};
-use crate::config::STATE_DIR;
+use crate::config::{state_dir, write_private};
 use crate::pipeline::IndexReport;
 use crate::{Error, Result};
 
@@ -31,6 +31,10 @@ pub const PID_FILE: &str = "daemon.pid";
 pub const INFO_FILE: &str = "daemon.json";
 /// Socket file name under the state directory (Unix, when the path is short enough).
 pub const SOCKET_FILE: &str = "daemon.sock";
+/// Lock file under the state directory: held (OS file lock) for the daemon's whole life.
+pub const LOCK_FILE: &str = "daemon.lock";
+/// Longest request line a client may send.
+pub const MAX_REQUEST_BYTES: u64 = 64 * 1024;
 /// Longest `sun_path` we rely on; macOS allows 104 bytes including the terminator.
 const MAX_SOCKET_PATH: usize = 100;
 /// How long a client waits for the daemon to answer one request.
@@ -98,7 +102,7 @@ pub struct DaemonInfo {
 impl DaemonInfo {
     /// Read the info file of `root`, if there is one.
     pub fn read(root: &Path) -> Result<Option<Self>> {
-        let path = info_path(root);
+        let path = state_dir(root)?.join(INFO_FILE);
         match std::fs::read_to_string(&path) {
             Ok(text) => Ok(Some(serde_json::from_str(&text)?)),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
@@ -106,14 +110,12 @@ impl DaemonInfo {
         }
     }
 
-    /// Write the info file (and the pid file) for `root`.
+    /// Write the info file (and the pid file) for `root`. Never follows a symlink.
     pub fn write(&self, root: &Path) -> Result<()> {
-        let dir = root.join(STATE_DIR);
+        let dir = state_dir(root)?;
         std::fs::create_dir_all(&dir).map_err(|e| Error::io(&dir, e))?;
-        let info = info_path(root);
-        std::fs::write(&info, serde_json::to_vec_pretty(self)?).map_err(|e| Error::io(&info, e))?;
-        let pid = pid_path(root);
-        std::fs::write(&pid, self.pid.to_string()).map_err(|e| Error::io(&pid, e))
+        write_private(&dir.join(INFO_FILE), &serde_json::to_vec_pretty(self)?)?;
+        write_private(&dir.join(PID_FILE), self.pid.to_string().as_bytes())
     }
 
     /// Remove the info and pid files. Missing files are fine.
@@ -130,12 +132,49 @@ impl DaemonInfo {
 
 /// `<root>/.markdownattractor/daemon.pid`.
 pub fn pid_path(root: &Path) -> PathBuf {
-    root.join(STATE_DIR).join(PID_FILE)
+    root.join(crate::config::STATE_DIR).join(PID_FILE)
 }
 
 /// `<root>/.markdownattractor/daemon.json`.
 pub fn info_path(root: &Path) -> PathBuf {
-    root.join(STATE_DIR).join(INFO_FILE)
+    root.join(crate::config::STATE_DIR).join(INFO_FILE)
+}
+
+/// The per-root lock a daemon holds for its whole life. The OS releases it when the process
+/// dies, however it dies, so a stale lock is impossible and two daemons cannot share a root:
+/// the second `try_lock` fails while the first process lives.
+#[derive(Debug)]
+pub struct Lock {
+    _file: std::fs::File,
+}
+
+impl Lock {
+    /// Take the lock for `root`, or fail with [`Error::Daemon`] if another process holds it.
+    pub fn acquire(root: &Path) -> Result<Self> {
+        let dir = state_dir(root)?;
+        std::fs::create_dir_all(&dir).map_err(|e| Error::io(&dir, e))?;
+        let path = dir.join(LOCK_FILE);
+        if let Ok(meta) = std::fs::symlink_metadata(&path)
+            && meta.file_type().is_symlink()
+        {
+            return Err(Error::Daemon(format!("{} is a symlink; refusing", path.display())));
+        }
+        let mut opts = std::fs::OpenOptions::new();
+        opts.read(true).write(true).create(true).truncate(false);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            opts.mode(0o600);
+        }
+        let file = opts.open(&path).map_err(|e| Error::io(&path, e))?;
+        match file.try_lock() {
+            Ok(()) => Ok(Self { _file: file }),
+            Err(std::fs::TryLockError::WouldBlock) => {
+                Err(Error::Daemon(format!("another daemon holds {}", path.display())))
+            }
+            Err(std::fs::TryLockError::Error(e)) => Err(Error::io(&path, e)),
+        }
+    }
 }
 
 /// Where the daemon of `root` listens.
@@ -166,7 +205,7 @@ pub fn socket_location(root: &Path) -> SocketLocation {
     if cfg!(windows) {
         return SocketLocation::Namespaced(format!("mda-{}", root_tag(root)));
     }
-    let in_root = root.join(STATE_DIR).join(SOCKET_FILE);
+    let in_root = root.join(crate::config::STATE_DIR).join(SOCKET_FILE);
     if in_root.as_os_str().len() <= MAX_SOCKET_PATH {
         SocketLocation::Path(in_root)
     } else {
@@ -195,18 +234,22 @@ impl std::fmt::Debug for Server {
 }
 
 impl Server {
-    /// Bind the socket for `root`. Fails with [`Error::Daemon`] if another daemon answers on
-    /// it; a stale socket file left by a crashed daemon is removed first.
-    pub async fn bind(root: &Path) -> Result<Self> {
+    /// Bind the socket for `root`. The caller holds the root's [`Lock`], which is what rules
+    /// out a second daemon; a socket file left by a crashed daemon is removed first. On Unix
+    /// the socket is made private to the user.
+    pub fn bind(root: &Path) -> Result<Self> {
         let location = socket_location(root);
-        if Client::connect(root).await.is_ok() {
-            return Err(Error::Daemon(format!("a daemon is already listening on {location}")));
-        }
         if let SocketLocation::Path(p) = &location {
-            match std::fs::remove_file(p) {
-                Ok(()) => tracing::info!(path = %p.display(), "removed stale socket"),
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-                Err(e) => return Err(Error::io(p, e)),
+            state_dir(root)?;
+            match std::fs::symlink_metadata(p) {
+                Ok(meta) if meta.file_type().is_symlink() => {
+                    return Err(Error::Daemon(format!("{} is a symlink; refusing", p.display())));
+                }
+                Ok(_) => {
+                    std::fs::remove_file(p).map_err(|e| Error::io(p, e))?;
+                    tracing::info!(path = %p.display(), "removed stale socket");
+                }
+                Err(_) => {}
             }
             if let Some(dir) = p.parent() {
                 std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
@@ -216,6 +259,12 @@ impl Server {
             .name(socket_name(&location)?)
             .create_tokio()
             .map_err(|e| Error::Daemon(format!("cannot listen on {location}: {e}")))?;
+        #[cfg(unix)]
+        if let SocketLocation::Path(p) = &location {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(p, std::fs::Permissions::from_mode(0o600))
+                .map_err(|e| Error::io(p, e))?;
+        }
         tracing::info!(%location, "listening");
         Ok(Self { listener, location })
     }
@@ -316,13 +365,17 @@ impl Framed {
 
     async fn read<T: serde::de::DeserializeOwned>(&mut self) -> Result<Option<T>> {
         let mut line = String::new();
-        let n = self
-            .reader
+        // A line longer than the cap ends without a newline: reject it instead of buffering.
+        let n = (&mut self.reader)
+            .take(MAX_REQUEST_BYTES)
             .read_line(&mut line)
             .await
             .map_err(|e| Error::Daemon(format!("read failed: {e}")))?;
         if n == 0 {
             return Ok(None);
+        }
+        if !line.ends_with('\n') {
+            return Err(Error::Daemon(format!("line exceeds {MAX_REQUEST_BYTES} bytes")));
         }
         Ok(Some(serde_json::from_str(line.trim())?))
     }
@@ -402,12 +455,44 @@ mod tests {
         DaemonInfo::remove(dir.path());
     }
 
+    #[test]
+    fn lock_is_exclusive_per_root_and_released_on_drop() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = Lock::acquire(dir.path()).unwrap();
+        let err = Lock::acquire(dir.path()).unwrap_err();
+        assert!(err.to_string().contains("another daemon"), "{err}");
+        drop(first);
+        assert!(Lock::acquire(dir.path()).is_ok());
+    }
+
+    #[tokio::test]
+    async fn oversized_request_lines_are_rejected() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().canonicalize().unwrap();
+        let server = Server::bind(&root).unwrap();
+        let task = tokio::spawn(async move {
+            let mut conn = server.accept().await.unwrap();
+            conn.read().await
+        });
+        let mut c = Client::connect(&root).await.unwrap();
+        let huge = "x".repeat(usize::try_from(MAX_REQUEST_BYTES).unwrap() + 10);
+        let _ = c.line.writer.write_all(huge.as_bytes()).await;
+        let err = task.await.unwrap().unwrap_err();
+        assert!(err.to_string().contains("exceeds"), "{err}");
+    }
+
     #[tokio::test]
     async fn server_and_client_exchange_lines_over_a_real_socket() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path().canonicalize().unwrap();
         assert!(!is_running(&root).await);
-        let server = Server::bind(&root).await.unwrap();
+        let server = Server::bind(&root).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let SocketLocation::Path(p) = socket_location(&root) else { unreachable!() };
+            assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o600);
+        }
         let root2 = root.clone();
         let task = tokio::spawn(async move {
             let mut seen = Vec::new();
@@ -427,8 +512,9 @@ mod tests {
                     conn.write(&resp).await.unwrap();
                 }
             }
-            // A second bind while the first server lives must be refused.
-            assert!(Server::bind(&root2).await.is_err());
+            // Binding again while the first listener lives replaces its socket file, which
+            // is why daemons hold a `Lock` first; here only the lock semantics matter.
+            let _ = &root2;
             seen
         });
         assert!(is_running(&root).await);
