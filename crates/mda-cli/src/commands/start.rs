@@ -162,9 +162,39 @@ fn spawn_detached(root: &Path, log_dir: &Path) -> anyhow::Result<u32> {
         const DETACHED_PROCESS: u32 = 0x0000_0008;
         const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
         cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
+        make_std_handles_non_inheritable();
     }
     let child = cmd.spawn().context("spawning the daemon")?;
     Ok(child.id())
+}
+
+/// Windows spawns children with `bInheritHandles = TRUE`, so every inheritable handle of this
+/// process, including the stdout pipe a shell or a test harness gave *us*, would live on in
+/// the daemon even though its own stdio is redirected to files. Whoever captures `mda start`'s
+/// output then never sees EOF and waits for the daemon to exit. Clearing the inherit flag on
+/// our three standard handles before spawning is the fix Microsoft documents (KB 315939).
+#[cfg(windows)]
+fn make_std_handles_non_inheritable() {
+    use windows_sys::Win32::Foundation::{
+        HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE, SetHandleInformation,
+    };
+    use windows_sys::Win32::System::Console::{
+        GetStdHandle, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+    };
+    for id in [STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
+        // SAFETY: both calls take plain integers and a handle this process owns; clearing the
+        // inherit flag on our own standard handles cannot touch memory this program manages,
+        // and a missing or invalid handle is skipped. Failure is harmless (the spawn still
+        // works, only the EOF problem above remains), so the result is ignored.
+        #[allow(unsafe_code)]
+        unsafe {
+            let h = GetStdHandle(id);
+            if h.is_null() || h == INVALID_HANDLE_VALUE {
+                continue;
+            }
+            let _ = SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0);
+        }
+    }
 }
 
 fn tail_of(path: &Path, n: usize) -> String {
