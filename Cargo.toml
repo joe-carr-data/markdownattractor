@@ -41,6 +41,10 @@ ignore = "0.4"
 # http (api + local backends)
 reqwest = { version = "0.13", features = ["json"] }
 
+# daemon (ADR-0003): filesystem watcher and CLI <-> daemon local socket
+notify = "8.2"
+interprocess = { version = "2.4", features = ["tokio"] }
+
 # storage & search
 rusqlite = { version = "0.40", features = ["bundled", "jiff", "functions"] }
 
