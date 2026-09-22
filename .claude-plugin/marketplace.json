@@ -1,7 +1,7 @@
 {
   "name": "markdownattractor",
   "description": "The markdownattractor plugin, distributed from its own repository.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "owner": {
     "name": "Joe Carr",
     "email": "joe.carr.data@gmail.com",
@@ -12,7 +12,7 @@
       "name": "markdownattractor",
       "source": "./",
       "description": "Claude reads your markdown before it reads your files: a live, time-aware, searchable knowledge layer. One Rust binary, no API key.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "productivity",
       "tags": ["markdown", "search", "knowledge-base", "context", "token-savings", "time-aware"],
       "homepage": "https://github.com/joe-carr-data/markdownattractor",

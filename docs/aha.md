@@ -2,6 +2,7 @@
 
 Dated one-liners. Newest first. Pruned monthly: entries that became rules graduate to `.claude/rules/`, the rest go to `archive/aha-YYYY-MM.md`. Keep under 60 lines.
 
+- 2026-09-22 — `plugin.json` must not name the standard component paths (`hooks/hooks.json`, `skills/`, `.mcp.json`): Claude Code loads those automatically and a marketplace install then fails with "Duplicate hooks file detected". `claude plugin validate` and a `--plugin-dir` load both passed; only a real marketplace install (from a local path works: `claude plugin marketplace add /path/to/checkout`) caught it. Test installs that way before tagging.
 - 2026-09-22 — History was rewritten (git filter-repo) to scrub two workspace ids before the repo went public: every commit SHA quoted in docs written before 2026-09-22 15:30 UTC (review pins, handoffs) refers to the old history; look commits up by message. Old objects can linger on GitHub until its GC or a support request.
 - 2026-09-22 — A/B on the 450-line golden corpus: parity 12/12, but the index reads *more* source tokens (median 1,305 vs 341) because eight hits with cards cost ~1.3K tokens whatever the corpus size and one grep+read finds the answer in a few hundred. G3 is a claim about big corpora; the small-corpus number is published as the plan promised.
 - 2026-09-22 — `claude -p --bare` skips keychain reads, so a headless run answers "Not logged in"; `--setting-sources ""` plus `--strict-mcp-config` gives the lean, fair session the A/B needs without it. Variadic flags (`--tools a b c`) swallow the prompt: put `--` before it.
