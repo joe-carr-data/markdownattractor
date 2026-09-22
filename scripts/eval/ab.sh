@@ -26,7 +26,9 @@ for v in $(env | grep -oE '^(CLAUDE_CODE_[A-Z_]*|CLAUDECODE|CLAUDE_PID|CLAUDE_PL
 mcp_cfg="$out/mcp.json"
 jq -n --arg cmd "$mda" --arg root "$corpus" \
   '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: (env.HOME + "/.cache/markdownattractor/models")}}}}' > "$mcp_cfg"
-rules="${MDA_RULES:-$(dirname "$0")/../../skills/search-first/SKILL.md}"
+repo="$(cd "$(dirname "$0")/../.." && pwd)"
+rules="${MDA_RULES:-$repo/skills/search-first/SKILL.md}"
+[ -f "$rules" ] || { echo "rules file not found: $rules" >&2; exit 1; }
 
 common=(--print --setting-sources "" --no-session-persistence --model "$model" --max-turns 12
         --output-format stream-json --verbose --permission-mode dontAsk)
@@ -43,9 +45,12 @@ jq -c '.' "$questions" | while IFS= read -r qline; do
       log="$out/$id-$arm-$r.jsonl"
       if [ "$arm" = baseline ]; then args=("${baseline[@]}"); else args=("${withindex[@]}"); fi
       t0=$(date +%s.%N)
-      (cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$log" 2>"$log.err") || true
+      rc=0
+      (cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$log" 2>"$log.err") || rc=$?
       t1=$(date +%s.%N)
-      jq -c --arg id "$id" --arg arm "$arm" --argjson run "$r" --arg q "$q" \
+      # Fail loud (plan rule 0.3): a run without a result event is an error row, never a silent zero.
+      stderr_tail="$(tail -c 300 "$log.err" 2>/dev/null | tr '\n' ' ')"
+      jq -c --arg id "$id" --arg arm "$arm" --argjson run "$r" --arg q "$q" --argjson rc "$rc" --arg stderr "$stderr_tail" \
          --argjson wall "$(echo "$t1 - $t0" | bc)" \
          -s '
         (map(select(.type=="result")) | last) as $res |
@@ -57,9 +62,18 @@ jq -c '.' "$questions" | while IFS= read -r qline; do
          answer: ($res.result // ""), turns: ($res.num_turns // null), cost_usd: ($res.total_cost_usd // null),
          input_tokens: (($res.usage.input_tokens // 0) + ($res.usage.cache_read_input_tokens // 0) + ($res.usage.cache_creation_input_tokens // 0)),
          output_tokens: ($res.usage.output_tokens // 0),
-         source_tokens: $source, tool_calls: ($tools | length), tools: $tools, error: ($res.is_error // false)}' "$log" >> "$out/runs.jsonl"
-      printf '%s %s run %s: %s tool calls, $%s\n' "$id" "$arm" "$r" "$(tail -1 "$out/runs.jsonl" | jq .tool_calls)" "$(tail -1 "$out/runs.jsonl" | jq .cost_usd)"
+         source_tokens: $source, tool_calls: ($tools | length), tools: $tools,
+         error: (($res == null) or ($res.is_error // false) or ($rc != 0)), exit_code: $rc,
+         stderr: (if (($res == null) or ($rc != 0)) then $stderr else null end)}' "$log" >> "$out/runs.jsonl"
+      last="$(tail -1 "$out/runs.jsonl")"
+      if [ "$(jq -r .error <<<"$last")" = true ]; then
+        printf '%s %s run %s: ERROR (exit %s): %s\n' "$id" "$arm" "$r" "$rc" "$(jq -r '.stderr // ""' <<<"$last")" >&2
+      else
+        printf '%s %s run %s: %s tool calls, $%s\n' "$id" "$arm" "$r" "$(jq .tool_calls <<<"$last")" "$(jq .cost_usd <<<"$last")"
+      fi
     done
   done
 done
-echo "runs written to $out/runs.jsonl"
+errors="$(jq -s 'map(select(.error)) | length' "$out/runs.jsonl")"
+echo "runs written to $out/runs.jsonl ($errors error row(s))"
+[ "$errors" = 0 ] || exit 2
