@@ -147,6 +147,19 @@ fn check_backend(cfg: &mda_core::config::Config) -> Check {
 fn check_embeddings(cfg: &mda_core::config::Config) -> Check {
     let c = mda_core::embed::check(cfg);
     match c.model {
+        None if !mda_core::embed::BUILT_WITH_EMBEDDINGS
+            && cfg.embeddings != mda_core::config::Embeddings::Off =>
+        {
+            Check {
+                name: "embeddings",
+                status: Status::Warn,
+                detail: "unavailable: this binary was built without the `embeddings` feature"
+                    .to_owned(),
+                fix: Some(
+                    "install a build with embeddings, or `mda embeddings off` to silence this",
+                ),
+            }
+        }
         None => Check {
             name: "embeddings",
             status: Status::Warn,
