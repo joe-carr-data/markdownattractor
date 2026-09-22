@@ -34,3 +34,7 @@ Constraints that matter: nothing is ever written into the watched root except un
 - **`notify-debouncer-full`** — stable 0.7 pins `notify` 8 and its debounce cannot see file size; the rc line tracks `notify` 9 rc. Not worth a pre-release dependency for a check we can write.
 - **tokio `UnixListener` + `named_pipe` by hand** — two code paths and a hand-rolled Windows client; `interprocess` is the same amount of code with one path.
 - **Signals for `stop` (SIGTERM)** — needs `libc`/`nix`, has no Windows story, and a socket round-trip already gives a graceful stop plus an acknowledgement.
+
+## Amendments
+
+- **2026-09-22 — one `unsafe` block for Windows.** The first Windows CI run of the daemon hung in `mda start`: Rust's `Command` spawns Windows children with `bInheritHandles = TRUE`, so the detached daemon inherited the stdout pipe that the test harness (or any shell capturing output) had given `mda start`, and the capture never saw EOF. The fix is the documented one, `SetHandleInformation(…, HANDLE_FLAG_INHERIT, 0)` on the three standard handles before spawning, which needs `windows-sys` and one `unsafe` block. The workspace lint moved from `forbid` to `deny` so that this single, commented, `#[cfg(windows)]` site can `allow` it; every other `unsafe` still fails the build.
