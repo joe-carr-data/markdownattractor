@@ -45,3 +45,8 @@
 - A diagnostics bundle is an allowlist, not a redaction pass: export named fields, and push every free-form string (errors, log lines, check details) through one scrubber. Replacing the home prefix is not redaction.
 - Counts share a unit before they are compared: `sections` are rows, `summarized`/`pending` are distinct hashes.
 - A hook and the binary behind it resolve every path the same way (`MDA_MODEL_DIR`, `MDA_NUDGE_FILE`): one precedence, tested on both sides.
+
+## From the 2026-09-22 Codex `.mdx` review
+- A dialect (`markdown::Flavor`) is a property of the file, chosen once from its path; every re-parse of a stored document (staleness, `open`) uses the same flavour or hashes disagree.
+- A line scan inside a block carries the block's raw-content state (fences with their length rule, comments, `<pre>`-like elements); a text rule ("starts with `import `") is not a syntax check.
+- When recovering a construct from raw lines, hand the line to the real parser (comrak) instead of re-implementing its rules.

@@ -21,4 +21,4 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
-## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-benchmark-plan.md) — benchmark plan, 13 findings, all resolved over three passes, plan accepted
+## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-mdx-ingestion.md) — `.mdx` ingestion, 6 findings, all fixed before merge
