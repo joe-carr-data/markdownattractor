@@ -1,7 +1,7 @@
 {
   "name": "markdownattractor",
   "displayName": "markdownattractor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Claude reads your markdown before it reads your files: a live, time-aware, searchable knowledge layer over ADRs, runbooks, specs and notes. One Rust binary, no API key.",
   "author": {
     "name": "Joe Carr",
@@ -11,8 +11,13 @@
   "homepage": "https://github.com/joe-carr-data/markdownattractor",
   "repository": "https://github.com/joe-carr-data/markdownattractor",
   "license": "Apache-2.0",
-  "keywords": ["markdown", "search", "knowledge", "index", "time-aware", "context", "tokens"],
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
-  "mcpServers": "./.mcp.json"
+  "keywords": [
+    "markdown",
+    "search",
+    "knowledge",
+    "index",
+    "time-aware",
+    "context",
+    "tokens"
+  ]
 }

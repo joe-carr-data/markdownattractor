@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-09-22
+
+### Fixed
+- The plugin failed to load when installed from the marketplace: `plugin.json` pointed at `hooks/hooks.json`, `skills/` and `.mcp.json`, which Claude Code loads automatically from their standard locations and then rejected as duplicates ("Duplicate hooks file detected"). The three keys are gone; a `--plugin-dir` load had masked it.
+
+## [0.1.0] — 2026-09-22
+
+First tagged release: five prebuilt archives and `SHA256SUMS` on GitHub Releases, fetched by the SessionStart hook.
+
 ### Added
 - **Release pipeline (ADR-0005).** `.github/workflows/release.yml` builds `mda-{darwin,linux,windows}-{arm64,x64}.tar.gz` and `SHA256SUMS` on every `v*` tag (dry run through `workflow_dispatch`), installs the linux-x64 archive through the real `scripts/bootstrap.sh` as its gate, signs and notarises macOS binaries when the Apple secrets exist, and publishes a GitHub Release. Intel macOS gets a lexical-only build. `scripts/dev/check-version.sh` (also in CI) keeps `VERSION`, `plugin.json`, `marketplace.json` and `Cargo.toml` in step; `scripts/dev/bump-version.sh` changes them together. `docs/design/distribution.md`.
 - **First-run experience (plan §9.5).** `mda start` on a fresh root waits for the first cards (bounded, 60 s) and prints one real example query with its hit and line range; `--no-example` skips it and the SessionStart hook passes it. `mda cost [--since]` reads the usage ledger per day and per model/outcome and says that tokens saved on reads are not measured yet. `mda diagnostics [--out]` writes a redacted bundle (home directory, workspace id and hot paths redacted; no document content) for issue reports. `mda nudge on|off [--global]` switches the search-first reminder per root (`config.toml`) or everywhere (`${CLAUDE_PLUGIN_DATA}/nudge.off` through `MDA_NUDGE_FILE`); the hook honours both.
