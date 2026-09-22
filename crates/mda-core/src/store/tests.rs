@@ -485,3 +485,61 @@ fn documents_lists_live_docs_by_path() {
     let paths: Vec<_> = store.documents().unwrap().into_iter().map(|d| d.rel_path).collect();
     assert_eq!(paths, vec!["a/b.md", "z.md"]);
 }
+
+#[test]
+fn document_hash_reports_live_documents_only() {
+    let mut store = Store::open_in_memory().unwrap();
+    assert_eq!(store.document_hash("a.md").unwrap(), None);
+    let doc = parse_str(DOC_A);
+    store.upsert_document("a.md", &doc, &times(0)).unwrap();
+    assert_eq!(store.document_hash("a.md").unwrap().as_deref(), Some(doc.hash.as_str()));
+    store.tombstone("a.md", ts(5)).unwrap();
+    assert_eq!(store.document_hash("a.md").unwrap(), None);
+}
+
+#[test]
+fn note_rename_moves_history_and_tombstones_the_old_path() {
+    let mut store = Store::open_in_memory().unwrap();
+    let doc = parse_str(DOC_A);
+    let birth = DocTimes { created_at: Some(ts(-500)), ..times(0) };
+    store.upsert_document("old.md", &doc, &birth).unwrap();
+    store
+        .attach_summary(
+            &doc.sections[1].hash,
+            &summary("t", "b"),
+            &provenance(1),
+            &Usage::default(),
+        )
+        .unwrap();
+
+    // The file shows up at its new path first (the watcher indexes what exists)...
+    let out = store.upsert_document("new/path.md", &doc, &times(10)).unwrap();
+    assert!(out.created);
+    assert!(out.new_hashes.is_empty(), "cards are keyed by hash: nothing to summarize");
+    // ...then the intake notices the old one is gone with the same content.
+    assert!(store.note_rename("old.md", "new/path.md", ts(11)).unwrap());
+
+    let old = store.document_by_path("old.md").unwrap().unwrap();
+    assert_eq!(old.deleted_at, Some(ts(11)));
+    assert!(store.sections_of(&old.doc_id).unwrap().is_empty());
+    let new = store.document_by_path("new/path.md").unwrap().unwrap();
+    assert_eq!(new.created_at, ts(-500));
+    assert_eq!(new.created_at_source, CreatedAtSource::Birthtime);
+    assert_eq!(new.first_seen_at, ts(0));
+    assert_eq!(new.deleted_at, None);
+    assert_eq!(store.sections_of(&new.doc_id).unwrap().len(), 3);
+    assert_eq!(store.counts().unwrap().summarized, 1, "the card followed the content");
+
+    let events = store.timeline(None, None, 100).unwrap();
+    let renamed: Vec<_> = events.iter().filter(|e| e.kind == EventKind::DocRenamed).collect();
+    assert_eq!(renamed.len(), 1);
+    assert_eq!(renamed[0].doc_id, new.doc_id);
+    assert_eq!(renamed[0].detail.as_deref(), Some("old.md"));
+    assert!(!events.iter().any(|e| e.kind == EventKind::DocDeleted), "a rename is not a delete");
+
+    // Idempotent and safe when a side is missing.
+    assert!(!store.note_rename("old.md", "new/path.md", ts(12)).unwrap());
+    assert!(!store.note_rename("ghost.md", "new/path.md", ts(12)).unwrap());
+    assert!(!store.note_rename("new/path.md", "nowhere.md", ts(12)).unwrap());
+    assert!(!store.note_rename("x.md", "x.md", ts(12)).unwrap());
+}

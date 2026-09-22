@@ -44,6 +44,9 @@ use crate::{Error, Result};
 /// version, append one entry; [`Store::open`] runs whatever the file is missing.
 const MIGRATIONS: &[&str] = &[SCHEMA_V1, SCHEMA_V2];
 
+/// How long a connection waits for another writer before giving up.
+pub const BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 /// Current schema version: the one a freshly opened store reports.
 #[allow(clippy::cast_possible_truncation)] // a handful of migrations, never 2^32
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
@@ -436,6 +439,9 @@ pub enum EventKind {
     DocChanged,
     /// A document was tombstoned.
     DocDeleted,
+    /// A document moved: the old path was tombstoned and this one carries its history on.
+    /// `detail` is the old relative path.
+    DocRenamed,
     /// A summary was attached to a section.
     SectionSummarized,
     /// Summarizing a section failed.
@@ -448,6 +454,7 @@ impl EventKind {
             Self::DocCreated => "doc_created",
             Self::DocChanged => "doc_changed",
             Self::DocDeleted => "doc_deleted",
+            Self::DocRenamed => "doc_renamed",
             Self::SectionSummarized => "section_summarized",
             Self::SectionFailed => "section_failed",
         }
@@ -458,6 +465,7 @@ impl EventKind {
             "doc_created" => Some(Self::DocCreated),
             "doc_changed" => Some(Self::DocChanged),
             "doc_deleted" => Some(Self::DocDeleted),
+            "doc_renamed" => Some(Self::DocRenamed),
             "section_summarized" => Some(Self::SectionSummarized),
             "section_failed" => Some(Self::SectionFailed),
             _ => None,
@@ -546,6 +554,10 @@ impl Store {
         // journal_mode returns a row (the resulting mode); in-memory databases answer
         // "memory" instead of "wal", which is fine.
         let _mode: String = conn.query_row("PRAGMA journal_mode = WAL", [], |r| r.get(0))?;
+        // The daemon's indexer and summarizer, plus any `mda` command in another shell, share
+        // one file. WAL serialises their short write transactions; waiting here instead of
+        // failing with "database is locked" is what makes that safe.
+        conn.busy_timeout(BUSY_TIMEOUT)?;
         conn.pragma_update(None, "synchronous", "NORMAL")?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
         let mut store = Self { conn };
@@ -861,6 +873,60 @@ impl Store {
     /// One document by relative path, tombstoned or not.
     pub fn document_by_path(&self, rel_path: &str) -> Result<Option<StoredDocument>> {
         self.document(&doc_id_for(rel_path))
+    }
+
+    /// Content hash of the live document at `rel_path`, or `None` if there is none.
+    pub fn document_hash(&self, rel_path: &str) -> Result<Option<String>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT content_hash FROM docs WHERE doc_id = ?1 AND deleted_at IS NULL",
+                params![doc_id_for(rel_path)],
+                |r| r.get(0),
+            )
+            .optional()?)
+    }
+
+    /// Record that the live document at `old_rel` moved to `new_rel`, which must already be
+    /// upserted. The new row inherits `created_at`, `created_at_source` and `first_seen_at`;
+    /// the old row is tombstoned without a delete event and a [`EventKind::DocRenamed`] event
+    /// names the old path. Returns `false` (and changes nothing) when either row is missing
+    /// or the old one is already tombstoned.
+    pub fn note_rename(&mut self, old_rel: &str, new_rel: &str, at: Timestamp) -> Result<bool> {
+        let old_id = doc_id_for(old_rel);
+        let new_id = doc_id_for(new_rel);
+        if old_id == new_id {
+            return Ok(false);
+        }
+        let tx = self.conn.transaction()?;
+        let history: Option<(String, String, String)> = tx
+            .query_row(
+                "SELECT created_at, created_at_source, first_seen_at FROM docs
+                 WHERE doc_id = ?1 AND deleted_at IS NULL",
+                params![old_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .optional()?;
+        let Some((created_at, source, first_seen_at)) = history else {
+            return Ok(false);
+        };
+        let moved = tx.execute(
+            "UPDATE docs SET created_at = ?2, created_at_source = ?3, first_seen_at = ?4
+             WHERE doc_id = ?1 AND deleted_at IS NULL",
+            params![new_id, created_at, source, first_seen_at],
+        )?;
+        if moved == 0 {
+            return Ok(false);
+        }
+        tx.execute(
+            "UPDATE docs SET deleted_at = ?2 WHERE doc_id = ?1",
+            params![old_id, fmt_ts(at)],
+        )?;
+        delete_doc_sections(&tx, &old_id)?;
+        insert_event(&tx, at, EventKind::DocRenamed, &new_id, None, Some(old_rel))?;
+        tx.commit()?;
+        tracing::debug!(from = old_rel, to = new_rel, "recorded rename");
+        Ok(true)
     }
 
     /// Every live (not tombstoned) document, ordered by path.
