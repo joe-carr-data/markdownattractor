@@ -21,7 +21,7 @@ jobs:
     name: version agrees
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: VERSION, plugin.json, marketplace.json and Cargo.toml agree (and the tag, when there is one)
         run: |
           if [ "${{ github.ref_type }}" = tag ]; then scripts/dev/check-version.sh "${{ github.ref_name }}"; else scripts/dev/check-version.sh; fi
@@ -61,7 +61,7 @@ jobs:
             features: ""
             bin: mda.exe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -108,7 +108,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           path: dist
