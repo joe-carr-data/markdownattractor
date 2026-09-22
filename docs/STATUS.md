@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Plugin watched live in a headless Claude Code session (`--plugin-dir`): MCP server connects, tools answer (`design/mcp.md`). First-run UX: `mda start` example query (5.4 s on a fresh `docs/`), `mda cost`, `mda diagnostics` (redacted), `mda nudge [--global]`, `mda index <dir>`.
 
 ## Next (max 3, in order)
-1. Benchmark plan (`docs/plans/2026-09-benchmarks.md`, accepted): B0a `.mdx` ingestion, B0b leaner hit payload, then B0 harness hardening and the DocsQA ingestion gate.
+1. Benchmark plan (`docs/plans/2026-09-benchmarks.md`, v3.2, accepted; every model call through the owner's Claude Code login, §0a.3): B0a `.mdx` ingestion, B0b leaner hit payload, then B0 harness hardening and the DocsQA ingestion gate.
 2. Launch checklist (plan §8 Phase 4): README leads with the one-line install (`/plugin install markdownattractor --marketplace joe-carr-data/markdownattractor`) and drops the "not released yet" note; short demo; submit to `claude-plugins-community`; recruit design partners.
 3. Owner decisions: Apple notarisation secrets; read ledger (schema v4) for `cost`/`status` savings and hit rate. Follow-ups: subtree `index`, live config reload, socket peer auth, time-filter evals, hybrid latency.
 
