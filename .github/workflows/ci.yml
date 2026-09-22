@@ -48,7 +48,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # windows-2022 pinned on 2026-09-22: the windows-latest image (windows-2025-vs2026,
+        # 20260907.229.1) cannot start bash for taiki-e/install-action
+        # (actions/partner-runner-images#169); every run failed for hours. Revisit when fixed.
+        os: [ubuntu-latest, macos-latest, windows-2022]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
