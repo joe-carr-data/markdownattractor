@@ -114,6 +114,9 @@ pub struct EmbedCheck {
     pub cached: bool,
 }
 
+/// Whether this binary was built with the `embeddings` feature (fastembed + ONNX Runtime).
+pub const BUILT_WITH_EMBEDDINGS: bool = cfg!(feature = "embeddings");
+
 /// Inspect the embedding setup without loading or downloading anything.
 #[must_use]
 pub fn check(cfg: &Config) -> EmbedCheck {
@@ -122,6 +125,12 @@ pub fn check(cfg: &Config) -> EmbedCheck {
         Embeddings::Off => {
             EmbedCheck { embeddings: Embeddings::Off, model: None, cache_dir: dir, cached: false }
         }
+        Embeddings::LocalSmall if !BUILT_WITH_EMBEDDINGS => EmbedCheck {
+            embeddings: Embeddings::LocalSmall,
+            model: None,
+            cache_dir: dir,
+            cached: false,
+        },
         Embeddings::LocalSmall => EmbedCheck {
             embeddings: Embeddings::LocalSmall,
             model: Some(LOCAL_SMALL_MODEL.to_owned()),
@@ -131,20 +140,28 @@ pub fn check(cfg: &Config) -> EmbedCheck {
     }
 }
 
-/// The embedder the config asks for, or `None` when embeddings are off. Nothing is loaded
-/// until the first call to [`Embedder::embed`].
+/// The embedder the config asks for, or `None` when embeddings are off or the binary was
+/// built without them. Nothing is loaded until the first call to [`Embedder::embed`].
 #[must_use]
 pub fn embedder_for(cfg: &Config) -> Option<Arc<dyn Embedder>> {
     match cfg.embeddings {
         Embeddings::Off => None,
+        #[cfg(feature = "embeddings")]
         Embeddings::LocalSmall => Some(Arc::new(LocalEmbedder::new(cache_dir(cfg)))),
+        #[cfg(not(feature = "embeddings"))]
+        Embeddings::LocalSmall => {
+            tracing::warn!("built without the `embeddings` feature; search is lexical");
+            None
+        }
     }
 }
 
 /// `bge-small-en-v1.5` (quantised) through fastembed. Lazily initialised; the first
 /// [`Embedder::embed`] downloads ~33 MB into the cache directory if they are not there.
+/// With the `embeddings` feature off, only [`LocalEmbedder::is_cached`] exists.
 pub struct LocalEmbedder {
     cache_dir: PathBuf,
+    #[cfg(feature = "embeddings")]
     model: Mutex<Option<fastembed::TextEmbedding>>,
 }
 
@@ -157,24 +174,44 @@ impl std::fmt::Debug for LocalEmbedder {
 impl LocalEmbedder {
     /// An embedder caching its model under `cache_dir`.
     pub fn new(cache_dir: PathBuf) -> Self {
-        Self { cache_dir, model: Mutex::new(None) }
+        Self {
+            cache_dir,
+            #[cfg(feature = "embeddings")]
+            model: Mutex::new(None),
+        }
     }
 
-    /// Whether the model files are already in `cache_dir` (a directory named after the
-    /// Hugging Face repo, as `hf-hub` lays them out).
+    /// Whether every artifact the model needs is already in `cache_dir`, laid out as
+    /// `hf-hub` does it (`models--<org>--<repo>/snapshots/<rev>/<file>`). A directory that
+    /// merely exists is not enough: an interrupted download leaves one behind, and loading
+    /// from it would fetch the missing files, which a query must never do.
     #[must_use]
     pub fn is_cached(cache_dir: &Path) -> bool {
-        let Ok(entries) = std::fs::read_dir(cache_dir) else { return false };
-        entries.filter_map(std::result::Result::ok).any(|e| {
-            let name = e.file_name().to_string_lossy().to_lowercase();
-            name.contains("bge-small-en-v1.5") && e.path().is_dir()
+        const REQUIRED: &[&str] =
+            &["model_optimized.onnx", "tokenizer.json", "config.json", "tokenizer_config.json"];
+        let Ok(repos) = std::fs::read_dir(cache_dir) else { return false };
+        repos.filter_map(std::result::Result::ok).any(|repo| {
+            let name = repo.file_name().to_string_lossy().to_lowercase();
+            if !name.contains("bge-small-en-v1.5") {
+                return false;
+            }
+            let Ok(snapshots) = std::fs::read_dir(repo.path().join("snapshots")) else {
+                return false;
+            };
+            snapshots.filter_map(std::result::Result::ok).any(|snap| {
+                REQUIRED.iter().all(|f| {
+                    std::fs::metadata(snap.path().join(f)).is_ok_and(|m| m.is_file() && m.len() > 0)
+                })
+            })
         })
     }
 
+    #[cfg(feature = "embeddings")]
     fn lock(&self) -> MutexGuard<'_, Option<fastembed::TextEmbedding>> {
         self.model.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
+    #[cfg(feature = "embeddings")]
     fn load(&self) -> Result<()> {
         let mut slot = self.lock();
         if slot.is_some() {
@@ -201,6 +238,7 @@ impl LocalEmbedder {
     }
 }
 
+#[cfg(feature = "embeddings")]
 impl Embedder for LocalEmbedder {
     fn model(&self) -> &'static str {
         LOCAL_SMALL_MODEL
@@ -345,6 +383,24 @@ mod tests {
     }
 
     #[test]
+    fn is_cached_requires_every_artifact() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path().join("models--Qdrant--bge-small-en-v1.5-onnx-Q");
+        std::fs::create_dir_all(&repo).unwrap();
+        assert!(!LocalEmbedder::is_cached(tmp.path()), "an empty repo directory is not a model");
+        let snap = repo.join("snapshots").join("abc");
+        std::fs::create_dir_all(&snap).unwrap();
+        for f in ["model_optimized.onnx", "tokenizer.json", "config.json"] {
+            std::fs::write(snap.join(f), b"x").unwrap();
+        }
+        assert!(!LocalEmbedder::is_cached(tmp.path()), "one file missing");
+        std::fs::write(snap.join("tokenizer_config.json"), b"x").unwrap();
+        assert!(LocalEmbedder::is_cached(tmp.path()));
+        std::fs::write(snap.join("model_optimized.onnx"), b"").unwrap();
+        assert!(!LocalEmbedder::is_cached(tmp.path()), "an empty artifact is a broken download");
+    }
+
+    #[test]
     fn check_reports_off_and_uncached() {
         let off = check(&Config { embeddings: Embeddings::Off, ..Config::default() });
         assert_eq!(off.model, None);
@@ -355,13 +411,15 @@ mod tests {
         let cfg =
             Config { embedding_cache_dir: Some(tmp.path().to_path_buf()), ..Config::default() };
         let on = check(&cfg);
-        assert_eq!(on.model.as_deref(), Some(LOCAL_SMALL_MODEL));
+        let expected = if BUILT_WITH_EMBEDDINGS { Some(LOCAL_SMALL_MODEL) } else { None };
+        assert_eq!(on.model.as_deref(), expected);
         assert!(!on.cached);
-        assert!(embedder_for(&cfg).is_some());
+        assert_eq!(embedder_for(&cfg).is_some(), BUILT_WITH_EMBEDDINGS);
     }
 
     /// Downloads the model once (~33 MB) and embeds two texts. Run with
     /// `MDA_LIVE_EMBED=1 cargo nextest run -E 'test(live_embed)' --run-ignored ignored-only`.
+    #[cfg(feature = "embeddings")]
     #[test]
     #[ignore = "downloads a model; opt in with MDA_LIVE_EMBED=1"]
     fn live_embed_bge_small() {

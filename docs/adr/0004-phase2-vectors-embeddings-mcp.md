@@ -26,7 +26,7 @@ Facts checked on 2026-09-22:
 
 ## Consequences
 
-- Three new crates: `fastembed` (with `ort`, `tokenizers`, `hf-hub`, `ureq` behind it) and `rmcp` (+ `rmcp-macros`). The binary grows by the static ONNX Runtime (tens of MB); build time grows by the one-time binary download. Cargo comments reference this ADR.
+- Three new crates: `fastembed` (with `ort`, `tokenizers`, `hf-hub`, `ureq` behind it) and `rmcp` (+ `rmcp-macros`). The binary grows by the static ONNX Runtime (tens of MB); build time grows by the one-time binary download. Cargo comments reference this ADR. `fastembed` sits behind the default-on cargo feature `embeddings` (Codex F16): `ort-sys` ships no prebuilt binaries for Intel macOS, and `--no-default-features` builds a lexical-only binary there.
 - Coverage and MSRV jobs compile `ort` too; CI needs network access at build time, which it already has for crates.
 - `Matched` gains a variant; `Hit` gains `vector`. `search.rs` gets a `VectorIndex` and a query-embedding step that is skipped when no embedder is available.
 - Search latency budget: lexical ≈ 2 ms plus a vector scan that must stay under 10 ms at 10K sections (measured in the plan's exit criteria).

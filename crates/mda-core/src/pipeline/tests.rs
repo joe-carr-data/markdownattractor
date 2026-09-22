@@ -527,4 +527,27 @@ fn stale_recent_and_timeline_reflect_the_store_and_the_disk() {
     assert_eq!(sub.len(), 1);
     assert_eq!(sub[0].rel_path, "sub/b.md");
     assert_eq!(e.timeline(None, None, None, 1).unwrap().len(), 1);
+    // The prefix filter runs before the limit: limit 1 still finds the sub/ event.
+    let one = e.timeline(None, None, Some("sub/"), 1).unwrap();
+    assert_eq!(one.len(), 1);
+    assert_eq!(one[0].rel_path, "sub/b.md");
+}
+
+#[cfg(unix)]
+#[test]
+fn stale_never_follows_a_link_out_of_the_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "a.md", "# A\n\none\n");
+    e.index_root().unwrap();
+    // Replace the indexed file with a link to a newer file outside the root.
+    let outside = tempfile::tempdir().unwrap();
+    let target = write(outside.path(), "secret.md", "# Secret\n\nkeys\n");
+    std::fs::remove_file(root.join("a.md")).unwrap();
+    std::os::unix::fs::symlink(&target, root.join("a.md")).unwrap();
+    let stale = e.stale().unwrap();
+    let a = stale.iter().find(|s| s.rel_path == "a.md").unwrap();
+    assert!(a.unreadable, "{a:?}");
+    assert!(!a.changed_on_disk, "the outside file was never read");
 }

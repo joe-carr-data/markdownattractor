@@ -16,7 +16,7 @@ Goal: Claude searches through MCP and gets hybrid hits fused from cards, raw tex
 | 6 | `daemon` | after every round and once when idle: `embed_pending`; `LiveStatus.embedded: u64`, event `Embedded { count, ms }`; the summarizer owns the embedder. |
 | 7 | `mcp` | `McpServer { engine: Mutex<Engine>, embedder }`, `#[tool_router]` with `mda_search(query, k?, since?, until?, path_prefix?, raw?)`, `mda_card(section_id)`, `mda_open(section_id)`, `mda_timeline(since?, until?, path_prefix?, limit?)`, `mda_recent(n?)`, `mda_stale()`, `mda_status()`; `serve_stdio(root) -> Result<()>`; instructions text = the search-first rules from the skill. Structured results via `Json<T>` of the CLI's own types. |
 | 8 | CLI | `mda mcp [--root]`, `mda explain <q>`, `mda timeline [--since] [--until] [--in] [--limit]`, `mda recent [n]`, `mda stale`, `mda rebuild --embeddings`, `mda embeddings <local-small|off>`, `mda eval --golden <dir> [-k]`; `status` shows embedding coverage; `doctor` gets an `embeddings` check; `search` prints `vec` in the matched column. `.mcp.json` in the plugin root; `plugin.json` points at it; the skill mentions the tools. |
-| 9 | evals | `evals/golden/docs/*.md` (30 documents: ADRs, runbooks, changelogs, meeting notes, specs), `evals/golden/queries.jsonl` (60 queries with expected `rel_path` + heading substring, a third of them temporal), `evals/README.md`. `mda eval` indexes the corpus into a temp root with `--no-summarize` (lexical-only run) and, when `cards.json` recordings exist, attaches them (hybrid run); prints recall@k, MRR, misses; `docs/benchmarks.md` records the numbers. |
+| 9 | evals | `evals/golden/docs/*.md` (30 documents: ADRs, runbooks, changelogs, meeting notes, specs), `evals/golden/queries.jsonl` (60 queries with expected `rel_path` + heading substring, a third of them temporal), `evals/README.md`. `mda eval` indexes the corpus into a temp root with `--no-summarize` (lexical-only run) and, when `cards.json` recordings exist, attaches them (hybrid run); prints success@k, MRR@k, misses; `docs/benchmarks.md` records the numbers. |
 
 ## Tasks
 
@@ -35,7 +35,7 @@ Goal: Claude searches through MCP and gets hybrid hits fused from cards, raw tex
 
 ## Exit criteria
 
-- [x] recall@5 0.983 / MRR 0.853 hybrid vs 0.883 / 0.747 lexical-only on the golden set (`docs/benchmarks.md`).
+- [x] success@5 0.983 / MRR 0.853 hybrid vs 0.883 / 0.747 lexical-only on the golden set (`docs/benchmarks.md`).
 - [ ] **Not met as written**: lexical p50 is 2–3 ms in-process (20 ms as a process); hybrid is ≈ 50–60 ms in-process because of the query embedding, 257 ms as a fresh process (model load). The scan itself is microseconds at this size. Recorded in `docs/benchmarks.md`; the MCP server amortises the load.
 - [x] `mda mcp` answers `tools/list` and every tool over stdio in `mcp_cli.rs`; `.mcp.json` written per the plugin reference (loading in Claude Code to be confirmed by hand).
 - [x] `embeddings = "off"` never downloads (daemon and CLI tests run with it); a failed or absent model leaves search lexical (`Embedder::ready`), `mda index` prints one warning.

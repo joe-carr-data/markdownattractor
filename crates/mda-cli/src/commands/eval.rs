@@ -6,6 +6,10 @@
 //! in the hit's heading path. Optional `cards.json` (`{"<section_hash>": <SectionSummary>}`)
 //! turns on the hybrid run: cards are attached without any model call and, when the
 //! embedding model is on disk, vectors are built too.
+//!
+//! Metrics: a query's `expect` entries are *alternatives* (any of them answers it), so the
+//! headline number is **success@k** (an expected section is in the top k), and **MRR@k** is
+//! the mean reciprocal rank of the first expected section within the top k (0 beyond k).
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -60,10 +64,10 @@ pub struct Metrics {
     pub run: String,
     /// Queries evaluated.
     pub queries: usize,
-    /// Fraction of queries with an expected section in the top k.
-    pub recall_at_k: f64,
-    /// Mean reciprocal rank of the first expected section.
-    pub mrr: f64,
+    /// Fraction of queries with an expected section in the top k (success@k).
+    pub success_at_k: f64,
+    /// Mean reciprocal rank of the first expected section within the top k (MRR@k).
+    pub mrr_at_k: f64,
     /// Queries that missed, with the top hit for each.
     pub misses: Vec<Miss>,
     /// Mean query latency in milliseconds.
@@ -151,9 +155,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         queries.iter().filter(|q| q.temporal).count(),
         args.k
     );
-    println!("{:<34} {:>9} {:>7} {:>8}", "run", "recall@k", "MRR", "mean ms");
+    println!("{:<34} {:>9} {:>7} {:>8}", "run", "success@k", "MRR@k", "mean ms");
     for r in &runs {
-        println!("{:<34} {:>9.3} {:>7.3} {:>8.1}", r.run, r.recall_at_k, r.mrr, r.mean_ms);
+        println!("{:<34} {:>9.3} {:>7.3} {:>8.1}", r.run, r.success_at_k, r.mrr_at_k, r.mean_ms);
     }
     if let Some(last) = runs.last()
         && !last.misses.is_empty()
@@ -234,7 +238,7 @@ fn copy_tree(from: &Path, to: &Path) -> anyhow::Result<()> {
     for entry in walkdir(from)? {
         let rel = entry.strip_prefix(from)?;
         let dest = to.join(rel);
-        if entry.is_dir() {
+        if std::fs::symlink_metadata(&entry)?.is_dir() {
             std::fs::create_dir_all(&dest)?;
         } else {
             if let Some(p) = dest.parent() {
@@ -246,16 +250,21 @@ fn copy_tree(from: &Path, to: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Regular files and directories under `dir`. Symlinks and anything else are skipped, so a
+/// link in the fixture can neither pull outside files into the corpus nor loop.
 fn walkdir(dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
     let mut out = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
     while let Some(d) = stack.pop() {
         for e in std::fs::read_dir(&d).with_context(|| d.display().to_string())? {
             let p = e?.path();
-            if p.is_dir() {
+            let Ok(meta) = std::fs::symlink_metadata(&p) else { continue };
+            if meta.is_dir() {
                 stack.push(p.clone());
+                out.push(p);
+            } else if meta.is_file() {
+                out.push(p);
             }
-            out.push(p);
         }
     }
     Ok(out)
@@ -342,8 +351,8 @@ fn evaluate(
     Ok(Metrics {
         run: name.to_owned(),
         queries: queries.len(),
-        recall_at_k: found / n,
-        mrr: rr_sum / n,
+        success_at_k: found / n,
+        mrr_at_k: rr_sum / n,
         misses,
         mean_ms: ms_sum / n,
     })

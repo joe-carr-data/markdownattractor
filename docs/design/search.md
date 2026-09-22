@@ -12,7 +12,7 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 
 1. **Escape** (`store::fts_escape`): the user text is split on whitespace, each term is double-quoted with inner quotes doubled, and terms are joined with spaces (FTS5 implicit AND). No FTS5 syntax from the user ever reaches `MATCH`. A trailing `*` keeps prefix matching.
 2. **Two BM25 lists**: `cards_fts` over `heading_path`, `tldr`, `summary`, `keywords`, `questions_answered`, `entities` with weights 3/3/1/1/2/1, and `sections_raw_fts` over `heading_path` (3) and the raw section text (1). Both use `unicode61 remove_diacritics 2`. `search --raw` skips the cards list.
-3. **Vectors** (`search::vector_list`, ADR-0004): when embeddings are on, an embedder is given and its model is already on disk (`Embedder::ready`; a query never triggers a download), the query is embedded with `bge-small-en-v1.5` (quantised, 384 dimensions) and every card vector of that model is scored by dot product (`VectorIndex::top_k`, brute force from a contiguous `f32` buffer; ~15 MB and single-digit milliseconds at 10K sections). Vectors are keyed by section hash like the cards, made from `title + heading_path + tldr + summary + keywords + questions_answered` right after a card is attached (`Engine::embed_pending`, batches of 32), and rebuilt by `mda rebuild --embeddings`.
+3. **Vectors** (`search::vector_list`, ADR-0004): when embeddings are on, an embedder is given and its model is already on disk (`Embedder::ready`; a query never triggers a download), the query is embedded with `bge-small-en-v1.5` (quantised, 384 dimensions) and every card vector of that model is scored by dot product (`VectorIndex::top_k`, brute force from a contiguous `f32` buffer; ~15 MB and single-digit milliseconds at 10K sections). Vectors are keyed by section hash like the cards (so a moved or duplicated section costs nothing; the trade-off is that a hash shared by several documents carries one document's title and heading context, the same ambiguity the card itself has), made from `title + heading_path + tldr + summary + keywords + questions_answered` right after a card is attached (`Engine::embed_pending`, batches of 32), and rebuilt by `mda rebuild --embeddings`.
 4. **Fusion** (`search::fuse`): reciprocal rank fusion with k = 60 over the three lists. A section in both lexical lists is `matched: both`; one found only by its vector is `matched: vector`; every hit carries `vector: bool` and `vector_score` (cosine).
 5. **Recency** (`search::recency_factor`): score × (0.5 + 0.5·2^(−age/half-life)), half-life 30 days by default. Old but relevant sections are never buried below half weight; `0` disables it.
 6. **Filters**: `--since`/`--until` on the section's `updated_at`, `--in <prefix>` on the relative path. Applied after fusion on the stored rows.
@@ -45,7 +45,7 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 
 ## Measured (golden set, 32 docs / 117 sections / 60 queries, release build, Apple M3)
 
-| Run | recall@5 | MRR | mean query |
+| Run | success@5 | MRR@5 | mean query |
 |---|---|---|---|
 | lexical, raw text only (no cards) | 0.883 | 0.747 | ≈ 2 ms |
 | lexical, cards + raw | 0.900 | 0.777 | ≈ 3 ms |

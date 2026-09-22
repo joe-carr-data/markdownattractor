@@ -41,10 +41,16 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         cfg.save(&root)?;
     }
     let check = mda_core::embed::check(&cfg);
+    // A running daemon or MCP server keeps the embedder it started with.
+    let running = args.setting.is_some()
+        && super::block_on(mda_core::daemon::is_running(&root)).unwrap_or(false);
     if json {
-        output::json(
-            &serde_json::json!({ "embeddings": cfg.embeddings.as_str(), "check": check, "saved": args.setting.is_some() }),
-        );
+        output::json(&serde_json::json!({
+            "embeddings": cfg.embeddings.as_str(),
+            "check": check,
+            "saved": args.setting.is_some(),
+            "needs_restart": running,
+        }));
         return Ok(ExitCode::SUCCESS);
     }
     let verb = if args.setting.is_some() { "embeddings set to" } else { "embeddings" };
@@ -62,6 +68,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             }
         ),
         None => println!("{} {} · search is lexical only", st.ok(verb), st.accent("off")),
+    }
+    if running {
+        println!("  {} the daemon keeps its current setting until `mda restart`", st.warn("note:"));
     }
     Ok(ExitCode::SUCCESS)
 }

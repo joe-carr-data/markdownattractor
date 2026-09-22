@@ -609,33 +609,46 @@ async fn sleep_cancellable(shared: &Shared, d: Duration) {
 /// Embed whatever has a card and no vector. Runs on the summarizer task; the model work is
 /// CPU-bound, so it runs under `block_in_place` to keep the runtime's other workers free. A
 /// failure (model cannot be fetched) is recorded once and retried on the next call.
+/// Cards per embedding step; pause and stop are honoured between steps.
+const EMBED_STEP: usize = 4 * crate::embed::EMBED_BATCH;
+
 fn embed_pass(
     engine: &mut Engine,
     embedder: Option<&Arc<dyn crate::embed::Embedder>>,
     shared: &Shared,
 ) {
     let Some(embedder) = embedder else { return };
-    let result = tokio::task::block_in_place(|| engine.embed_pending(&**embedder, usize::MAX));
-    match result {
-        Ok(r) => {
-            let mut live = lock(&shared.live);
-            live.embedded += r.embedded as u64;
-            live.embedding_error = None;
-            drop(live);
-            if r.embedded > 0 {
-                shared.publish(DaemonEvent::Embedded {
-                    count: r.embedded,
-                    remaining: r.remaining,
-                    ms: r.ms,
-                });
-            }
+    loop {
+        if shared.cancel.is_cancelled() || shared.paused.load(Ordering::Relaxed) {
+            return;
         }
-        Err(e) => {
-            let msg = e.to_string();
-            let mut live = lock(&shared.live);
-            if live.embedding_error.as_deref() != Some(msg.as_str()) {
-                tracing::warn!(error = %msg, "embedding pass failed; search stays lexical");
-                live.embedding_error = Some(msg);
+        let result = tokio::task::block_in_place(|| engine.embed_pending(&**embedder, EMBED_STEP));
+        match result {
+            Ok(r) => {
+                {
+                    let mut live = lock(&shared.live);
+                    live.embedded += r.embedded as u64;
+                    live.embedding_error = None;
+                }
+                if r.embedded > 0 {
+                    shared.publish(DaemonEvent::Embedded {
+                        count: r.embedded,
+                        remaining: r.remaining,
+                        ms: r.ms,
+                    });
+                }
+                if r.remaining == 0 || r.embedded == 0 {
+                    return;
+                }
+            }
+            Err(e) => {
+                let msg = e.to_string();
+                let mut live = lock(&shared.live);
+                if live.embedding_error.as_deref() != Some(msg.as_str()) {
+                    tracing::warn!(error = %msg, "embedding pass failed; search stays lexical");
+                    live.embedding_error = Some(msg);
+                }
+                return;
             }
         }
     }
