@@ -15,36 +15,49 @@ pub struct Args {
     pub root: PathBuf,
 }
 
+/// Outcome of one check.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
-enum Status {
+pub enum Status {
     Ok,
     Warn,
     Fail,
 }
 
+/// One named check with its outcome and, when it did not pass, the fix.
 #[derive(Debug, Serialize)]
-struct Check {
-    name: &'static str,
-    status: Status,
-    detail: String,
-    fix: Option<&'static str>,
+pub struct Check {
+    /// Short name (`root`, `backend`, `daemon`, …).
+    pub name: &'static str,
+    /// Outcome.
+    pub status: Status,
+    /// What was found.
+    pub detail: String,
+    /// What to do about it.
+    pub fix: Option<&'static str>,
+}
+
+/// Every check `doctor` runs for `root` with `cfg`, in display order. Shared with
+/// `mda diagnostics`.
+pub fn checks(root: &std::path::Path, cfg: &mda_core::config::Config) -> Vec<Check> {
+    let mut checks = vec![
+        check_root(root),
+        check_state_dir(root),
+        check_backend(cfg),
+        check_embeddings(cfg),
+        check_daemon(root),
+    ];
+    if matches!(cfg.backend, mda_core::config::Backend::ClaudeCli) {
+        checks.push(check_claude_cli());
+    }
+    checks
 }
 
 /// Run the command. Exit code is non-zero when any check fails.
 #[expect(clippy::unnecessary_wraps, reason = "every command shares the same signature")]
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let cfg = mda_core::config::Config::load(&args.root).unwrap_or_default();
-    let mut checks = vec![
-        check_root(&args.root),
-        check_state_dir(&args.root),
-        check_backend(&cfg),
-        check_embeddings(&cfg),
-        check_daemon(&args.root),
-    ];
-    if matches!(cfg.backend, mda_core::config::Backend::ClaudeCli) {
-        checks.push(check_claude_cli());
-    }
+    let checks = checks(&args.root, &cfg);
     let failed = checks.iter().any(|c| matches!(c.status, Status::Fail));
 
     if json {

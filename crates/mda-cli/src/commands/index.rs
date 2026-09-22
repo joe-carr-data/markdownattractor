@@ -31,18 +31,31 @@ pub struct Args {
 
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
-    let root = super::resolve_root(args.root.as_deref())?;
+    // `mda index .` or `mda index docs/` means "this directory is the root", not "this file".
+    let (root_arg, path) = match &args.path {
+        Some(p) if p.is_dir() => {
+            anyhow::ensure!(
+                args.root.is_none(),
+                "{} is a directory; pass either a directory or --root, not both",
+                p.display()
+            );
+            (Some(p.as_path()), None)
+        }
+        other => (args.root.as_deref(), other.as_deref()),
+    };
+    let root = super::resolve_root(root_arg)?;
     let mut engine = Engine::open(&root).with_context(|| format!("opening {}", root.display()))?;
     let st = Style::auto();
 
     if super::block_on(mda_core::daemon::is_running(engine.root()))? {
-        return delegate(args, &mut engine, json, &st);
+        return delegate(args, path, &mut engine, json, &st);
     }
 
     let started = std::time::Instant::now();
-    let report = match &args.path {
+    let report = match path {
         Some(p) => {
-            let abs = if p.is_absolute() { p.clone() } else { std::env::current_dir()?.join(p) };
+            let abs =
+                if p.is_absolute() { p.to_path_buf() } else { std::env::current_dir()?.join(p) };
             let abs = abs.canonicalize().with_context(|| format!("resolving {}", p.display()))?;
             let out = engine.index_file(&abs)?;
             IndexReport {
@@ -190,7 +203,13 @@ fn print_summary(summarize: Option<&SummarizeReport>, pending_total: u64, st: &S
 
 /// A running daemon is the single writer for cards: hand the request to it and return once the
 /// raw index is updated. Cards follow in the background.
-fn delegate(args: &Args, engine: &mut Engine, json: bool, st: &Style) -> anyhow::Result<ExitCode> {
+fn delegate(
+    args: &Args,
+    path: Option<&std::path::Path>,
+    engine: &mut Engine,
+    json: bool,
+    st: &Style,
+) -> anyhow::Result<ExitCode> {
     use mda_core::daemon::{Client, Request, Response};
     if args.retry_failed {
         let n = engine.store_mut().retry_failed()?;
@@ -198,9 +217,10 @@ fn delegate(args: &Args, engine: &mut Engine, json: bool, st: &Style) -> anyhow:
             println!("{} {n} failed section(s) queued again", st.ok("retry"));
         }
     }
-    let path = match &args.path {
+    let path = match path {
         Some(p) => {
-            let abs = if p.is_absolute() { p.clone() } else { std::env::current_dir()?.join(p) };
+            let abs =
+                if p.is_absolute() { p.to_path_buf() } else { std::env::current_dir()?.join(p) };
             // Canonical when it exists (symlinks, `..`, case); lexical otherwise so a deleted
             // file can still be tombstoned on request.
             let abs = abs.canonicalize().unwrap_or(abs);
