@@ -58,6 +58,7 @@ gh run view <id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
 - `claude -p --bare` disables keychain reads ("Not logged in"); variadic flags swallow the prompt (`--` before it); `--tools a b c` are separate args.
 - `gh workflow run` needs the workflow on the default branch.
 - `rust-toolchain.toml` pins the toolchain cargo uses in CI; `dtolnay/rust-toolchain@stable` with `targets:` adds the target to `stable`, not to the pinned one (fixed on `docs/phase4-wrap`).
+- The prebuilt static ONNX Runtime wants GCC 13's libstdc++: linking on `ubuntu-22.04-arm` fails with `__cxa_call_terminate` undefined. Linux release builds run on 24.04 (glibc ≥ 2.39 for users).
 - macOS temp paths have two spellings; Windows `home_dir()` reads `USERPROFILE`; the scrubber handles both, tests set both env vars.
 - `mda status`'s daemon line counts cards per finished round; the store line is live. They disagree mid-round by design.
 - A/B on tiny corpora: eight hits with cards are ~1.3K tokens regardless of size; `k` and the per-hit payload are the lever if G3 is to be met on mid-size corpora.

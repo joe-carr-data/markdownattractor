@@ -45,13 +45,15 @@ jobs:
             target: x86_64-apple-darwin
             features: "--no-default-features"
             bin: mda
+          # 24.04: the prebuilt static ONNX Runtime needs the libstdc++ of GCC 13 (22.04 has 11:
+          # `__cxa_call_terminate` undefined at link time on arm64).
           - name: linux-x64
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             features: ""
             bin: mda
           - name: linux-arm64
-            os: ubuntu-22.04-arm
+            os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             features: ""
             bin: mda
