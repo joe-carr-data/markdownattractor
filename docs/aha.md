@@ -2,6 +2,9 @@
 
 Dated one-liners. Newest first. Pruned monthly: entries that became rules graduate to `.claude/rules/`, the rest go to `archive/aha-YYYY-MM.md`. Keep under 60 lines.
 
+- 2026-09-22 — A hook that calls the binary with a flag the *installed* binary does not have fails silently (`>/dev/null 2>&1 &`). I added `--no-example` to `bootstrap.sh` before the binary had it and spent a debugging round on "the SessionStart hook does not start the daemon". Ship script and binary changes in the same PR and re-copy the binary before testing a hook.
+- 2026-09-22 — macOS temp dirs have two spellings (`/var/…` and `/private/var/…`); a redaction that replaces `$HOME` as given misses the canonical form. Redact both.
+- 2026-09-22 — First-run example on a fresh copy of `docs/` (224 sections, Haiku via `api`): `mda start` printed a real hit 5.4 s after starting, once the first 10 cards landed ($0.013). The wait is bounded at 60 s and skipped by the hook.
 - 2026-09-22 — Vectors did what the plan hoped: on the golden set every lexical miss was a paraphrase, and bge-small recovered six of seven (recall@5 0.883 → 0.983). The cost is the query embedding, ≈ 50 ms on CPU, not the scan.
 - 2026-09-22 — `sqlite-vec` needs an `unsafe` extension registration; with `unsafe_code` forbidden and corpora of thousands of sections, a contiguous `f32` buffer scanned from Rust is simpler and fast enough (ADR-0004).
 - 2026-09-22 — fastembed's default features pull `native-tls`, which `deny.toml` bans on purpose; `ort-download-binaries-rustls-tls` + `hf-hub-rustls-tls` keep the tree pure rustls and `ort` links ONNX Runtime statically.

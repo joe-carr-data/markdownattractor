@@ -56,6 +56,49 @@ pub fn write_private(path: &Path, bytes: &[u8]) -> Result<()> {
     f.write_all(bytes).map_err(|e| Error::io(path, e))
 }
 
+/// Where the global "nudge off" marker lives: `$MDA_NUDGE_FILE` (the plugin launcher sets it
+/// to `${CLAUDE_PLUGIN_DATA}/nudge.off`; `CLAUDE_PLUGIN_DATA` itself is never read here),
+/// else the same default the plugin scripts use.
+#[must_use]
+pub fn nudge_off_file() -> PathBuf {
+    if let Some(p) = std::env::var_os("MDA_NUDGE_FILE").filter(|s| !s.is_empty()) {
+        return PathBuf::from(p);
+    }
+    std::env::home_dir()
+        .unwrap_or_else(std::env::temp_dir)
+        .join(".claude")
+        .join("plugins")
+        .join("data")
+        .join("markdownattractor-markdownattractor")
+        .join("nudge.off")
+}
+
+/// Create (`on = false`) or remove (`on = true`) the global nudge-off marker at
+/// [`nudge_off_file`]. Returns its path.
+pub fn set_global_nudge(on: bool) -> Result<PathBuf> {
+    let path = nudge_off_file();
+    set_global_nudge_at(&path, on)?;
+    Ok(path)
+}
+
+/// Create (`on = false`) or remove (`on = true`) the nudge-off marker at `path`. The marker
+/// is an empty private file; its parent directory is created when missing.
+pub fn set_global_nudge_at(path: &Path, on: bool) -> Result<()> {
+    if on {
+        match std::fs::remove_file(path) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(Error::io(path, e)),
+        }
+    } else {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| Error::io(parent, e))?;
+        }
+        write_private(path, b"")?;
+    }
+    Ok(())
+}
+
 /// Shown whenever `backend = "claude-cli"` is selected without the acknowledgement.
 pub const CLAUDE_CLI_POLICY: &str = "backend \"claude-cli\" routes requests through your Claude \
 subscription. Anthropic's terms do not permit third-party tools to do that on your behalf \
@@ -378,6 +421,21 @@ mod tests {
         std::os::unix::fs::symlink(&target, &link).unwrap();
         assert!(write_private(&link, b"clobbered").is_err());
         assert_eq!(std::fs::read_to_string(&target).unwrap(), "keep me");
+    }
+
+    #[test]
+    fn nudge_marker_is_created_removed_and_idempotent() {
+        let dir = tempfile::tempdir().unwrap();
+        let marker = dir.path().join("data").join("nudge.off");
+        assert!(nudge_off_file().ends_with("nudge.off"));
+        set_global_nudge_at(&marker, true).unwrap(); // removing a missing marker is fine
+        assert!(!marker.exists());
+        set_global_nudge_at(&marker, false).unwrap(); // creates the parent too
+        assert!(marker.is_file());
+        assert_eq!(std::fs::metadata(&marker).unwrap().len(), 0);
+        set_global_nudge_at(&marker, false).unwrap();
+        set_global_nudge_at(&marker, true).unwrap();
+        assert!(!marker.exists());
     }
 
     #[test]

@@ -217,6 +217,18 @@ pub struct TimelineEntry {
     pub detail: Option<String>,
 }
 
+/// A real question from a freshly made card and the hit it produces: what `mda start` shows
+/// on a first run so the user sees a result before walking away (plan §9.5).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Example {
+    /// The query, taken from a card's `questions_answered`.
+    pub query: String,
+    /// The section the card belongs to.
+    pub section_id: String,
+    /// The top hit for the query (lexical search, no model involved).
+    pub hit: Option<crate::search::Hit>,
+}
+
 /// Exact source lines of a section, re-checked against the file at read time.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Opened {
@@ -785,6 +797,38 @@ impl Engine {
             Ok(_) => DiskState::Fresh,
             Err(_) => DiskState::Unreadable,
         }
+    }
+
+    /// Pick a question from one of the newest cards and run it through the lexical search.
+    /// Cards a model wrote are preferred over deterministic heading-only cards; `None` when
+    /// no card carries a question yet.
+    pub fn example(&self) -> Result<Option<Example>> {
+        let sample = self.store.carded_sections_sample(32)?;
+        let with_question = |s: &&crate::store::StoredSection| {
+            s.summary
+                .as_ref()
+                .is_some_and(|c| c.questions_answered.iter().any(|q| !q.trim().is_empty()))
+        };
+        let from_model = |s: &&crate::store::StoredSection| {
+            s.provenance.as_ref().is_some_and(|p| p.backend != "deterministic")
+        };
+        let Some(section) = sample
+            .iter()
+            .filter(with_question)
+            .find(from_model)
+            .or_else(|| sample.iter().find(with_question))
+        else {
+            return Ok(None);
+        };
+        let query = section
+            .summary
+            .as_ref()
+            .and_then(|c| c.questions_answered.iter().find(|q| !q.trim().is_empty()))
+            .map(|q| q.trim().to_owned())
+            .unwrap_or_default();
+        let opts = crate::search::SearchOptions { k: 1, ..crate::search::SearchOptions::default() };
+        let hit = crate::search::search(&self.store, &query, &opts)?.into_iter().next();
+        Ok(Some(Example { query, section_id: section.section_id.clone(), hit }))
     }
 
     /// The `n` most recently updated documents.
