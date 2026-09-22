@@ -111,6 +111,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo doc --workspace --no-deps --all-features
 
+  version:
+    name: version agrees
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/dev/check-version.sh
+
   shell:
     name: shellcheck
     runs-on: ubuntu-latest
