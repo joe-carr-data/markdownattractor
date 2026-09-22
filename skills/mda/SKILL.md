@@ -23,7 +23,7 @@ Arguments: `$ARGUMENTS`
    - `start` → the one-line result; if it reports `backend_warning`, show it and the fix (`mda doctor`, then `mda restart`). On a first run the result carries `example` (a real question from a fresh card and its top hit): show the query, the hit's path, heading and line range, and the `mda open` id; if `example_skipped` is set instead, say why in one line. `start` may take up to a minute on a first run while the first cards land; that is expected.
    - `watch` → with `--json` it prints one event per line and runs until Ctrl-C; pass `--count N` to stop after N events. Render each event as one short line.
    - `cost` → the window totals on one line, then the per-day and per-model tables; say plainly that tokens saved on reads are not measured yet (`tokens_saved` is null).
-   - `diagnostics` → pass `--out /tmp/mda-diagnostics.json` and tell the user where the redacted bundle is and that it holds no document content; never paste the bundle.
+   - `diagnostics` → pass `--out "${TMPDIR:-/tmp}/mda-diagnostics-$(date +%Y%m%d-%H%M%S).json"` (the file must not exist yet; the binary never overwrites) and tell the user where the redacted bundle is and that it holds no document content or paths; never paste the bundle.
    - `nudge` → one line: effective state, this root, everywhere.
    - `timeline`, `recent`, `stale` → a compact table.
    - anything else → the one-line result the binary printed.

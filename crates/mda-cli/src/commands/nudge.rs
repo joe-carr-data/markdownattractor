@@ -50,7 +50,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             cfg.save(&root)?;
         }
     }
-    let global_off = marker.exists();
+    let global_off = marker.is_file(); // the hook tests `-f`: a directory is not a switch
     let effective = cfg.nudge && !global_off;
 
     if json {
