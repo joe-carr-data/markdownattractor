@@ -71,18 +71,27 @@ The search result itself shrank from ≈ 1,400 to ≈ 400 tokens and the median 
 
 ## DocsQA-Repo — ingestion gate and the first axis-A row (benchmark plan B2, 2026-09-22)
 
-Source-repository adaptation of DocsQA-Repo (`PowderXu/docsqa-data` schema v3; `evals/README.md`): the four repositories indexed at their pinned commits (raw index only, no cards yet), labels mapped to repository paths, every question assigned to the seeded split (seed 20260922). Numbers below are the **development split** only (rule 0.2), the raw-text lexical configuration only (BM25 over section text, no cards, no vectors), one run, on the release-profile-free debug binary (latency is indicative). Raw files: `evals/results/docsqa/<project>/{coverage,split,results}.json`.
+Source-repository adaptation of DocsQA-Repo (`PowderXu/docsqa-data` schema v3; `evals/README.md`): the four repositories indexed at their pinned commits, labels mapped to repository paths, every question assigned to the seeded split (seed 20260922). Numbers below are the **development split** only (rule 0.2), the raw-text lexical configuration (BM25 over section text, no cards, no vectors), one run, debug binary (latency is indicative; the adapter fetches deeper until it holds ten distinct pages, so a page that hogs the section list cannot hide the next one). Raw files: `evals/results/docsqa/<project>/{coverage,split,results}.json`.
 
-| Project | docs / sections indexed | labels indexed (coverage) | questions → eligible | dev/test/holdout | dev scored | success@5 | MRR@5 | nDCG@10 | mean ms |
-|---|---|---|---|---|---|---|---|---|---|
-| github-docs | 3742 / 23066 | 260/260 (100%) | 197 → 161 (36 image-evidence) | 59/108/30 | 49 | 0.306 | 0.175 | 0.227 | 540 |
-| prisma | 693 / 10438 | 179/179 (100%) | 125 → 118 (7 image-evidence) | 37/68/20 | 37 | 0.216 | 0.108 | 0.132 | 514 |
-| supabase | 836 / 6548 | 63/63 (100%) | 52 → 40 (12 image-evidence) | 15/28/9 | 12 | 0.333 | 0.118 | 0.208 | 547 |
-| tailwind-css | 198 / 1518 | 99/99 (100%) | 93 → 84 (9 image-evidence) | 27/51/15 | 25 | 0.600 | 0.340 | 0.420 | 69 |
+| Project | docs / sections indexed | labels indexed (coverage) | evidence anchors found | questions → eligible | dev/test/holdout | dev scored | success@5 | MRR@5 | nDCG@10 | mean ms |
+|---|---|---|---|---|---|---|---|---|---|---|
+| github-docs | 3742 / 23066 | 260/260 (100%) | 183/222 | 197 → 161 (36 image-evidence) | 59/108/30 | 49 | 0.306 | 0.175 | 0.227 | 401 |
+| prisma | 693 / 10438 | 179/179 (100%) | 176/176 | 125 → 118 (7 image-evidence) | 37/68/20 | 37 | 0.216 | 0.108 | 0.132 | 245 |
+| supabase | 836 / 6548 | 63/63 (100%) | 47/48 | 52 → 40 (12 image-evidence) | 15/28/9 | 12 | 0.333 | 0.118 | 0.208 | 381 |
+| tailwind-css | 198 / 1518 | 99/99 (100%) | 96/96 | 93 → 84 (9 image-evidence) | 27/51/15 | 25 | 0.600 | 0.340 | 0.420 | 52 |
 
-- **Ingestion gate (plan §2 F1): passed on all four projects**, 100% of the 601 labels map to an indexed file (the `.mdx` work of B0a is what made three of them possible). Excluded and stated: 64 questions whose reference evidence is image-derived text; none for a missing page.
+- **Ingestion gate (plan §2 F1): passed on all four projects.** (iii) 100% of the 601 labels map to an indexed file (the `.mdx` work of B0a made three projects possible). (iv) 64 questions whose reference evidence is image-derived text are excluded and counted; none for a missing page. (v) The evidence-presence check compares the dataset's resolved section anchors (`anchor_resolution`, canonical headings from the rendered pages) with the headings and titles of our indexed source, after folding case, backticks, Liquid tags and whitespace: Tailwind and Prisma 100%, Supabase 47 of 48, **GitHub Docs 183 of 222**. Of GitHub Docs' 39 misses, 35 sit on pages that render Liquid includes or version variants (`{% data reusables… %}`, `{% ifversion %}`; a heading such as "About {% data variables.product.prodname_registry %}" renders as "About GitHub Packages"), which the source-repository adaptation cannot reproduce without the site's variable data; the affected questions stay eligible because their label is the page, and their ids are listed in `coverage.json`. This is the adaptation's stated limitation, not a parser gap.
 - The raw-lexical row is the floor, not the product: DocsQA questions are long community questions ("how do I…", with error strings and context), which an AND query over every term rarely matches, so most queries fall to the OR form and BM25 over raw text ranks the page with the most repeated words. Cards (`questions_answered`, `tldr`) and vectors are what the plan expects to move these numbers; the carded and hybrid rows come with the committed cards (B2, `claude-cli` backend per §0a.3).
-- Query latency on the three larger corpora is ≈ 0.5 s per question in this configuration (long OR queries, 120 candidates fetched per list, one row read per candidate), far above the 30 ms budget; a lever to measure before axis B (fewer candidates, a prepared statement per section lookup, or the release build).
+- **Partial cards bias the fusion.** Tailwind's index carries cards and vectors for 216 of 1,518 sections (14%, from the carding-rate measurement below), and on that index the carded and hybrid rows are far *below* raw: reciprocal-rank fusion gives every carded section a place on the cards list and on the vector list, so the 14% that happen to be carded crowd out uncarded relevant pages. The rows are published for what they are; the real carded numbers need every section carded, and the product implication (a daemon half-way through its first backfill can rank worse than raw) goes to the plan as a follow-up.
+
+| Tailwind, dev split, 14% of sections carded | n | success@5 | MRR@5 | nDCG@10 | mean ms |
+|---|---|---|---|---|---|
+| lexical (raw only) | 25 | 0.600 | 0.340 | 0.420 | 52 |
+| lexical (cards + raw) | 25 | 0.360 | 0.211 | 0.309 | 63 |
+| hybrid (cards + raw + vectors) | 25 | 0.120 | 0.038 | 0.060 | 204 |
+
+- **Carding rate through the owner's Claude Code login** (`claude-cli` backend, Haiku 4.5, the plan's §0a.3): 200 Tailwind sections in 182 s wall (13 s of it embedding), 0 failures, 509K input / 69K output tokens, **$0.85 list-price equivalent**; ≈ 1.1 sections/s. The four corpora are ≈ 41.6K sections: ≈ 10 h and ≈ $175 list-price equivalent, which is above the plan's $60 card figure and is an owner decision before it runs (plan §6).
+- Query latency on the three larger corpora is 0.25–0.42 s per question in this configuration (long OR queries, deep candidate lists, one row read per candidate), far above the 30 ms budget; a lever to measure before axis B (fewer candidates, a prepared statement per section lookup, or the release build).
 
 ## Not measured yet
 

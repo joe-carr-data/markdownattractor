@@ -1,18 +1,54 @@
 {
   "cards_attached": 0,
   "coverage": {
+    "anchors": 222,
+    "anchors_found": 183,
     "corpus_pages": 3208,
     "corpus_pages_indexed": 3208,
     "eligible": 161,
     "excluded_image_evidence": 36,
     "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "github-docs::110865",
+      "github-docs::122713",
+      "github-docs::124413",
+      "github-docs::134627",
+      "github-docs::143714",
+      "github-docs::147941",
+      "github-docs::150190",
+      "github-docs::152845",
+      "github-docs::156304",
+      "github-docs::15669",
+      "github-docs::156738",
+      "github-docs::158698",
+      "github-docs::166151",
+      "github-docs::169850",
+      "github-docs::195589",
+      "github-docs::21125",
+      "github-docs::23166",
+      "github-docs::23212",
+      "github-docs::24939",
+      "github-docs::25478",
+      "github-docs::25497",
+      "github-docs::27172",
+      "github-docs::27600",
+      "github-docs::49124",
+      "github-docs::50035",
+      "github-docs::53922",
+      "github-docs::64750",
+      "github-docs::69168",
+      "github-docs::77916",
+      "github-docs::88451",
+      "github-docs::88452"
+    ],
     "multimodal_judgment": 64,
     "project": "github-docs",
     "qrel_coverage": 1.0,
     "qrels": 260,
     "qrels_indexed": 260,
     "qrels_unmapped": 0,
-    "questions": 197
+    "questions": 197,
+    "questions_with_missing_anchor": 31
   },
   "data": "~/.cache/markdownattractor/bench/docsqa-data",
   "dataset": "docsqa",
@@ -24,7 +60,7 @@
   "runs": [
     {
       "metrics": {
-        "mean_ms": 539.867677755102,
+        "mean_ms": 401.15510797959195,
         "mrr_at_5": 0.17517006802721088,
         "ndcg_at_10": 0.22672407084769108,
         "questions": 49,
@@ -32,6 +68,7 @@
       },
       "results": [
         {
+          "fetched": 30,
           "id": "github-docs::109354",
           "ndcg_at_10": 1.0,
           "rank": 1,
@@ -45,9 +82,11 @@
             "content/nonprofit/troubleshooting/frequently-asked-questions.md",
             "content/site-policy/other-site-policies/github-account-recovery-policy.md",
             "content/organizations/managing-organization-settings/renaming-an-organization.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::118629",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -61,9 +100,11 @@
             "content/copilot/reference/copilot-allowlist-reference.md",
             "content/packages/working-with-a-github-packages-registry/working-with-the-docker-registry.md",
             "content/packages/learn-github-packages/connecting-a-repository-to-a-package.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::121211",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -77,9 +118,11 @@
             "content/admin/configuring-packages/migrating-your-enterprise-to-the-container-registry-from-the-docker-registry.md",
             "content/desktop/working-with-your-remote-repository-on-github-or-github-enterprise/viewing-a-pull-request-in-github-desktop.md",
             "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-on-actions.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::121855",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -93,9 +136,11 @@
             "content/site-policy/content-removal-policies/dmca-takedown-policy.md",
             "content/get-started/using-git/using-git-rebase-on-the-command-line.md",
             "content/site-policy/content-removal-policies/guide-to-submitting-a-dmca-takedown-notice.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::124122",
           "ndcg_at_10": -0.0,
           "rank": 12,
@@ -109,9 +154,11 @@
             "content/actions/how-tos/monitor-workflows/use-workflow-run-logs.md",
             "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue.md",
             "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::126137",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -126,9 +173,11 @@
             "content/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-organization.md",
             "content/admin/managing-your-enterprise-account/creating-an-enterprise-account.md",
             "content/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-plan/upgrade-plan.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::126853",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -142,9 +191,11 @@
             "content/copilot/tutorials/refactor-code.md",
             "content/copilot/how-tos/copilot-cli/cli-getting-started.md",
             "content/contributing/collaborating-on-github-docs/using-git-on-github-docs.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::134627",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -160,9 +211,11 @@
             "content/get-started/using-github-docs/github-docs-api.md",
             "content/admin/data-residency/about-github-enterprise-cloud-with-data-residency.md",
             "content/admin/overview/about-github-enterprise-server.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::140491",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -176,9 +229,11 @@
             "content/rest/guides/discovering-resources-for-a-user.md",
             "content/rest/using-the-rest-api/rate-limits-for-the-rest-api.md",
             "content/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::142094",
           "ndcg_at_10": 0.43067655807339306,
           "rank": 4,
@@ -192,9 +247,11 @@
             "content/search-github/github-code-search/using-github-code-search.md",
             "content/search-github/github-code-search/understanding-github-code-search-syntax.md",
             "content/get-started/learning-to-code/finding-and-understanding-example-code.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::143714",
           "ndcg_at_10": -0.0,
           "rank": 16,
@@ -208,9 +265,11 @@
             "content/copilot/get-started/quickstart.md",
             "content/copilot/reference/copilot-billing/request-based-billing-legacy/copilot-requests.md",
             "content/subscriptions-and-notifications/get-started/configuring-notifications.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::147941",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -224,9 +283,11 @@
             "content/copilot/tutorials/use-an-ai-sme.md",
             "content/pages/getting-started-with-github-pages/creating-a-github-pages-site.md",
             "content/pages/quickstart.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::150642",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -240,9 +301,11 @@
             "content/copilot/reference/copilot-usage-metrics/team-level-metrics.md",
             "content/copilot/concepts/copilot-usage-metrics/copilot-metrics.md",
             "content/copilot/reference/copilot-usage-metrics/reconciling-usage-metrics.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::152845",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -254,9 +317,11 @@
           "split": "dev",
           "top": [
             "content/copilot/tutorials/migrate-a-project.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::156304",
           "ndcg_at_10": 0.3010299956639812,
           "rank": 9,
@@ -270,9 +335,11 @@
             "content/copilot/concepts/agents/github-copilot-app.md",
             "content/nonprofit/troubleshooting/frequently-asked-questions.md",
             "content/copilot/tutorials/vibe-coding.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::15669",
           "ndcg_at_10": -0.0,
           "rank": 21,
@@ -286,9 +353,11 @@
             "content/subscriptions-and-notifications/how-tos/viewing-and-triaging-notifications/managing-notifications-from-your-inbox.md",
             "content/subscriptions-and-notifications/get-started/configuring-notifications.md",
             "content/subscriptions-and-notifications/concepts/about-notifications.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::157548",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -302,9 +371,11 @@
             "content/copilot/tutorials/copilot-cookbook/document-code/write-discussions-or-blog-posts.md",
             "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-updates-stopped.md",
             "content/copilot/tutorials/use-an-ai-sme.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::159649",
           "ndcg_at_10": 1.0,
           "rank": 1,
@@ -318,9 +389,11 @@
             "content/nonprofit/troubleshooting/frequently-asked-questions.md",
             "content/contributing/style-guide-and-content-model/style-guide.md",
             "content/actions/reference/workflows-and-actions/workflow-syntax.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::16243",
           "ndcg_at_10": 0.43067655807339306,
           "rank": 4,
@@ -334,9 +407,11 @@
             "content/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets.md",
             "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository.md",
             "content/actions/how-tos/reuse-automations/share-with-your-enterprise.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::164155",
           "ndcg_at_10": 1.0,
           "rank": 1,
@@ -350,9 +425,11 @@
             "content/copilot/get-started/plans.md",
             "content/copilot/reference/copilot-billing/request-based-billing-legacy/monitor-premium-requests.md",
             "content/copilot/reference/copilot-billing/request-based-billing-legacy/model-multipliers-for-annual-plans.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::169850",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -366,9 +443,11 @@
             "content/billing/how-tos/manage-for-client/manage-client-org.md",
             "content/billing/how-tos/set-up-payment/redeem-coupon.md",
             "content/site-policy/other-site-policies/github-account-recovery-policy.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::179906",
           "ndcg_at_10": 0.19342640361727081,
           "rank": 8,
@@ -383,9 +462,11 @@
             "content/admin/monitoring-and-managing-your-instance/configuring-clustering/monitoring-the-health-of-your-cluster.md",
             "content/authentication/keeping-your-account-and-data-secure/about-anonymized-urls.md",
             "content/admin/configuring-settings/hardening-security-for-your-enterprise/configuring-host-keys-for-your-instance.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::180907",
           "ndcg_at_10": 0.6309297535714575,
           "rank": 2,
@@ -399,9 +480,11 @@
             "content/actions/how-tos/manage-runners/self-hosted-runners/run-scripts.md",
             "content/actions/how-tos/manage-runners/self-hosted-runners/monitor-and-troubleshoot.md",
             "content/actions/concepts/security/github_token.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::19200",
           "ndcg_at_10": 0.43067655807339306,
           "rank": 4,
@@ -415,9 +498,11 @@
             "content/education/about-github-education/github-education-for-teachers/why-wasnt-my-application-to-github-education-for-teachers-approved.md",
             "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
             "content/education/about-github-education/github-education-for-students/github-terms-and-conditions-for-the-student-developer-pack.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::23381",
           "ndcg_at_10": 0.6309297535714575,
           "rank": 2,
@@ -431,9 +516,11 @@
             "content/admin/configuring-settings/configuring-user-applications-for-your-enterprise/verifying-or-approving-a-domain-for-your-enterprise.md",
             "content/pages/getting-started-with-github-pages/troubleshooting-404-errors-for-github-pages-sites.md",
             "content/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::23483",
           "ndcg_at_10": 0.6309297535714575,
           "rank": 2,
@@ -447,9 +534,11 @@
             "content/copilot/tutorials/use-an-ai-sme.md",
             "content/migrations/using-github-enterprise-importer/migrate-from-gitlab/use-graphql.md",
             "content/support/sharing-feedback-with-github.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::24768",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -463,9 +552,11 @@
             "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-the-automatic-deletion-of-branches.md",
             "content/rest/using-the-rest-api/issue-event-types.md",
             "content/pull-requests/reference/stacked-prs-cli-commands.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::25309",
           "ndcg_at_10": -0.0,
           "rank": 17,
@@ -480,9 +571,11 @@
             "content/admin/managing-github-actions-for-your-enterprise/getting-started-with-github-actions-for-your-enterprise/introducing-github-actions-to-your-enterprise.md",
             "content/code-security/reference/code-scanning/troubleshoot-analysis-errors/analysis-takes-too-long.md",
             "content/actions/concepts/runners/self-hosted-runners.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::25497",
           "ndcg_at_10": 0.2640681225725909,
           "rank": 4,
@@ -497,9 +590,11 @@
             "content/actions/tutorials/migrate-to-github-actions/automated-migrations/bitbucket-pipelines-migration.md",
             "content/codespaces/developing-in-a-codespace/using-github-codespaces-with-github-cli.md",
             "content/authentication/connecting-to-github-with-ssh/using-ssh-agent-forwarding.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::26258",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -513,9 +608,11 @@
             "content/actions/reference/security/secure-use.md",
             "content/actions/how-tos/manage-runners/self-hosted-runners/monitor-and-troubleshoot.md",
             "content/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::26686",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -531,9 +628,11 @@
             "content/copilot/tutorials/copilot-cookbook/refactor-code/fix-database-deadlocks.md",
             "content/site-policy/other-site-policies/github-username-policy.md",
             "content/copilot/tutorials/learn-a-new-language.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::27172",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -547,9 +646,11 @@
             "content/actions/how-tos/deploy/deploy-to-third-party-platforms/docker-to-azure-app-service.md",
             "content/actions/tutorials/publish-packages/publish-docker-images.md",
             "content/actions/tutorials/use-containerized-services/use-docker-service-containers.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::28581",
           "ndcg_at_10": 1.0,
           "rank": 1,
@@ -563,9 +664,11 @@
             "content/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps.md",
             "content/get-started/learning-to-code/storing-your-secrets-safely.md",
             "content/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::30915",
           "ndcg_at_10": -0.0,
           "rank": 14,
@@ -579,9 +682,11 @@
             "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
             "content/copilot/tutorials/learn-a-new-language.md",
             "content/get-started/learning-to-code/finding-and-understanding-example-code.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::32447",
           "ndcg_at_10": 1.0,
           "rank": 1,
@@ -595,9 +700,11 @@
             "content/site-policy/content-removal-policies/dmca-takedown-policy.md",
             "content/account-and-profile/reference/profile-reference.md",
             "content/site-policy/content-removal-policies/guide-to-submitting-a-dmca-counter-notice.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::34872",
           "ndcg_at_10": 0.6309297535714575,
           "rank": 2,
@@ -611,9 +718,11 @@
             "content/repositories/creating-and-managing-repositories/access-to-repositories.md",
             "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/deleting-users-from-your-instance.md",
             "content/admin/managing-your-enterprise-account/deleting-an-enterprise-account.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::36459",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -627,9 +736,11 @@
             "content/nonprofit/troubleshooting/frequently-asked-questions.md",
             "content/copilot/concepts/context/spaces.md",
             "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-private-registries.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::39520",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -644,9 +755,11 @@
             "content/copilot/how-tos/copilot-on-github/customize-copilot/customize-copilot-overview.md",
             "content/copilot/tutorials/use-an-ai-sme.md",
             "content/copilot/how-tos/use-copilot-agents/cloud-agent/use-cloud-agent-via-the-api.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::41404",
           "ndcg_at_10": 0.2890648263178879,
           "rank": 10,
@@ -660,9 +773,11 @@
             "content/copilot/concepts/agents/copilot-cli/comparing-cli-features.md",
             "content/nonprofit/troubleshooting/frequently-asked-questions.md",
             "content/get-started/using-github/communicating-on-github.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::42300",
           "ndcg_at_10": 0.43067655807339306,
           "rank": 4,
@@ -676,9 +791,11 @@
             "content/account-and-profile/how-tos/email-preferences/troubleshooting-email-verification.md",
             "content/account-and-profile/concepts/username-changes.md",
             "content/pull-requests/how-tos/commit-changes/troubleshooting-commits.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::48086",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -692,9 +809,11 @@
             "content/desktop/installing-and-authenticating-to-github-desktop/authenticating-to-github-in-github-desktop.md",
             "content/authentication/troubleshooting-ssh/error-were-doing-an-ssh-key-audit.md",
             "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::48438",
           "ndcg_at_10": 0.31546487678572877,
           "rank": 8,
@@ -708,9 +827,11 @@
             "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-code-governance.md",
             "content/admin/managing-accounts-and-repositories/managing-repositories-in-your-enterprise/governing-how-people-use-repositories-in-your-enterprise.md",
             "content/contributing/style-guide-and-content-model/style-guide.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::49521",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -724,9 +845,11 @@
             "content/apps/creating-github-apps/writing-code-for-a-github-app/building-ci-checks-with-a-github-app.md",
             "content/rest/quickstart.md",
             "content/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::54877",
           "ndcg_at_10": 0.5,
           "rank": 3,
@@ -740,9 +863,11 @@
             "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md",
             "content/github-cli/github-cli/using-multiple-accounts.md",
             "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::60023",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -756,9 +881,11 @@
             "content/get-started/using-git/about-git-rebase.md",
             "content/get-started/using-github/github-flow.md",
             "content/communities/documenting-your-project-with-wikis/viewing-a-wikis-history-of-changes.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::73522",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -772,9 +899,11 @@
             "content/code-security/how-tos/view-and-interpret-data/change-used-by-data.md",
             "content/organizations/collaborating-with-groups-in-organizations/viewing-insights-for-dependencies-in-your-organization.md",
             "content/organizations/managing-organization-settings/renaming-an-organization.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::77614",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -788,9 +917,11 @@
             "content/pull-requests/reference/stacked-pull-requests.md",
             "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md",
             "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-stacked-pull-requests.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::85000",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -804,9 +935,11 @@
             "content/copilot/concepts/agents/copilot-cli/chronicle.md",
             "content/get-started/using-github/communicating-on-github.md",
             "content/support/sharing-feedback-with-github.md"
-          ]
+          ],
+          "truncated": false
         },
         {
+          "fetched": 30,
           "id": "github-docs::88452",
           "ndcg_at_10": -0.0,
           "rank": null,
@@ -822,7 +955,8 @@
             "content/site-policy/other-site-policies/github-account-recovery-policy.md",
             "content/get-started/learning-about-github/faq-about-changes-to-githubs-plans.md",
             "content/copilot/tutorials/vibe-coding.md"
-          ]
+          ],
+          "truncated": false
         }
       ],
       "run": "lexical (raw only)",
