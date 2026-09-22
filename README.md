@@ -113,7 +113,7 @@ Watcher ─► Parser ─► Section diff ─► Planner ─► Workers ─► V
 - **Section diff**: a blake3 hash per section. Unchanged sections never go to the LLM.
 - **Workers**: an adaptive pool against the Messages API (or a local OpenAI-compatible server) with a replaced system prompt, structured output, and a JSON schema. Concurrency ramps up on success and halves on rate limits; failing rounds back off.
 - **Validator**: every extracted date and entity must quote an `evidence` substring that exists in the section, or it is dropped. Metadata is never hallucinated into the index.
-- **Index**: SQLite with FTS5 over cards, FTS5 over raw section text, and card embeddings from a small local ONNX model (`bge-small-en-v1.5`, 33 MB, downloaded once, never inside a query) scanned from Rust, fused with reciprocal rank fusion and a recency prior. Lexical search answers in a few milliseconds; hybrid adds the query embedding (≈ 50 ms). On the golden set hybrid recall@5 is 0.98 against 0.88 lexical ([benchmarks](docs/benchmarks.md)).
+- **Index**: SQLite with FTS5 over cards, FTS5 over raw section text, and card embeddings from a small local ONNX model (`bge-small-en-v1.5`, 33 MB, downloaded once, never inside a query) scanned from Rust, fused with reciprocal rank fusion and a recency prior. Lexical search answers in a few milliseconds; hybrid adds the query embedding (≈ 50 ms). On the golden set hybrid success@5 is 0.98 against 0.88 lexical ([benchmarks](docs/benchmarks.md)).
 - **MCP**: `mda_search`, `mda_card`, `mda_open`, `mda_timeline`, `mda_recent`, `mda_stale`, `mda_status`, served by the same binary (`mda mcp`).
 
 Full design: [`docs/project-plan.md`](docs/project-plan.md).

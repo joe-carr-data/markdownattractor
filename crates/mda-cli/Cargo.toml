@@ -15,6 +15,11 @@ categories.workspace = true
 name = "mda"
 path = "src/main.rs"
 
+[features]
+default = ["embeddings"]
+# Forwarded to mda-core: build without local embeddings on targets ONNX Runtime does not ship for.
+embeddings = ["mda-core/embeddings"]
+
 [lints]
 workspace = true
 

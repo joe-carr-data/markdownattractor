@@ -11,6 +11,12 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[features]
+default = ["embeddings"]
+# Local embeddings through fastembed + a statically linked ONNX Runtime (ADR-0004). Off, the
+# binary builds on targets without prebuilt ONNX binaries (Intel macOS) and search is lexical.
+embeddings = ["dep:fastembed"]
+
 [lints]
 workspace = true
 
@@ -31,7 +37,7 @@ tokio-util.workspace = true
 reqwest.workspace = true
 notify.workspace = true       # ADR-0003
 interprocess.workspace = true # ADR-0003
-fastembed.workspace = true    # ADR-0004
+fastembed = { workspace = true, optional = true } # ADR-0004, feature `embeddings`
 rmcp.workspace = true         # ADR-0004
 
 [dev-dependencies]

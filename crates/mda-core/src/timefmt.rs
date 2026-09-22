@@ -1,6 +1,6 @@
 //! Time parsing and rendering shared by the CLI and the MCP server.
 
-use jiff::{Span, Timestamp, ToSpan};
+use jiff::{Span, Timestamp};
 
 use crate::{Error, Result};
 
@@ -11,15 +11,24 @@ pub fn parse_time(s: &str) -> Result<Timestamp> {
     let s = s.trim();
     let bad = |msg: String| Error::Config(msg);
     if let Some((num, unit)) = split_relative(s) {
+        // Every step is fallible: a huge number must be an error, never a panic (the MCP
+        // server runs with `panic = "abort"` and takes these strings from tool arguments).
         let n: i64 = num.parse().map_err(|_| bad(format!("bad number in {s:?}")))?;
+        let too_big = || bad(format!("{s:?} is too far back"));
         let span: Span = match unit {
-            "m" | "min" => n.minutes(),
-            "h" | "hr" | "hour" | "hours" => n.hours(),
-            "d" | "day" | "days" => (n * 24).hours(),
-            "w" | "week" | "weeks" => (n * 24 * 7).hours(),
+            "m" | "min" => Span::new().try_minutes(n).map_err(|_| too_big())?,
+            "h" | "hr" | "hour" | "hours" => Span::new().try_hours(n).map_err(|_| too_big())?,
+            "d" | "day" | "days" => {
+                let hours = n.checked_mul(24).ok_or_else(too_big)?;
+                Span::new().try_hours(hours).map_err(|_| too_big())?
+            }
+            "w" | "week" | "weeks" => {
+                let hours = n.checked_mul(24 * 7).ok_or_else(too_big)?;
+                Span::new().try_hours(hours).map_err(|_| too_big())?
+            }
             _ => return Err(bad(format!("unknown time unit {unit:?} in {s:?} (use m, h, d, w)"))),
         };
-        return Timestamp::now().checked_sub(span).map_err(|e| bad(e.to_string()));
+        return Timestamp::now().checked_sub(span).map_err(|_| too_big());
     }
     if let Ok(ts) = s.parse::<Timestamp>() {
         return Ok(ts);
@@ -74,6 +83,18 @@ mod tests {
         assert!(parse_time("2026-09-21T10:00:00Z").is_ok());
         assert!(parse_time("yesterday").is_err());
         assert_eq!(humanize_age(now), "just now");
-        assert_eq!(humanize_age(now - 90.minutes()), "1 hour ago");
+        assert_eq!(humanize_age(now - jiff::SignedDuration::from_mins(90)), "1 hour ago");
+    }
+
+    #[test]
+    fn absurd_durations_are_errors_not_panics() {
+        for s in [
+            "9223372036854775807h",
+            "9223372036854775807d",
+            "999999999999999w",
+            "99999999999999999999m",
+        ] {
+            assert!(parse_time(s).is_err(), "{s}");
+        }
     }
 }

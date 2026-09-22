@@ -139,9 +139,11 @@ pub struct EmbeddingStatus {
     pub carded: u64,
 }
 
-/// The server: one engine, one optional embedder.
+/// The server: one engine, one optional embedder. Engine work (SQLite, file reads, the
+/// query embedding) is blocking, so every tool runs it on the blocking thread pool through
+/// the private `blocking` helper and the async runtime stays free to answer other requests.
 pub struct McpServer {
-    engine: Mutex<Engine>,
+    engine: Arc<Mutex<Engine>>,
     embedder: Option<Arc<dyn Embedder>>,
 }
 
@@ -165,17 +167,56 @@ fn parse_opt_time(s: Option<&str>) -> std::result::Result<Option<jiff::Timestamp
         .map_err(|e| McpError::invalid_params(e.to_string(), None))
 }
 
+fn embedding_status(
+    engine: &Engine,
+    embedder: Option<&dyn Embedder>,
+) -> crate::Result<EmbeddingStatus> {
+    let cfg: &Config = engine.config();
+    let Some(e) = embedder else {
+        return Ok(EmbeddingStatus {
+            setting: cfg.embeddings,
+            model: None,
+            ready: false,
+            embedded: 0,
+            carded: 0,
+        });
+    };
+    let counts = engine.store().embedding_counts(e.model())?;
+    Ok(EmbeddingStatus {
+        setting: cfg.embeddings,
+        model: Some(e.model().to_owned()),
+        ready: e.ready(),
+        embedded: counts.embedded,
+        carded: counts.carded,
+    })
+}
+
 #[tool_router]
 impl McpServer {
     /// Open the engine for `root` and build the embedder the config asks for.
     pub fn open(root: &Path) -> crate::Result<Self> {
         let engine = Engine::open(root)?;
         let embedder = embed::embedder_for(engine.config());
-        Ok(Self { engine: Mutex::new(engine), embedder })
+        Ok(Self { engine: Arc::new(Mutex::new(engine)), embedder })
     }
 
-    fn engine(&self) -> MutexGuard<'_, Engine> {
-        self.engine.lock().unwrap_or_else(PoisonError::into_inner)
+    /// Run `f` with the engine on the blocking pool.
+    async fn blocking<T, F>(&self, f: F) -> std::result::Result<T, McpError>
+    where
+        T: Send + 'static,
+        F: FnOnce(&mut Engine, Option<&dyn Embedder>) -> std::result::Result<T, McpError>
+            + Send
+            + 'static,
+    {
+        let engine = Arc::clone(&self.engine);
+        let embedder = self.embedder.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut guard: MutexGuard<'_, Engine> =
+                engine.lock().unwrap_or_else(PoisonError::into_inner);
+            f(&mut guard, embedder.as_deref())
+        })
+        .await
+        .map_err(|e| internal(format!("tool task failed: {e}")))?
     }
 
     /// Hybrid search over the markdown index: cards, raw text and card vectors fused, most
@@ -183,7 +224,7 @@ impl McpServer {
     /// range, a one-line tldr (or a raw snippet when the section has no card yet) and when it
     /// last changed.
     #[tool(name = "mda_search")]
-    fn mda_search(
+    async fn mda_search(
         &self,
         Parameters(p): Parameters<SearchParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
@@ -195,23 +236,32 @@ impl McpServer {
             path_prefix: p.path_prefix.clone(),
             ..SearchOptions::default()
         };
-        let engine = self.engine();
-        let hits = search::search_with(engine.store(), &p.query, &opts, self.embedder.as_deref())
-            .map_err(internal)?;
+        let query = p.query.clone();
+        let hits = self
+            .blocking(move |engine, embedder| {
+                search::search_with(engine.store(), &query, &opts, embedder).map_err(internal)
+            })
+            .await?;
         structured(&serde_json::json!({ "query": p.query, "hits": hits }))
     }
 
     /// The full card of a section: tldr, summary, keywords, questions it answers, grounded
     /// dates and entities, decisions, action items, and how it was produced.
     #[tool(name = "mda_card")]
-    fn mda_card(
+    async fn mda_card(
         &self,
         Parameters(p): Parameters<SectionParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        let engine = self.engine();
-        let s = engine.store().section(&p.section_id).map_err(internal)?.ok_or_else(|| {
-            McpError::invalid_params(format!("no section {}", p.section_id), None)
-        })?;
+        let id = p.section_id.clone();
+        let s = self
+            .blocking(move |engine, _| {
+                engine
+                    .store()
+                    .section(&id)
+                    .map_err(internal)?
+                    .ok_or_else(|| McpError::invalid_params(format!("no section {id}"), None))
+            })
+            .await?;
         structured(&CardView {
             section_id: s.section_id,
             rel_path: s.rel_path,
@@ -231,51 +281,57 @@ impl McpServer {
     /// the file changed since it was indexed, the current lines are returned with stale=true
     /// and `section_id` is the section's current id.
     #[tool(name = "mda_open")]
-    fn mda_open(
+    async fn mda_open(
         &self,
         Parameters(p): Parameters<SectionParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        let opened = self.engine().open_section(&p.section_id).map_err(|e| match e {
-            Error::NotFound(m) => McpError::invalid_params(m, None),
-            other => internal(other),
-        })?;
+        let id = p.section_id.clone();
+        let opened = self
+            .blocking(move |engine, _| {
+                engine.open_section(&id).map_err(|e| match e {
+                    Error::NotFound(m) => McpError::invalid_params(m, None),
+                    other => internal(other),
+                })
+            })
+            .await?;
         structured(&opened)
     }
 
     /// What was created, changed, renamed or deleted in a time window, oldest first, with
     /// document paths.
     #[tool(name = "mda_timeline")]
-    fn mda_timeline(
+    async fn mda_timeline(
         &self,
         Parameters(p): Parameters<TimelineParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
+        let since = parse_opt_time(p.since.as_deref())?;
+        let until = parse_opt_time(p.until.as_deref())?;
+        let limit = p.limit.unwrap_or(200).clamp(1, 2000);
+        let prefix = p.path_prefix.clone();
         let entries = self
-            .engine()
-            .timeline(
-                parse_opt_time(p.since.as_deref())?,
-                parse_opt_time(p.until.as_deref())?,
-                p.path_prefix.as_deref(),
-                p.limit.unwrap_or(200).clamp(1, 2000),
-            )
-            .map_err(internal)?;
+            .blocking(move |engine, _| {
+                engine.timeline(since, until, prefix.as_deref(), limit).map_err(internal)
+            })
+            .await?;
         structured(&entries)
     }
 
     /// The most recently updated documents with their section and pending counts.
     #[tool(name = "mda_recent")]
-    fn mda_recent(
+    async fn mda_recent(
         &self,
         Parameters(p): Parameters<RecentParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        let docs = self.engine().recent(p.n.unwrap_or(10).clamp(1, 200)).map_err(internal)?;
+        let n = p.n.unwrap_or(10).clamp(1, 200);
+        let docs = self.blocking(move |engine, _| engine.recent(n).map_err(internal)).await?;
         structured(&docs)
     }
 
     /// Documents whose index is not final: sections still waiting for a card, failed ones,
     /// or files changed on disk since they were indexed. Empty when the daemon is keeping up.
     #[tool(name = "mda_stale")]
-    fn mda_stale(&self) -> std::result::Result<CallToolResult, McpError> {
-        let stale = self.engine().stale().map_err(internal)?;
+    async fn mda_stale(&self) -> std::result::Result<CallToolResult, McpError> {
+        let stale = self.blocking(|engine, _| engine.stale().map_err(internal)).await?;
         structured(&stale)
     }
 
@@ -283,37 +339,15 @@ impl McpServer {
     /// daemon is running.
     #[tool(name = "mda_status")]
     async fn mda_status(&self) -> std::result::Result<CallToolResult, McpError> {
-        let (root, counts, cfg) = {
-            let engine = self.engine();
-            (
-                engine.root().to_path_buf(),
-                engine.store().counts().map_err(internal)?,
-                engine.config().clone(),
-            )
-        };
-        let embeddings = self.embedding_status(&cfg).map_err(internal)?;
+        let (root, counts, embeddings) = self
+            .blocking(|engine, embedder| {
+                let counts = engine.store().counts().map_err(internal)?;
+                let embeddings = embedding_status(engine, embedder).map_err(internal)?;
+                Ok((engine.root().to_path_buf(), counts, embeddings))
+            })
+            .await?;
         let daemon = live_status(&root).await;
         structured(&StatusView { root, counts, embeddings, daemon })
-    }
-
-    fn embedding_status(&self, cfg: &Config) -> crate::Result<EmbeddingStatus> {
-        let Some(e) = &self.embedder else {
-            return Ok(EmbeddingStatus {
-                setting: cfg.embeddings,
-                model: None,
-                ready: false,
-                embedded: 0,
-                carded: 0,
-            });
-        };
-        let counts = self.engine().store().embedding_counts(e.model())?;
-        Ok(EmbeddingStatus {
-            setting: cfg.embeddings,
-            model: Some(e.model().to_owned()),
-            ready: e.ready(),
-            embedded: counts.embedded,
-            carded: counts.carded,
-        })
     }
 }
 

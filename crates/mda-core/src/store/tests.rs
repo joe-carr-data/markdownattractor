@@ -555,7 +555,7 @@ fn embeddings_round_trip_live_filter_and_counts() {
     assert!(store.vector_set("m").unwrap().is_empty());
 
     // One card, no vector yet: it is what needs embedding.
-    let todo = store.cards_without_embedding("m", 10).unwrap();
+    let todo = store.cards_without_embedding("m", None, 10).unwrap();
     assert_eq!(todo.len(), 1);
     assert_eq!(todo[0].section_hash, h1);
     assert_eq!(todo[0].title.as_deref(), Some("Alpha"));
@@ -568,14 +568,15 @@ fn embeddings_round_trip_live_filter_and_counts() {
     assert_eq!(set.dim, 2);
     assert_eq!(set.hashes, vec![h1.clone()]);
     assert!((set.row(0)[0] - 0.6).abs() < 1e-6 && (set.row(0)[1] - 0.8).abs() < 1e-6);
-    assert!(store.cards_without_embedding("m", 10).unwrap().is_empty());
+    assert!(store.cards_without_embedding("m", None, 10).unwrap().is_empty());
     assert!(store.vector_set("other-model").unwrap().is_empty(), "model filter");
 
     // Replace is fine; a second card shows up as pending work; counts add up.
     store.put_embedding(&h1, "m", &[1.0, 0.0]).unwrap();
     assert_eq!(store.vector_set("m").unwrap().row(0), &[1.0, 0.0]);
     store.attach_summary(&h2, &summary("t2", "b2"), &provenance(2), &Usage::default()).unwrap();
-    assert_eq!(store.cards_without_embedding("m", 10).unwrap()[0].section_hash, h2);
+    assert_eq!(store.cards_without_embedding("m", None, 10).unwrap()[0].section_hash, h2);
+    assert!(store.cards_without_embedding("m", Some(&h2), 10).unwrap().is_empty(), "cursor");
     let c = store.embedding_counts("m").unwrap();
     assert_eq!((c.embedded, c.carded), (1, 2));
 

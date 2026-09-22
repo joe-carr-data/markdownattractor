@@ -1057,23 +1057,45 @@ impl Store {
         until: Option<Timestamp>,
         limit: usize,
     ) -> Result<Vec<Event>> {
+        Ok(self
+            .timeline_with_paths(since, until, None, limit)?
+            .into_iter()
+            .map(|(e, _)| e)
+            .collect())
+    }
+
+    /// Like [`Store::timeline`], with each event's document path (tombstoned or not) and an
+    /// optional path prefix filter applied in SQL, before the limit.
+    pub fn timeline_with_paths(
+        &self,
+        since: Option<Timestamp>,
+        until: Option<Timestamp>,
+        path_prefix: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<(Event, String)>> {
         let mut stmt = self.conn.prepare(
-            "SELECT at, kind, doc_id, section_id, detail FROM events
-             WHERE (?1 IS NULL OR at >= ?1) AND (?2 IS NULL OR at < ?2)
-             ORDER BY at, id LIMIT ?3",
+            "SELECT e.at, e.kind, e.doc_id, e.section_id, e.detail, COALESCE(d.rel_path, e.doc_id)
+             FROM events e LEFT JOIN docs d ON d.doc_id = e.doc_id
+             WHERE (?1 IS NULL OR e.at >= ?1) AND (?2 IS NULL OR e.at < ?2)
+               AND (?4 IS NULL OR substr(d.rel_path, 1, length(?4)) = ?4)
+             ORDER BY e.at, e.id LIMIT ?3",
         )?;
+        let prefix = path_prefix.map(|p| p.trim_start_matches("./").to_owned());
         let rows = stmt.query_map(
-            params![since.map(fmt_ts), until.map(fmt_ts), to_i64(limit as u64)],
+            params![since.map(fmt_ts), until.map(fmt_ts), to_i64(limit as u64), prefix],
             |r| {
                 let kind: String = r.get(1)?;
-                Ok(Event {
-                    at: r.get(0)?,
-                    kind: EventKind::parse(&kind)
-                        .ok_or_else(|| bad_column(1, format!("unknown event kind {kind}")))?,
-                    doc_id: r.get(2)?,
-                    section_id: r.get(3)?,
-                    detail: r.get(4)?,
-                })
+                Ok((
+                    Event {
+                        at: r.get(0)?,
+                        kind: EventKind::parse(&kind)
+                            .ok_or_else(|| bad_column(1, format!("unknown event kind {kind}")))?,
+                        doc_id: r.get(2)?,
+                        section_id: r.get(3)?,
+                        detail: r.get(4)?,
+                    },
+                    r.get(5)?,
+                ))
             },
         )?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
@@ -1187,28 +1209,38 @@ impl Store {
         Ok(set)
     }
 
-    /// Cards of live sections that have no vector for `model` yet, up to `limit`.
-    pub fn cards_without_embedding(&self, model: &str, limit: usize) -> Result<Vec<CardText>> {
+    /// Cards of live sections that have no vector for `model` yet, up to `limit`, in
+    /// section-hash order starting after `after` (keyset pagination: a backfill walks the
+    /// corpus once instead of rescanning it for every batch). The context fields come from
+    /// the lowest section id carrying the hash.
+    pub fn cards_without_embedding(
+        &self,
+        model: &str,
+        after: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<CardText>> {
         let mut stmt = self.conn.prepare(
             "SELECT m.section_hash, d.title, s.heading_path, m.summary
              FROM summaries m
-             JOIN sections s ON s.section_hash = m.section_hash
+             JOIN sections s ON s.section_id =
+                 (SELECT MIN(section_id) FROM sections WHERE section_hash = m.section_hash)
              JOIN docs d ON d.doc_id = s.doc_id
              WHERE m.state = 'summarized' AND m.summary IS NOT NULL
+               AND m.section_hash > ?3
                AND NOT EXISTS (SELECT 1 FROM embeddings e
                                WHERE e.section_hash = m.section_hash AND e.model = ?1)
-             GROUP BY m.section_hash
-             ORDER BY s.section_id
+             ORDER BY m.section_hash
              LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![model, to_i64(limit as u64)], |r| {
-            Ok(CardText {
-                section_hash: r.get(0)?,
-                title: r.get(1)?,
-                heading_path: json_col(r, 2)?,
-                summary: json_col(r, 3)?,
-            })
-        })?;
+        let rows =
+            stmt.query_map(params![model, to_i64(limit as u64), after.unwrap_or("")], |r| {
+                Ok(CardText {
+                    section_hash: r.get(0)?,
+                    title: r.get(1)?,
+                    heading_path: json_col(r, 2)?,
+                    summary: json_col(r, 3)?,
+                })
+            })?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 

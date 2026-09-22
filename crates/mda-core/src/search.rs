@@ -226,7 +226,19 @@ fn lexical_lists(
         })
     };
     let first = lists(&and_expr)?;
-    if first.cards.is_empty() && first.raw.is_empty() && opts.or_fallback {
+    // Fall back when nothing *eligible* matched: an AND hit outside the time or path filter
+    // must not hide OR hits inside it.
+    let any_eligible = first
+        .cards
+        .iter()
+        .chain(&first.raw)
+        .map(|h| h.section_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .try_fold(false, |found, id| -> Result<bool> {
+            Ok(found || store.section(id)?.is_some_and(|s| passes(&s, opts)))
+        })?;
+    if !any_eligible && opts.or_fallback {
         let or_expr = or_expression(query);
         if or_expr != and_expr && !or_expr.is_empty() {
             return Ok((lists(&or_expr)?, true));
@@ -253,7 +265,14 @@ fn vector_list(
         return Ok(Vec::new());
     }
     let Some(index) = VectorIndex::load(store, embedder.model())? else { return Ok(Vec::new()) };
-    let mut q = embedder.embed(&[query.to_owned()])?;
+    // A broken model must not take lexical search down with it: log, answer lexical.
+    let mut q = match embedder.embed(&[query.to_owned()]) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(error = %e, "query embedding failed; lexical only");
+            return Ok(Vec::new());
+        }
+    };
     let Some(qv) = q.pop() else { return Ok(Vec::new()) };
     Ok(index.top_k(&qv, fetch))
 }
@@ -433,7 +452,11 @@ pub fn explain(
     embedder: Option<&dyn Embedder>,
 ) -> Result<Explain> {
     let query = query.trim();
-    let k = opts.k.max(1);
+    // Same candidate depth as the search itself, so every fused winner is visible in the
+    // list that produced it.
+    let filtered = opts.since.is_some() || opts.until.is_some() || opts.path_prefix.is_some();
+    let k =
+        if filtered { opts.k.saturating_mul(4).max(200) } else { opts.k.saturating_mul(4).max(16) };
     let (lexical, via_or_fallback) = lexical_lists(store, query, k, opts)?;
     let vector_note = match embedder {
         _ if !opts.vectors => Some("vectors disabled for this query".to_owned()),
@@ -585,6 +608,45 @@ mod tests {
         let hits = search_with(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
         assert_eq!(hits[0].section_id, rollback_id);
         assert!(hits[0].vector_score.unwrap() > hits[1].vector_score.unwrap());
+    }
+
+    #[test]
+    fn or_fallback_decision_ignores_hits_the_filters_exclude() {
+        let (store, _, _) = carded_store();
+        // "flour deployctl": AND matches nothing; OR matches Pancakes (flour) and Rollback.
+        let hits = search(&store, "flour deployctl", &SearchOptions::default()).unwrap();
+        assert_eq!(hits.len(), 2);
+        assert!(hits[0].via_or_fallback);
+        // An AND hit that the time filter excludes must not suppress the fallback decision,
+        // and with nothing eligible either way the result is simply empty.
+        let future = Timestamp::from_second(1_800_000_000).unwrap();
+        let opts = SearchOptions { since: Some(future), ..SearchOptions::default() };
+        assert!(search(&store, "deployctl", &opts).unwrap().is_empty(), "nothing is that new");
+    }
+
+    struct Broken;
+    impl Embedder for Broken {
+        fn model(&self) -> &'static str {
+            "fixed"
+        }
+        fn dim(&self) -> usize {
+            2
+        }
+        fn ready(&self) -> bool {
+            true
+        }
+        fn embed(&self, _: &[String]) -> Result<Vec<Vec<f32>>> {
+            Err(crate::Error::Embed("corrupt model".into()))
+        }
+    }
+
+    #[test]
+    fn a_broken_embedder_leaves_search_lexical() {
+        let (store, rollback_id, _) = carded_store();
+        let hits =
+            search_with(&store, "deployctl", &SearchOptions::default(), Some(&Broken)).unwrap();
+        assert_eq!(hits[0].section_id, rollback_id);
+        assert!(!hits[0].vector);
     }
 
     #[test]

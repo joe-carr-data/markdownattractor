@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "text-processing"]
 
 [workspace.dependencies]
 # internal
-mda-core = { path = "crates/mda-core", version = "0.1.0" }
+mda-core = { path = "crates/mda-core", version = "0.1.0", default-features = false }
 
 # runtime
 tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "process", "io-util", "sync", "time", "fs", "signal"] }

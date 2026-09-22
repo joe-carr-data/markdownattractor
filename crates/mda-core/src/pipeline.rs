@@ -142,6 +142,17 @@ pub struct SummarizeReport {
     pub pool: PoolStats,
 }
 
+/// Largest file `stale()` will parse to compare content; bigger files are reported unreadable.
+pub const MAX_STALE_PARSE_BYTES: u64 = 32 * 1024 * 1024;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DiskState {
+    Fresh,
+    Changed,
+    Missing,
+    Unreadable,
+}
+
 /// What one embedding pass did.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmbedReport {
@@ -169,6 +180,9 @@ pub struct StaleDoc {
     pub changed_on_disk: bool,
     /// The file is gone but the document is still live (no rescan since).
     pub missing: bool,
+    /// The file could not be checked (permissions, not a regular file, outside the root, or
+    /// too large to parse here); its state is unknown, not "fresh".
+    pub unreadable: bool,
 }
 
 /// A recently updated document, for `mda recent`.
@@ -666,12 +680,12 @@ impl Engine {
         let started = std::time::Instant::now();
         let model = embedder.model();
         let mut done = 0usize;
+        let mut after: Option<String> = None;
         while done < limit {
             let batch = EMBED_BATCH.min(limit - done);
-            let cards = self.store.cards_without_embedding(model, batch)?;
-            if cards.is_empty() {
-                break;
-            }
+            let cards = self.store.cards_without_embedding(model, after.as_deref(), batch)?;
+            let Some(last) = cards.last() else { break };
+            after = Some(last.section_hash.clone());
             let texts: Vec<String> = cards
                 .iter()
                 .map(|c| embed_text(c.title.as_deref(), &c.heading_path, &c.summary))
@@ -709,52 +723,68 @@ impl Engine {
     }
 
     /// Documents whose index is not final. Files newer on disk than their indexed content are
-    /// parsed and compared by hash, so a `touch` alone does not count.
+    /// parsed and compared by hash, so a `touch` alone does not count; a file with an older
+    /// or equal mtime is trusted (a backdated edit is caught by the next rescan). Every path
+    /// goes through [`Engine::safe_join`] and must be a regular file under
+    /// [`MAX_STALE_PARSE_BYTES`], or it is reported `unreadable` rather than assumed fresh.
     pub fn stale(&self) -> Result<Vec<StaleDoc>> {
         let mut by_path: std::collections::BTreeMap<String, StaleDoc> =
             std::collections::BTreeMap::new();
+        let blank = |rel_path: &str| StaleDoc {
+            rel_path: rel_path.to_owned(),
+            pending: 0,
+            failed: 0,
+            changed_on_disk: false,
+            missing: false,
+            unreadable: false,
+        };
         for (doc, pending, failed) in self.store.documents_with_open_sections()? {
-            by_path.insert(
-                doc.rel_path.clone(),
-                StaleDoc {
-                    rel_path: doc.rel_path,
-                    pending,
-                    failed,
-                    changed_on_disk: false,
-                    missing: false,
-                },
-            );
+            let entry = by_path.entry(doc.rel_path.clone()).or_insert_with(|| blank(&doc.rel_path));
+            entry.pending = pending;
+            entry.failed = failed;
         }
         for doc in self.store.documents()? {
-            let abs = self.root.join(&doc.rel_path);
-            let (changed, missing) = match std::fs::metadata(&abs) {
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (false, true),
-                Err(_) => (false, false),
-                Ok(meta) => {
-                    let newer = meta
-                        .modified()
-                        .ok()
-                        .and_then(|t| Timestamp::try_from(t).ok())
-                        .is_some_and(|m| m > doc.updated_at);
-                    let changed = newer
-                        && std::fs::read_to_string(&abs)
-                            .is_ok_and(|t| markdown::parse_str(&t).hash != doc.content_hash);
-                    (changed, false)
-                }
-            };
-            if changed || missing {
-                let entry = by_path.entry(doc.rel_path.clone()).or_insert(StaleDoc {
-                    rel_path: doc.rel_path.clone(),
-                    pending: 0,
-                    failed: 0,
-                    changed_on_disk: false,
-                    missing: false,
-                });
-                entry.changed_on_disk = changed;
-                entry.missing = missing;
+            let state = self.disk_state(&doc);
+            if state == DiskState::Fresh {
+                continue;
+            }
+            let entry = by_path.entry(doc.rel_path.clone()).or_insert_with(|| blank(&doc.rel_path));
+            match state {
+                DiskState::Changed => entry.changed_on_disk = true,
+                DiskState::Missing => entry.missing = true,
+                DiskState::Unreadable => entry.unreadable = true,
+                DiskState::Fresh => {}
             }
         }
         Ok(by_path.into_values().collect())
+    }
+
+    fn disk_state(&self, doc: &crate::store::StoredDocument) -> DiskState {
+        let Ok(abs) = self.safe_join(&doc.rel_path) else {
+            // Not resolvable inside the root: gone, or replaced by a link pointing elsewhere.
+            return if self.root.join(&doc.rel_path).symlink_metadata().is_ok() {
+                DiskState::Unreadable
+            } else {
+                DiskState::Missing
+            };
+        };
+        let Ok(meta) = std::fs::symlink_metadata(&abs) else { return DiskState::Missing };
+        if !meta.is_file() || meta.len() > MAX_STALE_PARSE_BYTES {
+            return DiskState::Unreadable;
+        }
+        let newer = meta
+            .modified()
+            .ok()
+            .and_then(|t| Timestamp::try_from(t).ok())
+            .is_some_and(|m| m > doc.updated_at);
+        if !newer {
+            return DiskState::Fresh;
+        }
+        match std::fs::read_to_string(&abs) {
+            Ok(text) if markdown::parse_str(&text).hash != doc.content_hash => DiskState::Changed,
+            Ok(_) => DiskState::Fresh,
+            Err(_) => DiskState::Unreadable,
+        }
     }
 
     /// The `n` most recently updated documents.
@@ -779,7 +809,7 @@ impl Engine {
     }
 
     /// Store events in a window, oldest first, with document paths resolved and an optional
-    /// path prefix filter applied.
+    /// path prefix filter applied in the query, before the limit.
     pub fn timeline(
         &self,
         since: Option<Timestamp>,
@@ -787,38 +817,18 @@ impl Engine {
         path_prefix: Option<&str>,
         limit: usize,
     ) -> Result<Vec<TimelineEntry>> {
-        // Fetch deeper when filtering by path, since the filter runs after the store's limit.
-        let fetch = if path_prefix.is_some() { limit.saturating_mul(8).max(500) } else { limit };
-        let mut paths: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-        let mut out = Vec::new();
-        for ev in self.store.timeline(since, until, fetch)? {
-            let rel_path = if let Some(p) = paths.get(&ev.doc_id) {
-                p.clone()
-            } else {
-                let p = self
-                    .store
-                    .document(&ev.doc_id)?
-                    .map_or_else(|| ev.doc_id.clone(), |d| d.rel_path);
-                paths.insert(ev.doc_id.clone(), p.clone());
-                p
-            };
-            if let Some(prefix) = path_prefix
-                && !rel_path.starts_with(prefix.trim_start_matches("./"))
-            {
-                continue;
-            }
-            out.push(TimelineEntry {
+        Ok(self
+            .store
+            .timeline_with_paths(since, until, path_prefix, limit)?
+            .into_iter()
+            .map(|(ev, rel_path)| TimelineEntry {
                 at: ev.at,
                 kind: ev.kind,
                 rel_path,
                 section_id: ev.section_id,
                 detail: ev.detail,
-            });
-            if out.len() == limit {
-                break;
-            }
-        }
-        Ok(out)
+            })
+            .collect())
     }
 
     /// Return the exact source lines of a section, re-checking the file at read time.
