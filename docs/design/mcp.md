@@ -4,7 +4,7 @@ As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *
 
 ## Shape
 
-`mda mcp` serves the index over stdio with `rmcp` 3. The plugin declares it in `.mcp.json` (`${CLAUDE_PLUGIN_ROOT}/scripts/mda mcp`, `MDA_ROOT=${CLAUDE_PROJECT_DIR}`, `MDA_MODEL_DIR=${CLAUDE_PLUGIN_DATA}/models`), so Claude Code starts it with the plugin and the tools appear as `mcp__plugin_markdownattractor_markdownattractor__<tool>`. The root is `--root`, else `$MDA_ROOT`, else the nearest indexed ancestor of the working directory.
+`mda mcp` serves the index over stdio with `rmcp` 3. The plugin declares it in `.mcp.json` (`${CLAUDE_PLUGIN_ROOT}/scripts/mda mcp`, `MDA_ROOT=${CLAUDE_PROJECT_DIR}`, `MDA_MODEL_DIR=${CLAUDE_PLUGIN_DATA}/models`; the plugin reference substitutes these placeholders in an MCP stdio server's `command`, `args` and `env`), so Claude Code starts it with the plugin and the tools appear as `mcp__plugin_markdownattractor_markdownattractor__<tool>`. The root is `--root`, else `$MDA_ROOT`, else the nearest indexed ancestor of the working directory.
 
 One `Engine` behind a mutex, one optional embedder built from the config. stdout is the protocol channel; logs go to stderr. Results are `structured_content` (plus the same JSON as text) built from the CLI's own `--json` types, so a skill reading the CLI and a tool call see one format.
 
