@@ -1,5 +1,5 @@
 # STATUS (updated 2026-09-22 by Claude)
-**Start here after compaction: `docs/handoffs/2026-09-22-session3-final-handoff.md`.**
+**Start here after compaction: `docs/handoffs/2026-09-22-session4-handoff.md` (then the session-3 handoff for releases and recipes).**
 Phase: benchmarks — **B0a, B0b, the DocsQA adapter and the B2 ingestion gate done (100% coverage); cards for the four corpora next**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
