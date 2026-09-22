@@ -20,7 +20,7 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 
 ## What a hit carries
 
-`section_id`, `rel_path`, `heading_path`, `line_start`/`line_end`, `token_estimate`, `tldr` (when a card exists), `snippet` (first ~200 chars of the body, whitespace-collapsed), `score`, `matched` (cards / raw / both), `pending` (no card yet), `updated_at`. The CLI prints the exact `mda open <section_id>` to run next.
+`section_id`, `rel_path`, `heading_path`, `line_start`/`line_end`, `token_estimate`, `tldr` (when a card exists), `snippet` (first ~200 chars of the body, whitespace-collapsed; lines that are only a JSX/HTML tag, a tag's attribute lines, or an MDX `import`/`export` are skipped, see `design/ingestion.md`), `score`, `matched` (cards / raw / both), `pending` (no card yet), `updated_at`. The CLI prints the exact `mda open <section_id>` to run next.
 
 ## Reading source: `mda open`
 

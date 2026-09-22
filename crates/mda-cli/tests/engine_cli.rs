@@ -143,6 +143,50 @@ fn index_then_status_search_open_card() {
 }
 
 #[test]
+fn index_accepts_mdx_and_titles_it_from_front_matter() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(
+        root,
+        "guides/tabs.mdx",
+        "---\ntitle: Tabs guide\n---\n\nimport Tabs from '@theme/Tabs';\n\n<Tabs>\n<TabItem value=\"a\">\n## Install with pnpm\n\nRun pnpm add deployctl.\n</TabItem>\n</Tabs>\n",
+    );
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("indexed 1 file(s)"));
+    let out = mda()
+        .args(["--json", "search", "pnpm", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let hits = json_of(&out)["hits"].as_array().unwrap().clone();
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert_eq!(hits[0]["rel_path"], "guides/tabs.mdx");
+    assert_eq!(hits[0]["heading_path"], serde_json::json!(["Install with pnpm"]));
+    assert_eq!(hits[0]["line_start"], 9);
+    assert_eq!(
+        hits[0]["snippet"], "Run pnpm add deployctl.",
+        "tag-only lines stay out of the snippet"
+    );
+    let out = mda()
+        .args(["--json", "recent", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let recent = json_of(&out);
+    assert_eq!(recent["docs"][0]["title"], "Tabs guide", "{recent}");
+}
+
+#[test]
 fn open_reports_stale_after_edit() {
     let dir = root_with_docs();
     let root = dir.path();

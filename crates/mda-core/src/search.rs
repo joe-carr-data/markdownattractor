@@ -411,19 +411,64 @@ fn to_hit(
     }
 }
 
-/// Body text after the heading line, whitespace-collapsed, cut to ~200 chars.
+/// Body text after the heading line, whitespace-collapsed, cut to ~200 chars. Lines that
+/// carry no prose (a lone JSX/HTML tag, the attribute lines of a tag spread over several
+/// lines, an MDX `import`/`export` statement) are skipped so the snippet shows text, not
+/// markup; a line with words outside its tags is kept whole.
 fn snippet_of(text: &str) -> String {
-    let body: String = text
-        .lines()
-        .skip_while(|l| l.trim_start().starts_with('#'))
-        .flat_map(str::split_whitespace)
-        .collect::<Vec<_>>()
-        .join(" ");
+    let mut in_tag = false;
+    let mut words: Vec<&str> = Vec::new();
+    for line in text.lines().skip_while(|l| l.trim_start().starts_with('#')) {
+        let mut t = line.trim();
+        if in_tag {
+            // The tag ends at its first `>`; whatever follows on the line is prose.
+            let Some(end) = t.find('>') else { continue };
+            in_tag = false;
+            t = t[end + 1..].trim();
+        }
+        if opens_tag(t) && !t.contains('>') {
+            in_tag = true;
+            continue;
+        }
+        if !t.is_empty() && !is_markup_only(t) {
+            words.extend(t.split_whitespace());
+        }
+    }
+    let body = words.join(" ");
     let mut out: String = body.chars().take(200).collect();
     if body.chars().count() > 200 {
         out.push('…');
     }
     out
+}
+
+/// `<Tag`, `</Tag` or `<!--`: the start of markup, as opposed to `<` in prose ("a < b").
+fn opens_tag(t: &str) -> bool {
+    t.starts_with('<')
+        && t[1..].starts_with(|c: char| c.is_ascii_alphabetic() || c == '/' || c == '!')
+}
+
+/// A trimmed line that carries no prose: nothing but tags (`<Tabs>`, `</TabPanel>
+/// </Tabs>`, `<Figure />`), an MDX `import`/`export` statement, or a bare JSX brace.
+fn is_markup_only(t: &str) -> bool {
+    if t.starts_with("import ") || t.starts_with("export ") || t == "{" || t == "}" {
+        return true;
+    }
+    if !opens_tag(t) {
+        return false;
+    }
+    let mut depth = 0u32;
+    t.chars().all(|c| match c {
+        '<' => {
+            depth = depth.saturating_add(1);
+            true
+        }
+        '>' => {
+            depth = depth.saturating_sub(1);
+            true
+        }
+        _ => depth > 0 || c.is_whitespace(),
+    })
 }
 
 /// The three ranked lists behind a query and the fused result, for `mda explain`.
@@ -497,6 +542,24 @@ mod tests {
     #[test]
     fn rrf_decreases_with_rank() {
         assert!(rrf(0) > rrf(1) && rrf(1) > rrf(10));
+    }
+
+    #[test]
+    fn snippet_skips_markup_only_lines() {
+        let s = snippet_of(
+            "## Title\n\n<Tabs\n  scrollable\n  size=\"small\"\n>\n<TabPanel id=\"a\"> </TabPanel>\n\nprose here\n\n</TabPanel>\n</Tabs>\n",
+        );
+        assert_eq!(s, "prose here");
+        assert_eq!(
+            snippet_of("## T\n\nimport X from 'y'\n\n<Note>with text</Note>\nrun --to <sha>\n"),
+            "<Note>with text</Note> run --to <sha>"
+        );
+        // A tag closed mid-line keeps the prose after it; `<` in prose is not a tag.
+        assert_eq!(
+            snippet_of("# H\n<Note\n kind=\"tip\">Important prose\nFollowing prose.\na < b > c\n"),
+            "Important prose Following prose. a < b > c"
+        );
+        assert_eq!(snippet_of("# H\n<Note\n kind=\"tip\"\nnever closed\n"), "");
     }
 
     #[test]

@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- **`.mdx` ingestion** (`docs/design/ingestion.md`). The walker accepts `.mdx`; the parser excludes a leading block of `import`/`export` statements from sections the way it excludes front matter, keeps a heading that sits inside a JSX or HTML block without a blank line before it (CommonMark would swallow it), and falls back for the document title to front matter `title:` (YAML or TOML) and then to `export const title = "…"`. JSX, expressions and template tags stay as text. Search snippets skip markup-only lines. Checked on the four DocsQA-Repo corpora at their pinned commits: every heading kept, every page titled except partials. The search-first skill and the nudge hook cover `.mdx` too.
+
 ## [0.1.1] — 2026-09-22
 
 ### Fixed
