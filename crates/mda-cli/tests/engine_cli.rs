@@ -497,9 +497,17 @@ fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
     write(
         root,
         ".markdownattractor/config.toml",
-        "api_workspace_id = \"wrkspc_secret\"\nembeddings = \"off\"\n",
+        "api_workspace_id = \"wrkspc_secret\"\nembeddings = \"off\"\napi_base_url = \"https://bob:hunter2@api.example.com/v1\"\n",
     );
     mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    // A planted "log" that is a symlink to a document must be ignored by the log tail.
+    std::fs::create_dir_all(root.join(".markdownattractor/logs")).unwrap();
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(
+        root.join("docs/runbook.md"),
+        root.join(".markdownattractor/logs/daemon.2099-01-01.log"),
+    )
+    .unwrap();
     let out = mda()
         .args(["diagnostics", "--root"])
         .arg(root)
@@ -515,12 +523,21 @@ fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
     assert!(!text.contains("wrkspc_secret"), "workspace id redacted: {text}");
     assert!(!text.contains(root.to_str().unwrap()), "home redacted: {text}");
     let v = json_of(&out);
-    assert_eq!(v["config"]["api_workspace_id"], "<redacted>");
+    assert_eq!(v["config"]["api_workspace_id_set"], true);
+    assert!(v["config"].get("api_workspace_id").is_none(), "allowlisted view only");
+    assert_eq!(
+        v["config"]["api_base_url"], "https://api.example.com",
+        "credentials and path dropped"
+    );
+    assert!(!text.contains("hunter2"), "URL credential redacted: {text}");
     assert_eq!(v["root"], "~");
     assert_eq!(v["store"]["counts"]["docs"], 2);
     assert!(v["doctor"].as_array().unwrap().iter().any(|c| c["name"] == "backend"));
     assert!(v["daemon"].is_null());
     assert_eq!(v["mda_version"], env!("CARGO_PKG_VERSION"));
+    // The log tail comes from regular files only: a symlinked "log" pointing at a document
+    // is skipped, and nothing of that document appears.
+    assert!(!text.contains("deployctl"), "document content never leaks: {text}");
 
     let out_file = root.join("bundle.json");
     mda()
@@ -535,4 +552,29 @@ fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
     let v: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(&out_file).unwrap()).unwrap();
     assert_eq!(v["os"], std::env::consts::OS);
+    // Never overwrites (and therefore never truncates a symlink target).
+    mda()
+        .args(["diagnostics", "--out"])
+        .arg(&out_file)
+        .arg("--root")
+        .arg(root)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("does not exist"));
+}
+
+#[test]
+fn index_of_a_subdirectory_uses_the_enclosing_root() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    write(root, ".markdownattractor/config.toml", "ignore = [\"notes/\"]\n");
+    mda()
+        .args(["index", "--no-summarize"])
+        .arg(root.join("docs"))
+        .env("NO_COLOR", "1")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("is inside the indexed root"))
+        .stdout(predicate::str::contains("indexed 1 file(s)")); // notes/ stays ignored
+    assert!(!root.join("docs/.markdownattractor").exists(), "no second root was created");
 }

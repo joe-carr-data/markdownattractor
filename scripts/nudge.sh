@@ -6,7 +6,8 @@
 [ "${MARKDOWNATTRACTOR_WORKER:-0}" = "1" ] && exit 0
 set -u
 DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
-[ -f "$DATA/nudge.off" ] && exit 0
+# Same precedence as the launcher and `mda nudge --global`.
+[ -f "${MDA_NUDGE_FILE:-$DATA/nudge.off}" ] && exit 0
 
 input="$(cat 2>/dev/null || true)"
 [ -n "$input" ] || exit 0

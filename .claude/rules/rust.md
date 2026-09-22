@@ -40,3 +40,8 @@
 - A stopped run is not a failed section: cancel, stop and pool-stopping outcomes defer; only the model's answer or the validator fails a section.
 - Exclusivity is an OS file lock, never "does the socket answer".
 - Every file under `.markdownattractor/` is created through `config::write_private` / `state_dir`, which refuse symlinks.
+
+## From the 2026-09-22 Codex first-run review
+- A diagnostics bundle is an allowlist, not a redaction pass: export named fields, and push every free-form string (errors, log lines, check details) through one scrubber. Replacing the home prefix is not redaction.
+- Counts share a unit before they are compared: `sections` are rows, `summarized`/`pending` are distinct hashes.
+- A hook and the binary behind it resolve every path the same way (`MDA_MODEL_DIR`, `MDA_NUDGE_FILE`): one precedence, tested on both sides.

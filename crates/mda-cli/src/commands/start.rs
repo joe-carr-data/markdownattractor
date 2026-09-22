@@ -29,7 +29,7 @@ pub struct Args {
     #[arg(long)]
     pub no_example: bool,
     /// How long a first run may wait for the first cards before giving up on the example.
-    #[arg(long, default_value_t = 60, hide = true)]
+    #[arg(long, default_value_t = 60, hide = true, value_parser = clap::value_parser!(u64).range(0..=3600))]
     pub example_timeout: u64,
 }
 
@@ -181,20 +181,31 @@ fn wait_for_example(
     root: &Path,
     timeout: Duration,
 ) -> std::result::Result<Option<mda_core::pipeline::Example>, String> {
-    let deadline = Instant::now() + timeout;
+    let deadline = Instant::now().checked_add(timeout).ok_or("timeout out of range")?;
     let engine = Engine::open(root).map_err(|e| e.to_string())?;
     loop {
         let counts = engine.store().counts().map_err(|e| e.to_string())?;
-        let target = EXAMPLE_CARDS.min(counts.sections.max(1));
-        if counts.sections > 0 && counts.summarized >= target {
-            return engine.example().map_err(|e| e.to_string());
+        // `summarized` and `pending` count distinct hashes; `sections` counts rows. Two
+        // documents with the same content are one hash, so "done" is "nothing pending", and
+        // the card target only shortens the wait on a large root.
+        let work_done = counts.sections > 0 && counts.pending == 0;
+        let enough = counts.summarized >= EXAMPLE_CARDS;
+        if work_done || enough {
+            // A card without a usable question (heading-only, or an empty list) is not an
+            // example; keep polling while the daemon is still producing cards.
+            if let Some(ex) = engine.example().map_err(|e| e.to_string())? {
+                return Ok(Some(ex));
+            }
+            if work_done {
+                return Ok(None);
+            }
         }
         if Instant::now() >= deadline {
             return Err(format!(
-                "no cards after {}s ({} of {} sections carded); `mda status` shows progress",
+                "no usable card after {}s ({} carded, {} pending); `mda status` shows progress",
                 timeout.as_secs(),
                 counts.summarized,
-                counts.sections
+                counts.pending
             ));
         }
         std::thread::sleep(Duration::from_millis(500));

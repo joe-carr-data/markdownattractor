@@ -31,19 +31,9 @@ pub struct Args {
 
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
-    // `mda index .` or `mda index docs/` means "this directory is the root", not "this file".
-    let (root_arg, path) = match &args.path {
-        Some(p) if p.is_dir() => {
-            anyhow::ensure!(
-                args.root.is_none(),
-                "{} is a directory; pass either a directory or --root, not both",
-                p.display()
-            );
-            (Some(p.as_path()), None)
-        }
-        other => (args.root.as_deref(), other.as_deref()),
-    };
-    let root = super::resolve_root(root_arg)?;
+    let Target { root_arg, path, enclosing_note } = target_of(args)?;
+    let path = path.as_deref();
+    let root = super::resolve_root(root_arg.as_deref())?;
     let mut engine = Engine::open(&root).with_context(|| format!("opening {}", root.display()))?;
     let st = Style::auto();
 
@@ -51,6 +41,16 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         return delegate(args, path, &mut engine, json, &st);
     }
 
+    if let Some((dir, parent)) = &enclosing_note
+        && !json
+    {
+        println!(
+            "  {} {} is inside the indexed root {}; indexing that root",
+            st.dim("note:"),
+            dir.display(),
+            parent.display()
+        );
+    }
     let started = std::time::Instant::now();
     let report = match path {
         Some(p) => {
@@ -134,6 +134,52 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let failed =
         !report.errors.is_empty() || summarize.as_ref().is_some_and(|s| s.failed > 0 && s.ok == 0);
     Ok(if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS })
+}
+
+/// What `mda index [path]` should act on.
+struct Target {
+    root_arg: Option<PathBuf>,
+    path: Option<PathBuf>,
+    enclosing_note: Option<(PathBuf, PathBuf)>,
+}
+
+/// `mda index .` or `mda index docs/` means "this directory is the root", not "this file"; a
+/// directory inside an already indexed root means that root (its config and ignore rules
+/// apply), never a second, unconfigured index of the subtree.
+fn target_of(args: &Args) -> anyhow::Result<Target> {
+    match &args.path {
+        Some(p) if p.is_dir() => {
+            anyhow::ensure!(
+                args.root.is_none(),
+                "{} is a directory; pass either a directory or --root, not both",
+                p.display()
+            );
+            let dir = p.canonicalize().with_context(|| format!("resolving {}", p.display()))?;
+            Ok(match enclosing_root(&dir) {
+                Some(parent) if parent != dir => Target {
+                    root_arg: Some(parent.clone()),
+                    path: None,
+                    enclosing_note: Some((dir, parent)),
+                },
+                _ => Target { root_arg: Some(dir), path: None, enclosing_note: None },
+            })
+        }
+        other => {
+            Ok(Target { root_arg: args.root.clone(), path: other.clone(), enclosing_note: None })
+        }
+    }
+}
+
+/// The nearest ancestor of `dir` (itself included) that carries a state directory.
+fn enclosing_root(dir: &std::path::Path) -> Option<PathBuf> {
+    let mut d: Option<&std::path::Path> = Some(dir);
+    while let Some(p) = d {
+        if p.join(mda_core::config::STATE_DIR).is_dir() {
+            return Some(p.to_path_buf());
+        }
+        d = p.parent();
+    }
+    None
 }
 
 fn embed_after(

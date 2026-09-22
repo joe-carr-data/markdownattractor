@@ -91,7 +91,7 @@ fn start_status_index_pause_resume_stop() {
     assert_eq!(v["files"], 1);
     assert!(v["example"].is_null());
     assert!(
-        v["example_skipped"].as_str().unwrap().contains("no cards after 1s"),
+        v["example_skipped"].as_str().unwrap().contains("no usable card after 1s"),
         "{}",
         v["example_skipped"]
     );

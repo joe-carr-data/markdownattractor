@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - CI verified green on all three OSes on main.
 
 ## Next (max 3, in order)
-1. Codex review of the first-run PR, triage, merge.
+1. Merge PR #7 once CI is green on all three OSes.
 2. Release pipeline (plan §7 of the Phase 4 plan): ADR-0005, `release.yml` (five targets, `SHA256SUMS` as `bootstrap.sh` expects), `check-version.sh` in CI, `bump-version.sh`, dry run.
 3. A/B parity protocol (plan §11): questions with reference answers, runner, Sonnet grader, first numbers; only then a token-saving claim.
 
@@ -20,4 +20,4 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
-## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-phase2.md) — 17 findings, 14 fixed, 2 in part, 1 rejected with reason, 0 open
+## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-first-run.md) — 8 findings, 7 fixed, 1 in part, 0 open
