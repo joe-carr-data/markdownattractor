@@ -16,9 +16,16 @@ questions="${2:?questions.jsonl}"
 out="${3:?out dir}"
 runs="${4:-1}"
 model="${5:-sonnet}"
-mkdir -p "$out"
-mda="${MDA_BIN:-$(command -v mda || echo "$(dirname "$0")/../../target/release/mda")}"
+# Every path is resolved before the per-run `cd` into the corpus (a relative --out used to
+# land under the corpus, and a failed redirection left no row behind).
+[ -f "$questions" ] || { echo "questions file not found: $questions" >&2; exit 1; }
+questions="$(cd "$(dirname "$questions")" && pwd)/$(basename "$questions")"
+mkdir -p "$out"; out="$(cd "$out" && pwd)"
+# One run set per directory: appending to an old runs.jsonl would double-count (plan rule 0.3).
+[ ! -e "$out/runs.jsonl" ] || { echo "$out/runs.jsonl exists; use a fresh directory" >&2; exit 1; }
+mda="${MDA_BIN:-$(command -v mda || echo "$(cd "$(dirname "$0")/../.." && pwd)/target/release/mda")}"
 [ -x "$mda" ] || { echo "mda binary not found (set MDA_BIN)" >&2; exit 1; }
+mda="$(cd "$(dirname "$mda")" && pwd)/$(basename "$mda")"
 
 # Nested-session markers would make claude refuse to start from inside Claude Code.
 for v in $(env | grep -oE '^(CLAUDE_CODE_[A-Z_]*|CLAUDECODE|CLAUDE_PID|CLAUDE_PLUGIN_DATA|CLAUDE_PLUGIN_ROOT|CLAUDE_PROJECT_DIR|CLAUDE_EFFORT)'); do unset "$v"; done
@@ -26,7 +33,9 @@ for v in $(env | grep -oE '^(CLAUDE_CODE_[A-Z_]*|CLAUDECODE|CLAUDE_PID|CLAUDE_PL
 mcp_cfg="$out/mcp.json"
 jq -n --arg cmd "$mda" --arg root "$corpus" \
   '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: (env.HOME + "/.cache/markdownattractor/models")}}}}' > "$mcp_cfg"
-rules="${MDA_RULES:-$(dirname "$0")/../../skills/search-first/SKILL.md}"
+repo="$(cd "$(dirname "$0")/../.." && pwd)"
+rules="${MDA_RULES:-$repo/skills/search-first/SKILL.md}"
+[ -f "$rules" ] || { echo "rules file not found: $rules" >&2; exit 1; }
 
 common=(--print --setting-sources "" --no-session-persistence --model "$model" --max-turns 12
         --output-format stream-json --verbose --permission-mode dontAsk)
@@ -43,9 +52,12 @@ jq -c '.' "$questions" | while IFS= read -r qline; do
       log="$out/$id-$arm-$r.jsonl"
       if [ "$arm" = baseline ]; then args=("${baseline[@]}"); else args=("${withindex[@]}"); fi
       t0=$(date +%s.%N)
-      (cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$log" 2>"$log.err") || true
+      rc=0
+      (cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$log" 2>"$log.err") || rc=$?
       t1=$(date +%s.%N)
-      jq -c --arg id "$id" --arg arm "$arm" --argjson run "$r" --arg q "$q" \
+      # Fail loud (plan rule 0.3): a run without a result event is an error row, never a silent zero.
+      stderr_tail="$( (tail -c 300 "$log.err" 2>/dev/null || true) | tr '\n' ' ')"
+      jq -c --arg id "$id" --arg arm "$arm" --argjson run "$r" --arg q "$q" --argjson rc "$rc" --arg stderr "$stderr_tail" \
          --argjson wall "$(echo "$t1 - $t0" | bc)" \
          -s '
         (map(select(.type=="result")) | last) as $res |
@@ -57,9 +69,23 @@ jq -c '.' "$questions" | while IFS= read -r qline; do
          answer: ($res.result // ""), turns: ($res.num_turns // null), cost_usd: ($res.total_cost_usd // null),
          input_tokens: (($res.usage.input_tokens // 0) + ($res.usage.cache_read_input_tokens // 0) + ($res.usage.cache_creation_input_tokens // 0)),
          output_tokens: ($res.usage.output_tokens // 0),
-         source_tokens: $source, tool_calls: ($tools | length), tools: $tools, error: ($res.is_error // false)}' "$log" >> "$out/runs.jsonl"
-      printf '%s %s run %s: %s tool calls, $%s\n' "$id" "$arm" "$r" "$(tail -1 "$out/runs.jsonl" | jq .tool_calls)" "$(tail -1 "$out/runs.jsonl" | jq .cost_usd)"
+         source_tokens: $source, tool_calls: ($tools | length), tools: $tools,
+         error: (($res == null) or ($res.is_error // false) or ($rc != 0) or (($res.result // "") | length == 0)), exit_code: $rc,
+         stderr: (if (($res == null) or ($rc != 0)) then $stderr else null end)}' "$log" >> "$out/runs.jsonl"
+      last="$(tail -1 "$out/runs.jsonl")"
+      if [ "$(jq -r .error <<<"$last")" = true ]; then
+        printf '%s %s run %s: ERROR (exit %s): %s\n' "$id" "$arm" "$r" "$rc" "$(jq -r '.stderr // ""' <<<"$last")" >&2
+      else
+        printf '%s %s run %s: %s tool calls, $%s\n' "$id" "$arm" "$r" "$(jq .tool_calls <<<"$last")" "$(jq .cost_usd <<<"$last")"
+      fi
     done
   done
 done
-echo "runs written to $out/runs.jsonl"
+errors="$(jq -s 'map(select(.error)) | length' "$out/runs.jsonl")"
+# Manifest: what a complete run set looks like, so grade.sh can check for missing rows.
+jq -n --arg model "$model" --argjson runs "$runs" --arg corpus "$corpus" --arg mda "$("$mda" --version)" \
+   --argjson ids "$(jq -c '[.id]' "$questions" | jq -s 'add')" \
+   '{model: $model, runs: $runs, arms: ["baseline", "index"], question_ids: $ids, corpus: $corpus, mda: $mda,
+     recorded_at: (now | todate)}' > "$out/manifest.json"
+echo "runs written to $out/runs.jsonl ($errors error row(s)); manifest in $out/manifest.json"
+[ "$errors" = 0 ] || exit 2

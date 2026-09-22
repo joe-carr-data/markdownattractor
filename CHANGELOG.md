@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+- **Leaner `mda_search` payload over MCP** (benchmark plan B0b). Default `k` is 5 (was 8); each hit keeps the CLI's field names but drops the ranking diagnostics (`score`, `vector`, `vector_score`, `title`), sends `snippet` only when the section has no card, `pending` only when true, `updated_at` to the second, and the OR-fallback flag once as `partial`. The CLI `--json` shape is unchanged. Numbers in `docs/benchmarks.md`.
+- `scripts/eval/grade.sh` grades through `claude -p` with a JSON schema instead of the Messages API (no API key in `evals/`); an answer with no grade is reported as ungraded, never as zero; medians are conventional.
+
 ### Added
 - **`.mdx` ingestion** (`docs/design/ingestion.md`). The walker accepts `.mdx`; the parser excludes a leading block of `import`/`export` statements from sections the way it excludes front matter, keeps a heading that sits inside a JSX or HTML block without a blank line before it (CommonMark would swallow it), and falls back for the document title to front matter `title:` (YAML or TOML) and then to `export const title = "…"`. JSX, expressions and template tags stay as text. Search snippets skip markup-only lines. Checked on the four DocsQA-Repo corpora at their pinned commits: every heading kept, every page titled except partials. The search-first skill and the nudge hook cover `.mdx` too.
 
