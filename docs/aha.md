@@ -2,6 +2,12 @@
 
 Dated one-liners. Newest first. Pruned monthly: entries that became rules graduate to `.claude/rules/`, the rest go to `archive/aha-YYYY-MM.md`. Keep under 60 lines.
 
+- 2026-09-22 — Vectors did what the plan hoped: on the golden set every lexical miss was a paraphrase, and bge-small recovered six of seven (recall@5 0.883 → 0.983). The cost is the query embedding, ≈ 50 ms on CPU, not the scan.
+- 2026-09-22 — `sqlite-vec` needs an `unsafe` extension registration; with `unsafe_code` forbidden and corpora of thousands of sections, a contiguous `f32` buffer scanned from Rust is simpler and fast enough (ADR-0004).
+- 2026-09-22 — fastembed's default features pull `native-tls`, which `deny.toml` bans on purpose; `ort-download-binaries-rustls-tls` + `hf-hub-rustls-tls` keep the tree pure rustls and `ort` links ONNX Runtime statically.
+- 2026-09-22 — Never read `CLAUDE_PLUGIN_DATA` from the binary: in a developer's shell it belongs to whichever plugin ran last (our model landed in another plugin's directory). The plugin passes `MDA_MODEL_DIR` explicitly.
+- 2026-09-22 — A merged PR is not a green PR: I merged #4 on a stale reading of `gh pr checks` while the Windows job had timed out. Read the job list, not the status column count. Hotfix #5.
+- 2026-09-22 — rmcp 3: `use crate::Result` in the module that carries `#[tool_handler]` breaks the macro (it expands `Result<_, ErrorData>` unqualified); keep the crate alias out of that file.
 - 2026-09-22 — Linux `notify` (inotify) reports every `open`. A daemon that parses files on hints will hint itself forever unless `EventKind::Access` is dropped at the source. macOS FSEvents never showed it, which is why the live run looked fine.
 - 2026-09-22 — SQLite WAL: a deferred transaction that reads, then writes after another connection committed, fails with `SQLITE_BUSY_SNAPSHOT` immediately; `busy_timeout` does not help. Every read-then-write transaction begins `IMMEDIATE`.
 - 2026-09-22 — A `BufReader` created per call over a socket read ahead and silently dropped the buffered lines after the first one; the watch stream lost events. Keep one framed reader per connection.

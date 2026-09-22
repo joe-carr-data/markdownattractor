@@ -47,7 +47,8 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         path_prefix: args.path_prefix.clone(),
         ..SearchOptions::default()
     };
-    let hits = search::search(engine.store(), &query, &opts)?;
+    let embedder = super::embedder_for(engine.config());
+    let hits = search::search_with(engine.store(), &query, &opts, embedder.as_deref())?;
 
     if json {
         output::json(&serde_json::json!({ "query": query, "hits": hits }));
@@ -69,10 +70,14 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         } else {
             h.heading_path.join(" › ")
         };
-        let matched = match h.matched {
-            Matched::Both => "",
-            Matched::Cards => " · card",
-            Matched::Raw => " · raw",
+        let matched = match (h.matched, h.vector) {
+            (Matched::Both, false) => "",
+            (Matched::Both, true) => " · +vec",
+            (Matched::Cards, false) => " · card",
+            (Matched::Cards, true) => " · card+vec",
+            (Matched::Raw, false) => " · raw",
+            (Matched::Raw, true) => " · raw+vec",
+            (Matched::Vector, _) => " · vec",
         };
         let pending = if h.pending { st.warn(" (pending)") } else { String::new() };
         println!(

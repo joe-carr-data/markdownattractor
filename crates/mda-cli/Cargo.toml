@@ -15,6 +15,11 @@ categories.workspace = true
 name = "mda"
 path = "src/main.rs"
 
+[features]
+default = ["embeddings"]
+# Forwarded to mda-core: build without local embeddings on targets ONNX Runtime does not ship for.
+embeddings = ["mda-core/embeddings"]
+
 [lints]
 workspace = true
 
@@ -30,11 +35,13 @@ jiff.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true # ADR-0003: daemon log file
+tempfile.workspace = true         # mda eval indexes the golden corpus in a private temp root
 
 [target.'cfg(windows)'.dependencies]
 windows-sys.workspace = true # ADR-0003 amendment: make std handles non-inheritable before spawning the daemon
 
 [dev-dependencies]
+rmcp = { workspace = true, features = ["client", "transport-child-process"] } # MCP end-to-end test
 assert_cmd.workspace = true
 predicates.workspace = true
 tempfile.workspace = true

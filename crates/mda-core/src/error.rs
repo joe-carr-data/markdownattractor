@@ -66,6 +66,10 @@ pub enum Error {
     /// The daemon could not start, watch, or talk to its socket.
     #[error("daemon error: {0}")]
     Daemon(String),
+
+    /// The embedding model could not be loaded or run.
+    #[error("embedding error: {0}")]
+    Embed(String),
 }
 
 /// Convenience alias used throughout the crate.

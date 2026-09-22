@@ -3,7 +3,11 @@ all-features = true
 
 [advisories]
 version = 2
-ignore = []
+ignore = [
+    # `paste` is unmaintained (macro crate, transitive through the search-layer deps of ADR-0004).
+    # Not a vulnerability; revisit when its dependents move to `pastey`.
+    { id = "RUSTSEC-2024-0436", reason = "unmaintained proc-macro crate pulled in transitively; no vulnerability" },
+]
 
 [licenses]
 version = 2

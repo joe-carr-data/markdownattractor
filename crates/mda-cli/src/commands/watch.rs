@@ -102,6 +102,9 @@ fn render(ev: &DaemonEvent, st: &Style) {
             st.ok("summarized"),
             if *ok == 1 { "" } else { "s" }
         ),
+        DaemonEvent::Embedded { count, remaining, ms } => {
+            format!("{} {count} card(s) · {remaining} remaining · {ms} ms", st.accent("embedded"))
+        }
         DaemonEvent::Backoff { secs, reason } => {
             format!("{} {secs}s · {reason}", st.warn("backoff"))
         }

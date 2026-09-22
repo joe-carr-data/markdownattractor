@@ -26,7 +26,7 @@ ensure_daemon() {
   project="${CLAUDE_PROJECT_DIR:-$PWD}"
   if [ -d "$project/.markdownattractor" ]; then
     # Detached: the hook returns at once whatever `start` has to wait for.
-    ( "$1" start --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
+    ( MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}" "$1" start --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
   fi
   exit 0
 }

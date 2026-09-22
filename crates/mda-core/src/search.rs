@@ -4,13 +4,17 @@
 //! re-weighted by recency so that, all else equal, what changed last week outranks what
 //! changed last year. Filters on time and path are applied after fusion, on the stored rows.
 //!
-//! No vectors yet: that is Phase 2, and it slots in as a third ranked list.
+//! Card embeddings are the third list (ADR-0004): when an [`Embedder`] is available and its
+//! model is ready, the query is embedded and the [`VectorIndex`] contributes its top hits to
+//! the same fusion. Search never waits for a model download; without a ready embedder the
+//! result is lexical only.
 
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
-use crate::store::{FtsHit, SectionState, Store, StoredSection, fts_escape};
+use crate::embed::{Embedder, dot};
+use crate::store::{FtsHit, SectionState, Store, StoredSection, VectorSet, fts_escape};
 
 /// RRF constant. 60 is the value from Cormack et al. and works well for short lists.
 const RRF_K: f64 = 60.0;
@@ -25,6 +29,8 @@ pub enum Matched {
     Raw,
     /// Both.
     Both,
+    /// Neither lexical index matched; only the card vector did.
+    Vector,
 }
 
 /// Search parameters.
@@ -44,6 +50,8 @@ pub struct SearchOptions {
     pub recency_half_life_days: f64,
     /// Fall back to an OR query when the AND query returns nothing.
     pub or_fallback: bool,
+    /// Use the vector list when an embedder is available. `raw_only` implies `false`.
+    pub vectors: bool,
 }
 
 impl Default for SearchOptions {
@@ -56,7 +64,66 @@ impl Default for SearchOptions {
             path_prefix: None,
             recency_half_life_days: 30.0,
             or_fallback: true,
+            vectors: true,
         }
+    }
+}
+
+/// Every vector of one model plus the live section ids each hash currently maps to, loaded
+/// once per query (or kept around by long-lived callers) and scanned by dot product.
+#[derive(Debug, Clone)]
+pub struct VectorIndex {
+    set: VectorSet,
+    ids: Vec<Vec<String>>,
+}
+
+impl VectorIndex {
+    /// Load the vectors of `model`. `None` when there are none.
+    pub fn load(store: &Store, model: &str) -> Result<Option<Self>> {
+        let set = store.vector_set(model)?;
+        if set.is_empty() {
+            return Ok(None);
+        }
+        let hashes: Vec<&str> = set.hashes.iter().map(String::as_str).collect();
+        let mut by_hash = store.section_ids_by_hashes(&hashes)?;
+        let ids = set.hashes.iter().map(|h| by_hash.remove(h).unwrap_or_default()).collect();
+        Ok(Some(Self { set, ids }))
+    }
+
+    /// Number of vectors.
+    pub fn len(&self) -> usize {
+        self.set.len()
+    }
+
+    /// `true` when empty (never, for a loaded index).
+    pub fn is_empty(&self) -> bool {
+        self.set.is_empty()
+    }
+
+    /// Model the vectors came from.
+    pub fn model(&self) -> &str {
+        &self.set.model
+    }
+
+    /// The `k` best sections for a unit-length `query`, best first, as `(section_id, cosine)`.
+    /// A hash shared by several live sections yields one entry per section.
+    pub fn top_k(&self, query: &[f32], k: usize) -> Vec<(String, f32)> {
+        if query.len() != self.set.dim || k == 0 {
+            return Vec::new();
+        }
+        let mut scored: Vec<(f32, usize)> =
+            (0..self.set.len()).map(|i| (dot(self.set.row(i), query), i)).collect();
+        scored.sort_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+        let mut out = Vec::with_capacity(k);
+        for (score, i) in scored {
+            for id in &self.ids[i] {
+                out.push((id.clone(), score));
+                if out.len() == k {
+                    return out;
+                }
+            }
+        }
+        out
     }
 }
 
@@ -86,6 +153,10 @@ pub struct Hit {
     pub score: f64,
     /// Which index matched.
     pub matched: Matched,
+    /// `true` when the card vector was among the vector hits for this query.
+    pub vector: bool,
+    /// Cosine similarity between the query and the card vector, when `vector` is set.
+    pub vector_score: Option<f32>,
     /// `true` when the section has no card yet.
     pub pending: bool,
     /// When the section content last changed.
@@ -94,8 +165,19 @@ pub struct Hit {
     pub via_or_fallback: bool,
 }
 
-/// Run a hybrid search.
+/// Run a lexical-only hybrid search (cards + raw text). See [`search_with`] for vectors.
 pub fn search(store: &Store, query: &str, opts: &SearchOptions) -> Result<Vec<Hit>> {
+    search_with(store, query, opts, None)
+}
+
+/// Run a hybrid search. With an `embedder` whose model is ready and `opts.vectors` set, the
+/// card vectors join the fusion as a third list; otherwise the search is lexical.
+pub fn search_with(
+    store: &Store,
+    query: &str,
+    opts: &SearchOptions,
+    embedder: Option<&dyn Embedder>,
+) -> Result<Vec<Hit>> {
     let query = query.trim();
     if query.is_empty() {
         return Ok(Vec::new());
@@ -105,27 +187,16 @@ pub fn search(store: &Store, query: &str, opts: &SearchOptions) -> Result<Vec<Hi
     let fetch =
         if filtered { opts.k.saturating_mul(4).max(200) } else { opts.k.saturating_mul(4).max(16) };
 
-    let (hits, via_or) = {
-        let and_expr = fts_escape(query);
-        let hits = run(store, &and_expr, fetch, opts)?;
-        if hits.is_empty() && opts.or_fallback {
-            let or_expr = or_expression(query);
-            if or_expr != and_expr && !or_expr.is_empty() {
-                (run(store, &or_expr, fetch, opts)?, true)
-            } else {
-                (hits, false)
-            }
-        } else {
-            (hits, false)
-        }
-    };
+    let vector_hits = vector_list(store, query, fetch, opts, embedder)?;
+    let (lexical, via_or) = lexical_lists(store, query, fetch, opts)?;
+    let fused = fuse(store, &lexical, &vector_hits, opts)?;
 
     let now = Timestamp::now();
-    let mut scored: Vec<Hit> = hits
+    let mut scored: Vec<Hit> = fused
         .into_iter()
-        .map(|(section, matched, rrf)| {
+        .map(|(section, matched, vector_score, rrf)| {
             let fused = rrf * recency_factor(section.updated_at, now, opts.recency_half_life_days);
-            to_hit(section, matched, fused, via_or)
+            to_hit(section, matched, vector_score, fused, via_or)
         })
         .collect();
 
@@ -135,41 +206,130 @@ pub fn search(store: &Store, query: &str, opts: &SearchOptions) -> Result<Vec<Hi
     Ok(scored)
 }
 
-/// Query both indexes and fuse. Returns sections with their match kind and RRF score.
-fn run(
+/// The two BM25 lists for a query, with the OR fallback applied when the AND form is empty.
+struct Lexical {
+    cards: Vec<FtsHit>,
+    raw: Vec<FtsHit>,
+}
+
+fn lexical_lists(
     store: &Store,
-    expr: &str,
+    query: &str,
     fetch: usize,
     opts: &SearchOptions,
-) -> Result<Vec<(StoredSection, Matched, f64)>> {
-    let raw = store.search_raw(expr, fetch)?;
-    let cards = if opts.raw_only { Vec::new() } else { store.search_cards(expr, fetch)? };
-
-    let mut fused: std::collections::HashMap<String, (f64, bool, bool)> =
-        std::collections::HashMap::new();
-    for (rank, h) in cards.iter().enumerate() {
-        let e = fused.entry(h.section_id.clone()).or_insert((0.0, false, false));
-        e.0 += rrf(rank);
-        e.1 = true;
+) -> Result<(Lexical, bool)> {
+    let and_expr = fts_escape(query);
+    let lists = |expr: &str| -> Result<Lexical> {
+        Ok(Lexical {
+            raw: store.search_raw(expr, fetch)?,
+            cards: if opts.raw_only { Vec::new() } else { store.search_cards(expr, fetch)? },
+        })
+    };
+    let first = lists(&and_expr)?;
+    // Fall back when nothing *eligible* matched: an AND hit outside the time or path filter
+    // must not hide OR hits inside it.
+    let any_eligible = first
+        .cards
+        .iter()
+        .chain(&first.raw)
+        .map(|h| h.section_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .try_fold(false, |found, id| -> Result<bool> {
+            Ok(found || store.section(id)?.is_some_and(|s| passes(&s, opts)))
+        })?;
+    if !any_eligible && opts.or_fallback {
+        let or_expr = or_expression(query);
+        if or_expr != and_expr && !or_expr.is_empty() {
+            return Ok((lists(&or_expr)?, true));
+        }
     }
-    for (rank, h) in raw.iter().enumerate() {
-        let e = fused.entry(h.section_id.clone()).or_insert((0.0, false, false));
-        e.0 += rrf(rank);
-        e.2 = true;
+    Ok((first, false))
+}
+
+/// The vector list: empty when vectors are off, no embedder is given, the model is not ready
+/// (never download inside a query), or nothing is embedded yet.
+fn vector_list(
+    store: &Store,
+    query: &str,
+    fetch: usize,
+    opts: &SearchOptions,
+    embedder: Option<&dyn Embedder>,
+) -> Result<Vec<(String, f32)>> {
+    if !opts.vectors || opts.raw_only {
+        return Ok(Vec::new());
+    }
+    let Some(embedder) = embedder else { return Ok(Vec::new()) };
+    if !embedder.ready() {
+        tracing::debug!(model = embedder.model(), "embedding model not ready; lexical only");
+        return Ok(Vec::new());
+    }
+    let Some(index) = VectorIndex::load(store, embedder.model())? else { return Ok(Vec::new()) };
+    // A broken model must not take lexical search down with it: log, answer lexical.
+    let mut q = match embedder.embed(&[query.to_owned()]) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(error = %e, "query embedding failed; lexical only");
+            return Ok(Vec::new());
+        }
+    };
+    let Some(qv) = q.pop() else { return Ok(Vec::new()) };
+    Ok(index.top_k(&qv, fetch))
+}
+
+type Fused = Vec<(StoredSection, Matched, Option<f32>, f64)>;
+
+/// Reciprocal rank fusion of the three lists, then the time and path filters.
+fn fuse(
+    store: &Store,
+    lexical: &Lexical,
+    vector: &[(String, f32)],
+    opts: &SearchOptions,
+) -> Result<Fused> {
+    struct Acc {
+        score: f64,
+        cards: bool,
+        raw: bool,
+        vector: Option<f32>,
+    }
+    fn entry<'a>(map: &'a mut std::collections::HashMap<String, Acc>, id: &str) -> &'a mut Acc {
+        map.entry(id.to_owned()).or_insert(Acc {
+            score: 0.0,
+            cards: false,
+            raw: false,
+            vector: None,
+        })
+    }
+    let mut fused: std::collections::HashMap<String, Acc> = std::collections::HashMap::new();
+    for (rank, h) in lexical.cards.iter().enumerate() {
+        let e = entry(&mut fused, &h.section_id);
+        e.score += rrf(rank);
+        e.cards = true;
+    }
+    for (rank, h) in lexical.raw.iter().enumerate() {
+        let e = entry(&mut fused, &h.section_id);
+        e.score += rrf(rank);
+        e.raw = true;
+    }
+    for (rank, (id, cosine)) in vector.iter().enumerate() {
+        let e = entry(&mut fused, id);
+        e.score += rrf(rank);
+        e.vector = Some(*cosine);
     }
 
     let mut out = Vec::with_capacity(fused.len());
-    for (id, (score, in_cards, in_raw)) in fused {
+    for (id, acc) in fused {
         let Some(section) = store.section(&id)? else { continue };
         if !passes(&section, opts) {
             continue;
         }
-        let matched = match (in_cards, in_raw) {
-            (true, true) => Matched::Both,
-            (true, false) => Matched::Cards,
-            _ => Matched::Raw,
+        let matched = match (acc.cards, acc.raw, acc.vector.is_some()) {
+            (true, true, _) => Matched::Both,
+            (true, false, _) => Matched::Cards,
+            (false, true, _) => Matched::Raw,
+            (false, false, _) => Matched::Vector,
         };
-        out.push((section, matched, score));
+        out.push((section, matched, acc.vector, acc.score));
     }
     Ok(out)
 }
@@ -222,7 +382,13 @@ fn or_expression(query: &str) -> String {
         .join(" OR ")
 }
 
-fn to_hit(section: StoredSection, matched: Matched, score: f64, via_or: bool) -> Hit {
+fn to_hit(
+    section: StoredSection,
+    matched: Matched,
+    vector_score: Option<f32>,
+    score: f64,
+    via_or: bool,
+) -> Hit {
     let pending = section.state != SectionState::Summarized;
     let tldr = section.summary.as_ref().map(|s| s.tldr.clone());
     Hit {
@@ -237,6 +403,8 @@ fn to_hit(section: StoredSection, matched: Matched, score: f64, via_or: bool) ->
         snippet: snippet_of(&section.text),
         score,
         matched,
+        vector: vector_score.is_some(),
+        vector_score,
         pending,
         updated_at: section.updated_at,
         via_or_fallback: via_or,
@@ -258,10 +426,57 @@ fn snippet_of(text: &str) -> String {
     out
 }
 
-/// Tell the caller which FTS hits exist for a query without fusing (used by `mda explain`).
-pub fn explain(store: &Store, query: &str, k: usize) -> Result<(Vec<FtsHit>, Vec<FtsHit>)> {
-    let expr = fts_escape(query.trim());
-    Ok((store.search_cards(&expr, k)?, store.search_raw(&expr, k)?))
+/// The three ranked lists behind a query and the fused result, for `mda explain`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Explain {
+    /// BM25 hits on the cards index, best first.
+    pub cards: Vec<FtsHit>,
+    /// BM25 hits on the raw-text index, best first.
+    pub raw: Vec<FtsHit>,
+    /// Vector hits as `(section_id, cosine)`, best first; empty when vectors did not run.
+    pub vector: Vec<(String, f32)>,
+    /// Why the vector list is empty, when it is.
+    pub vector_note: Option<String>,
+    /// The lexical lists come from the OR form of the query because the AND form was empty.
+    pub via_or_fallback: bool,
+    /// The fused, recency-weighted, filtered result exactly as `search_with` returns it.
+    pub fused: Vec<Hit>,
+}
+
+/// Show every list behind a query. The lexical lists are the ones the search used: the AND
+/// form, or the OR form when the AND form matched nothing (`via_or_fallback`).
+pub fn explain(
+    store: &Store,
+    query: &str,
+    opts: &SearchOptions,
+    embedder: Option<&dyn Embedder>,
+) -> Result<Explain> {
+    let query = query.trim();
+    // Same candidate depth as the search itself, so every fused winner is visible in the
+    // list that produced it.
+    let filtered = opts.since.is_some() || opts.until.is_some() || opts.path_prefix.is_some();
+    let k =
+        if filtered { opts.k.saturating_mul(4).max(200) } else { opts.k.saturating_mul(4).max(16) };
+    let (lexical, via_or_fallback) = lexical_lists(store, query, k, opts)?;
+    let vector_note = match embedder {
+        _ if !opts.vectors => Some("vectors disabled for this query".to_owned()),
+        None => Some("embeddings are off".to_owned()),
+        Some(e) if !e.ready() => Some(format!("model {} not downloaded yet", e.model())),
+        Some(_) => None,
+    };
+    let vector = if vector_note.is_none() {
+        vector_list(store, query, k, opts, embedder)?
+    } else {
+        Vec::new()
+    };
+    Ok(Explain {
+        cards: lexical.cards,
+        raw: lexical.raw,
+        vector,
+        vector_note,
+        via_or_fallback,
+        fused: search_with(store, query, opts, embedder)?,
+    })
 }
 
 #[cfg(test)]
@@ -291,6 +506,173 @@ mod tests {
         let long = format!("# H\n{}", "x".repeat(500));
         assert!(snippet_of(&long).ends_with('…'));
         assert_eq!(snippet_of(&long).chars().count(), 201);
+    }
+
+    /// Returns the same fixed unit vector for every text, so "closeness" is under the test's
+    /// control: a stored vector equal to it scores 1, an orthogonal one scores 0.
+    struct Fixed(Vec<f32>);
+    impl Embedder for Fixed {
+        fn model(&self) -> &'static str {
+            "fixed"
+        }
+        fn dim(&self) -> usize {
+            self.0.len()
+        }
+        fn ready(&self) -> bool {
+            true
+        }
+        fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>> {
+            Ok(texts.iter().map(|_| self.0.clone()).collect())
+        }
+    }
+
+    fn carded_store() -> (Store, String, String) {
+        use crate::card::{Entities, Provenance, SCHEMA_VERSION, SectionSummary};
+        use crate::markdown::parse_str;
+        use crate::store::{DocTimes, Usage};
+        let mut store = Store::open_in_memory().unwrap();
+        let doc = parse_str(
+            "# Ops\n\n## Rollback\n\nrun deployctl rollback\n\n## Pancakes\n\nflour eggs milk\n",
+        );
+        let t = Timestamp::from_second(1_700_000_000).unwrap();
+        store
+            .upsert_document(
+                "ops.md",
+                &doc,
+                &DocTimes { created_at: None, modified_at: t, now: t, size_bytes: 1 },
+            )
+            .unwrap();
+        let card = |tldr: &str| SectionSummary {
+            tldr: tldr.into(),
+            summary: tldr.into(),
+            keywords: vec![],
+            questions_answered: vec![],
+            entities: Entities::default(),
+            mentioned_dates: vec![],
+            decisions: vec![],
+            action_items: vec![],
+        };
+        let prov = Provenance {
+            model: "m".into(),
+            prompt_version: "p".into(),
+            schema_version: SCHEMA_VERSION,
+            backend: "mock".into(),
+            summarized_at: t,
+            truncated: false,
+        };
+        let (h_roll, h_cake) = (doc.sections[1].hash.clone(), doc.sections[2].hash.clone());
+        store
+            .attach_summary(&h_roll, &card("Revert a release."), &prov, &Usage::default())
+            .unwrap();
+        store
+            .attach_summary(&h_cake, &card("Breakfast recipe."), &prov, &Usage::default())
+            .unwrap();
+        store.put_embedding(&h_roll, "fixed", &[1.0, 0.0]).unwrap();
+        store.put_embedding(&h_cake, "fixed", &[0.0, 1.0]).unwrap();
+        let doc_id = crate::store::doc_id_for("ops.md");
+        (store, format!("{doc_id}#1"), format!("{doc_id}#2"))
+    }
+
+    #[test]
+    fn vector_only_hit_is_found_and_labelled() {
+        let (store, rollback_id, _) = carded_store();
+        let e = Fixed(vec![1.0, 0.0]);
+        // No lexical match anywhere for "undo"; the vector list still points at Rollback.
+        let hits = search_with(&store, "undo", &SearchOptions::default(), Some(&e)).unwrap();
+        assert_eq!(hits.len(), 2, "both vectors are returned, ranked");
+        assert_eq!(hits[0].section_id, rollback_id);
+        assert_eq!(hits[0].matched, Matched::Vector);
+        assert!(hits[0].vector);
+        assert!((hits[0].vector_score.unwrap() - 1.0).abs() < 1e-6);
+        assert!(hits[0].score > hits[1].score);
+        // Without an embedder, the same query finds nothing.
+        assert!(search(&store, "undo", &SearchOptions::default()).unwrap().is_empty());
+        // Vectors can be switched off per query.
+        let off = SearchOptions { vectors: false, ..SearchOptions::default() };
+        assert!(search_with(&store, "undo", &off, Some(&e)).unwrap().is_empty());
+    }
+
+    #[test]
+    fn vector_and_lexical_agreement_outranks_lexical_alone() {
+        let (store, rollback_id, pancake_id) = carded_store();
+        // "deployctl" matches Rollback lexically; the vector points at Pancakes.
+        let e = Fixed(vec![0.0, 1.0]);
+        let hits = search_with(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        let roll = hits.iter().find(|h| h.section_id == rollback_id).unwrap();
+        let cake = hits.iter().find(|h| h.section_id == pancake_id).unwrap();
+        assert_eq!(roll.matched, Matched::Raw);
+        assert!(roll.vector, "every stored vector is in the top list of a two-vector index");
+        assert_eq!(cake.matched, Matched::Vector);
+        // Now the vector agrees with the lexical hit: it must come out first.
+        let e = Fixed(vec![1.0, 0.0]);
+        let hits = search_with(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        assert_eq!(hits[0].section_id, rollback_id);
+        assert!(hits[0].vector_score.unwrap() > hits[1].vector_score.unwrap());
+    }
+
+    #[test]
+    fn or_fallback_decision_ignores_hits_the_filters_exclude() {
+        let (store, _, _) = carded_store();
+        // "flour deployctl": AND matches nothing; OR matches Pancakes (flour) and Rollback.
+        let hits = search(&store, "flour deployctl", &SearchOptions::default()).unwrap();
+        assert_eq!(hits.len(), 2);
+        assert!(hits[0].via_or_fallback);
+        // An AND hit that the time filter excludes must not suppress the fallback decision,
+        // and with nothing eligible either way the result is simply empty.
+        let future = Timestamp::from_second(1_800_000_000).unwrap();
+        let opts = SearchOptions { since: Some(future), ..SearchOptions::default() };
+        assert!(search(&store, "deployctl", &opts).unwrap().is_empty(), "nothing is that new");
+    }
+
+    struct Broken;
+    impl Embedder for Broken {
+        fn model(&self) -> &'static str {
+            "fixed"
+        }
+        fn dim(&self) -> usize {
+            2
+        }
+        fn ready(&self) -> bool {
+            true
+        }
+        fn embed(&self, _: &[String]) -> Result<Vec<Vec<f32>>> {
+            Err(crate::Error::Embed("corrupt model".into()))
+        }
+    }
+
+    #[test]
+    fn a_broken_embedder_leaves_search_lexical() {
+        let (store, rollback_id, _) = carded_store();
+        let hits =
+            search_with(&store, "deployctl", &SearchOptions::default(), Some(&Broken)).unwrap();
+        assert_eq!(hits[0].section_id, rollback_id);
+        assert!(!hits[0].vector);
+    }
+
+    #[test]
+    fn explain_lists_every_source() {
+        let (store, rollback_id, _) = carded_store();
+        let e = Fixed(vec![1.0, 0.0]);
+        let ex = explain(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        assert_eq!(ex.raw[0].section_id, rollback_id);
+        assert!(ex.cards.is_empty(), "the card says 'revert', not 'deployctl'");
+        assert_eq!(ex.vector[0].0, rollback_id);
+        assert_eq!(ex.vector_note, None);
+        assert_eq!(ex.fused[0].section_id, rollback_id);
+        let ex = explain(&store, "deployctl", &SearchOptions::default(), None).unwrap();
+        assert!(ex.vector.is_empty());
+        assert_eq!(ex.vector_note.as_deref(), Some("embeddings are off"));
+    }
+
+    #[test]
+    fn vector_index_top_k_expands_shared_hashes_and_checks_dim() {
+        let (store, _, _) = carded_store();
+        let idx = VectorIndex::load(&store, "fixed").unwrap().unwrap();
+        assert_eq!(idx.len(), 2);
+        assert_eq!(idx.model(), "fixed");
+        assert!(idx.top_k(&[1.0, 0.0, 0.0], 5).is_empty(), "dimension mismatch");
+        assert_eq!(idx.top_k(&[1.0, 0.0], 1).len(), 1);
+        assert!(VectorIndex::load(&store, "none").unwrap().is_none());
     }
 
     #[test]

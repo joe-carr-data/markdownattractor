@@ -5,20 +5,28 @@ pub mod backend;
 pub mod card;
 pub mod daemon;
 pub mod doctor;
+pub mod embeddings;
+pub mod eval;
+pub mod explain;
 pub mod index;
+pub mod mcp;
 pub mod open;
 pub mod parse;
 pub mod pause;
+pub mod rebuild;
+pub mod recent;
 pub mod schema;
 pub mod search;
+pub mod stale;
 pub mod start;
 pub mod status;
 pub mod stop;
+pub mod timeline;
 pub mod watch;
 
 use std::path::{Path, PathBuf};
 
-use jiff::{Span, Timestamp, ToSpan};
+use jiff::Timestamp;
 use mda_core::config::STATE_DIR;
 
 /// Resolve the watched root: an explicit `--root`, else the nearest ancestor of the current
@@ -70,56 +78,26 @@ pub fn humanize_secs(secs: u64) -> String {
 }
 
 /// Parse `7d`, `24h`, `30m`, `2w`, or an ISO date/time into an absolute timestamp.
-///
-/// Relative forms count back from now; `YYYY-MM-DD` means midnight UTC of that day.
 pub fn parse_time(s: &str) -> anyhow::Result<Timestamp> {
-    let s = s.trim();
-    if let Some((num, unit)) = split_relative(s) {
-        let n: i64 = num.parse()?;
-        let span: Span = match unit {
-            "m" | "min" => n.minutes(),
-            "h" | "hr" | "hour" | "hours" => n.hours(),
-            "d" | "day" | "days" => (n * 24).hours(),
-            "w" | "week" | "weeks" => (n * 24 * 7).hours(),
-            _ => anyhow::bail!("unknown time unit {unit:?} in {s:?} (use m, h, d, w)"),
-        };
-        return Ok(Timestamp::now().checked_sub(span)?);
-    }
-    if let Ok(ts) = s.parse::<Timestamp>() {
-        return Ok(ts);
-    }
-    if let Ok(date) = s.parse::<jiff::civil::Date>() {
-        return Ok(date.to_zoned(jiff::tz::TimeZone::UTC)?.timestamp());
-    }
-    anyhow::bail!("cannot parse {s:?} as a duration (7d, 24h) or a date (2026-09-21)")
-}
-
-fn split_relative(s: &str) -> Option<(&str, &str)> {
-    let digits = s.chars().take_while(char::is_ascii_digit).count();
-    if digits == 0 || digits == s.len() {
-        return None;
-    }
-    let (num, unit) = s.split_at(digits);
-    unit.chars().all(|c| c.is_ascii_alphabetic()).then_some((num, unit))
+    Ok(mda_core::timefmt::parse_time(s)?)
 }
 
 /// `2 days ago`, `3 hours ago`, `just now`.
 pub fn humanize_age(ts: Timestamp) -> String {
-    let secs = (Timestamp::now().as_second() - ts.as_second()).max(0);
-    let (n, unit) = match secs {
-        0..=59 => return "just now".to_owned(),
-        60..=3_599 => (secs / 60, "min"),
-        3_600..=86_399 => (secs / 3_600, "hour"),
-        86_400..=2_591_999 => (secs / 86_400, "day"),
-        2_592_000..=31_535_999 => (secs / 2_592_000, "month"),
-        _ => (secs / 31_536_000, "year"),
-    };
-    let plural = if n == 1 { "" } else { "s" };
-    format!("{n} {unit}{plural} ago")
+    mda_core::timefmt::humanize_age(ts)
+}
+
+/// The embedder the config asks for (`None` when embeddings are off).
+pub fn embedder_for(
+    cfg: &mda_core::config::Config,
+) -> Option<std::sync::Arc<dyn mda_core::embed::Embedder>> {
+    mda_core::embed::embedder_for(cfg)
 }
 
 #[cfg(test)]
 mod tests {
+    use jiff::ToSpan;
+
     use super::*;
 
     #[test]

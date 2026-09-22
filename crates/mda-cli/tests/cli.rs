@@ -84,7 +84,7 @@ fn doctor_json_has_checks() {
     let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
     let names: Vec<&str> =
         v["checks"].as_array().unwrap().iter().map(|c| c["name"].as_str().unwrap()).collect();
-    assert_eq!(names, vec!["root", "state dir", "backend", "daemon"]);
+    assert_eq!(names, vec!["root", "state dir", "backend", "embeddings", "daemon"]);
 }
 
 #[test]

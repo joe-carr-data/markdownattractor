@@ -447,3 +447,107 @@ fn file_times_are_sane() {
         assert!(c <= t.modified_at);
     }
 }
+
+#[tokio::test]
+async fn embed_pending_vectorises_cards_in_batches_and_reports_remaining() {
+    use crate::embed::HashEmbedder;
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let body: String = (0..40).fold(String::new(), |mut acc, i| {
+        use std::fmt::Write as _;
+        let _ = write!(acc, "# S{i}\n\nsection {i} body\n\n");
+        acc
+    });
+    write(&root, "many.md", &body);
+    e.index_file(&root.join("many.md")).unwrap();
+    let backend = Arc::new(Mock::new().default_ok());
+    e.summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
+    let emb = HashEmbedder::new(16);
+    let r = e.embed_pending(&emb, 35).unwrap();
+    assert_eq!(r.embedded, 35);
+    assert_eq!(r.remaining, 5);
+    assert_eq!(r.model, "hash-test");
+    let r2 = e.embed_pending(&emb, 100).unwrap();
+    assert_eq!((r2.embedded, r2.remaining), (5, 0));
+    let r3 = e.embed_pending(&emb, 100).unwrap();
+    assert_eq!((r3.embedded, r3.remaining), (0, 0));
+    let set = e.store().vector_set("hash-test").unwrap();
+    assert_eq!(set.len(), 40);
+    assert_eq!(set.dim, 16);
+    // Searching by a word only the card knows works through the vector list.
+    let hits = crate::search::search_with(
+        e.store(),
+        "section 7 body",
+        &crate::search::SearchOptions::default(),
+        Some(&emb),
+    )
+    .unwrap();
+    assert!(hits.iter().any(|h| h.vector));
+}
+
+#[test]
+fn stale_recent_and_timeline_reflect_the_store_and_the_disk() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "a.md", "# A\n\none\n");
+    write(&root, "sub/b.md", "# B\n\ntwo\n");
+    e.index_root().unwrap();
+    // Both pending: both stale.
+    let stale = e.stale().unwrap();
+    assert_eq!(stale.len(), 2);
+    assert_eq!(stale[0].pending, 1);
+    assert!(!stale[0].changed_on_disk);
+
+    // Change a.md on disk without re-indexing; it must show as changed, a touch must not.
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    write(&root, "a.md", "# A\n\none more\n");
+    let stale = e.stale().unwrap();
+    let a = stale.iter().find(|s| s.rel_path == "a.md").unwrap();
+    assert!(a.changed_on_disk);
+    std::fs::remove_file(root.join("sub/b.md")).unwrap();
+    let b = e.stale().unwrap().into_iter().find(|s| s.rel_path == "sub/b.md").unwrap();
+    assert!(b.missing);
+
+    let recent = e.recent(5).unwrap();
+    assert_eq!(recent.len(), 2);
+    assert_eq!(recent[0].sections, 1);
+    assert_eq!(recent[0].pending, 1);
+
+    let all = e.timeline(None, None, None, 100).unwrap();
+    assert!(
+        all.iter().all(|t| Path::new(&t.rel_path).extension().is_some_and(|e| e == "md")),
+        "{all:?}"
+    );
+    assert_eq!(all.len(), 2, "two doc_created events");
+    let sub = e.timeline(None, None, Some("sub/"), 100).unwrap();
+    assert_eq!(sub.len(), 1);
+    assert_eq!(sub[0].rel_path, "sub/b.md");
+    assert_eq!(e.timeline(None, None, None, 1).unwrap().len(), 1);
+    // The prefix filter runs before the limit: limit 1 still finds the sub/ event.
+    let one = e.timeline(None, None, Some("sub/"), 1).unwrap();
+    assert_eq!(one.len(), 1);
+    assert_eq!(one[0].rel_path, "sub/b.md");
+}
+
+#[cfg(unix)]
+#[test]
+fn stale_never_follows_a_link_out_of_the_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(&root, "a.md", "# A\n\none\n");
+    e.index_root().unwrap();
+    // Replace the indexed file with a link to a newer file outside the root.
+    let outside = tempfile::tempdir().unwrap();
+    let target = write(outside.path(), "secret.md", "# Secret\n\nkeys\n");
+    std::fs::remove_file(root.join("a.md")).unwrap();
+    std::os::unix::fs::symlink(&target, root.join("a.md")).unwrap();
+    let stale = e.stale().unwrap();
+    let a = stale.iter().find(|s| s.rel_path == "a.md").unwrap();
+    assert!(a.unreadable, "{a:?}");
+    assert!(!a.changed_on_disk, "the outside file was never read");
+}
