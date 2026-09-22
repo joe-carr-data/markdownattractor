@@ -1,0 +1,143 @@
+name: Release
+
+# Tag `vX.Y.Z` → five archives + SHA256SUMS on a GitHub Release, exactly as
+# scripts/bootstrap.sh downloads them (ADR-0005). `workflow_dispatch` builds the same
+# artifacts without publishing, for dry runs.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: version agrees
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: VERSION, plugin.json, marketplace.json and Cargo.toml agree (and the tag, when there is one)
+        run: |
+          if [ "${{ github.ref_type }}" = tag ]; then scripts/dev/check-version.sh "${{ github.ref_name }}"; else scripts/dev/check-version.sh; fi
+
+  build:
+    name: build (${{ matrix.name }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: darwin-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            features: ""
+            bin: mda
+          # ONNX Runtime ships no prebuilt binaries for Intel macOS: lexical-only build.
+          - name: darwin-x64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            features: "--no-default-features"
+            bin: mda
+          - name: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            features: ""
+            bin: mda
+          - name: linux-arm64
+            os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            features: ""
+            bin: mda
+          - name: windows-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            features: ""
+            bin: mda.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.name }}
+      - name: build
+        run: cargo build --release -p mda-cli --target ${{ matrix.target }} ${{ matrix.features }}
+      - name: smoke test
+        if: matrix.name != 'darwin-x64'
+        shell: bash
+        run: |
+          target/${{ matrix.target }}/release/${{ matrix.bin }} --version
+          target/${{ matrix.target }}/release/${{ matrix.bin }} --version | grep -q "$(tr -d '[:space:]' < VERSION)"
+      - name: sign and notarise (macOS, only when the Apple secrets exist)
+        if: runner.os == 'macOS' && env.APPLE_CERTIFICATE_P12 != ''
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: scripts/dev/notarize-macos.sh "target/${{ matrix.target }}/release/mda"
+      - name: pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="mda-${{ matrix.name }}"
+          mkdir -p "dist/$out"
+          cp "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/$out/"
+          cp LICENSE README.md "dist/$out/"
+          # The binary sits at the archive root: that is what bootstrap.sh extracts.
+          tar -C "dist/$out" -czf "dist/$out.tar.gz" .
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mda-${{ matrix.name }}
+          path: dist/mda-${{ matrix.name }}.tar.gz
+          if-no-files-found: error
+
+  publish:
+    name: checksums and release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: SHA256SUMS
+        run: |
+          cd dist
+          sha256sum mda-*.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+      - name: bootstrap.sh installs the linux-x64 archive from this layout
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}
+          CLAUDE_PLUGIN_DATA: ${{ runner.temp }}/plugin-data
+        run: |
+          set -euo pipefail
+          # Serve dist/ the way GitHub Releases would, then point the hook at it.
+          python3 -m http.server 8765 --directory dist >/dev/null 2>&1 &
+          sleep 1
+          sed "s|https://github.com/\$REPO/releases/download/v\${WANTED}|http://127.0.0.1:8765|" scripts/bootstrap.sh > /tmp/bootstrap-local.sh
+          bash /tmp/bootstrap-local.sh
+          "$CLAUDE_PLUGIN_DATA/bin/mda" --version | grep -q "$(tr -d '[:space:]' < VERSION)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SHA256SUMS
+          path: dist/SHA256SUMS
+      - name: publish the GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/mda-*.tar.gz dist/SHA256SUMS \
+            --title "${{ github.ref_name }}" --generate-notes --verify-tag
