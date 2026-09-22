@@ -2,6 +2,10 @@
 
 Dated one-liners. Newest first. Pruned monthly: entries that became rules graduate to `.claude/rules/`, the rest go to `archive/aha-YYYY-MM.md`. Keep under 60 lines.
 
+- 2026-09-22 — A/B on the 450-line golden corpus: parity 12/12, but the index reads *more* source tokens (median 1,305 vs 341) because eight hits with cards cost ~1.3K tokens whatever the corpus size and one grep+read finds the answer in a few hundred. G3 is a claim about big corpora; the small-corpus number is published as the plan promised.
+- 2026-09-22 — `claude -p --bare` skips keychain reads, so a headless run answers "Not logged in"; `--setting-sources ""` plus `--strict-mcp-config` gives the lean, fair session the A/B needs without it. Variadic flags (`--tools a b c`) swallow the prompt: put `--` before it.
+- 2026-09-22 — `gh workflow run` needs the workflow file on the default branch (404 otherwise): a new workflow's dry run happens after its PR merges, not on the branch.
+- 2026-09-22 — Codex through a bare `codex exec --sandbox read-only --ephemeral` from the sandboxed shell fails to initialise ("Operation not permitted"); the shared companion runtime the codex-rescue skill provides works. Say so in the review prompt.
 - 2026-09-22 — A hook that calls the binary with a flag the *installed* binary does not have fails silently (`>/dev/null 2>&1 &`). I added `--no-example` to `bootstrap.sh` before the binary had it and spent a debugging round on "the SessionStart hook does not start the daemon". Ship script and binary changes in the same PR and re-copy the binary before testing a hook.
 - 2026-09-22 — macOS temp dirs have two spellings (`/var/…` and `/private/var/…`); a redaction that replaces `$HOME` as given misses the canonical form. Redact both.
 - 2026-09-22 — First-run example on a fresh copy of `docs/` (224 sections, Haiku via `api`): `mda start` printed a real hit 5.4 s after starting, once the first 10 cards landed ($0.013). The wait is bounded at 60 s and skipped by the hook.
