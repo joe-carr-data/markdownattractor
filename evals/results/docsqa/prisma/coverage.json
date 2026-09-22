@@ -1,0 +1,14 @@
+{
+  "project": "prisma",
+  "corpus_pages": 685,
+  "corpus_pages_indexed": 685,
+  "qrels": 179,
+  "qrels_indexed": 179,
+  "qrels_unmapped": 0,
+  "questions": 125,
+  "excluded_image_evidence": 7,
+  "excluded_missing_page": 0,
+  "eligible": 118,
+  "multimodal_judgment": 11,
+  "qrel_coverage": 1.0
+}

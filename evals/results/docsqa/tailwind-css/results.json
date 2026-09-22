@@ -1,0 +1,459 @@
+{
+  "cards_attached": 0,
+  "coverage": {
+    "corpus_pages": 197,
+    "corpus_pages_indexed": 197,
+    "eligible": 84,
+    "excluded_image_evidence": 9,
+    "excluded_missing_page": 0,
+    "multimodal_judgment": 10,
+    "project": "tailwind-css",
+    "qrel_coverage": 1.0,
+    "qrels": 99,
+    "qrels_indexed": 99,
+    "qrels_unmapped": 0,
+    "questions": 93
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "project": "tailwind-css",
+  "root": "~/.cache/markdownattractor/bench/tailwindcss",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": 69.04308667999999,
+        "mrr_at_5": 0.34,
+        "ndcg_at_10": 0.41973933842368466,
+        "questions": 25,
+        "success_at_5": 0.6
+      },
+      "results": [
+        {
+          "id": "tailwind-css::tailwind-11515",
+          "ndcg_at_10": -0.0,
+          "rank": 15,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/background-attachment.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/background-repeat.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-14375",
+          "ndcg_at_10": 0.43067655807339306,
+          "rank": 4,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/upgrade-guide.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-14974",
+          "ndcg_at_10": 1.0,
+          "rank": 1,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/detecting-classes-in-source-files.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/upgrade-guide.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-15019",
+          "ndcg_at_10": -0.0,
+          "rank": 16,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/preflight.mdx",
+            "src/docs/line-height.mdx",
+            "src/docs/compatibility.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-16299",
+          "ndcg_at_10": 0.3562071871080222,
+          "rank": 6,
+          "relevant": [
+            "src/docs/font-size.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/line-height.mdx",
+            "src/docs/text-indent.mdx",
+            "src/docs/display.mdx",
+            "src/docs/styling-with-utility-classes.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17063",
+          "ndcg_at_10": 0.43067655807339306,
+          "rank": 4,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/display.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/preflight.mdx",
+            "src/docs/overscroll-behavior.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17086",
+          "ndcg_at_10": 0.6131471927654584,
+          "rank": 1,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/margin.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/responsive-design.mdx",
+            "src/docs/theme.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/adding-custom-styles.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17186",
+          "ndcg_at_10": 0.6309297535714575,
+          "rank": 2,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/detecting-classes-in-source-files.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/line-height.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17487",
+          "ndcg_at_10": 0.6309297535714575,
+          "rank": 2,
+          "relevant": [
+            "src/docs/functions-and-directives.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/editor-setup.mdx",
+            "src/docs/detecting-classes-in-source-files.mdx",
+            "src/docs/adding-custom-styles.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17561",
+          "ndcg_at_10": 0.5,
+          "rank": 3,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/styling-with-utility-classes.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17641",
+          "ndcg_at_10": -0.0,
+          "rank": 13,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/compatibility.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-17967",
+          "ndcg_at_10": 0.3010299956639812,
+          "rank": 9,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/theme.mdx",
+            "src/docs/overscroll-behavior.mdx",
+            "src/docs/responsive-design.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18123",
+          "ndcg_at_10": 1.0,
+          "rank": 1,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/preflight.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/theme.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/upgrade-guide.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18456",
+          "ndcg_at_10": 0.6309297535714575,
+          "rank": 2,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/detecting-classes-in-source-files.mdx",
+            "src/docs/responsive-design.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/theme.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18580",
+          "ndcg_at_10": 0.43067655807339306,
+          "rank": 4,
+          "relevant": [
+            "src/docs/styling-with-utility-classes.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/compatibility.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18691",
+          "ndcg_at_10": -0.0,
+          "rank": 16,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/font-size.mdx",
+            "src/docs/line-height.mdx",
+            "src/docs/text-indent.mdx",
+            "src/docs/text-align.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18753",
+          "ndcg_at_10": -0.0,
+          "rank": null,
+          "relevant": [
+            "src/docs/box-shadow.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/theme.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/preflight.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18759",
+          "ndcg_at_10": 0.3010299956639812,
+          "rank": 9,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/theme.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/overscroll-behavior.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-18845",
+          "ndcg_at_10": 0.3065735963827292,
+          "rank": 3,
+          "relevant": [
+            "src/docs/colors.mdx",
+            "src/docs/font-family.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/detecting-classes-in-source-files.mdx",
+            "src/docs/colors.mdx",
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/hover-focus-and-other-states.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-1910",
+          "ndcg_at_10": 0.5,
+          "rank": 3,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/theme.mdx",
+            "src/docs/dark-mode.mdx",
+            "src/docs/adding-custom-styles.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-19128",
+          "ndcg_at_10": -0.0,
+          "rank": 13,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/line-height.mdx",
+            "src/docs/text-indent.mdx",
+            "src/docs/font-size.mdx",
+            "src/docs/text-decoration-color.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-19267",
+          "ndcg_at_10": 1.0,
+          "rank": 1,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/preflight.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/functions-and-directives.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-19887",
+          "ndcg_at_10": 0.43067655807339306,
+          "rank": 4,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/preflight.mdx",
+            "src/docs/adding-custom-styles.mdx",
+            "src/docs/compatibility.mdx",
+            "src/docs/theme.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-20272",
+          "ndcg_at_10": 1.0,
+          "rank": 1,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/responsive-design.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/styling-with-utility-classes.mdx",
+            "src/docs/content.mdx"
+          ]
+        },
+        {
+          "id": "tailwind-css::tailwind-6921",
+          "ndcg_at_10": -0.0,
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "top": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/line-height.mdx",
+            "src/docs/font-size.mdx",
+            "src/docs/text-indent.mdx",
+            "src/docs/compatibility.mdx"
+          ]
+        }
+      ],
+      "run": "lexical (raw only)",
+      "split": "dev"
+    }
+  ],
+  "seed": 20260922,
+  "split": "dev",
+  "split_counts": {
+    "dev": 27,
+    "holdout": 15,
+    "test": 51
+  },
+  "store": {
+    "docs": 198,
+    "failed": 0,
+    "pending": 1332,
+    "sections": 1518,
+    "summarized": 0,
+    "tombstoned": 0,
+    "total_cost_usd": 0.0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0
+  }
+}

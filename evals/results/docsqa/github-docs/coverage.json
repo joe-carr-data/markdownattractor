@@ -1,0 +1,14 @@
+{
+  "project": "github-docs",
+  "corpus_pages": 3208,
+  "corpus_pages_indexed": 3208,
+  "qrels": 260,
+  "qrels_indexed": 260,
+  "qrels_unmapped": 0,
+  "questions": 197,
+  "excluded_image_evidence": 36,
+  "excluded_missing_page": 0,
+  "eligible": 161,
+  "multimodal_judgment": 64,
+  "qrel_coverage": 1.0
+}

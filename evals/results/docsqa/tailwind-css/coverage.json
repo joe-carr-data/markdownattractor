@@ -1,0 +1,14 @@
+{
+  "project": "tailwind-css",
+  "corpus_pages": 197,
+  "corpus_pages_indexed": 197,
+  "qrels": 99,
+  "qrels_indexed": 99,
+  "qrels_unmapped": 0,
+  "questions": 93,
+  "excluded_image_evidence": 9,
+  "excluded_missing_page": 0,
+  "eligible": 84,
+  "multimodal_judgment": 10,
+  "qrel_coverage": 1.0
+}
