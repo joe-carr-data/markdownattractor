@@ -97,7 +97,7 @@ jobs:
           # The binary sits at the archive root: that is what bootstrap.sh extracts.
           tar -C "dist/$out" -czf "dist/$out.tar.gz" .
           ls -l dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mda-${{ matrix.name }}
           path: dist/mda-${{ matrix.name }}.tar.gz
@@ -130,7 +130,7 @@ jobs:
           sed "s|https://github.com/\$REPO/releases/download/v\${WANTED}|http://127.0.0.1:8765|" scripts/bootstrap.sh > /tmp/bootstrap-local.sh
           bash /tmp/bootstrap-local.sh
           "$CLAUDE_PLUGIN_DATA/bin/mda" --version | grep -q "$(tr -d '[:space:]' < VERSION)"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: SHA256SUMS
           path: dist/SHA256SUMS
