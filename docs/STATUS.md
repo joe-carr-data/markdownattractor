@@ -1,9 +1,10 @@
 # STATUS (updated 2026-09-22 by Claude)
 **Start here after compaction: `docs/handoffs/2026-09-22-session3-final-handoff.md`.**
-Phase: benchmarks — **B0a `.mdx` ingestion done; B0b leaner payload next**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md
+Phase: benchmarks — **B0a `.mdx` ingestion (PR #18) and B0b lean payload done; B0 harness hardening next**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
+- **B0b lean MCP payload**: `mda_search` returns five hits without ranking diagnostics; golden-corpus source tokens 1,305 → 760 at 11/12 parity, but more turns (`docs/benchmarks.md`). `ab.sh`/`grade.sh` run through `claude -p` and fail loud.
 - **B0a `.mdx` ingestion** (benchmark plan): walker accepts `.mdx`; parser excludes the leading ESM block, keeps headings glued to JSX tags, titles pages from front matter (YAML/TOML) or `export const title`; `docs/design/ingestion.md` with the numbers on all four DocsQA corpora at the pinned commits (every heading kept, every non-partial page titled). Benchmark plan v3.2: every model call through the owner's Claude Code login (§0a.3).
 - **v0.1.0 + v0.1.1 released** (five archives + `SHA256SUMS` each). Marketplace install verified end to end from a clean state: hook downloads the binary, daemon starts, MCP answers. v0.1.1 fixed the manifest (standard component paths must not be listed in `plugin.json`).
 - Release workflow verified end to end on `main` (dry run: five builds, checksums, `bootstrap.sh` install gate all green) after two fixes (cross target on the pinned toolchain, Linux on ubuntu-24.04). Repo public; history scrubbed of workspace ids.
