@@ -24,10 +24,19 @@ pub struct Args {
     /// Run in this terminal instead of the background (logs to stderr; Ctrl-C stops).
     #[arg(long)]
     pub foreground: bool,
+    /// On a first run, do not wait for the first cards to show an example query. The
+    /// `SessionStart` hook passes this; interactive users get the example.
+    #[arg(long)]
+    pub no_example: bool,
+    /// How long a first run may wait for the first cards before giving up on the example.
+    #[arg(long, default_value_t = 60, hide = true, value_parser = clap::value_parser!(u64).range(0..=3600))]
+    pub example_timeout: u64,
 }
 
 /// How long `start` waits for the daemon to answer its socket.
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(8);
+/// Cards to wait for before running the example query (or every section when fewer).
+const EXAMPLE_CARDS: u64 = 10;
 
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
@@ -36,25 +45,14 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let st = Style::auto();
 
     if super::block_on(is_running(&root))? {
-        let info = DaemonInfo::read(&root)?;
-        if json {
-            output::json(&serde_json::json!({ "started": false, "running": true, "info": info }));
-        } else {
-            let pid = info.map_or("?".to_owned(), |i| i.pid.to_string());
-            println!(
-                "{} already running · pid {pid} · {}",
-                st.ok("mda"),
-                st.dim(&root.display().to_string())
-            );
-            println!("  {} mda status · mda watch · mda stop", st.dim("next:"));
-        }
-        return Ok(ExitCode::SUCCESS);
+        return report_already_running(&root, json, &st);
     }
 
     // Creates .markdownattractor/ and the database if this is the first run.
     let engine = Engine::open(&root)?;
     let cfg = engine.config().clone();
     let files = mda_core::walk::discover(&root, &cfg)?.len();
+    let carded_before = engine.store().counts()?.summarized;
     drop(engine);
     let backend_warning = backend_for(&cfg).err().map(|e| e.to_string());
 
@@ -97,6 +95,10 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let info = DaemonInfo::read(&root)?;
     let pid = info.as_ref().map_or(pid, |i| i.pid);
 
+    // First run: show one real hit before the user walks away (plan §9.5).
+    let (example, example_skipped) =
+        first_run_example(args, &root, backend_warning.as_deref(), carded_before, files);
+
     if json {
         output::json(&serde_json::json!({
             "started": true,
@@ -107,6 +109,8 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "log_dir": log_dir,
             "backend_warning": backend_warning,
             "info": info,
+            "example": example,
+            "example_skipped": example_skipped,
         }));
     } else {
         println!(
@@ -128,8 +132,121 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
                 st.dim("hint:")
             );
         }
+        match (&example, &example_skipped) {
+            (Some(ex), _) => print_example(ex, &st),
+            (None, Some(reason)) if !args.no_example && backend_warning.is_none() => {
+                println!("  {} example query skipped: {reason}", st.dim("note:"));
+            }
+            _ => {}
+        }
         println!("  {} mda status · mda watch · mda search \"…\"", st.dim("next:"));
         let _ = std::io::stdout().flush();
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// Decide whether this start gets an example query and, if so, wait for it. Returns the
+/// example or the reason it was skipped.
+fn first_run_example(
+    args: &Args,
+    root: &Path,
+    backend_warning: Option<&str>,
+    carded_before: u64,
+    files: usize,
+) -> (Option<mda_core::pipeline::Example>, Option<String>) {
+    let skip = if args.no_example {
+        Some("--no-example")
+    } else if backend_warning.is_some() {
+        Some("summarization is disabled")
+    } else if carded_before > 0 {
+        Some("this root already had cards")
+    } else if files == 0 {
+        Some("no markdown files")
+    } else {
+        None
+    };
+    if let Some(reason) = skip {
+        return (None, Some(reason.to_owned()));
+    }
+    match wait_for_example(root, Duration::from_secs(args.example_timeout)) {
+        Ok(Some(ex)) => (Some(ex), None),
+        Ok(None) => (None, Some("no card carries a question yet".to_owned())),
+        Err(reason) => (None, Some(reason)),
+    }
+}
+
+/// Poll the store until the first cards land (or `timeout`), then pick a question from one
+/// of them and search for it. `Err` carries the reason when nothing could be shown.
+fn wait_for_example(
+    root: &Path,
+    timeout: Duration,
+) -> std::result::Result<Option<mda_core::pipeline::Example>, String> {
+    let deadline = Instant::now().checked_add(timeout).ok_or("timeout out of range")?;
+    let engine = Engine::open(root).map_err(|e| e.to_string())?;
+    loop {
+        let counts = engine.store().counts().map_err(|e| e.to_string())?;
+        // `summarized` and `pending` count distinct hashes; `sections` counts rows. Two
+        // documents with the same content are one hash, so "done" is "nothing pending", and
+        // the card target only shortens the wait on a large root.
+        let work_done = counts.sections > 0 && counts.pending == 0;
+        let enough = counts.summarized >= EXAMPLE_CARDS;
+        if work_done || enough {
+            // A card without a usable question (heading-only, or an empty list) is not an
+            // example; keep polling while the daemon is still producing cards.
+            if let Some(ex) = engine.example().map_err(|e| e.to_string())? {
+                return Ok(Some(ex));
+            }
+            if work_done {
+                return Ok(None);
+            }
+        }
+        if Instant::now() >= deadline {
+            return Err(format!(
+                "no usable card after {}s ({} carded, {} pending); `mda status` shows progress",
+                timeout.as_secs(),
+                counts.summarized,
+                counts.pending
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(500));
+    }
+}
+
+fn print_example(ex: &mda_core::pipeline::Example, st: &Style) {
+    println!("  {} mda search {:?}", st.bold("example:"), ex.query);
+    match &ex.hit {
+        Some(h) => {
+            let heading = if h.heading_path.is_empty() {
+                "(preamble)".to_owned()
+            } else {
+                h.heading_path.join(" › ")
+            };
+            println!(
+                "    {} › {}   {} · {}",
+                st.bold(&h.rel_path),
+                heading,
+                st.accent(&format!("L{}–{}", h.line_start, h.line_end)),
+                super::humanize_age(h.updated_at),
+            );
+            println!("    {}", h.tldr.as_deref().unwrap_or(&h.snippet));
+            println!("    {}", st.dim(&format!("mda open {}", h.section_id)));
+        }
+        None => println!("    (no lexical hit for that question; try `mda search` with vectors)"),
+    }
+}
+
+fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result<ExitCode> {
+    let info = DaemonInfo::read(root)?;
+    if json {
+        output::json(&serde_json::json!({ "started": false, "running": true, "info": info }));
+    } else {
+        let pid = info.map_or("?".to_owned(), |i| i.pid.to_string());
+        println!(
+            "{} already running · pid {pid} · {}",
+            st.ok("mda"),
+            st.dim(&root.display().to_string())
+        );
+        println!("  {} mda status · mda watch · mda stop", st.dim("next:"));
     }
     Ok(ExitCode::SUCCESS)
 }

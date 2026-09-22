@@ -551,3 +551,28 @@ fn stale_never_follows_a_link_out_of_the_root() {
     assert!(a.unreadable, "{a:?}");
     assert!(!a.changed_on_disk, "the outside file was never read");
 }
+
+#[tokio::test]
+async fn example_prefers_a_model_card_question_and_finds_its_section() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    write(
+        &root,
+        "ops.md",
+        "# Ops\n\n## Empty\n\n## Rollback\n\nRun deployctl rollback to revert a release.\n",
+    );
+    e.index_file(&root.join("ops.md")).unwrap();
+    assert_eq!(e.example().unwrap(), None, "no cards yet");
+
+    let backend = Arc::new(Mock::new().default_ok());
+    e.summarize_pending(backend, CancellationToken::new(), SummarizeOptions::default(), |_| {})
+        .await
+        .unwrap();
+    let ex = e.example().unwrap().expect("a card with a question");
+    let section = e.store().section(&ex.section_id).unwrap().unwrap();
+    assert_ne!(section.provenance.unwrap().backend, "deterministic");
+    assert!(!ex.query.is_empty());
+    assert_eq!(section.summary.unwrap().questions_answered[0].trim(), ex.query);
+    assert!(ex.hit.is_some(), "the picked question finds something");
+}

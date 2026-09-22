@@ -92,6 +92,12 @@ pub fn restart(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             return Ok(code);
         }
     }
-    let start = super::start::Args { path: None, root: Some(root), foreground: false };
+    let start = super::start::Args {
+        path: None,
+        root: Some(root),
+        foreground: false,
+        no_example: true,
+        example_timeout: 0,
+    };
     super::start::run(&start, json)
 }

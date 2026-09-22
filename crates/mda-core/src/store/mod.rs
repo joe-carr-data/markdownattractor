@@ -409,6 +409,25 @@ pub struct Usage {
     pub cost_usd: f64,
 }
 
+/// One row of the spend ledger aggregated by UTC day, model and outcome (`mda cost`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DailyUsage {
+    /// UTC day, `YYYY-MM-DD`.
+    pub day: String,
+    /// Model the attempts were sent to.
+    pub model: String,
+    /// Outcome kind the pool recorded: `ok`, `malformed`, `retryable`, `rate_limited`, `fatal`.
+    pub outcome: String,
+    /// Attempts (jobs) recorded.
+    pub calls: u64,
+    /// Prompt tokens.
+    pub input_tokens: u64,
+    /// Completion tokens.
+    pub output_tokens: u64,
+    /// Cost in US dollars as the backend reported it.
+    pub cost_usd: f64,
+}
+
 /// A full-text hit.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FtsHit {
@@ -1628,6 +1647,43 @@ impl Store {
             ],
         )?;
         Ok(())
+    }
+
+    /// The ledger aggregated by UTC day, model and outcome, newest day first, for every
+    /// attempt at or after `since` (all of it when `None`).
+    pub fn usage_by_day(&self, since: Option<Timestamp>) -> Result<Vec<DailyUsage>> {
+        let floor = since.map(fmt_ts).unwrap_or_default();
+        let mut stmt = self.conn.prepare(
+            "SELECT substr(at, 1, 10) AS day, model, outcome, COUNT(*),
+                    SUM(input_tokens), SUM(output_tokens), SUM(cost_usd)
+             FROM usage_log WHERE at >= ?1
+             GROUP BY day, model, outcome
+             ORDER BY day DESC, model, outcome",
+        )?;
+        let rows = stmt.query_map([floor], |r| {
+            Ok(DailyUsage {
+                day: r.get(0)?,
+                model: r.get(1)?,
+                outcome: r.get(2)?,
+                calls: u64::try_from(r.get::<_, i64>(3)?).unwrap_or(0),
+                input_tokens: u64::try_from(r.get::<_, i64>(4)?).unwrap_or(0),
+                output_tokens: u64::try_from(r.get::<_, i64>(5)?).unwrap_or(0),
+                cost_usd: r.get(6)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// Up to `limit` summarized sections of live documents, most recently carded first.
+    /// Used to pick a real question for the first-run example query.
+    pub fn carded_sections_sample(&self, limit: usize) -> Result<Vec<StoredSection>> {
+        let sql = format!(
+            "SELECT {SECTION_COLUMNS} WHERE m.state = 'summarized' AND d.deleted_at IS NULL
+             ORDER BY m.summarized_at DESC, s.section_id LIMIT ?1"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let rows = stmt.query_map(params![to_i64(limit as u64)], row_to_section)?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
     /// Tokens and cost of every attempt logged at or after `since`, successful or not.

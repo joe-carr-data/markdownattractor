@@ -631,3 +631,50 @@ fn recent_documents_and_documents_with_open_sections() {
         "fully carded docs drop out"
     );
 }
+
+#[test]
+fn usage_by_day_groups_the_ledger_and_honours_since() {
+    let (mut store, out) = store_with_doc_a();
+    let sections = store.sections_of(&out.doc_id).unwrap();
+    let u = Usage { input_tokens: 100, output_tokens: 10, cost_usd: 0.01 };
+    store.record_usage(&sections[0].section_hash, "haiku", &u, "ok").unwrap();
+    store.record_usage(&sections[1].section_hash, "haiku", &u, "ok").unwrap();
+    store.record_usage(&sections[2].section_hash, "haiku", &u, "retryable").unwrap();
+    store.record_usage(&sections[2].section_hash, "sonnet", &u, "ok").unwrap();
+
+    let rows = store.usage_by_day(None).unwrap();
+    assert_eq!(rows.len(), 3, "{rows:?}");
+    let today = fmt_ts(Timestamp::now())[..10].to_owned();
+    assert!(rows.iter().all(|r| r.day == today));
+    let haiku_ok = rows.iter().find(|r| r.model == "haiku" && r.outcome == "ok").unwrap();
+    assert_eq!(haiku_ok.calls, 2);
+    assert_eq!(haiku_ok.input_tokens, 200);
+    assert_eq!(haiku_ok.output_tokens, 20);
+    assert!((haiku_ok.cost_usd - 0.02).abs() < 1e-9);
+    let sonnet = rows.iter().find(|r| r.model == "sonnet").unwrap();
+    assert_eq!(sonnet.calls, 1);
+
+    // A window that starts in the future sees nothing; one in the past sees everything.
+    let future = Timestamp::now() + jiff::Span::new().hours(1);
+    assert!(store.usage_by_day(Some(future)).unwrap().is_empty());
+    assert_eq!(store.usage_by_day(Some(ts(0))).unwrap().len(), 3);
+}
+
+#[test]
+fn carded_sections_sample_returns_live_summarized_sections_newest_first() {
+    let (mut store, out) = store_with_doc_a();
+    let sections = store.sections_of(&out.doc_id).unwrap();
+    assert!(store.carded_sections_sample(5).unwrap().is_empty());
+    store
+        .attach_summary(&sections[0].section_hash, &summary("first", "b"), &provenance(1), &usage())
+        .unwrap();
+    store
+        .attach_summary(&sections[2].section_hash, &summary("later", "b"), &provenance(2), &usage())
+        .unwrap();
+    let sample = store.carded_sections_sample(5).unwrap();
+    assert_eq!(sample.len(), 2);
+    assert_eq!(sample[0].summary.as_ref().unwrap().tldr, "later");
+    assert_eq!(store.carded_sections_sample(1).unwrap().len(), 1);
+    store.tombstone("a.md", ts(9)).unwrap();
+    assert!(store.carded_sections_sample(5).unwrap().is_empty());
+}

@@ -6,6 +6,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 |---|---|---|
 | 2026-09-22 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-09-22 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-09-22 | [plans/2026-09-phase4-launch.md](plans/2026-09-phase4-launch.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 4, §9 distribution, §9.5 first … |
 | 2026-09-22 | [plans/2026-09-phase2-search.md](plans/2026-09-phase2-search.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 2 · decisions in ADR-0004 · bra… |
 | 2026-09-22 | [plans/2026-09-phase1-engine.md](plans/2026-09-phase1-engine.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1 |
 | 2026-09-22 | [plans/2026-09-phase1-daemon.md](plans/2026-09-phase1-daemon.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1, row 13 of `2026-09-phase1-engi… |
@@ -14,16 +15,19 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
 | 2026-09-22 | [design/daemon.md](design/daemon.md) | As built at the end of Phase 1 (2026-09-22). Decisions and their reasons: ADR-0003. This document… |
+| 2026-09-22 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
 | 2026-09-22 | [adr/0004-phase2-vectors-embeddings-mcp.md](adr/0004-phase2-vectors-embeddings-mcp.md) | Status: **Accepted** · 2026-09-22 · Plan §5, §13 questions 1 and 3, §16 · Evidence: `docs/p… |
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
 | 2026-09-22 | [reviews/codex/2026-09-22-phase2.md](reviews/codex/2026-09-22-phase2.md) | \ |
+| 2026-09-22 | [reviews/codex/2026-09-22-first-run.md](reviews/codex/2026-09-22-first-run.md) | \| \| \| |
 | 2026-09-22 | [reviews/codex/2026-09-22-daemon.md](reviews/codex/2026-09-22-daemon.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
 | 2026-09-22 | [handoffs/2026-09-22-session-handoff.md](handoffs/2026-09-22-session-handoff.md) | Written by Claude (Fable 5.1) at the end of the first build session, for the next session after c… |
 | 2026-09-22 | [handoffs/2026-09-22-phase2-handoff.md](handoffs/2026-09-22-phase2-handoff.md) | Written by Claude (Fable 5.1) at the end of the second build session, for the next session. **Rea… |
+| 2026-09-22 | [handoffs/2026-09-22-1209-auto.md](handoffs/2026-09-22-1209-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-22 | [handoffs/2026-09-22-0259-auto.md](handoffs/2026-09-22-0259-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |

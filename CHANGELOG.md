@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Added
+- **First-run experience (plan §9.5).** `mda start` on a fresh root waits for the first cards (bounded, 60 s) and prints one real example query with its hit and line range; `--no-example` skips it and the SessionStart hook passes it. `mda cost [--since]` reads the usage ledger per day and per model/outcome and says that tokens saved on reads are not measured yet. `mda diagnostics [--out]` writes a redacted bundle (home directory, workspace id and hot paths redacted; no document content) for issue reports. `mda nudge on|off [--global]` switches the search-first reminder per root (`config.toml`) or everywhere (`${CLAUDE_PLUGIN_DATA}/nudge.off` through `MDA_NUDGE_FILE`); the hook honours both.
+- `mda index <directory>` treats the directory as the root instead of failing with "is a directory".
+- The plugin's MCP server was watched loading in a real Claude Code session (`claude -p --plugin-dir`): tools appear as `mcp__plugin_markdownattractor_markdownattractor__mda_*` and answer; recorded in `docs/design/mcp.md`.
 - **Search layer (ADR-0004).** Card embeddings with a local `bge-small-en-v1.5` model (fastembed, static ONNX Runtime, downloaded once, never inside a query) as a third fused list; `mda explain` shows cards, raw and vector lists; `mda embeddings local-small|off`, `mda rebuild --embeddings`. Golden set: hybrid success@5 0.983 vs 0.883 lexical.
 - **MCP server.** `mda mcp` (stdio, rmcp 3) with `mda_search`, `mda_card`, `mda_open`, `mda_timeline`, `mda_recent`, `mda_stale`, `mda_status`; declared by the plugin in `.mcp.json`.
 - `mda timeline`, `mda recent`, `mda stale`, `mda eval --golden` (success@k, MRR@k, `--record`); `evals/golden` with 32 documents and 60 queries; `docs/benchmarks.md`.

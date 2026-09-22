@@ -98,7 +98,7 @@ Everything is `/markdownattractor …` or the short form `/mda …`. The search 
 | **Indexing** | `index [path]` · `pause` · `resume` · `rebuild` · `ignore <pattern>` · `prune` |
 | **Search** | `search <q> [--since 7d] [--status current] [--in path]` · `open <id>` · `timeline` · `recent` · `stale` · `explain <q>` |
 | **Configure** | `summarization_model` · `escalation_model` · `backend` · `embeddings` · `concurrency` · `budget` · `retention` · `nudge` · `config` |
-| **Meta** | `cost` · `diagnostics` · `export` · `logs` · `reset` · `version` · `update` · `help` |
+| **Meta** | `cost [--since 7d]` · `diagnostics [--out file]` · `export` · `logs` · `reset` · `version` · `update` · `help` |
 
 The full reference with flags is in [`docs/project-plan.md` §6](docs/project-plan.md#6-command-ux--markdownattractor).
 
