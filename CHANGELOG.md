@@ -9,6 +9,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - `scripts/eval/grade.sh` grades through `claude -p` with a JSON schema instead of the Messages API (no API key in `evals/`); an answer with no grade is reported as ungraded, never as zero; medians are conventional.
 
 ### Added
+- **`mda eval --dataset docsqa`** (benchmark plan B0/B2): the DocsQA-Repo adapter. Loads a project from a `docsqa-data` checkout, maps its page labels to repository paths, reports ingestion coverage (labels indexed, questions excluded for image-derived evidence or missing pages), assigns a seeded dev/test/holdout split, and scores success@5, MRR@5 and nDCG@10 at page granularity for the raw, carded and hybrid configurations; `--out` writes `coverage.json`, `split.json`, `results.json`. Metrics, coverage and the split live in `mda_core::eval`.
+
+### Added
 - **`.mdx` ingestion** (`docs/design/ingestion.md`). The walker accepts `.mdx`; the parser excludes a leading block of `import`/`export` statements from sections the way it excludes front matter, keeps a heading that sits inside a JSX or HTML block without a blank line before it (CommonMark would swallow it), and falls back for the document title to front matter `title:` (YAML or TOML) and then to `export const title = "…"`. JSX, expressions and template tags stay as text. Search snippets skip markup-only lines. Checked on the four DocsQA-Repo corpora at their pinned commits: every heading kept, every page titled except partials. The search-first skill and the nudge hook cover `.mdx` too.
 
 ## [0.1.1] — 2026-09-22

@@ -45,7 +45,7 @@ As built through Phase 4 (2026-09-22). One line per command: what it does, what 
 |---|---|---|
 | `cost [--since 7d]` | The usage ledger (every model attempt, whatever its outcome) as window totals, per day, and per model/outcome; the all-time card total. Says that tokens saved on reads are **not measured yet** (`tokens_saved: null`). | Estimates savings it has not measured. |
 | `diagnostics [--out file]` | A JSON bundle: versions, features, OS/arch, config (workspace id and home directory redacted; the config never holds a key), store counts and schema, embedding check, daemon live status (hot paths dropped), `doctor` checks, the last 40 daemon log lines (home redacted). | Includes document content or paths outside the root. |
-| `eval --golden <dir> [-k] [--record]` | Retrieval metrics on a golden set (`docs/benchmarks.md`). | Writes under `evals/` unless `--record`. |
+| `eval --golden <dir> [-k] [--record]` · `eval --dataset docsqa --data <dir> --project <p> --root <checkout> [--split dev\|test\|holdout\|all] [--seed] [--cards] [--out]` | Retrieval metrics on a golden set, or on DocsQA-Repo at page granularity with a coverage report and a seeded split (`evals/README.md`, `docs/benchmarks.md`). | Writes under `evals/` unless `--record`/`--out`; never indexes a dataset root itself (`mda index` first). |
 | `mcp` | Serves the index over stdio (`docs/design/mcp.md`). | Prints anything but protocol on stdout. |
 
 Not built yet (plan §6): `root`, `ignore`, `prune`, `summarization_model`, `escalation_model`, `concurrency`, `budget`, `retention`, `config`, `export`, `logs`, `reset`, `update`, `help`. Their settings exist in `config.toml`; the commands are convenience wrappers to come.

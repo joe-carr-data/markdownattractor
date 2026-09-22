@@ -69,6 +69,21 @@ Two levers the numbers point at: a leaner hit payload (`k` and per-hit fields ar
 
 The search result itself shrank from ≈ 1,400 to ≈ 400 tokens and the median source tokens per answer fell by 42%, but Claude now opens sections it used to answer from the tldr, so it takes more turns and total input tokens (the whole context, once per turn) went up. On this corpus the index still reads three times the baseline's source tokens; the break-even size will be measured on the DocsQA corpora (plan B2).
 
+## DocsQA-Repo — ingestion gate and the first axis-A row (benchmark plan B2, 2026-09-22)
+
+Source-repository adaptation of DocsQA-Repo (`PowderXu/docsqa-data` schema v3; `evals/README.md`): the four repositories indexed at their pinned commits (raw index only, no cards yet), labels mapped to repository paths, every question assigned to the seeded split (seed 20260922). Numbers below are the **development split** only (rule 0.2), the raw-text lexical configuration only (BM25 over section text, no cards, no vectors), one run, on the release-profile-free debug binary (latency is indicative). Raw files: `evals/results/docsqa/<project>/{coverage,split,results}.json`.
+
+| Project | docs / sections indexed | labels indexed (coverage) | questions → eligible | dev/test/holdout | dev scored | success@5 | MRR@5 | nDCG@10 | mean ms |
+|---|---|---|---|---|---|---|---|---|---|
+| github-docs | 3742 / 23066 | 260/260 (100%) | 197 → 161 (36 image-evidence) | 59/108/30 | 49 | 0.306 | 0.175 | 0.227 | 540 |
+| prisma | 693 / 10438 | 179/179 (100%) | 125 → 118 (7 image-evidence) | 37/68/20 | 37 | 0.216 | 0.108 | 0.132 | 514 |
+| supabase | 836 / 6548 | 63/63 (100%) | 52 → 40 (12 image-evidence) | 15/28/9 | 12 | 0.333 | 0.118 | 0.208 | 547 |
+| tailwind-css | 198 / 1518 | 99/99 (100%) | 93 → 84 (9 image-evidence) | 27/51/15 | 25 | 0.600 | 0.340 | 0.420 | 69 |
+
+- **Ingestion gate (plan §2 F1): passed on all four projects**, 100% of the 601 labels map to an indexed file (the `.mdx` work of B0a is what made three of them possible). Excluded and stated: 64 questions whose reference evidence is image-derived text; none for a missing page.
+- The raw-lexical row is the floor, not the product: DocsQA questions are long community questions ("how do I…", with error strings and context), which an AND query over every term rarely matches, so most queries fall to the OR form and BM25 over raw text ranks the page with the most repeated words. Cards (`questions_answered`, `tldr`) and vectors are what the plan expects to move these numbers; the carded and hybrid rows come with the committed cards (B2, `claude-cli` backend per §0a.3).
+- Query latency on the three larger corpora is ≈ 0.5 s per question in this configuration (long OR queries, 120 candidates fetched per list, one row read per candidate), far above the 30 ms budget; a lever to measure before axis B (fewer candidates, a prepared statement per section lookup, or the release build).
+
 ## Not measured yet
 
 - The A/B protocol on corpora beyond the golden set (design-partner repos; this repository's own `docs/` is a candidate at 28 files / 5K lines).

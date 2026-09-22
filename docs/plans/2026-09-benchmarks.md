@@ -80,11 +80,11 @@ The benchmark is versioned by `mda` release: axis A reruns in CI on every tag; B
 
 ## 5. Tasks
 
-- [ ] B0 Harness: dataset adapters (`mda eval --dataset docsqa <dir>` with page-level aggregation and coverage report); `ab.sh` per-arm manifests, fail-loud validation, transcript-counted tokens (rule 0.7), conventional medians, smoke tests with traces; `grade.sh` through `claude -p` (no API key), grounding check and schema validation; `FROZEN.md` writer; dev/test split tool.
+- [ ] B0 Harness: **done** — dataset adapter `mda eval --dataset docsqa` (page-level aggregation, coverage report, seeded dev/test/holdout split written to `split.json`), `ab.sh` run manifest + fail-loud validation, `grade.sh` through `claude -p` with schema validation and conventional medians. **Open** — per-arm manifests for the competitor arms and smoke tests with traces, transcript-counted tokens (rule 0.7), grounding check in the grader, `FROZEN.md` writer, `panel.sh`.
 - [x] B0a `.mdx` ingestion (walker, parser: leading ESM block excluded, headings inside JSX blocks kept, title fallbacks; `docs/design/ingestion.md`; checked on all four DocsQA corpora at the pinned commits).
 - [x] B0b leaner hit payload: MCP `k` 5, no diagnostics, snippet only without a card; golden corpus median source tokens 1,304.5 → 762.5 (all 12 questions) at 11/12 parity, more turns; exploratory, one run (`docs/benchmarks.md`). `grade.sh` and `ab.sh` moved to `claude -p`, fail loud, write and check a run manifest (Codex review `docs/reviews/codex/2026-09-22-lean-payload.md`).
 - [ ] B1 Own corpora, mda vs grep (axes B, E), break-even size.
-- [ ] B2 DocsQA ingestion gate, then axis A (all four projects, all arms) and axis B on the frozen 25-question test sample per project.
+- [ ] B2 DocsQA: **ingestion gate passed** (100% label coverage on all four projects, `docs/benchmarks.md`); first axis-A row (raw lexical, dev split) published as the floor. **Open** — cards for the four corpora through `claude-cli` (§0a.3), committed under `evals/results/docsqa/`; carded and hybrid rows; qmd and BM25-over-files arms; axis B on the frozen test sample.
 - [ ] B3 Freshness on Prisma (axis C), three distributions, all arms.
 - [ ] B4 Temporal set with historical replay (mtimes + `MDA_NOW`), git validation (axis D), all arms including the git baseline.
 - [ ] B5 FreshStack documentation subset (axis A).
