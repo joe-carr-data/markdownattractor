@@ -36,7 +36,7 @@ Goal: a user installs the plugin with one command, types `/mda start`, and sees 
 - [x] A headless Claude Code session with the plugin loaded answers a question through `mda_search` (transcript excerpt in `design/mcp.md`).
 - [x] On a fresh copy of `docs/` with the `api` backend, `mda start` prints a real hit with a line range within 60 s of starting: 5.4 s, after the first 10 cards.
 - [x] `mda cost`, `mda diagnostics`, `mda nudge` exist, have `--json`, and are covered by CLI tests; `diagnostics` output contains neither the home directory nor the workspace id.
-- [ ] A tag build produces the five archives and `SHA256SUMS` (pending the first `workflow_dispatch` run); `scripts/bootstrap.sh` installed the darwin-arm64 archive on this machine from a local mirror of the release layout and `mda --version` matched `VERSION` (done 2026-09-22).
+- [x] The release workflow dry run on `main` (2026-09-22, second run) built all five archives, wrote `SHA256SUMS`, and `scripts/bootstrap.sh` installed the linux-x64 archive from a mirror of the layout in the `publish` job; the darwin-arm64 archive was also installed by hand on this machine. The tag itself (`v0.1.0`) is the owner's call.
 - [x] `check-version.sh` runs in CI and fails on a mismatch (verified locally with a wrong tag; the CI job runs the same script).
 - [x] The A/B table exists in `docs/benchmarks.md` with the parity gate applied (golden corpus: parity 12/12, no saving). The README makes no token-saving number claim.
 
