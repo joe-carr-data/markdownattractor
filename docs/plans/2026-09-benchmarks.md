@@ -1,10 +1,12 @@
 # Benchmark plan — public datasets, competitors, and where we can shine
 
-Status: **v3, revised after two Codex passes** (`docs/reviews/codex/2026-09-22-benchmark-plan.md`) · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchmarking strategy where we can shine, on a golden dataset others use, clearly beating the alternatives"
+Status: **v3, accepted by Codex on the third pass** (`docs/reviews/codex/2026-09-22-benchmark-plan.md`); implementation not started (`docs/reviews/codex/2026-09-22-benchmark-plan.md`) · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchmarking strategy where we can shine, on a golden dataset others use, clearly beating the alternatives"
 
 Goal: publish numbers that (a) other people can rerun from public data with one command per table, (b) are computed on questions we did not write, (c) compare like with like against the tools a Claude Code user would otherwise install, and (d) show the three things markdownattractor is built for: answer quality at parity with far fewer source tokens on large corpora, freshness, and time questions. Where we lose (tiny corpora, questions the model already knows) the page says so; that is what makes the wins credible.
 
 ## 0. Rules that apply to every table (the reader's trust, pre-empted)
+
+Scope statement for the page, from the review: the results cover the declared dataset adaptations, a simulated historical replay and a disclosed test-set reuse; they do not claim universal superiority, and the replay does not claim production recovery of historical timestamps.
 
 1. **Frozen before any run:** dataset commit, question sample (seeded, stratified by project), development/test split, every tool's version and configuration, the resolved model ids (never an alias), prompts, and the analysis. Recorded in `evals/results/<dataset>/FROZEN.md` before the first measurement.
 2. **Tune on development, publish test.** DocsQA has no split; we make one per project with seed 20260922: 30% development, 55% test, 15% **sealed holdout**. Development is for tuning; test is published on every release and its reuse across releases is stated on the page; the sealed holdout is opened once, at 1.0, and published as the un-reused number.

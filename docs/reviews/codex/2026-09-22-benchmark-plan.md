@@ -7,7 +7,7 @@
 | Reviewer | Codex CLI 0.155.1 via the shared companion runtime, model `gpt-6-astra`, fresh thread `01a0ca49-d99d-7282-8417-91b5c14ecaaf`, read-only |
 | Pinned to | `2177471` (branch `plan/benchmarks`) |
 | Triaged by | Claude (Fable 5.1), same day |
-| Outcome | 13 findings (7 High, 6 Medium): **13 accepted**. Second pass on v2 (same thread): 8 resolved, 5 partly (F3, F4, F6, F7, F12); v3 closes those with a CI-lower-bound quality gate plus absolute floor and grounding gate, an `MDA_NOW` observation-clock override for replay, a sealed holdout split, a 100-card metadata audit, committed cards and a stated cache policy. Codex's verdict on v2: "would not yet accept"; v3 addresses each stated reason. Codex knew of no better public dataset than DocsQA-Repo. |
+| Outcome | 13 findings (7 High, 6 Medium): **13 accepted**. Second pass on v2 (same thread): 8 resolved, 5 partly (F3, F4, F6, F7, F12); v3 closes those with a CI-lower-bound quality gate plus absolute floor and grounding gate, an `MDA_NOW` observation-clock override for replay, a sealed holdout split, a 100-card metadata audit, committed cards and a stated cache policy. Codex's verdict on v2: "would not yet accept"; on v3 (third pass): accepted, no new findings. Codex knew of no better public dataset than DocsQA-Repo. |
 
 ## 1. Packet
 
@@ -67,7 +67,11 @@ Answers, condensed: DocsQA is a plausible primary conditional on ingestion and a
 | F7 | partly: no grounding threshold, drops ≠ correctness | grounding pass rate gates savings; 100-card human metadata audit per corpus |
 | F12 | partly: generated artifacts and cache state | cards committed per corpus and version; embedding model revision recorded; cold/warm policy stated with a cold column |
 
-## 6. Follow-ups
+## 6. Third pass (v3, commit `4611258`)
 
-- Third, short concurrence pass on v3 if the owner wants Codex's explicit acceptance on record.
+F3, F4, F6, F7, F12: resolved. New findings: none. Verdict, verbatim: "Yes, given verification that the implemented harness satisfies the plan's requirements. Acceptance covers the declared dataset adaptations, simulated historical replay and disclosed test reuse; it would not establish universal superiority or production recovery of historical timestamps." That caveat is carried onto the benchmark page as its scope statement.
+
+## 7. Follow-ups
+
+- Verification of the implemented harness against the plan's rules is part of task B0's exit, and a fourth pass on the harness code is due before the first published table.
 - `.mdx` support is a product feature with value beyond the benchmark (Docusaurus, Nextra, Mintlify sites); it gets its own small plan line and tests.
