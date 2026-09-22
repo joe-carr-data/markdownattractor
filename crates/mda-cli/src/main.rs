@@ -49,11 +49,36 @@ enum Command {
     Schema(commands::schema::Args),
     /// Check that everything mda needs is present and working.
     Doctor(commands::doctor::Args),
+    /// Start the daemon: watch the root, index on save, summarize in the background.
+    Start(commands::start::Args),
+    /// Stop the daemon gracefully; unfinished work resumes on the next start.
+    Stop(commands::stop::Args),
+    /// Stop and start the daemon (after config changes).
+    Restart(commands::stop::Args),
+    /// Stream the daemon's events live.
+    Watch(commands::watch::Args),
+    /// Keep indexing but stop calling the model.
+    Pause(commands::pause::Args),
+    /// Resume summarization after `pause`.
+    Resume(commands::pause::Args),
+    /// The daemon process itself (spawned by `start`).
+    #[command(hide = true)]
+    Daemon(commands::daemon::Args),
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    output::init_logging(cli.verbose);
+    match &cli.command {
+        Command::Daemon(args) if args.log_dir.is_some() => {
+            if let Some(dir) = &args.log_dir
+                && let Err(e) = output::init_file_logging(dir)
+            {
+                eprintln!("error: cannot open log directory {}: {e}", dir.display());
+                return ExitCode::FAILURE;
+            }
+        }
+        _ => output::init_logging(cli.verbose),
+    }
 
     let result = match cli.command {
         Command::Index(args) => commands::index::run(&args, cli.json),
@@ -65,6 +90,13 @@ fn main() -> ExitCode {
         Command::Parse(args) => commands::parse::run(&args, cli.json),
         Command::Schema(args) => commands::schema::run(&args),
         Command::Doctor(args) => commands::doctor::run(&args, cli.json),
+        Command::Start(args) => commands::start::run(&args, cli.json),
+        Command::Stop(args) => commands::stop::run(&args, cli.json),
+        Command::Restart(args) => commands::stop::restart(&args, cli.json),
+        Command::Watch(args) => commands::watch::run(&args, cli.json),
+        Command::Pause(args) => commands::pause::pause(&args, cli.json),
+        Command::Resume(args) => commands::pause::resume(&args, cli.json),
+        Command::Daemon(args) => commands::daemon::run(&args, cli.json),
     };
 
     match result {
