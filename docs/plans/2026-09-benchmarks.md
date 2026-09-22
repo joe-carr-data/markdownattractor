@@ -1,76 +1,100 @@
 # Benchmark plan — public datasets, competitors, and where we can shine
 
-Status: **draft for review** · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchmarking strategy where we can shine, on a golden dataset others use, clearly beating the alternatives"
+Status: **v2, revised after Codex review** (`docs/reviews/codex/2026-09-22-benchmark-plan.md`) · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchmarking strategy where we can shine, on a golden dataset others use, clearly beating the alternatives"
 
-Goal: publish numbers that (a) other people can rerun, (b) are computed on datasets we did not write, (c) compare like with like against the tools a Claude Code user would otherwise install, and (d) show the three things markdownattractor is built for: answer quality at parity with far fewer source tokens on large corpora, freshness (seconds from edit to correct answer), and time questions nobody else answers. Where we lose (tiny corpora) the page says so; that is what makes the wins credible.
+Goal: publish numbers that (a) other people can rerun from public data with one command per table, (b) are computed on questions we did not write, (c) compare like with like against the tools a Claude Code user would otherwise install, and (d) show the three things markdownattractor is built for: answer quality at parity with far fewer source tokens on large corpora, freshness, and time questions. Where we lose (tiny corpora, questions the model already knows) the page says so; that is what makes the wins credible.
+
+## 0. Rules that apply to every table (the reader's trust, pre-empted)
+
+1. **Frozen before any run:** dataset commit, question sample (seeded, stratified by project), development/test split, every tool's version and configuration, the resolved model ids (never an alias), prompts, and the analysis. Recorded in `evals/results/<dataset>/FROZEN.md` before the first measurement.
+2. **Tune on development, publish test.** DocsQA has no split; we make one (30% dev / 70% test per project, seed 20260922) and never look at test until the final run of a release.
+3. **Failures are results.** A run that errored, timed out, produced no answer or no grade is counted and shown; it never qualifies for savings and never becomes a zero-versus-zero "parity".
+4. **Quality first, then cost.** A table reports token or cost savings only if the pre-declared quality criterion holds over the whole test set: mean index score ≥ mean baseline score − 0.25 on the 0–6 scale, with a paired bootstrap 95% interval published; per-question scores and costs are all published. Parity-subset savings are labelled with their denominator.
+5. **Every arm gets the same evidence and a smoke test.** Before a table is run, each arm has a recorded trace proving its index or hook was actually used on three probe questions, and the effective configuration is published with the traces. Temporal questions give every arm the git history.
+6. **A no-retrieval control** (the model answers from memory, no tools) is in every answer-quality table: GitHub Docs, Tailwind, Prisma and Supabase are in every model's training data, and a reader must see how much of the score is retrieval.
+7. **Tokens are counted, not guessed:** tool-result and prompt tokens through the Messages API `count_tokens` endpoint with the same model family; where an estimate is unavoidable it is labelled "estimated". Medians are the conventional median (mean of the two middle values).
+8. **Grounding is graded:** the grader also checks that every claim in an answer is supported by a cited page (or, for the control arm, that it is unsupported), and the card-level grounding pass rate (validator drops per card) is published for every corpus. A calibration sample of 30 answers per dataset is graded blind by a human and the agreement is published.
+9. **Public results are reproducible; private results are labelled.** The owner's private corpus appears in a clearly separated "supporting evidence" table and is exempt from the reproducibility claim.
 
 ## 1. What is measured, and what "shine" means
 
-| Axis | Metric | Who competes | Where we expect to win |
+| Axis | Metric | Arms | Where we expect to win |
 |---|---|---|---|
-| A. Retrieval | success@5, MRR@5, nDCG@10 against the dataset's relevance labels | mda lexical, mda hybrid, qmd, grep-as-retrieval (BM25 over files) | hybrid on paraphrased questions; must at least match qmd |
-| B. Answer quality + tokens (the CodeGraph/claude-context protocol) | Sonnet-graded score 0–6 against a reference; parity gate; **source tokens** (tool results), total input tokens, tool calls, wall-clock, cost; medians of 3 runs | grep baseline, mda, qmd, graphify | corpora ≥ 1K sections: parity with 3–10× fewer source tokens; on ≤ 200 sections we lose and say so |
-| C. Freshness | seconds from a file edit to a correct answer to a question that depends on the edit | mda daemon vs qmd (manual re-index) vs graphify (rebuild) | only mda is live; report the others' rebuild time honestly |
-| D. Time questions | success@5 and answer score on questions whose answer needs *when* (changed since, created when, current vs superseded) | mda vs the same tools | uncontested lane; reported in its own table, never averaged into A/B |
-| E. Cost to build | $, minutes and tokens per 1K sections, first index and incremental re-index after one edit | all | incremental cost near zero after one edit |
+| A. Retrieval | success@5, MRR@5, nDCG@10 at **page** granularity: a page counts as retrieved at rank r if its first section appears at r after page-level deduplication of the section list. Original sparse labels first; a blinded pooled judgment of top-5 unlabeled pages (sample of 100 query-page pairs per project) as a second column. | mda lexical, mda hybrid, qmd (full, and reranker-off ablation), BM25-over-files | hybrid on paraphrased questions; must at least match qmd on labels |
+| B. Answer quality + cost | Score 0–6 vs reference (correctness, completeness) plus grounding check; source tokens (tool results), total input tokens, tool calls, wall-clock, $; medians of 3 runs; rule 4 applies | no-retrieval control, grep baseline, mda, qmd, graphify | corpora where grep+read costs thousands of tokens per answer; reported break-even size |
+| C. Freshness | three distributions per arm, same edit trigger, fixed 1 s polling, 300 s timeout: save→raw-searchable, save→card, save→correct grounded answer; fallback reads recorded | mda daemon, qmd (documented re-index command), graphify (rebuild), grep | only mda is live; the others' rebuild time is the honest comparison |
+| D. Time questions | success@5 and answer score on "what changed / when / added in" questions with **ground truth from git**; rule 5 (every arm gets the history) and a **git baseline** (Claude with `git log`/`git diff` in Bash) | git baseline, grep, mda, qmd, graphify | convenience and correctness at equal evidence; never "others score zero by construction" |
+| E. Cost to build | $, minutes, tokens per 1K sections; first index and incremental re-index after one edit; graphify's own build cost | all | incremental cost near zero after one edit |
 
 ## 2. Datasets: public first, ours second
 
-**Primary — DocsQA-Repo** (`PowderXu/docsqa-data`): 467 real community questions over 4,860 documentation pages from four markdown/MDX documentation repositories (GitHub Docs 197 q, Prisma 125, Supabase 52, Tailwind CSS 93), pinned to exact commits (`data/manifest.json`), with reference answers (`data/answers.jsonl`: original community answer, normalised answer, `qrel_ids` sparse relevant-page labels) and model-assisted grading aspects (`data/aspects.jsonl`). This is our use case almost exactly: real questions about real markdown documentation, four corpora of different sizes, and a frozen revision anyone can clone. It carries axes A, B and E directly. Caveats to state on the page: `qrel_ids` are sparse (a correct page outside the labels counts as a miss, which hurts every system equally); the aspects are model-assisted, not expert-validated; we index the markdown source at the pinned commit, not their extracted text, so page identity has to be mapped (path ↔ page id).
+**Primary — DocsQA-Repo** (`PowderXu/docsqa-data`, schema v3): 467 real community questions over 4,860 documentation pages from four repositories pinned to exact commits, with reference answers (`answers.jsonl`: original and normalised answers, `qrel_ids`, `qrel_anchors`, 601 relevance judgments), grading aspects (`aspects.jsonl`, model-assisted, not expert-validated) and a frozen `corpus.jsonl.gz` with rendered text.
 
-**Secondary — FreshStack** (arXiv 2504.13128, CC-BY-SA 4.0): retrieval over code and technical documentation from GitHub repositories on five recent programmer topics, queries from community Q&A, nugget-level relevance. Corpora mix code and docs; we run only the documentation subset and say so. Used because the retrieval community already quotes it (axis A only).
+| Project | Repository @ commit | Docs path | Questions |
+|---|---|---|---|
+| GitHub Docs | `github/docs` @ `c34e3dc` | `content` | 197 |
+| Prisma | `prisma/web` @ `c4ac0e9` | `apps/docs/content/docs` | 125 |
+| Tailwind CSS | `tailwindlabs/tailwindcss.com` @ `bd868a3` | `src/docs` | 93 |
+| Supabase | `supabase/supabase` @ `6ea3567` | `apps/docs/content` | 52 |
 
-**Temporal — TEMPO** (arXiv 2601.09523, CC-BY 4.0): 1,730 queries needing "what changed" and validity reasoning across 13 domains with gold documents per step; the best published system reaches NDCG@10 of 32. Feasibility check first: its corpora are documents with time stamps, not versioned files, and our clocks are filesystem and git time. If it cannot be run faithfully, we do not bend it; instead **the DocsQA repositories give us a temporal set for free**: they are git repositories, so we replay a range of real commits through the daemon and generate questions of the form "what changed in <area> between <date> and <date>", "when was <page> last changed", "which pages were added in <month>", with answers computed from git itself (ground truth, no model). Axis D. This is the set where the competitors score near zero by construction, so it is published as its own table with that stated.
+**Ingestion gate (F1), before any DocsQA number:** we index the markdown/MDX source at the pinned commit, not the rendered text, so (i) the walker must accept `.mdx` (today it rejects it; three of the four corpora are MDX), (ii) MDX components, imports and includes must degrade to text without dropping headings, (iii) page ↔ path mapping coverage is measured and published (fraction of `qrel_ids` we can map to an indexed file; target ≥ 95%), (iv) questions whose evidence is image-derived text (`question_modalities`, `image_text.jsonl`) are excluded with the count stated, (v) a per-question answerability check confirms the reference evidence is present in our indexed text. Results are labelled "source-repository adaptation of DocsQA-Repo", with the canonical-corpus numbers alongside where we can compute them (BM25 over `rendered_text`).
 
-**Ours** (already fixed): `evals/golden` (32 docs, 117 sections, 60 queries); this repository's `docs/` (28 docs, 224 sections); the owner's trading-research repo (582 docs, 7,380 sections, private: numbers published, corpus not). They span the size range the plan asked for and anchor axis E.
+**Secondary — FreshStack** (arXiv 2504.13128, CC-BY-SA 4.0): mixed code and documentation corpora; we define the documentation subset (retained documents, supported nuggets, eligible queries) and publish coverage before running; labelled a derived benchmark. Axis A only, after B2.
 
-Not used: CRAG, FRAMES, MultiHop-RAG (web/Wikipedia/news, not documentation), TechQA (IBM technotes, HTML, old), MTRAG (multi-turn), SWE-bench-style code tasks (code, not prose; CodeGraph and claude-context own that lane).
+**Temporal — a git-derived set on the DocsQA repositories** (TEMPO was checked: document time stamps, not versioned files; not run). Protocol (F4): the harness replays a fixed range of real commits; for each commit it checks out the tree **and sets the mtime of every changed file to the commit's author date** before the daemon indexes it, so the stored `updated_at`, `created_at` and events carry historical time rather than replay time; stored timestamps are validated against `git log` before questions are asked, and the validation table is published. Questions are limited to facts the index stores and exposes (`mda timeline`, `recent`, section `updated_at`): "which pages changed between A and B", "when was page P last changed", "which pages were added in month M", "which sections of P changed since D". 40 questions, ground truth computed from git, never from a model. Every arm receives the repository with its `.git` history; the git baseline may run `git log`/`git diff`.
 
-## 3. Competitors and fairness rules
+**Ours** (fixed): `evals/golden` (117 sections), this repository's `docs/` (224), the owner's trading-research repo (7,380; private, supporting-evidence table only). They anchor axis E and the break-even size.
 
-- **grep baseline**: Claude with Read/Grep/Glob only. Every table has it.
-- **qmd** (BM25 + vectors + LLM rerank over markdown, MCP): the closest tool. Run with its documented defaults and its own MCP server in the same headless harness.
-- **graphify** (LLM-built knowledge graph, "consult graph first" hook): run its `/graphify` build at the pinned revision, its own cost recorded under axis E, its hook enabled.
-- Not run: CodeGraph, Understand Anything, claudix, claude-context (code indexes; we cite their own published numbers and say the lanes differ).
-- Same questions, same model (`sonnet`), same grader, same `--setting-sources "" --strict-mcp-config` harness, medians of 3 runs, corpora and question sets committed before any run, raw logs published under `evals/results/`. Each tool gets its recommended configuration and one round of "did it actually use the index" verification, as their own guides ask for.
+Not used: CRAG, FRAMES, MultiHop-RAG (web, Wikipedia, news), TechQA (HTML technotes), MTRAG (multi-turn), SWE-bench-style code tasks (CodeGraph and claude-context own that lane; cited, not raced). Codex was asked for a better public dataset for real questions over markdown documentation with labels and knew of none.
+
+## 3. Competitors and fairness
+
+- **No-retrieval control** and **grep baseline** in every answer-quality table; **git baseline** in the temporal table.
+- **qmd** (BM25 + vectors + LLM rerank, MCP): primary row with its recommended full configuration, ablation row with reranking off, everything else held constant; its local compute and latency reported next to quality.
+- **graphify**: `/graphify` build at the pinned revision, its hook enabled and proven active (rule 5), its build cost under axis E.
+- The harness (`scripts/eval/ab.sh`) is generalised per arm: each arm declares the tools and MCP servers it needs, and the smoke test asserts they were used. Raw JSONL logs, effective configs and tool-use traces are published under `evals/results/`.
 
 ## 4. Features that change the numbers, and whether to wait
 
-| Feature | Axis it moves | Effort | Decision |
+| Feature | Axis | Effort | Decision |
 |---|---|---|---|
-| Leaner hit payload: `k` default 5 for MCP, drop `snippet` when a card exists, shorter `tldr`-only mode | B (source tokens): today 8 hits ≈ 1.3K tokens whatever the corpus | small | **Do before B runs.** Cheap, and it is the one number readers quote. |
-| Read ledger (schema v4) | measurement only | small | not needed; the harness measures tokens from the transcript |
-| Document-level cards (plan §4.4 reducer) | A on "which page covers X" questions, B on overview questions | medium | **Do not wait.** Run the benchmark, ship doc cards, rerun: two rows on the page show the gain. |
-| Content dates as a ranking signal (`mentioned_dates`) and `since`-style filters on them | D | medium | build after the first D results say how often filesystem time is not the right clock |
-| Phase 3 `superseded_by` / validity | D ("is this still current") | large | **Do not wait.** Keep "is this current" out of the question set until it exists; the D set is "what changed / when" which the stored data already answers. |
-| Reranker / better query encoder | A | medium | only if hybrid loses to qmd on A |
+| `.mdx` ingestion (walker + parser tolerance for JSX/imports) | gate for everything on DocsQA | small | **Before B2.** Required. |
+| Leaner hit payload: MCP `k` default 5, no `snippet` when a card exists, compact fields | B: today 8 hits ≈ 1.3K tokens whatever the corpus; a 5× saving needs ≈ 6.5K baseline tokens per answer at that floor | small | **Before B2.** The break-even is recomputed after. |
+| Harness hardening (fail-loud, counted tokens, schema-validated grades, arms, smoke tests) | all | medium | **B0.** Rules 3, 5, 7 depend on it. |
+| Historical-mtime replay in the daemon harness | D | small | **B4.** |
+| Read ledger (schema v4) | none (harness counts from transcripts) | small | not needed for the benchmark |
+| Document-level cards (plan §4.4) | A on "which page" questions, B on overview questions | medium | **Do not wait.** Second row on the page when shipped. |
+| Content dates as a ranking signal | D | medium | after the first D results |
+| Phase 3 validity / `superseded_by` | D ("is this current") | large | **Do not wait.** Such questions stay out of the set until it exists. |
+| Reranker / query encoder | A | medium | only if hybrid loses to qmd on the **development** split |
 
-Rule: the benchmark is versioned by `mda` release and rerun on every tag (a CI job for axis A; B/C/D by hand because they spend). Publishing early does not lock the numbers in; it locks the method in.
+The benchmark is versioned by `mda` release: axis A reruns in CI on every tag; B, C, D by hand (they spend). Publishing early locks the method, not the numbers.
 
 ## 5. Tasks
 
-- [ ] B0 Harness: `mda eval` gains a dataset adapter (`--dataset docsqa <dir>`) mapping page ids ↔ paths and reporting success@k / MRR / nDCG@10 against `qrel_ids`; `scripts/eval/ab.sh` gains `--arm qmd|graphify` and per-arm setup scripts; results land in `evals/results/<dataset>/<date>-<mda-version>.md` with raw JSONL.
-- [ ] B1 Own corpora, mda vs grep (axes B, E): golden, `docs/`, trading repo (private numbers). Break-even corpus size measured.
-- [ ] B2 DocsQA-Repo, axis A (mda lexical, mda hybrid, qmd) on all four corpora; axis B on a 25-question sample per corpus (mda, grep, qmd, graphify).
-- [ ] B3 Freshness (axis C): scripted edit → question loop on the Prisma corpus for mda, qmd, graphify.
-- [ ] B4 Temporal set from DocsQA git history (axis D): generator (`scripts/eval/temporal-questions.sh`), 40 questions, ground truth from git; mda vs qmd vs graphify vs grep.
-- [ ] B5 FreshStack docs subset, axis A only.
-- [ ] B6 `docs/benchmarks.md` restructured by axis with one table each, the "where we lose" section, and links to raw logs; README "How it compares" gets a numbers row and a link.
-- [ ] Leaner hit payload PR before B2 (see §4).
+- [ ] B0 Harness: dataset adapters (`mda eval --dataset docsqa <dir>` with page-level aggregation and coverage report); `ab.sh` per-arm manifests, fail-loud validation, `count_tokens`-based token counts, conventional medians, smoke tests with traces; `grade.sh` grounding check and schema validation; `FROZEN.md` writer; dev/test split tool.
+- [ ] B0a `.mdx` ingestion; B0b leaner hit payload (both PRs before B2).
+- [ ] B1 Own corpora, mda vs grep vs control (axes B, E), break-even size.
+- [ ] B2 DocsQA ingestion gate, then axis A (all four projects, all arms) and axis B on the frozen 25-question test sample per project.
+- [ ] B3 Freshness on Prisma (axis C), three distributions, all arms.
+- [ ] B4 Temporal set with historical-mtime replay and git validation (axis D), all arms including the git baseline.
+- [ ] B5 FreshStack documentation subset (axis A).
+- [ ] B6 `docs/benchmarks.md` restructured by axis, the "where we lose" and "what the model already knew" sections, links to raw logs; README numbers row.
+- [ ] Human calibration sample graded and agreement published (rule 8).
 
 ## 6. Exit criteria
 
-- [ ] Every number on the page can be regenerated from `evals/` and public data with one command per axis, and the raw logs are in the repo.
-- [ ] DocsQA-Repo: retrieval results for mda and qmd on all four corpora, and a B table with the parity gate.
-- [ ] A temporal table with ground truth from git, where the competitors' scores are reported, not omitted.
-- [ ] A freshness table with seconds, including the competitors' rebuild times.
-- [ ] The "where we lose" section exists and is honest about corpus size.
-- [ ] Budget: ≤ $60 API for cards across the public corpora, ≤ $100 of Claude Code usage for the B runs, graphify's own build cost recorded separately. Owner asked before anything above that.
+- [ ] Every public number regenerates from `evals/` and public data with one command per table; raw logs, effective configs and traces are in the repo; `FROZEN.md` predates the results in git history.
+- [ ] DocsQA: ingestion coverage ≥ 95% published; axis A for mda and qmd on all four projects; axis B with the rule-4 criterion and the no-retrieval control.
+- [ ] Temporal table with git ground truth, timestamp validation, and a git baseline.
+- [ ] Freshness table with the three distributions per arm.
+- [ ] "Where we lose" section present and specific (corpus size, questions answered from memory).
+- [ ] Budget: ≤ $60 API for cards across the public corpora, ≤ $150 of Claude Code usage for the B/C/D runs (five arms, three runs, four projects); graphify's build cost recorded separately; owner asked before exceeding.
 
-## 7. Open questions for review
+## 7. Resolved questions (from the review)
 
-1. Is DocsQA-Repo the right primary, or is its sparse labelling too harsh to show retrieval differences?
-2. Is generating the temporal set from git history sound, or does it favour us in a way a reader would reject?
-3. Which of the four DocsQA corpora is large enough for axis B to show a token gain, given the 1.3K-token floor per search?
-4. Should qmd be run with its LLM reranker on (its best) or off (comparable cost)? Proposal: both rows.
-5. What would make a reader distrust this page, and how do we pre-empt it?
+1. DocsQA-Repo stays primary, conditional on the ingestion gate; sparse labels are reported as-is plus a pooled blinded column; "others use it" is documented, not assumed.
+2. The git-derived temporal set is sound only with historical mtimes, timestamp validation, equal evidence for every arm and a git baseline; all four are in the protocol.
+3. No project is assumed large enough for a token gain; all four are measured on the frozen sample and the break-even is computed after the payload change.
+4. qmd: full configuration primary, reranker-off ablation, compute and latency reported.
+5. Distrust pre-empted by rules 0.1–0.9.
