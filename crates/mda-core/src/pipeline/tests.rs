@@ -135,7 +135,7 @@ async fn limit_and_budget_defer_sections() {
         .summarize_pending(
             backend.clone(),
             CancellationToken::new(),
-            SummarizeOptions { limit: Some(2) },
+            SummarizeOptions { limit: Some(2), ..SummarizeOptions::default() },
             |_| {},
         )
         .await

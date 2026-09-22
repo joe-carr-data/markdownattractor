@@ -62,6 +62,10 @@ pub enum Error {
     /// A stored record is missing or inconsistent (e.g. unknown `section_id`).
     #[error("not found: {0}")]
     NotFound(String),
+
+    /// The daemon could not start, watch, or talk to its socket.
+    #[error("daemon error: {0}")]
+    Daemon(String),
 }
 
 /// Convenience alias used throughout the crate.
