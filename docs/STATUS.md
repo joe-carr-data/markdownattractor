@@ -1,6 +1,6 @@
 # STATUS (updated 2026-09-22 by Claude)
 **Start here after compaction: the newest file in `docs/handoffs/`.**
-Phase: 2 — **search layer built on branch `feat/phase2-search`** (PR pending); Phase 1 merged (#4, #5)        Active plan: docs/plans/2026-09-phase2-search.md
+Phase: 2 — **search layer merged (#6, main `28fafa6`)**; Phase 1 merged (#4, #5)        Active plan: docs/plans/2026-09-phase2-search.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Backends per ADR-0002; engine end to end live on docs/.
 
 ## Next (max 3, in order)
-1. Land PR #6 (Codex triage filed and fixed; CI on all OSes). Then confirm by hand that `.mcp.json` loads in Claude Code (`claude plugin validate .` passes; `/reload-plugins`, call `mda_search`).
+1. Confirm by hand that `.mcp.json` loads in Claude Code (`claude plugin validate .` passes; `/reload-plugins`, call `mda_search`); then write the Phase 4 plan (`docs/plans/2026-09-phase4-launch.md`).
 2. First-run UX (plan §9.5): `mda start` example query, `mda cost`, `mda diagnostics`, `mda nudge on|off`; hybrid latency lever if it matters (query encoder / ONNX threads).
 3. Release pipeline (Phase 4): cargo-dist, GitHub Releases + `SHA256SUMS` for bootstrap.sh; the A/B answer-quality parity protocol (plan §11).
 
