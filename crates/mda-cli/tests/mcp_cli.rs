@@ -76,6 +76,16 @@ async fn mcp_server_serves_the_index_over_stdio() {
     assert_eq!(v["hits"].as_array().unwrap().len(), 1);
     assert_eq!(v["hits"][0]["rel_path"], "runbook.md");
     assert_eq!(v["hits"][0]["pending"], true);
+    assert_eq!(v["partial"], false);
+    // The lean view: a snippet because there is no card, no ranking diagnostics, a
+    // timestamp to the second.
+    let hit = v["hits"][0].as_object().unwrap();
+    assert!(hit["snippet"].as_str().unwrap().starts_with("Run deployctl"), "{hit:?}");
+    for absent in ["tldr", "score", "vector", "vector_score", "title", "via_or_fallback"] {
+        assert!(!hit.contains_key(absent), "{absent} should not be in the MCP hit: {hit:?}");
+    }
+    assert_eq!(hit["updated_at"].as_str().unwrap().len(), "2026-09-22T08:34:46Z".len());
+    assert!(hit["token_estimate"].as_u64().unwrap() > 0);
     let id = v["hits"][0]["section_id"].as_str().unwrap().to_owned();
 
     let r =

@@ -1,6 +1,11 @@
 //! The MCP server behind `mda mcp` (ADR-0004): the same engine the CLI uses, exposed to
 //! Claude over stdio as tools. Results are the CLI's own `--json` types, so a skill and a
-//! tool call see one format.
+//! tool call see one format, with one exception: `mda_search` returns [`SearchView`], the
+//! CLI hit with the same field names minus the diagnostics (`score`, `vector`,
+//! `vector_score`, `title`), a `snippet` only when there is no `tldr`, `pending` only when
+//! true, and the OR-fallback flag hoisted to one `partial` field. Every token in a search
+//! result is paid on every question, so the view carries what an answer needs and nothing
+//! else (`docs/design/mcp.md`).
 //!
 //! Search never waits for a model download here either: without a ready embedder the hits
 //! are lexical, and `mda_status` says so.
@@ -22,19 +27,21 @@ use crate::search::{self, SearchOptions};
 
 /// What `initialize` tells the client about how to use the tools.
 pub const INSTRUCTIONS: &str = "markdownattractor indexes this project's markdown into sections \
-with summaries (cards). Search first: call mda_search with the user's question, read the cards, \
-then call mda_open on the section ids you need to quote exact lines. Only read a whole file when \
-the user asks for it or the card says the file is small. If the top hits do not contain the \
-answer, retry mda_search with raw=true (raw text only), and if that fails too, fall back to \
-grep and say so. Every hit carries a line range and when the section last changed; hits marked \
-pending have no card yet.";
+with summaries (cards). Search first: call mda_search with the user's question (5 hits by \
+default; ask for more only when the first five miss), read the tldr of each hit, then call \
+mda_open on the one or two section ids you need to quote exact lines, or mda_card for the full \
+card. Only read a whole file when the user asks for it or the hit says the section is small. If \
+the top hits do not contain the answer, retry mda_search with raw=true (raw text only), and if \
+that fails too, fall back to grep and say so. Every hit carries a line range, a token estimate \
+and when the section last changed; a hit with pending=true has no card yet, so it shows a raw \
+snippet instead of a tldr.";
 
 /// Arguments of `mda_search`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct SearchParams {
     /// The question, as the user would type it into a search box.
     pub query: String,
-    /// Number of hits (default 8).
+    /// Number of hits (default 5, at most 50).
     #[serde(default)]
     pub k: Option<usize>,
     /// Only sections updated since this time: `7d`, `24h`, `2026-09-01`.
@@ -82,6 +89,71 @@ pub struct RecentParams {
     /// How many documents (default 10).
     #[serde(default)]
     pub n: Option<usize>,
+}
+
+/// Default number of hits for `mda_search`. Five cards are about 400 tokens; the CLI keeps
+/// its own default of 8 because a terminal has room and pays nothing per token.
+pub const DEFAULT_K: usize = 5;
+
+/// What `mda_search` returns.
+#[derive(Debug, Clone, Serialize)]
+pub struct SearchView {
+    /// The query as received.
+    pub query: String,
+    /// `true` when no section matched every term and the hits are OR matches.
+    pub partial: bool,
+    /// The hits, best first.
+    pub hits: Vec<HitView>,
+}
+
+/// One search hit as the MCP client sees it: the CLI's [`search::Hit`] field names, without
+/// the ranking diagnostics. Built by [`HitView::from`].
+#[derive(Debug, Clone, Serialize)]
+pub struct HitView {
+    /// `<doc_id>#<index>`, for `mda_open` and `mda_card`.
+    pub section_id: String,
+    /// Path relative to the root.
+    pub rel_path: String,
+    /// Headings down to the section.
+    pub heading_path: Vec<String>,
+    /// First line, 1-based.
+    pub line_start: u32,
+    /// Last line, 1-based, inclusive.
+    pub line_end: u32,
+    /// Rough token count of the section, so the cost of `mda_open` is known before calling it.
+    pub token_estimate: u32,
+    /// The card's one-liner, when the section has a card.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tldr: Option<String>,
+    /// The first ~200 characters of the body; only when there is no card.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snippet: Option<String>,
+    /// Which index matched: cards, raw, both, or vector.
+    pub matched: search::Matched,
+    /// `true` when the section has no card yet; omitted otherwise.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub pending: bool,
+    /// When the section content last changed, to the second.
+    pub updated_at: String,
+}
+
+impl From<search::Hit> for HitView {
+    fn from(h: search::Hit) -> Self {
+        let snippet = if h.tldr.is_none() { Some(h.snippet) } else { None };
+        Self {
+            section_id: h.section_id,
+            rel_path: h.rel_path,
+            heading_path: h.heading_path,
+            line_start: h.line_start,
+            line_end: h.line_end,
+            token_estimate: h.token_estimate,
+            tldr: h.tldr,
+            snippet,
+            matched: h.matched,
+            pending: h.pending,
+            updated_at: h.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        }
+    }
 }
 
 /// What `mda_card` returns: the stored section without its raw text.
@@ -221,15 +293,15 @@ impl McpServer {
 
     /// Hybrid search over the markdown index: cards, raw text and card vectors fused, most
     /// recently changed sections favoured. Each hit has a `section_id` for `mda_open`, a line
-    /// range, a one-line tldr (or a raw snippet when the section has no card yet) and when it
-    /// last changed.
+    /// range, a token estimate, a one-line tldr (or a raw snippet when the section has no card
+    /// yet) and when it last changed. Five hits by default.
     #[tool(name = "mda_search")]
     async fn mda_search(
         &self,
         Parameters(p): Parameters<SearchParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
         let opts = SearchOptions {
-            k: p.k.unwrap_or(8).clamp(1, 50),
+            k: p.k.unwrap_or(DEFAULT_K).clamp(1, 50),
             raw_only: p.raw.unwrap_or(false),
             since: parse_opt_time(p.since.as_deref())?,
             until: parse_opt_time(p.until.as_deref())?,
@@ -242,7 +314,12 @@ impl McpServer {
                 search::search_with(engine.store(), &query, &opts, embedder).map_err(internal)
             })
             .await?;
-        structured(&serde_json::json!({ "query": p.query, "hits": hits }))
+        let partial = hits.iter().any(|h| h.via_or_fallback);
+        structured(&SearchView {
+            query: p.query,
+            partial,
+            hits: hits.into_iter().map(HitView::from).collect(),
+        })
     }
 
     /// The full card of a section: tldr, summary, keywords, questions it answers, grounded
