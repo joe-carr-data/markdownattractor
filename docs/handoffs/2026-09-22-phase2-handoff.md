@@ -81,7 +81,7 @@ Measurement scripts must be `bash`, not zsh: zsh does not word-split unquoted va
 - The binary never reads `CLAUDE_PLUGIN_DATA` (in a dev shell it belongs to another plugin); the plugin passes `MDA_MODEL_DIR`.
 - fastembed defaults pull `native-tls` (banned); the workspace uses the rustls features. `paste` (via `tokenizers`) is an ignored unmaintained advisory in `deny.toml`.
 - `use crate::Result` in the file that carries `#[tool_handler]` breaks the rmcp macro; `mcp.rs` uses `crate::Result<T>` explicitly.
-- `.mcp.json` sets `MDA_ROOT=${CLAUDE_PROJECT_DIR}`; whether Claude Code substitutes that variable in `env` values has not been watched by hand yet. If not, the server falls back to the nearest indexed ancestor of its cwd.
+- `.mcp.json` sets `MDA_ROOT=${CLAUDE_PROJECT_DIR}` and `MDA_MODEL_DIR=${CLAUDE_PLUGIN_DATA}/models`; the plugin reference states that MCP stdio servers get the placeholders substituted in `command`, `args` and `env`, and that all three variables are also exported to the server process. Loading the plugin in a real session has still not been watched by hand.
 - The hybrid latency exit criterion is **not met** (§4); it is recorded, not hidden.
 
 ## 7. Open questions and owner items
