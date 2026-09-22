@@ -26,7 +26,7 @@ ensure_daemon() {
   project="${CLAUDE_PROJECT_DIR:-$PWD}"
   if [ -d "$project/.markdownattractor" ]; then
     # Detached: the hook returns at once whatever `start` has to wait for.
-    ( MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}" "$1" start --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
+    ( MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}" "$1" start --no-example --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
   fi
   exit 0
 }
@@ -88,8 +88,11 @@ if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
   exit 0
 fi
 
-if tar -xzf "$tmp/$target.tar.gz" -C "$tmp" && [ -f "$tmp/mda" ]; then
-  mv "$tmp/mda" "$BIN" && chmod +x "$BIN"
+# Windows archives carry mda.exe; the launcher runs it under the same name without the suffix.
+extracted="$tmp/mda"
+[ "$os" = windows ] && extracted="$tmp/mda.exe"
+if tar -xzf "$tmp/$target.tar.gz" -C "$tmp" && [ -f "$extracted" ]; then
+  mv "$extracted" "$BIN" && chmod +x "$BIN"
   [ "$(version_of "$BIN")" = "$WANTED" ] && ensure_daemon "$BIN"
   say "installed binary reports $(version_of "$BIN"), expected $WANTED — run /mda doctor"
 else
