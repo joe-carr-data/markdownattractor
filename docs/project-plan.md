@@ -585,7 +585,7 @@ Engineering rules: production-ready, documented code; frequent descriptive commi
 1. Default local embedding model: `bge-small` (fast, English) vs `nomic-embed-text-v1.5` (multilingual, larger).
 2. Commit `cards/` by default or leave it to the user? (Leaning: prompt once at `start`.)
 3. Single binary with MCP as a subcommand vs separate `mda-mcp` binary.
-4. Should the daemon be per-root (simple) or one global daemon with multiple roots (fewer processes)?
+4. ~~Should the daemon be per-root (simple) or one global daemon with multiple roots (fewer processes)?~~ **Decided: per-root (ADR-0003).**
 
 ---
 
@@ -702,7 +702,7 @@ fastembed    = "7"             # add features = ["qwen3"] only if we offer Qwen3
 # markdown & files
 comrak       = "0.x"           # GFM, frontmatter, sourcepos on every node (unverified: check latest)
 gray_matter  = "0.x"           # frontmatter parsing (unverified)
-notify       = "8"             # + notify-debouncer-full (unverified: check 8.x API)
+notify       = "8"             # verified 8.2; own debouncer (size-stable check), ADR-0003
 ignore       = "0.4"           # gitignore-aware walking (ripgrep)
 gix          = "0.x"           # git metadata; heavier compile but pure Rust (unverified: latest)
 blake3       = "1"
@@ -721,7 +721,7 @@ jiff         = { version = "0.2", features = ["serde"] }   # or "1" if released
 
 # plumbing
 governor     = "0.x"           # optional token-bucket for API-key backend; AIMD stays hand-rolled
-interprocess = "2"             # unix socket / named pipe for daemon ↔ CLI (unverified)
+interprocess = "2"             # verified 2.4 (tokio local sockets), ADR-0003
 indicatif    = "0.17"          # progress in CLI
 ```
 

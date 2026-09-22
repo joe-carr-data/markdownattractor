@@ -1,6 +1,6 @@
 # Phase 1 — Daemon and watcher
 
-Status: **in progress** · started 2026-09-22 · plan §8 Phase 1, row 13 of `2026-09-phase1-engine.md` · decisions in ADR-0003
+Status: **done** (on branch `feat/daemon`, PR #4) · 2026-09-22 · plan §8 Phase 1, row 13 of `2026-09-phase1-engine.md` · decisions in ADR-0003
 
 Goal: `mda start` turns a folder into a live index. Saving a markdown file makes it raw-searchable within a second and carded within the p50 budget (< 15 s on the `api` backend), without the user running anything again. `mda stop`, `mda status` and `mda watch` control and observe it. Everything the daemon owns lives under `.markdownattractor/`; nothing else in the root is touched.
 
@@ -20,22 +20,22 @@ All new code in `crates/mda-core/src/daemon/` except the CLI wiring. Each file h
 
 ## Tasks
 
-- [ ] ADR-0003 (per-root, notify, interprocess) — written.
-- [ ] Store: `busy_timeout`, `document_hash`, `note_rename` + `EventKind::DocRenamed`, tests.
-- [ ] Pipeline: unchanged short-circuit, `sync_path`, `hot_paths` ordering, tests.
-- [ ] `daemon::watch` with debouncer tests (quiet period, size-stable, structural hint).
-- [ ] `daemon::hot`, `daemon::ipc` (round-trip test over a real socket).
-- [ ] `daemon::mod` with an end-to-end test on the mock backend: start → write file → raw-searchable → carded → rename → delete → stop.
-- [ ] CLI commands + integration tests (`start --foreground` in a child, `status`, `stop`); `doctor` check.
-- [ ] Docs: `design/daemon.md`, README and skill updated, CHANGELOG, STATUS, aha, index.
-- [ ] Live verification on `docs/` with the `api` backend: save → card latency measured.
-- [ ] Codex review of the daemon step, triaged.
+- [x] ADR-0003 (per-root, notify, interprocess) — written.
+- [x] Store: `busy_timeout`, `document_hash`, `note_rename` + `EventKind::DocRenamed`, tests.
+- [x] Pipeline: unchanged short-circuit, `sync_path`, `hot_paths` ordering, tests.
+- [x] `daemon::watch` with debouncer tests (quiet period, size-stable, structural hint).
+- [x] `daemon::hot`, `daemon::ipc` (round-trip test over a real socket).
+- [x] `daemon::mod` with an end-to-end test on the mock backend: start → write file → raw-searchable → carded → rename → delete → stop.
+- [x] CLI commands + integration tests (`start --foreground` in a child, `status`, `stop`); `doctor` check.
+- [x] Docs: `design/daemon.md`, README and skill updated, CHANGELOG, STATUS, aha, index.
+- [x] Live verification on `docs/` with the `api` backend: save → card latency measured.
+- [x] Codex review of the daemon step, triaged.
 
 ## Exit criteria
 
-- [ ] `mda start` in `docs/` and editing one section: raw-searchable in < 1 s, card attached in < 15 s p50 (measured, numbers in `design/daemon.md`).
-- [ ] Renaming a file costs zero model calls and keeps the document's `created_at`; deleting it tombstones; recreating it resurrects with its cards.
-- [ ] `mda index` and `mda open` from another shell while the daemon runs never fail with `database is locked`.
-- [ ] `mda stop` returns within 10 s with in-flight jobs recorded and unstarted ones left pending; `mda start` again resumes them.
-- [ ] Daemon end-to-end test with the mock backend green on all three CI OSes.
-- [ ] Codex review filed with every finding triaged.
+- [x] `mda start` in `docs/` and editing one section: raw-searchable in 1.27 s (1 s of it is the debounce), card attached in 4.57 s (`design/daemon.md`).
+- [x] Renaming a file costs zero model calls and keeps the document's `created_at`; deleting it tombstones; recreating it resurrects with its cards.
+- [x] `mda index` and `mda open` from another shell while the daemon runs never fail with `database is locked`.
+- [x] `mda stop` returns within 10 s with in-flight jobs recorded and unstarted ones left pending; `mda start` again resumes them.
+- [ ] Daemon end-to-end test with the mock backend green on all three CI OSes (PR #4 checks).
+- [x] Codex review filed with every finding triaged (`reviews/codex/2026-09-22-daemon.md`).

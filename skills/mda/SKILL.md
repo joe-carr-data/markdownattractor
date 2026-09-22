@@ -20,6 +20,8 @@ Arguments: `$ARGUMENTS`
    - `search` → a numbered list: `path › heading path · lines A–B · updated <relative time> · <tldr or raw snippet>`, and after the list the exact `mda open <section_id>` the user or you would run next. Mark hits from unsummarized sections as `(pending)`.
    - `open` → the exact source lines in a fenced block with the path and line range as its title. If the result says `stale: true`, say so in one line.
    - `doctor` → the checks with ✓ / ! / ✗ and the fix lines verbatim.
+   - `start` → the one-line result; if it reports `backend_warning`, show it and the fix (`mda doctor`, then `mda restart`).
+   - `watch` → with `--json` it prints one event per line and runs until Ctrl-C; pass `--count N` to stop after N events. Render each event as one short line.
    - `cost`, `timeline`, `recent`, `stale` → a compact table.
    - anything else → the one-line result the binary printed.
 4. If the binary exits non-zero, show the `error` field and, when it mentions `doctor`, offer to run `/mda doctor`. If it says the API key is not set, explain the two options in one line each: `export ANTHROPIC_API_KEY=…` (console.anthropic.com) or `/mda backend local` with a llama.cpp server (link `docs/guides/local-model.md`). Never suggest `claude-cli` unprompted; if the user asks for it, show the policy text the binary prints.

@@ -2,6 +2,15 @@
 
 Dated one-liners. Newest first. Pruned monthly: entries that became rules graduate to `.claude/rules/`, the rest go to `archive/aha-YYYY-MM.md`. Keep under 60 lines.
 
+- 2026-09-22 — Linux `notify` (inotify) reports every `open`. A daemon that parses files on hints will hint itself forever unless `EventKind::Access` is dropped at the source. macOS FSEvents never showed it, which is why the live run looked fine.
+- 2026-09-22 — SQLite WAL: a deferred transaction that reads, then writes after another connection committed, fails with `SQLITE_BUSY_SNAPSHOT` immediately; `busy_timeout` does not help. Every read-then-write transaction begins `IMMEDIATE`.
+- 2026-09-22 — A `BufReader` created per call over a socket read ahead and silently dropped the buffered lines after the first one; the watch stream lost events. Keep one framed reader per connection.
+- 2026-09-22 — Building a fresh worker pool per daemon round reset AIMD to 4 workers every 32 sections. Feed the round's final concurrency into the next round.
+- 2026-09-22 — "One daemon per root" is an OS file lock (`File::try_lock`, MSRV 1.89), not "does the socket answer": two concurrent starts both fail the probe and one unlinks the other's socket.
+- 2026-09-22 — A cancelled or pool-stopped job is not a failed section. Marking it failed meant `mda stop` during a round quietly required `--retry-failed`; now the environment can only defer.
+- 2026-09-22 — Live daemon on docs/ with Haiku: save→raw-searchable 1.27 s, save→card 4.57 s; rename detected 0.2 s after the new path was indexed, history kept, no call. The G1 budget has room.
+- 2026-09-22 — GitHub's Windows runner takes ~15 min for the test job (compiling `aws-lc-sys`); everything else is under 2 min. Look there first when a run "hangs".
+- 2026-09-22 — zsh does not word-split unquoted variables; a `set -- $line` loop that works in bash silently waits forever in the default shell here. Write measurement scripts for `bash` explicitly.
 - 2026-09-21 — Codex CLI 0.155.1 returned "requires a newer version of Codex" for `gpt-6-astra` once, then accepted it minutes later after a Claude Code restart. Server-side gating, not a client bug; retry before upgrading.
 - 2026-09-21 — `codex exec` refuses to run outside a git repo unless `--skip-git-repo-check` is passed. Init the repo before wiring `/codex-review`.
 - 2026-09-21 — Pre-mortem framing ("it's 4 months later and it failed, why?") got sharper findings from Codex than a plain review would. Reuse the frame at each phase gate.
