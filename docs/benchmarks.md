@@ -90,7 +90,7 @@ Source-repository adaptation of DocsQA-Repo (`PowderXu/docsqa-data` schema v3; `
 | lexical (cards + raw) | 25 | 0.360 | 0.211 | 0.309 | 63 |
 | hybrid (cards + raw + vectors) | 25 | 0.120 | 0.038 | 0.060 | 204 |
 
-- **Carding rate through the owner's Claude Code login** (`claude-cli` backend, Haiku 4.5, the plan's §0a.3): 200 Tailwind sections in 182 s wall (13 s of it embedding), 0 failures, 509K input / 69K output tokens, **$0.85 list-price equivalent**; ≈ 1.1 sections/s. The four corpora are ≈ 41.6K sections: ≈ 10 h and ≈ $175 list-price equivalent, which is above the plan's $60 card figure and is an owner decision before it runs (plan §6).
+- **Carding rate through the owner's Claude Code login** (`claude-cli` backend, Haiku 4.5, the plan's §0a.3): 200 Tailwind sections in 182 s wall (13 s of it embedding), 0 failures, 509K input / 69K output tokens, **$0.85 list-price equivalent**; ≈ 1.1 sections/s. The four corpora are ≈ 41.6K sections: ≈ 10 h and ≈ $175 list-price equivalent; the equivalent is reported for readers who would run this on the API, it is not what the run cost (the owner's Max plan, plan §0a.3).
 - Query latency on the three larger corpora is 0.25–0.42 s per question in this configuration (long OR queries, deep candidate lists, one row read per candidate), far above the 30 ms budget; a lever to measure before axis B (fewer candidates, a prepared statement per section lookup, or the release build).
 
 ## Not measured yet
