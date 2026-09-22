@@ -73,9 +73,11 @@ fn start_status_index_pause_resume_stop() {
         .stdout(predicate::str::contains("not running"));
     assert!(status(&root)["daemon"].is_null());
 
+    // Bounded: a `start` whose output never reaches EOF is a bug, not something to wait on.
     let out = mda()
         .args(["--json", "start", "--root"])
         .arg(&root)
+        .timeout(Duration::from_secs(30))
         .assert()
         .success()
         .get_output()

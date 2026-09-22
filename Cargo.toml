@@ -44,6 +44,7 @@ reqwest = { version = "0.13", features = ["json"] }
 # daemon (ADR-0003): filesystem watcher and CLI <-> daemon local socket
 notify = "8.2"
 interprocess = { version = "2.4", features = ["tokio"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console"] }
 
 # search layer (ADR-0004): local embeddings (pure-rustls tree, static ONNX Runtime) and MCP
 fastembed = { version = "7", default-features = false, features = ["ort-download-binaries-rustls-tls", "hf-hub-rustls-tls"] }
@@ -63,7 +64,9 @@ assert_cmd = "2.2"
 predicates = "3.1"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# `deny`, not `forbid`: exactly one `#[allow(unsafe_code)]` exists, the Windows-only
+# SetHandleInformation call in mda-cli's `start` (ADR-0003 amendment). Every other use fails.
+unsafe_code = "deny"
 missing_docs = "warn"
 unused_must_use = "deny"
 rust_2018_idioms = { level = "warn", priority = -1 }
