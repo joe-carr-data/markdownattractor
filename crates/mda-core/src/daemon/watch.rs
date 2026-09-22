@@ -45,6 +45,9 @@ impl Watcher {
         let (tx, rx) = mpsc::unbounded_channel();
         let root_owned = root.to_path_buf();
         let handler = move |res: notify::Result<notify::Event>| match res {
+            // Reads are not changes. On Linux, inotify reports every open, including the
+            // daemon's own parses; forwarding those would make indexing feed itself forever.
+            Ok(ev) if matches!(ev.kind, notify::EventKind::Access(_)) => {}
             Ok(ev) => {
                 let rescan = ev.need_rescan();
                 let at = Instant::now();
@@ -98,19 +101,21 @@ pub fn classify(root: &Path, path: &Path, rescan: bool) -> HintKind {
     }) {
         return HintKind::Ignore;
     }
-    if crate::walk::is_markdown(path) {
-        return HintKind::Markdown;
-    }
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
     if IGNORE_FILES.contains(&name) {
         return HintKind::Structural;
     }
-    match std::fs::symlink_metadata(path) {
-        Ok(meta) if meta.is_dir() => HintKind::Structural,
-        // A vanished path with no extension was most likely a directory.
-        Err(_) if path.extension().is_none() => HintKind::Structural,
-        _ => HintKind::Ignore,
+    // What is there decides, not the name: a directory called `notes.md` is a directory.
+    let present = std::fs::symlink_metadata(path).ok();
+    if present.as_ref().is_some_and(std::fs::Metadata::is_dir) {
+        return HintKind::Structural;
     }
+    // A markdown name, present or gone, is handled by sync_path (index, tombstone, rename).
+    if crate::walk::is_markdown(path) {
+        return HintKind::Markdown;
+    }
+    // Anything else that vanished may have been a directory whose children went with it.
+    if present.is_some() { HintKind::Ignore } else { HintKind::Structural }
 }
 
 /// Paths released by [`Debouncer::due`].
@@ -245,9 +250,14 @@ mod tests {
         );
         assert_eq!(classify(root, Path::new("/r/a.md"), true), HintKind::Structural);
         assert_eq!(classify(root, Path::new("/r/gone-dir"), false), HintKind::Structural);
-        assert_eq!(classify(root, Path::new("/r/notes.txt"), false), HintKind::Ignore);
+        assert_eq!(classify(root, Path::new("/r/gone.v1"), false), HintKind::Structural);
         let dir = tempfile::tempdir().unwrap();
-        assert_eq!(classify(dir.path().parent().unwrap(), dir.path(), false), HintKind::Structural);
+        let r = dir.path().canonicalize().unwrap();
+        assert_eq!(classify(r.parent().unwrap(), &r, false), HintKind::Structural);
+        std::fs::write(r.join("notes.txt"), "x").unwrap();
+        assert_eq!(classify(&r, &r.join("notes.txt"), false), HintKind::Ignore);
+        std::fs::create_dir(r.join("folder.md")).unwrap();
+        assert_eq!(classify(&r, &r.join("folder.md"), false), HintKind::Structural);
     }
 
     #[test]
@@ -299,6 +309,22 @@ mod tests {
         let b = d.due_with(t0 + Duration::from_millis(160), |_| None);
         assert!(b.rescan);
         assert!(!d.due_with(t0 + Duration::from_millis(300), |_| None).rescan, "consumed");
+    }
+
+    #[test]
+    fn reading_a_file_produces_no_hint() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().canonicalize().unwrap();
+        std::fs::write(root.join("read.md"), "# Read\n").unwrap();
+        let (_w, mut rx) = Watcher::start(&root).unwrap();
+        std::thread::sleep(Duration::from_millis(200));
+        while rx.try_recv().is_ok() {}
+        // Parsing is what the daemon does all day; on Linux inotify reports every open.
+        for _ in 0..5 {
+            let _ = std::fs::read_to_string(root.join("read.md")).unwrap();
+        }
+        std::thread::sleep(Duration::from_millis(500));
+        assert!(rx.try_recv().is_err(), "a read must not feed the indexer");
     }
 
     #[test]

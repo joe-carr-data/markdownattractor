@@ -87,6 +87,10 @@ pub struct SummarizeOptions {
     /// puts files the user just saved here so an edit never waits behind a backfill. Within
     /// a document, and for everything else, smallest sections still go first.
     pub hot_paths: Vec<String>,
+    /// Start the pool at this concurrency instead of the configured initial value (clamped to
+    /// the configured maximum). The daemon feeds the previous round's final concurrency back
+    /// so AIMD does not restart from scratch every round.
+    pub initial_concurrency: Option<u16>,
 }
 
 /// What [`Engine::sync_path`] did about one path the watcher reported.
@@ -164,7 +168,7 @@ impl Engine {
     pub fn open(root: &Path) -> Result<Self> {
         let root = root.canonicalize().map_err(|e| Error::io(root, e))?;
         let config = Config::load(&root)?;
-        let store = Store::open(&Self::index_path(&root))?;
+        let store = Store::open(&crate::config::state_dir(&root)?.join(INDEX_FILE))?;
         Ok(Self { root, config, store })
     }
 
@@ -323,18 +327,21 @@ impl Engine {
     }
 
     /// Walk the root and index every markdown file, smallest first, then tombstone documents
-    /// that are no longer on disk.
+    /// the walker no longer finds: deleted files, and files that an ignore rule now excludes.
+    /// A discovered file that fails to read or parse keeps its previous index.
     pub fn index_root(&mut self) -> Result<IndexReport> {
         let mut files = crate::walk::discover(&self.root, &self.config)?;
         // Small docs first: something is searchable within seconds of `start` (plan §4.3).
         files.sort_by_key(|p| std::fs::metadata(p).map_or(u64::MAX, |m| m.len()));
 
         let mut report = IndexReport { files: files.len(), ..IndexReport::default() };
-        let mut seen = std::collections::HashSet::new();
+        // What the walker found is what the index should hold: membership is decided here,
+        // lexically, so a file that vanishes mid-walk is judged next round, not now.
+        let discovered: std::collections::HashSet<String> =
+            files.iter().filter_map(|p| self.rel_path(p).ok()).collect();
         for path in &files {
             match self.index_file(path) {
                 Ok(out) => {
-                    seen.insert(out.rel_path.clone());
                     if out.upsert.created || out.upsert.changed {
                         report.changed += 1;
                     }
@@ -349,12 +356,8 @@ impl Engine {
 
         let now = Timestamp::now();
         for doc in self.store.documents()? {
-            // A file that failed to read or parse this round is not gone; only tombstone
-            // documents whose file really is missing.
-            if !seen.contains(&doc.rel_path)
-                && !self.root.join(&doc.rel_path).exists()
-                && self.store.tombstone(&doc.rel_path, now)?
-            {
+            if !discovered.contains(&doc.rel_path) && self.store.tombstone(&doc.rel_path, now)? {
+                tracing::info!(path = doc.rel_path, "tombstoned: no longer discovered");
                 report.tombstoned += 1;
             }
         }
@@ -395,7 +398,10 @@ impl Engine {
         let by_hash: std::collections::HashMap<String, PendingSection> =
             pending.into_iter().map(|p| (p.section_hash.clone(), p)).collect();
 
-        let pool_cfg = PoolConfig::from_config(&self.config);
+        let mut pool_cfg = PoolConfig::from_config(&self.config);
+        if let Some(c) = opts.initial_concurrency {
+            pool_cfg.initial_concurrency = c.clamp(1, pool_cfg.max_concurrency);
+        }
         let backend_name = backend.name().to_owned();
         let pool = Pool::new(backend, pool_cfg, cancel);
 
@@ -483,7 +489,9 @@ impl Engine {
             let remaining = budget.saturating_sub(spent.input_tokens + spent.output_tokens);
             let affordable =
                 usize::try_from(remaining / TOKENS_PER_SECTION_ESTIMATE).unwrap_or(usize::MAX);
-            if affordable < pending.len() {
+            // The budget "exhausted" a run only when it, not the explicit limit, is what cut
+            // it: a bounded daemon round over a large backlog is not a budget problem.
+            if affordable < pending.len().min(cap) {
                 budget_exhausted = true;
                 tracing::warn!(
                     budget,
@@ -530,8 +538,10 @@ impl Engine {
             cost_usd: r.usage.cost_usd,
         };
         self.store.record_usage(&r.id, &r.model_used, &spent, r.outcome.kind())?;
-        if r.attempts == 0 {
-            // Never started (pool stopped or cancelled): stays pending for the next run.
+        if r.was_stopped() {
+            // Never started, cut off by a stop or cancel, or an environment failure that
+            // stopped the pool (bad key, dead server): the section is fine, the run was not.
+            // It stays pending for the next run instead of being marked failed.
             report.deferred += 1;
             return Ok(());
         }

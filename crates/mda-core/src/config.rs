@@ -16,6 +16,46 @@ pub const STATE_DIR: &str = ".markdownattractor";
 /// Name of the config file inside [`STATE_DIR`].
 pub const CONFIG_FILE: &str = "config.toml";
 
+/// `<root>/.markdownattractor`, refusing a symlink in its place. A checked-out repository can
+/// carry a planted `.markdownattractor` link; following it would put the database, the pid
+/// file and the socket wherever the link points.
+pub fn state_dir(root: &Path) -> Result<PathBuf> {
+    let dir = root.join(STATE_DIR);
+    match std::fs::symlink_metadata(&dir) {
+        Ok(meta) if meta.file_type().is_symlink() => Err(Error::Config(format!(
+            "{} is a symlink; refusing to use it as the state directory",
+            dir.display()
+        ))),
+        Ok(meta) if !meta.is_dir() => {
+            Err(Error::Config(format!("{} exists and is not a directory", dir.display())))
+        }
+        _ => Ok(dir),
+    }
+}
+
+/// Write a file under the state directory, refusing to follow a symlink at `path` and
+/// keeping the file private to the user on Unix.
+pub fn write_private(path: &Path, bytes: &[u8]) -> Result<()> {
+    use std::io::Write as _;
+    if let Ok(meta) = std::fs::symlink_metadata(path)
+        && meta.file_type().is_symlink()
+    {
+        return Err(Error::Config(format!(
+            "{} is a symlink; refusing to write through it",
+            path.display()
+        )));
+    }
+    let mut opts = std::fs::OpenOptions::new();
+    opts.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    let mut f = opts.open(path).map_err(|e| Error::io(path, e))?;
+    f.write_all(bytes).map_err(|e| Error::io(path, e))
+}
+
 /// Shown whenever `backend = "claude-cli"` is selected without the acknowledgement.
 pub const CLAUDE_CLI_POLICY: &str = "backend \"claude-cli\" routes requests through your Claude \
 subscription. Anthropic's terms do not permit third-party tools to do that on your behalf \
@@ -185,7 +225,7 @@ impl Config {
 
     /// Load the config for `root`, returning defaults if the file does not exist.
     pub fn load(root: &Path) -> Result<Self> {
-        let path = Self::path_for(root);
+        let path = state_dir(root)?.join(CONFIG_FILE);
         match std::fs::read_to_string(&path) {
             Ok(text) => Self::from_toml(&text),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
@@ -207,11 +247,9 @@ impl Config {
 
     /// Write the config to its path under `root`, creating the state directory if needed.
     pub fn save(&self, root: &Path) -> Result<()> {
-        let path = Self::path_for(root);
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
-        }
-        std::fs::write(&path, self.to_toml()?).map_err(|e| Error::io(path, e))
+        let dir = state_dir(root)?;
+        std::fs::create_dir_all(&dir).map_err(|e| Error::io(&dir, e))?;
+        write_private(&dir.join(CONFIG_FILE), self.to_toml()?.as_bytes())
     }
 
     fn validate(&self) -> Result<()> {
@@ -293,6 +331,24 @@ mod tests {
     fn load_missing_file_gives_defaults() {
         let dir = tempfile::tempdir().unwrap();
         assert_eq!(Config::load(dir.path()).unwrap(), Config::default());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_state_dir_and_files_are_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let elsewhere = tempfile::tempdir().unwrap();
+        std::os::unix::fs::symlink(elsewhere.path(), dir.path().join(STATE_DIR)).unwrap();
+        assert!(matches!(state_dir(dir.path()), Err(Error::Config(_))));
+        assert!(Config::load(dir.path()).is_err());
+        assert!(Config::default().save(dir.path()).is_err());
+
+        let target = elsewhere.path().join("victim");
+        std::fs::write(&target, "keep me").unwrap();
+        let link = elsewhere.path().join("link");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+        assert!(write_private(&link, b"clobbered").is_err());
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "keep me");
     }
 
     #[test]

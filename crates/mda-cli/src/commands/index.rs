@@ -88,7 +88,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             &mut engine,
             json,
             &st,
-            SummarizeOptions { limit: args.limit, hot_paths: Vec::new() },
+            SummarizeOptions { limit: args.limit, ..SummarizeOptions::default() },
         )?)
     };
 
@@ -165,6 +165,9 @@ fn delegate(args: &Args, engine: &mut Engine, json: bool, st: &Style) -> anyhow:
     let path = match &args.path {
         Some(p) => {
             let abs = if p.is_absolute() { p.clone() } else { std::env::current_dir()?.join(p) };
+            // Canonical when it exists (symlinks, `..`, case); lexical otherwise so a deleted
+            // file can still be tombstoned on request.
+            let abs = abs.canonicalize().unwrap_or(abs);
             Some(abs.display().to_string())
         }
         None => None,
