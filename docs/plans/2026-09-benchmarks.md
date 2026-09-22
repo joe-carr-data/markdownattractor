@@ -1,6 +1,6 @@
 # Benchmark plan — public datasets, competitors, and where we can shine
 
-Status: **v3, accepted by Codex on the third pass** (`docs/reviews/codex/2026-09-22-benchmark-plan.md`); implementation not started (`docs/reviews/codex/2026-09-22-benchmark-plan.md`) · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchmarking strategy where we can shine, on a golden dataset others use, clearly beating the alternatives"
+Status: **v3.1, accepted by Codex on the third pass, two owner decisions applied (2026-09-22, §0a)** (`docs/reviews/codex/2026-09-22-benchmark-plan.md`); implementation not started (`docs/reviews/codex/2026-09-22-benchmark-plan.md`) · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchmarking strategy where we can shine, on a golden dataset others use, clearly beating the alternatives"
 
 Goal: publish numbers that (a) other people can rerun from public data with one command per table, (b) are computed on questions we did not write, (c) compare like with like against the tools a Claude Code user would otherwise install, and (d) show the three things markdownattractor is built for: answer quality at parity with far fewer source tokens on large corpora, freshness, and time questions. Where we lose (tiny corpora, questions the model already knows) the page says so; that is what makes the wins credible.
 
@@ -13,17 +13,22 @@ Scope statement for the page, from the review: the results cover the declared da
 3. **Failures are results.** A run that errored, timed out, produced no answer or no grade is counted and shown; it never qualifies for savings and never becomes a zero-versus-zero "parity".
 4. **Quality first, then cost.** A table reports token or cost savings only if all three pre-declared criteria hold over the whole test sample: (a) the **lower bound** of the paired bootstrap 95% interval of (index − baseline) mean score is ≥ −0.25 on the 0–6 scale; (b) the index arm's mean score is ≥ 4.0 (absolute floor); (c) the index arm's grounding pass rate (rule 8) is ≥ 95%. Otherwise the table shows quality and cost with no savings claim. Per-question scores and costs are all published; parity-subset savings are labelled with their denominator.
 5. **Every arm gets the same evidence and a smoke test.** Before a table is run, each arm has a recorded trace proving its index or hook was actually used on three probe questions, and the effective configuration is published with the traces. Temporal questions give every arm the git history.
-6. **A no-retrieval control** (the model answers from memory, no tools) is in every answer-quality table: GitHub Docs, Tailwind, Prisma and Supabase are in every model's training data, and a reader must see how much of the score is retrieval.
+6. **Arms are compared as whole systems.** The answering model's own knowledge of public documentation is part of every arm alike and counts for whichever system uses it best; no no-retrieval control is required, and none of the gates depends on one. (Owner decision, §0a.)
 7. **Tokens are counted, not guessed:** tool-result and prompt tokens through the Messages API `count_tokens` endpoint with the same model family; where an estimate is unavoidable it is labelled "estimated". Medians are the conventional median (mean of the two middle values).
-8. **Grounding is graded:** the grader also checks that every claim in an answer is supported by a cited page (an answer passes when every claim is supported); the pass rate is a gate (rule 4c). Card metadata is audited, not only counted: for every corpus a 100-card sample has its dates and entities checked against the source by a human and the precision is published, beside the validator's drop counts. A calibration sample of 30 answers per dataset is graded blind by a human and the agreement with the model grader is published.
+8. **Grounding is graded, and the graders are audited by a model panel.** The grader checks that every claim in an answer is supported by a cited page (an answer passes when every claim is supported); the pass rate is a gate (rule 4c). Card metadata is audited, not only counted: for every corpus a 100-card sample has its dates and entities checked against the source, and a calibration sample of 30 answers per dataset is re-graded blind. Both audits are done by a **two-model panel, Claude Fable 5.1 and GPT Astra, grading independently** with the same rubric; the panel's agreement with each other and with the Sonnet grader is published, and a disagreement of more than one point on the 0–6 scale is resolved by the two panel scores' mean. No human gate: the owner has decided the panel substitutes for it (§0a).
 9. **Public results are reproducible; private results are labelled.** Generated artifacts are preserved: the cards of every public corpus are committed (`evals/results/<dataset>/cards-<mda-version>.json`, as the golden set does) so an index is rebuilt deterministically without a model, and the embedding model name and revision are recorded. Cache state is fixed and stated: one MCP server per arm per run, started cold, warm after its first question; a "cold first question" column is reported separately. The owner's private corpus appears in a clearly separated "supporting evidence" table and is exempt from the reproducibility claim.
+
+### 0a. Owner decisions (2026-09-22)
+
+1. **No human gate.** Calibration of the grader and the metadata audit are done by a two-model panel (Claude Fable 5.1 + GPT Astra), independently, rubric-scored, with agreement published (rule 0.8). Reason: the owner cannot invest the time; two strong models from different vendors are a defensible substitute and the agreement numbers make the substitution visible.
+2. **No no-retrieval control.** A model's prior knowledge of public documentation is a property of the model, available to every arm equally, and choosing a model that knows the domain is a legitimate advantage of the system as a whole. Tables compare whole systems (rule 0.6).
 
 ## 1. What is measured, and what "shine" means
 
 | Axis | Metric | Arms | Where we expect to win |
 |---|---|---|---|
 | A. Retrieval | success@5, MRR@5, nDCG@10 at **page** granularity: a page counts as retrieved at rank r if its first section appears at r after page-level deduplication of the section list. Original sparse labels first; a blinded pooled judgment of top-5 unlabeled pages (sample of 100 query-page pairs per project) as a second column. | mda lexical, mda hybrid, qmd (full, and reranker-off ablation), BM25-over-files | hybrid on paraphrased questions; must at least match qmd on labels |
-| B. Answer quality + cost | Score 0–6 vs reference (correctness, completeness) plus grounding check; source tokens (tool results), total input tokens, tool calls, wall-clock, $; medians of 3 runs; rule 4 applies | no-retrieval control, grep baseline, mda, qmd, graphify | corpora where grep+read costs thousands of tokens per answer; reported break-even size |
+| B. Answer quality + cost | Score 0–6 vs reference (correctness, completeness) plus grounding check; source tokens (tool results), total input tokens, tool calls, wall-clock, $; medians of 3 runs; rule 4 applies | grep baseline, mda, qmd, graphify | corpora where grep+read costs thousands of tokens per answer; reported break-even size |
 | C. Freshness | three distributions per arm, same edit trigger, fixed 1 s polling, 300 s timeout: save→raw-searchable, save→card, save→correct grounded answer; fallback reads recorded | mda daemon, qmd (documented re-index command), graphify (rebuild), grep | only mda is live; the others' rebuild time is the honest comparison |
 | D. Time questions | success@5 and answer score on "what changed / when / added in" questions with **ground truth from git**; rule 5 (every arm gets the history) and a **git baseline** (Claude with `git log`/`git diff` in Bash) | git baseline, grep, mda, qmd, graphify | convenience and correctness at equal evidence; never "others score zero by construction" |
 | E. Cost to build | $, minutes, tokens per 1K sections; first index and incremental re-index after one edit; graphify's own build cost | all | incremental cost near zero after one edit |
@@ -51,7 +56,7 @@ Not used: CRAG, FRAMES, MultiHop-RAG (web, Wikipedia, news), TechQA (HTML techno
 
 ## 3. Competitors and fairness
 
-- **No-retrieval control** and **grep baseline** in every answer-quality table; **git baseline** in the temporal table.
+- **grep baseline** in every answer-quality table; **git baseline** in the temporal table.
 - **qmd** (BM25 + vectors + LLM rerank, MCP): primary row with its recommended full configuration, ablation row with reranking off, everything else held constant; its local compute and latency reported next to quality.
 - **graphify**: `/graphify` build at the pinned revision, its hook enabled and proven active (rule 5), its build cost under axis E.
 - The harness (`scripts/eval/ab.sh`) is generalised per arm: each arm declares the tools and MCP servers it needs, and the smoke test asserts they were used. Raw JSONL logs, effective configs and tool-use traces are published under `evals/results/`.
@@ -76,22 +81,22 @@ The benchmark is versioned by `mda` release: axis A reruns in CI on every tag; B
 
 - [ ] B0 Harness: dataset adapters (`mda eval --dataset docsqa <dir>` with page-level aggregation and coverage report); `ab.sh` per-arm manifests, fail-loud validation, `count_tokens`-based token counts, conventional medians, smoke tests with traces; `grade.sh` grounding check and schema validation; `FROZEN.md` writer; dev/test split tool.
 - [ ] B0a `.mdx` ingestion; B0b leaner hit payload (both PRs before B2).
-- [ ] B1 Own corpora, mda vs grep vs control (axes B, E), break-even size.
+- [ ] B1 Own corpora, mda vs grep (axes B, E), break-even size.
 - [ ] B2 DocsQA ingestion gate, then axis A (all four projects, all arms) and axis B on the frozen 25-question test sample per project.
 - [ ] B3 Freshness on Prisma (axis C), three distributions, all arms.
 - [ ] B4 Temporal set with historical replay (mtimes + `MDA_NOW`), git validation (axis D), all arms including the git baseline.
 - [ ] B5 FreshStack documentation subset (axis A).
 - [ ] B6 `docs/benchmarks.md` restructured by axis, the "where we lose" and "what the model already knew" sections, links to raw logs; README numbers row.
-- [ ] Human calibration sample graded and agreement published; 100-card metadata audit per corpus (rule 8).
+- [ ] Panel calibration (Fable + Astra) of the 30-answer sample and the 100-card metadata audit per corpus, agreement published (rule 8); `scripts/eval/panel.sh` runs both models through their APIs/CLIs with the same rubric.
 - [ ] Sealed holdout split written and never touched before 1.0 (rule 0.2).
 
 ## 6. Exit criteria
 
 - [ ] Every public number regenerates from `evals/` and public data with one command per table; raw logs, effective configs and traces are in the repo; `FROZEN.md` predates the results in git history.
-- [ ] DocsQA: ingestion coverage ≥ 95% published; axis A for mda and qmd on all four projects; axis B with the rule-4 criterion and the no-retrieval control.
+- [ ] DocsQA: ingestion coverage ≥ 95% published; axis A for mda and qmd on all four projects; axis B with the rule-4 criterion.
 - [ ] Temporal table with git ground truth, timestamp validation, and a git baseline.
 - [ ] Freshness table with the three distributions per arm.
-- [ ] "Where we lose" section present and specific (corpus size, questions answered from memory).
+- [ ] "Where we lose" section present and specific (corpus size).
 - [ ] Budget: ≤ $60 API for cards across the public corpora, ≤ $150 of Claude Code usage for the B/C/D runs (five arms, three runs, four projects); graphify's build cost recorded separately; owner asked before exceeding.
 
 ## 7. Resolved questions (from the reviews)
