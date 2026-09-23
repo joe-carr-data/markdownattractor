@@ -134,6 +134,32 @@ impl Backend {
     }
 }
 
+/// What text a card is embedded as (benchmark tuning, execution plan §3). Changing it
+/// changes the vector model id (`<model>+<variant>`), so vectors are rebuilt, never mixed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum EmbedText {
+    /// `title · heading path · tldr · summary · keywords · questions` (the v1 order). Default.
+    #[default]
+    V1,
+    /// `questions_answered` first, before the tldr (plan §3 candidate 1).
+    QuestionsFirst,
+    /// The v1 text with the card's entities appended (plan §3 candidate 2).
+    WithEntities,
+}
+
+impl EmbedText {
+    /// The suffix appended to the embedding model id; empty for the default text.
+    #[must_use]
+    pub fn suffix(self) -> &'static str {
+        match self {
+            Self::V1 => "",
+            Self::QuestionsFirst => "+questions-first",
+            Self::WithEntities => "+with-entities",
+        }
+    }
+}
+
 /// Which embedding model produces card vectors (ADR-0004).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
@@ -202,6 +228,16 @@ pub struct Config {
     /// Where embedding models are cached. `None` means `$MDA_MODEL_DIR`, then
     /// `~/.cache/markdownattractor/models`.
     pub embedding_cache_dir: Option<PathBuf>,
+    /// What text a card is embedded as (`v1`, `questions-first`, `with-entities`).
+    pub embedding_text: EmbedText,
+    /// Reciprocal-rank-fusion constant `k` (`1 / (k + rank)`); 60 by default.
+    pub search_rrf_k: f64,
+    /// Weight of the raw-text list's contribution in the fusion; 1.0 by default.
+    pub search_raw_weight: f64,
+    /// BM25 weight of the `questions_answered` column of the cards index; 2.0 by default.
+    pub search_questions_weight: f64,
+    /// Drop English stop-words from the AND form of a query (the OR fallback keeps them).
+    pub search_and_stopwords: bool,
 }
 
 impl Default for Config {
@@ -232,6 +268,11 @@ impl Default for Config {
             nudge: true,
             embeddings: Embeddings::default(),
             embedding_cache_dir: None,
+            embedding_text: EmbedText::default(),
+            search_rrf_k: 60.0,
+            search_raw_weight: 1.0,
+            search_questions_weight: 2.0,
+            search_and_stopwords: false,
         }
     }
 }
@@ -330,6 +371,15 @@ impl Config {
         }
         if self.concurrency == Some(0) {
             return Err(Error::Config("concurrency must be at least 1 (or unset for auto)".into()));
+        }
+        let bad = |v: f64, min: f64| v.is_nan() || v < min;
+        if bad(self.search_rrf_k, f64::MIN_POSITIVE)
+            || bad(self.search_raw_weight, 0.0)
+            || bad(self.search_questions_weight, 0.0)
+        {
+            return Err(Error::Config(
+                "search_rrf_k must be positive and the search weights non-negative".into(),
+            ));
         }
         if self.per_call_budget_usd.is_nan() || self.per_call_budget_usd <= 0.0 {
             return Err(Error::Config("per_call_budget_usd must be positive".into()));
@@ -441,9 +491,25 @@ mod tests {
     #[test]
     fn save_then_load() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = Config { summarization_model: "sonnet".into(), ..Config::default() };
+        let cfg = Config {
+            summarization_model: "sonnet".into(),
+            embedding_text: EmbedText::WithEntities,
+            search_rrf_k: 30.0,
+            search_raw_weight: 0.7,
+            search_questions_weight: 3.0,
+            search_and_stopwords: true,
+            ..Config::default()
+        };
         cfg.save(dir.path()).unwrap();
         assert_eq!(Config::load(dir.path()).unwrap(), cfg);
+        let text = std::fs::read_to_string(dir.path().join(STATE_DIR).join(CONFIG_FILE)).unwrap();
+        assert!(
+            text.contains("embedding_text = \"with-entities\"")
+                && text.contains("search_rrf_k = 30.0"),
+            "{text}"
+        );
+        let bad = Config { search_rrf_k: -1.0, ..Config::default() };
+        assert!(bad.validate().is_err());
         assert!(dir.path().join(STATE_DIR).join(CONFIG_FILE).exists());
     }
 }

@@ -298,11 +298,13 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         vectors = engine.embed_pending(&**e, usize::MAX)?.embedded;
     }
     let mut runs = Vec::new();
+    let search = SearchOptions::for_config(engine.config());
     let opts = |name: &str, raw_only: bool| RunOptions {
         name: name.to_owned(),
         raw_only,
         fetch: args.fetch,
         include_holdout: args.open_holdout,
+        search: search.clone(),
     };
     if let Some(arm) = &args.arm_output {
         let rows = docsqa::read_arm_output(arm).with_context(|| arm.display().to_string())?;
@@ -358,6 +360,7 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         "cards_exported": exported,
         "arm_output": args.arm_output.as_deref().map(portable),
         "embedding_model": embedder.as_ref().map(|e| e.model().to_owned()),
+        "search": {"rrf_k": search.rrf_k, "raw_list_weight": search.raw_list_weight, "questions_weight": search.questions_weight, "and_stopwords": search.and_stopwords, "embedding_text": engine.config().embedding_text},
         "coverage": coverage,
         "seed": args.seed,
         "split": split,
@@ -707,7 +710,7 @@ fn evaluate(
             k,
             raw_only,
             since: q.since.as_deref().map(super::parse_time).transpose()?,
-            ..SearchOptions::default()
+            ..SearchOptions::for_config(engine.config())
         };
         let started = std::time::Instant::now();
         let hits = search::search_with(engine.store(), &q.q, &opts, embedder)?;

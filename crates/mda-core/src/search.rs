@@ -52,6 +52,28 @@ pub struct SearchOptions {
     pub or_fallback: bool,
     /// Use the vector list when an embedder is available. `raw_only` implies `false`.
     pub vectors: bool,
+    /// Reciprocal-rank-fusion constant (`1 / (k + rank)`); 60 by default.
+    pub rrf_k: f64,
+    /// Weight of the raw-text list in the fusion (cards and vectors weigh 1.0); 1.0 by default.
+    pub raw_list_weight: f64,
+    /// BM25 weight of the cards index's `questions_answered` column; 2.0 by default.
+    pub questions_weight: f64,
+    /// Drop English stop-words from the AND form of the query (never from the OR fallback).
+    pub and_stopwords: bool,
+}
+
+impl SearchOptions {
+    /// The defaults with the tunables a root's `config.toml` sets (benchmark tuning, plan §3).
+    #[must_use]
+    pub fn for_config(cfg: &crate::config::Config) -> Self {
+        Self {
+            rrf_k: if cfg.search_rrf_k > 0.0 { cfg.search_rrf_k } else { RRF_K },
+            raw_list_weight: cfg.search_raw_weight.max(0.0),
+            questions_weight: cfg.search_questions_weight.max(0.0),
+            and_stopwords: cfg.search_and_stopwords,
+            ..Self::default()
+        }
+    }
 }
 
 impl Default for SearchOptions {
@@ -65,6 +87,10 @@ impl Default for SearchOptions {
             recency_half_life_days: 30.0,
             or_fallback: true,
             vectors: true,
+            rrf_k: RRF_K,
+            raw_list_weight: 1.0,
+            questions_weight: 2.0,
+            and_stopwords: false,
         }
     }
 }
@@ -218,11 +244,16 @@ fn lexical_lists(
     fetch: usize,
     opts: &SearchOptions,
 ) -> Result<(Lexical, bool)> {
-    let and_expr = fts_escape(query);
+    let and_expr =
+        if opts.and_stopwords { fts_escape(&without_stopwords(query)) } else { fts_escape(query) };
     let lists = |expr: &str| -> Result<Lexical> {
         Ok(Lexical {
             raw: store.search_raw(expr, fetch)?,
-            cards: if opts.raw_only { Vec::new() } else { store.search_cards(expr, fetch)? },
+            cards: if opts.raw_only {
+                Vec::new()
+            } else {
+                store.search_cards_weighted(expr, fetch, opts.questions_weight)?
+            },
         })
     };
     let first = lists(&and_expr)?;
@@ -303,17 +334,17 @@ fn fuse(
     let mut fused: std::collections::HashMap<String, Acc> = std::collections::HashMap::new();
     for (rank, h) in lexical.cards.iter().enumerate() {
         let e = entry(&mut fused, &h.section_id);
-        e.score += rrf(rank);
+        e.score += rrf(rank, opts.rrf_k);
         e.cards = true;
     }
     for (rank, h) in lexical.raw.iter().enumerate() {
         let e = entry(&mut fused, &h.section_id);
-        e.score += rrf(rank);
+        e.score += rrf(rank, opts.rrf_k) * opts.raw_list_weight;
         e.raw = true;
     }
     for (rank, (id, cosine)) in vector.iter().enumerate() {
         let e = entry(&mut fused, id);
-        e.score += rrf(rank);
+        e.score += rrf(rank, opts.rrf_k);
         e.vector = Some(*cosine);
     }
 
@@ -356,8 +387,28 @@ fn passes(section: &StoredSection, opts: &SearchOptions) -> bool {
 }
 
 #[allow(clippy::cast_precision_loss)] // ranks are tiny
-fn rrf(rank: usize) -> f64 {
-    1.0 / (RRF_K + rank as f64 + 1.0)
+fn rrf(rank: usize, k: f64) -> f64 {
+    1.0 / (k + rank as f64 + 1.0)
+}
+
+/// English stop-words dropped from the AND form when `and_stopwords` is set (plan §3
+/// candidate 7): the long community questions are mostly function words, and an AND over
+/// all of them almost never matches. A query made only of stop-words is left as it is.
+const STOPWORDS: &[&str] = &[
+    "a", "an", "and", "are", "as", "at", "be", "but", "by", "can", "do", "does", "for", "from",
+    "how", "i", "if", "in", "into", "is", "it", "its", "my", "of", "on", "or", "that", "the",
+    "this", "to", "was", "we", "what", "when", "where", "which", "why", "with", "you", "your",
+];
+
+fn without_stopwords(query: &str) -> String {
+    let kept: Vec<&str> = query
+        .split_whitespace()
+        .filter(|w| {
+            !STOPWORDS
+                .contains(&w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase().as_str())
+        })
+        .collect();
+    if kept.is_empty() { query.to_owned() } else { kept.join(" ") }
 }
 
 /// Exponential decay on age: 1.0 now, 0.5 after one half-life, floor at 0.5 so old but
@@ -541,7 +592,46 @@ mod tests {
 
     #[test]
     fn rrf_decreases_with_rank() {
-        assert!(rrf(0) > rrf(1) && rrf(1) > rrf(10));
+        assert!(rrf(0, 60.0) > rrf(1, 60.0) && rrf(1, 60.0) > rrf(10, 60.0));
+        assert!(rrf(0, 30.0) > rrf(0, 60.0), "a smaller k rewards the top ranks more");
+    }
+
+    #[test]
+    fn stop_words_leave_the_and_form_but_never_empty_it() {
+        assert_eq!(
+            without_stopwords("how do I roll back a deploy with deployctl"),
+            "roll back deploy deployctl"
+        );
+        assert_eq!(without_stopwords("What is the CAP theorem?"), "CAP theorem?");
+        assert_eq!(
+            without_stopwords("what is it"),
+            "what is it",
+            "all stop-words: the query stays"
+        );
+    }
+
+    #[test]
+    fn tunables_come_from_the_config_and_change_the_fusion() {
+        let cfg = crate::config::Config {
+            search_rrf_k: 30.0,
+            search_raw_weight: 0.5,
+            search_questions_weight: 3.0,
+            search_and_stopwords: true,
+            ..crate::config::Config::default()
+        };
+        let o = SearchOptions::for_config(&cfg);
+        assert!((o.rrf_k - 30.0).abs() < 1e-9 && (o.raw_list_weight - 0.5).abs() < 1e-9);
+        assert!((o.questions_weight - 3.0).abs() < 1e-9 && o.and_stopwords);
+        let bad = crate::config::Config { search_rrf_k: 0.0, ..crate::config::Config::default() };
+        assert!((SearchOptions::for_config(&bad).rrf_k - RRF_K).abs() < 1e-9, "a bad k falls back");
+        // With the raw list weighted 0, a section found by the raw index alone scores 0 and
+        // sinks below one found by the cards index.
+        let (store, _, _) = carded_store();
+        let default = search(&store, "deployctl", &SearchOptions::default()).unwrap();
+        assert!(!default.is_empty());
+        let no_raw = SearchOptions { raw_list_weight: 0.0, ..SearchOptions::default() };
+        let hits = search(&store, "deployctl", &no_raw).unwrap();
+        assert!(hits.iter().all(|h| h.matched != Matched::Raw || h.score <= 0.0 + 1e-12));
     }
 
     #[test]

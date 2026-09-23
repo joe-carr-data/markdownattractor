@@ -426,6 +426,9 @@ pub struct RunOptions {
     pub fetch: usize,
     /// Score holdout questions too (plan rule 0.2: only at 1.0).
     pub include_holdout: bool,
+    /// The search tunables (`SearchOptions::for_config`); `k`, `raw_only` and recency are
+    /// set by the adapter.
+    pub search: SearchOptions,
 }
 
 /// Upper bound on sections fetched for one question.
@@ -449,7 +452,7 @@ pub fn evaluate(
         k: opts.fetch,
         raw_only: opts.raw_only,
         recency_half_life_days: 0.0, // a frozen corpus has no "recent"
-        ..SearchOptions::default()
+        ..opts.search.clone()
     };
     let mut results = Vec::new();
     let (mut hits5, mut rr_sum, mut ndcg_sum, mut ms_sum) = (0usize, 0.0f64, 0.0f64, 0.0f64);

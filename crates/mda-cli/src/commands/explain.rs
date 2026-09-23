@@ -27,7 +27,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let engine = Engine::open(&root)?;
     let query = args.query.join(" ");
     let embedder = super::embedder_for(engine.config());
-    let opts = SearchOptions { k: args.k, ..SearchOptions::default() };
+    let opts = SearchOptions { k: args.k, ..SearchOptions::for_config(engine.config()) };
     let ex = search::explain(engine.store(), &query, &opts, embedder.as_deref())?;
 
     if json {
