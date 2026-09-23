@@ -7,7 +7,7 @@
 | Reviewer | Codex CLI 0.155.1 via the shared companion runtime, model `gpt-6-astra` (reports itself as GPT-6), thread `01a0ccb1-a678-7041-9dad-1f08485d767f`, read-only |
 | Pinned to | `e023d65` (branch `plan/benchmark-execution`) |
 | Triaged by | Claude (Fable 5.1), same day |
-| Outcome | 13 findings (10 High, 3 Medium): **13 accepted**, folded into plan v2. Second pass on v2 + runbook: 5 resolved, 8 partly, 1 new High (N1) and 9 runbook findings, all folded into v3 (§6 below). Third pass requested for the verdict. |
+| Outcome | 13 findings (10 High, 3 Medium): **13 accepted**, folded into plan v2. Second pass: 5 resolved, 8 partly, 1 new High (N1), 9 runbook findings → v3 (§6). Third pass: no new High, verdict quoted in §7 → v3.1. |
 
 ## 1. Packet
 
@@ -71,6 +71,14 @@ Answers, condensed: (1) rules 0.1/0.2 need a freeze lifecycle and an auditable s
 | F13 | partly: three-probe reconstruction; graph not archived; model verification | §2.0: whole-dev-split reconstruction, `graph.json` archived and hashed, model files hashed |
 | N1 | new High: publication conditioned on a stochastic rerun matching an interval | §2.0b: regeneration (byte-identical, the gate) vs independent rerun (published beside, never gated); runbook §0 rewritten on that split |
 | Runbook | working directory lost; checksums advisory; `rm -rf`; golden card provenance; count mismatch unexplained; tolerances undefined; prohibitions uncheckable | rewritten: absolute `$REPO`/`$RUN`/`$MDA`, asserted checksums and SHAs, refuse-existing clones, `ANTHROPIC_API_KEY` asserted unset, golden cards regenerated through the acknowledged backend, top-level files explain the counts, per-step regeneration/rerun kind, attempt ledger in the report, the Astra route named |
+
+## 7. Third pass (v3 at `46d7928`) and the verdict
+
+F4, F5, F6, F8, F13, N1 and runbook R1, R4–R8: resolved. Still partly, fixed in v3.1 on the same branch: F2 (one failure policy across §2.4–2.6: a failed run scores 0, fails grounding, contributes to no saving, is in every denominator), F7 (the CLI no-rerank fallback has no latency column; the rule-0.9 amendment stays an owner decision at M5), F12 (T5 scores the date in "when" answers and requires both effort measures), R3 (source SHA, version and model hashes asserted; resolved model ids checked before a rerun), R9 (one directory per attempt). R2 (table-specific sections) is by construction filled as each table is published.
+
+Verdict, verbatim: "Not yet without qualifications. A sceptical reader could accept a T1 table after its required preflight, scorer review and table-specific regeneration commands have been implemented and verified. T2 additionally needs one consistent failure-and-savings policy and resolution of the declared cache-lifecycle deviation; T5 needs scoring that verifies temporal facts and an explicit rule for both effort measures. Acceptance would cover the frozen configurations and datasets, with sparse/model-assisted labels and simulated historical replay disclosed. Byte-identical regeneration establishes reproducibility of the analysis, not independent confirmation of the measurements; the independent rerun must remain published regardless of its outcome."
+
+The qualifications map onto milestones M1–M5 and the owner decision on rule 0.9; the plan is accepted as the working plan on that basis.
 
 ## 5. Follow-ups
 

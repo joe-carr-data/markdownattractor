@@ -28,16 +28,19 @@ set -euo pipefail
 REPO="$HOME/markdownattractor"           # the source checkout; every later command is run from here or uses absolute paths
 RUN="$HOME/.cache/markdownattractor/bench"   # data and stores; a fresh run uses a fresh directory
 [ -z "${ANTHROPIC_API_KEY:-}" ] || { echo "unset ANTHROPIC_API_KEY: every model call goes through Claude Code's login"; exit 1; }
-cd "$REPO" && git rev-parse HEAD                 # must equal the SHA in the table's FROZEN.md (exploratory rows: 41fdbb1)
-cargo build --release -p mda-cli && MDA="$REPO/target/release/mda" && "$MDA" --version   # must equal FROZEN.md's version (exploratory: mda 0.1.1)
-claude --version                                  # record it; the answering and grading model ids are read from each run's result JSON, not from the alias
+EXPECT_SHA=41fdbb1e   # from the table's FROZEN.md (exploratory rows: 41fdbb1…); a table's section in §7 gives the full value
+EXPECT_VERSION="mda 0.1.1"
+cd "$REPO" && [ "$(git rev-parse HEAD)" = "$(git rev-parse "$EXPECT_SHA")" ] || { echo "checkout is not $EXPECT_SHA"; exit 1; }
+cargo build --release -p mda-cli && MDA="$REPO/target/release/mda" && [ "$("$MDA" --version)" = "$EXPECT_VERSION" ] || exit 1
+claude --version                                  # recorded; the answering and grading model ids resolved by the alias are compared with FROZEN.md before a rerun (one probe call, its result JSON `model` field) and read from every run's result JSON afterwards
 export MDA_MODEL_DIR="$HOME/.cache/markdownattractor/models"
 ```
 
 The embedding model (`bge-small-en-v1.5-q`, 33 MB) downloads on the first embedding pass; after it, hash the files and compare with `FROZEN.md`:
 
 ```bash
-find "$MDA_MODEL_DIR" -type f -exec shasum -a 256 {} \; | sort > /tmp/model.sha; cat /tmp/model.sha
+find "$MDA_MODEL_DIR" -type f -exec shasum -a 256 {} \; | sed "s|$MDA_MODEL_DIR/||" | sort > "$RUN/model.sha"
+diff "$RUN/model.sha" "$REPO/evals/results/docsqa/model.sha" || { echo "embedding model files differ from FROZEN.md (file written at M1)"; exit 1; }
 ```
 
 Prerequisites: macOS or Linux, ≈ 3 GB free (clones ≈ 300 MB, stores ≈ 330 MB; qmd's arm adds ≈ 2 GB of models), `git`, `python3`, `jq`, `curl`, the Rust toolchain (`rust-toolchain.toml` pins 1.98.1), Claude Code installed and logged in. The one model call that does not go through Claude Code is the Astra half of the grading panel, which goes through the Codex CLI (plan §2.4).
@@ -111,12 +114,13 @@ Expected raw-lexical dev row with `mda` 0.1.1 (exploratory): success@5 github-do
 **5b. Independent rerun.** Card the golden copy the same way as 4b (there is no committed card set for a scratch copy; the `evals/golden/cards.json` set is attached by `mda eval --golden`, which is the retrieval eval, not the A/B), then:
 
 ```bash
-cd "$REPO"; cp -R evals/golden/docs /tmp/golden && "$MDA" backend claude-cli --i-accept-the-policy --root /tmp/golden && "$MDA" index --root /tmp/golden
-MDA_BIN="$MDA" scripts/eval/ab.sh /tmp/golden evals/ab/questions.jsonl /tmp/ab-out 1 sonnet   # refuses a directory that already has runs.jsonl
-scripts/eval/grade.sh evals/ab/questions.jsonl /tmp/ab-out                                # a failed run is ungraded/incomplete, never zero
+A="$RUN/attempts/$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$A"        # one directory per attempt; nothing is overwritten, every attempt stays
+cd "$REPO"; cp -R evals/golden/docs "$A/golden" && "$MDA" backend claude-cli --i-accept-the-policy --root "$A/golden" && "$MDA" index --root "$A/golden"
+MDA_BIN="$MDA" scripts/eval/ab.sh "$A/golden" evals/ab/questions.jsonl "$A/ab-out" 1 sonnet   # refuses a directory that already has runs.jsonl
+scripts/eval/grade.sh evals/ab/questions.jsonl "$A/ab-out"                                # a failed run is ungraded/incomplete, never zero
 ```
 
-Read the resolved model ids from `/tmp/ab-out/*.jsonl` (`model` in the result event) and record them. Reference (2026-09-22, exploratory, lean payload, one run): parity 11 of 12; index mean 5.50, baseline 5.42; median source tokens index 762.5, baseline 245.5 over all 12 questions (`evals/ab/results/2026-09-22-golden-lean.md`). Publish yours beside it with the paired difference; a different sample of Sonnet answers is expected to differ.
+Read the resolved model ids from `$A/ab-out/*.jsonl` (`model` in the result event) and record them; the attempt directory is part of the report. Reference (2026-09-22, exploratory, lean payload, one run): parity 11 of 12; index mean 5.50, baseline 5.42; median source tokens index 762.5, baseline 245.5 over all 12 questions (`evals/ab/results/2026-09-22-golden-lean.md`). Publish yours beside it with the paired difference; a different sample of Sonnet answers is expected to differ.
 
 ## 6. Latency
 
