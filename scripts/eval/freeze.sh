@@ -129,11 +129,12 @@ inputs() {
   echo "- grep: Claude Code's own Read, Grep and Glob over the checkout, no MCP server, no extra instructions beyond the probe preamble (\`scripts/eval/probe.sh\`)"
   # Competitor arms: one line per arm, listing its per-project records
   # (arms/<arm>-<project>.json: version, effective configuration, build, coverage, hashes).
-  local arm
-  for arm in $(ls "$RESULTS"/arms/*.json 2>/dev/null | sed -E 's|.*/([a-z0-9]+)-[a-z-]+\.json$|\1|' | LC_ALL=C sort -u); do
+  local arm pr
+  # arm name = file name minus "-<project>.json" (arm names may carry dashes: graphify-haiku)
+  for arm in $(for f in "$RESULTS"/arms/*.json; do [ -f "$f" ] || continue; n="$(basename "$f" .json)"; for pr in $PROJECTS; do case "$n" in *"-$pr") echo "${n%-$pr}" ;; esac; done; done | LC_ALL=C sort -u); do
     local line="- $arm:"
-    for f in "$RESULTS"/arms/"$arm"-*.json; do
-      [ -f "$f" ] || continue
+    for pr in $PROJECTS; do
+      f="$RESULTS/arms/$arm-$pr.json"; [ -f "$f" ] || continue
       h="$(sha256 "$f")"
       line="$line $(basename "$f" .json) (version $(jq -r '.version // "?"' "$f") · $(jq -r 'if .build.completed == false then "did not complete" else "coverage \(.coverage.coverage // "?")" end' "$f") · sha256 $h);"
     done

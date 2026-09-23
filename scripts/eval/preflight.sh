@@ -188,6 +188,11 @@ if [ "$skip_probes" = 1 ]; then for arm in $probe_arms; do record "probes-$arm" 
 else
   : > "$OUT/probes/summary.jsonl"
   for arm in $probe_arms; do
+    # An arm whose build did not complete on this project has no interface to probe: its
+    # record is the evidence (rule 0.3), the probe is not applicable rather than failed.
+    if [ -f "$RESULTS/arms/$arm-$project.json" ] && [ "$(jq -r '.build.completed // true' "$RESULTS/arms/$arm-$project.json")" = false ]; then
+      record "probes-$arm" ok "not applicable: the arm's build did not complete on $project (recorded in arms/$arm-$project.json)"; continue
+    fi
     n_ok=0; n=0
     for qid in $(probe_ids "$project"); do
       n=$((n + 1))
