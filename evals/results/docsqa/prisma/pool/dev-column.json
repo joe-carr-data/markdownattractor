@@ -1,0 +1,147 @@
+{
+  "project": "prisma",
+  "split": "dev",
+  "label": "pooled, model-assisted, 100 pairs/project, judges fable",
+  "sample_pairs": 100,
+  "pooled_relevant_pairs": 18,
+  "judged_questions": 34,
+  "rule": "a pair is relevant when the mean of the judges scores is >= 1; metrics over the judged questions only; original labels never removed",
+  "arms": [
+    {
+      "arm": "lexical (raw only)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.23529411764705882,
+        "mrr_at_5": 0.11715686274509804,
+        "ndcg_at_10": 0.14401701927568714,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.35294117647058826,
+        "mrr_at_5": 0.17009803921568628,
+        "ndcg_at_10": 0.18703168135322165,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "lexical (cards + raw)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.29411764705882354,
+        "mrr_at_5": 0.18725490196078431,
+        "ndcg_at_10": 0.21385855977337806,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.47058823529411764,
+        "mrr_at_5": 0.26078431372549016,
+        "ndcg_at_10": 0.23937479355927394,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "hybrid (cards + raw + vectors)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.29411764705882354,
+        "mrr_at_5": 0.18970588235294117,
+        "ndcg_at_10": 0.22830346298284024,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.5,
+        "mrr_at_5": 0.3083333333333333,
+        "ndcg_at_10": 0.30192190250100714,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "BM25-over-files",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.2647058823529412,
+        "mrr_at_5": 0.1426470588235294,
+        "ndcg_at_10": 0.17074960938092415,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.4117647058823529,
+        "mrr_at_5": 0.23578431372549022,
+        "ndcg_at_10": 0.22521253939795596,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "graphify-haiku (query_graph)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.0,
+        "mrr_at_5": 0.0,
+        "ndcg_at_10": 0.0,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.029411764705882353,
+        "mrr_at_5": 0.014705882352941176,
+        "ndcg_at_10": 0.0113780237421924,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "qmd BM25 (MCP lex-only, rerank off)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.029411764705882353,
+        "mrr_at_5": 0.029411764705882353,
+        "ndcg_at_10": 0.018033740963689954,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.029411764705882353,
+        "mrr_at_5": 0.029411764705882353,
+        "ndcg_at_10": 0.018033740963689954,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "qmd full (MCP query, rerank)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.3235294117647059,
+        "mrr_at_5": 0.20588235294117646,
+        "ndcg_at_10": 0.23144316769984893,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.5294117647058824,
+        "mrr_at_5": 0.2656862745098039,
+        "ndcg_at_10": 0.2771107570368791,
+        "labels_added": 18
+      }
+    },
+    {
+      "arm": "qmd no-rerank (MCP query, rerank off)",
+      "original": {
+        "questions": 34,
+        "success_at_5": 0.2647058823529412,
+        "mrr_at_5": 0.16029411764705884,
+        "ndcg_at_10": 0.2075887285515866,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 34,
+        "success_at_5": 0.35294117647058826,
+        "mrr_at_5": 0.18333333333333335,
+        "ndcg_at_10": 0.21351871814133963,
+        "labels_added": 18
+      }
+    }
+  ]
+}

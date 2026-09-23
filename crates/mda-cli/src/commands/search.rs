@@ -45,7 +45,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         since: args.since.as_deref().map(super::parse_time).transpose()?,
         until: args.until.as_deref().map(super::parse_time).transpose()?,
         path_prefix: args.path_prefix.clone(),
-        ..SearchOptions::default()
+        ..SearchOptions::for_config(engine.config())
     };
     let embedder = super::embedder_for(engine.config());
     let hits = search::search_with(engine.store(), &query, &opts, embedder.as_deref())?;

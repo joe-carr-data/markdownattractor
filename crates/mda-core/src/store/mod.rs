@@ -169,9 +169,9 @@ CREATE VIRTUAL TABLE cards_fts USING fts5(
 /// `heading_path` 3.0, `text` 1.0.
 const RAW_BM25: &str = "bm25(sections_raw_fts, 0.0, 3.0, 1.0)";
 
-/// `bm25()` call for the cards index: `heading_path` 3.0, `tldr` 3.0, `summary` 1.0,
-/// `keywords` 1.0, `questions_answered` 2.0, `entities` 1.0.
-const CARDS_BM25: &str = "bm25(cards_fts, 0.0, 3.0, 3.0, 1.0, 1.0, 2.0, 1.0)";
+// The cards index's `bm25()` weights are `heading_path` 3.0, `tldr` 3.0, `summary` 1.0,
+// `keywords` 1.0, `questions_answered` 2.0 (configurable, see `search_cards_weighted`),
+// `entities` 1.0.
 
 /// Columns of a joined section row, shared by every query that returns [`StoredSection`].
 const SECTION_COLUMNS: &str = "
@@ -1011,11 +1011,34 @@ impl Store {
     /// `fts_expr` must already be a valid FTS5 expression; use [`fts_escape`] for user input.
     /// Best hit first.
     pub fn search_cards(&self, fts_expr: &str, k: usize) -> Result<Vec<FtsHit>> {
-        let sql = format!(
-            "SELECT section_id, {CARDS_BM25} AS score FROM cards_fts
-             WHERE cards_fts MATCH ?1 ORDER BY score, section_id LIMIT ?2"
-        );
-        self.search(&sql, fts_expr, k)
+        self.search_cards_weighted(fts_expr, k, 2.0)
+    }
+
+    /// [`Store::search_cards`] with the `questions_answered` column's BM25 weight given
+    /// (2.0 is the default; benchmark tuning, execution plan §3 candidate 3).
+    pub fn search_cards_weighted(
+        &self,
+        fts_expr: &str,
+        k: usize,
+        questions_weight: f64,
+    ) -> Result<Vec<FtsHit>> {
+        // Bound, never formatted: no rounding, no SQL text built from a number.
+        let w = if questions_weight.is_finite() && (0.0..=100.0).contains(&questions_weight) {
+            questions_weight
+        } else {
+            2.0
+        };
+        if fts_expr.trim().is_empty() || k == 0 {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT section_id, bm25(cards_fts, 0.0, 3.0, 3.0, 1.0, 1.0, ?3, 1.0) AS score FROM cards_fts
+             WHERE cards_fts MATCH ?1 ORDER BY score, section_id LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![fts_expr, to_i64(k as u64), w], |r| {
+            Ok(FtsHit { section_id: r.get(0)?, bm25: -r.get::<_, f64>(1)? })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
     fn search(&self, sql: &str, fts_expr: &str, k: usize) -> Result<Vec<FtsHit>> {

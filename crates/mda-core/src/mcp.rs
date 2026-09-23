@@ -300,17 +300,22 @@ impl McpServer {
         &self,
         Parameters(p): Parameters<SearchParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        let opts = SearchOptions {
-            k: p.k.unwrap_or(DEFAULT_K).clamp(1, 50),
-            raw_only: p.raw.unwrap_or(false),
-            since: parse_opt_time(p.since.as_deref())?,
-            until: parse_opt_time(p.until.as_deref())?,
-            path_prefix: p.path_prefix.clone(),
-            ..SearchOptions::default()
-        };
+        let (k, raw_only) = (p.k.unwrap_or(DEFAULT_K).clamp(1, 50), p.raw.unwrap_or(false));
+        let since = parse_opt_time(p.since.as_deref())?;
+        let until = parse_opt_time(p.until.as_deref())?;
+        let path_prefix = p.path_prefix.clone();
         let query = p.query.clone();
         let hits = self
             .blocking(move |engine, embedder| {
+                // The root's tunables (config.toml) are read where the engine is available.
+                let opts = SearchOptions {
+                    k,
+                    raw_only,
+                    since,
+                    until,
+                    path_prefix,
+                    ..SearchOptions::for_config(engine.config())
+                };
                 search::search_with(engine.store(), &query, &opts, embedder).map_err(internal)
             })
             .await?;

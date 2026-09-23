@@ -20,7 +20,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::card::{Provenance, SCHEMA_VERSION};
 use crate::config::{Config, STATE_DIR};
-use crate::embed::{EMBED_BATCH, Embedder, embed_text};
+use crate::embed::{EMBED_BATCH, Embedder};
 use crate::markdown::{self, Document};
 use crate::planner::{PlanConfig, chunk_text};
 use crate::store::{DocTimes, PendingSection, Store, UpsertOutcome, Usage as StoredUsage};
@@ -700,7 +700,14 @@ impl Engine {
             after = Some(last.section_hash.clone());
             let texts: Vec<String> = cards
                 .iter()
-                .map(|c| embed_text(c.title.as_deref(), &c.heading_path, &c.summary))
+                .map(|c| {
+                    crate::embed::embed_text_as(
+                        self.config.embedding_text,
+                        c.title.as_deref(),
+                        &c.heading_path,
+                        &c.summary,
+                    )
+                })
                 .collect();
             let vectors = embedder.embed(&texts)?;
             if vectors.len() != cards.len() {

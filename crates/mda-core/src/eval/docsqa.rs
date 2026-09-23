@@ -196,6 +196,27 @@ impl Dataset {
         Ok(Self { project: project.to_owned(), questions, pages })
     }
 
+    /// Add labels to the questions' `relevant` sets (the pooled, model-assisted labels of
+    /// plan §2.3: `(question_id, page)` pairs judged relevant). Unknown question ids are
+    /// returned so the caller can report them; a page already labelled is not duplicated.
+    /// The dataset's original labels are never removed.
+    pub fn add_labels(&mut self, extra: &[(String, String)]) -> Vec<String> {
+        let mut unknown = Vec::new();
+        for (id, page) in extra {
+            match self.questions.iter_mut().find(|q| &q.id == id) {
+                Some(q) => {
+                    if !q.relevant.contains(page) {
+                        q.relevant.push(page.clone());
+                    }
+                }
+                None => unknown.push(id.clone()),
+            }
+        }
+        unknown.sort();
+        unknown.dedup();
+        unknown
+    }
+
     /// The split of every question (seeded, stratified within the project).
     #[must_use]
     pub fn split(&self, seed: u64) -> HashMap<String, Split> {
@@ -426,6 +447,12 @@ pub struct RunOptions {
     pub fetch: usize,
     /// Score holdout questions too (plan rule 0.2: only at 1.0).
     pub include_holdout: bool,
+    /// The search tunables (`SearchOptions::for_config`); `k`, `raw_only` and recency are
+    /// set by the adapter.
+    pub search: SearchOptions,
+    /// Score only these question ids (plan §2.3: the pooled column is computed over the
+    /// judged questions). `None` scores every eligible question of the split.
+    pub only: Option<HashSet<String>>,
 }
 
 /// Upper bound on sections fetched for one question.
@@ -449,7 +476,7 @@ pub fn evaluate(
         k: opts.fetch,
         raw_only: opts.raw_only,
         recency_half_life_days: 0.0, // a frozen corpus has no "recent"
-        ..SearchOptions::default()
+        ..opts.search.clone()
     };
     let mut results = Vec::new();
     let (mut hits5, mut rr_sum, mut ndcg_sum, mut ms_sum) = (0usize, 0.0f64, 0.0f64, 0.0f64);
@@ -459,6 +486,9 @@ pub fn evaluate(
             continue;
         }
         if q_split == Split::Holdout && !opts.include_holdout {
+            continue;
+        }
+        if opts.only.as_ref().is_some_and(|ids| !ids.contains(&q.id)) {
             continue;
         }
         let started = std::time::Instant::now();
@@ -516,6 +546,25 @@ pub fn evaluate(
     })
 }
 
+/// One extra label (`--extra-labels`, plan §2.3): a page judged relevant for a question.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ExtraLabel {
+    /// `question_id`.
+    pub question_id: String,
+    /// Repository-relative page path.
+    pub page: String,
+}
+
+/// Read extra labels from a JSONL file (`{"question_id", "page"}` per line; other fields,
+/// such as the judgments the pair came from, are ignored).
+pub fn read_extra_labels(path: &Path) -> Result<Vec<(String, String)>> {
+    Ok(read_jsonl::<ExtraLabel>(path)?
+        .into_iter()
+        .map(|l| (l.question_id, normalize_arm_path(&l.page)))
+        .filter(|(_, p)| !p.is_empty())
+        .collect())
+}
+
 /// One row of an external arm's output (`--arm-output`, plan §2.2): the ranked repository
 /// paths the arm's driver returned for one question, and whether the driver hit a limit
 /// before reaching ten distinct pages or exhaustion.
@@ -561,6 +610,18 @@ pub fn normalize_arm_path(path: &str) -> String {
     p.split('/').filter(|seg| !seg.is_empty() && *seg != ".").collect::<Vec<_>>().join("/")
 }
 
+/// How an external arm's rows are scored: the row name, whether the sealed holdout is
+/// open, and an optional restriction to given question ids (the pooled column).
+#[derive(Debug, Clone, Default)]
+pub struct ArmScoring {
+    /// Name of the row.
+    pub name: String,
+    /// Score holdout questions too (rule 0.2: only at 1.0).
+    pub include_holdout: bool,
+    /// Score only these question ids.
+    pub only: Option<HashSet<String>>,
+}
+
 /// Score an external arm's ranked lists with the same eligibility (the store decides which
 /// labels are indexed), split, page rule and metrics as the store's own rows (plan §2.2).
 /// A scored question without a row is a miss, listed in [`Run::missing`].
@@ -571,9 +632,9 @@ pub fn score_arm(
     splits: &HashMap<String, Split>,
     split: Option<Split>,
     rows: &HashMap<String, ArmRow>,
-    name: &str,
-    include_holdout: bool,
+    how: &ArmScoring,
 ) -> Result<Run> {
+    let (name, include_holdout, only) = (how.name.as_str(), how.include_holdout, how.only.as_ref());
     let indexed: HashSet<String> = store.documents()?.into_iter().map(|d| d.rel_path).collect();
     let known: HashSet<&str> = dataset.questions.iter().map(|q| q.id.as_str()).collect();
     let mut unknown: Vec<String> =
@@ -588,6 +649,9 @@ pub fn score_arm(
             continue;
         }
         if q_split == Split::Holdout && !include_holdout {
+            continue;
+        }
+        if only.is_some_and(|ids| !ids.contains(&q.id)) {
             continue;
         }
         let (ranked, fetched, truncated) = if let Some(row) = rows.get(&q.id) {

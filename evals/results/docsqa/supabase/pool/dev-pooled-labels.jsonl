@@ -1,0 +1,14 @@
+{"question_id":"supabase::supabase-33340","page":"apps/docs/content/guides/realtime/presence.mdx","mean":2,"judges":["fable"]}
+{"question_id":"supabase::supabase-32027","page":"apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx","mean":2,"judges":["fable"]}
+{"question_id":"supabase::supabase-37719","page":"apps/docs/content/troubleshooting/database-api-42501-errors.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-21027","page":"apps/docs/content/guides/auth/server-side/creating-a-client.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-33340","page":"apps/docs/content/guides/platform/manage-your-usage/realtime-messages.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-32027","page":"apps/docs/content/guides/auth/managing-user-data.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-35974","page":"apps/docs/content/guides/auth/managing-user-data.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-35974","page":"apps/docs/content/guides/database/postgres/roles.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-33340","page":"apps/docs/content/guides/realtime/settings.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-36672","page":"apps/docs/content/_partials/quickstart_connection_string.mdx","mean":2,"judges":["fable"]}
+{"question_id":"supabase::supabase-36672","page":"apps/docs/content/guides/platform/network-restrictions.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-8508","page":"apps/docs/content/guides/queues/consuming-messages-with-edge-functions.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-35974","page":"apps/docs/content/troubleshooting/database-api-42501-errors.mdx","mean":1,"judges":["fable"]}
+{"question_id":"supabase::supabase-21027","page":"apps/docs/content/guides/auth/choosing-a-server-package.mdx","mean":1,"judges":["fable"]}

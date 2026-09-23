@@ -1176,3 +1176,57 @@ fn eval_docsqa_scores_an_external_arm_from_its_ranked_paths() {
         .failure()
         .stderr(predicate::str::contains("appears twice"));
 }
+
+#[test]
+fn eval_docsqa_adds_extra_labels_without_removing_the_originals() {
+    let (dir, data, root) = docsqa_fixture();
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    // q2's label is docs/paging.mdx; an arm that returns docs/other.mdx first misses it.
+    let arm = dir.path().join("arm.jsonl");
+    std::fs::write(
+        &arm,
+        "{\"question_id\":\"q2\",\"paths\":[\"docs/other.mdx\",\"docs/paging.mdx\"]}\n{\"question_id\":\"q1\",\"paths\":[\"docs/rollback.mdx\"]}\n",
+    )
+    .unwrap();
+    let extra = dir.path().join("pooled.jsonl");
+    std::fs::write(
+        &extra,
+        "{\"question_id\":\"q2\",\"page\":\"./docs/other.mdx\",\"score\":2}\n{\"question_id\":\"zz\",\"page\":\"docs/x.mdx\"}\n{\"question_id\":\"q2\",\"page\":\"docs/paging.mdx\"}\n",
+    )
+    .unwrap();
+    let base = || {
+        let mut c = mda();
+        c.args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root)
+            .args(["--split", "all", "--arm-output"])
+            .arg(&arm);
+        c
+    };
+    let plain = json_of(&base().assert().success().get_output().stdout);
+    assert_eq!(plain["runs"][0]["results"][1]["id"], "q2");
+    assert_eq!(
+        plain["runs"][0]["results"][1]["rank"], 2,
+        "original labels: other.mdx is a miss at rank 1"
+    );
+    let pooled =
+        json_of(&base().arg("--extra-labels").arg(&extra).assert().success().get_output().stdout);
+    assert_eq!(
+        pooled["extra_labels"]["added"], 1,
+        "other.mdx added once; paging.mdx already labelled"
+    );
+    assert_eq!(pooled["extra_labels"]["unknown_question_ids"], serde_json::json!(["zz"]));
+    let q2 = &pooled["runs"][0]["results"][1];
+    assert_eq!(q2["rank"], 1, "with the pooled label the first page counts");
+    assert_eq!(q2["relevant"].as_array().unwrap().len(), 2, "original label kept");
+    assert_eq!(pooled["runs"][0]["metrics"]["success_at_5"], 1.0);
+    // --only-questions restricts the scored set (the pooled column is over the judged ones).
+    let only = dir.path().join("only.txt");
+    std::fs::write(&only, "{\"question_id\":\"q2\"}\nq-not-there\n").unwrap();
+    let sub =
+        json_of(&base().arg("--only-questions").arg(&only).assert().success().get_output().stdout);
+    assert_eq!(sub["runs"][0]["metrics"]["questions"], 1);
+    assert_eq!(sub["runs"][0]["results"][0]["id"], "q2");
+    assert_eq!(sub["only_questions"], 2);
+}

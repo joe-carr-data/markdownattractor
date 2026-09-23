@@ -1,0 +1,925 @@
+{
+  "arm_output": null,
+  "card_coverage": {
+    "complete": true,
+    "sections": 6548,
+    "sections_carded": 6548
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 48,
+    "anchors_found": 47,
+    "corpus_pages": 770,
+    "corpus_pages_indexed": 770,
+    "eligible": 40,
+    "excluded_image_evidence": 12,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "supabase::supabase-30447"
+    ],
+    "multimodal_judgment": 7,
+    "project": "supabase",
+    "qrel_coverage": 1.0,
+    "qrels": 63,
+    "qrels_indexed": 63,
+    "qrels_unmapped": 0,
+    "questions": 52,
+    "questions_with_missing_anchor": 1
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q+with-entities",
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "project": "supabase",
+  "root": "~/.cache/markdownattractor/bench/supabase",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": 308.83066675,
+        "mrr_at_5": 0.11805555555555554,
+        "ndcg_at_10": 0.20754817230656675,
+        "questions": 12,
+        "success_at_5": 0.3333333333333333
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-1514",
+          "ndcg_at_10": 0.3065735963827292,
+          "pages": [
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-oauth.mdx",
+            "apps/docs/content/troubleshooting/identify-lovable-cloud-or-supabase-backend.mdx",
+            "apps/docs/content/guides/platform/sso/multiple-providers.mdx",
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx"
+          ],
+          "rank": 3,
+          "relevant": [
+            "apps/docs/content/guides/auth.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-21027",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/getting-started/quickstarts/expo-react-native.mdx",
+            "apps/docs/content/troubleshooting/performing-administration-tasks-on-the-server-side-with-the-servicerole-secret-BYM4Fa.mdx",
+            "apps/docs/content/guides/auth/users.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/troubleshooting/cant-access-supabase-project-lovable-cloud.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/storage/vector/storing-vectors.mdx",
+            "apps/docs/content/guides/monitoring-and-debugging/sentry-monitoring.mdx",
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side.mdx",
+            "apps/docs/content/guides/auth/auth-mfa.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32027",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/functions/examples/push-notifications.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32437",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/functions/examples/slack-bot-mention.mdx",
+            "apps/docs/content/guides/functions/websockets.mdx",
+            "apps/docs/content/guides/functions/examples/elevenlabs-generate-speech-stream.mdx",
+            "apps/docs/content/guides/functions/examples/auth-send-email-hook-react-email-resend.mdx",
+            "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx",
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/guides/functions/examples/cloudflare-turnstile.mdx",
+            "apps/docs/content/troubleshooting/unable-to-call-edge-function.mdx",
+            "apps/docs/content/guides/ai/automatic-embeddings.mdx",
+            "apps/docs/content/guides/functions/examples/resumable-websockets.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/functions/secrets.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32666",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/edge-function-500-error-response.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/storage/vector/storing-vectors.mdx",
+            "apps/docs/content/guides/auth/sessions.mdx",
+            "apps/docs/content/guides/auth/auth-hooks/password-verification-hook.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-google.mdx",
+            "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx",
+            "apps/docs/content/guides/auth/auth-hooks/mfa-verification-hook.mdx",
+            "apps/docs/content/troubleshooting/edge-function-503-response.mdx",
+            "apps/docs/content/guides/getting-started/migrating-to-new-api-keys.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-33029",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "apps/docs/content/guides/auth/auth-hooks/send-email-hook.mdx",
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx",
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx",
+            "apps/docs/content/guides/auth/auth-email-templates.mdx",
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/guides/auth/general-configuration.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx",
+            "apps/docs/content/guides/deployment/going-into-prod.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/guides/auth/sessions.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-33340",
+          "ndcg_at_10": 0.2890648263178879,
+          "pages": [
+            "apps/docs/content/guides/realtime/presence.mdx",
+            "apps/docs/content/troubleshooting/realtime-client-presence-rate-limit-reached.mdx",
+            "apps/docs/content/guides/realtime/settings.mdx",
+            "apps/docs/content/guides/realtime/getting_started.mdx",
+            "apps/docs/content/guides/realtime/reports.mdx",
+            "apps/docs/content/guides/realtime/protocol.mdx",
+            "apps/docs/content/guides/monitoring-and-debugging/reports.mdx",
+            "apps/docs/content/guides/realtime.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/guides/realtime/limits.mdx"
+          ],
+          "rank": 10,
+          "relevant": [
+            "apps/docs/content/guides/realtime/limits.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-34447",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/cant-access-supabase-project-lovable-cloud.mdx",
+            "apps/docs/content/troubleshooting/identify-lovable-cloud-or-supabase-backend.mdx",
+            "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/redwoodjs.mdx",
+            "apps/docs/content/troubleshooting/realtime-warn-sending-broadcast-message.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/troubleshooting/http-api-issues.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/prisma.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-35974",
+          "ndcg_at_10": 0.43067655807339306,
+          "pages": [
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/guides/auth/auth-hooks.mdx",
+            "apps/docs/content/guides/database/tables.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx",
+            "apps/docs/content/troubleshooting/rls-performance-and-best-practices-Z5Jjwv.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+            "apps/docs/content/guides/auth/users.mdx"
+          ],
+          "rank": 4,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-36672",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "apps/docs/content/guides/platform/ipv4-address.mdx",
+            "apps/docs/content/troubleshooting/resolving-database-hostname-and-managing-your-ip-address-pVlwE0.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/guides/platform/network-restrictions.mdx",
+            "apps/docs/content/troubleshooting/using-sqlalchemy-with-supabase-FUqebT.mdx",
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/content/troubleshooting/enabling-ipv4-addon.mdx",
+            "apps/docs/content/guides/database/replication/manual-replication-faq.mdx",
+            "apps/docs/content/guides/database/metabase.mdx",
+            "apps/docs/content/troubleshooting/supavisor-faq-YyP5tI.mdx"
+          ],
+          "rank": 3,
+          "relevant": [
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 60,
+          "id": "supabase::supabase-37719",
+          "ndcg_at_10": 0.3333333333333333,
+          "pages": [
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/platform/credits.mdx",
+            "apps/docs/WORD_LIST.md",
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/guides/storage/vector/storing-vectors.mdx",
+            "apps/docs/content/guides/cron/quickstart.mdx",
+            "apps/docs/content/guides/database/extensions/rum.mdx",
+            "apps/docs/content/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx"
+          ],
+          "rank": 7,
+          "relevant": [
+            "apps/docs/content/guides/cron/quickstart.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-8508",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/partitioning-an-existing-table-with-same-name-VEnbzK.mdx",
+            "apps/docs/content/guides/queues/pgmq.mdx",
+            "apps/docs/content/troubleshooting/edge-function-401-error-response.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-s3.mdx",
+            "apps/docs/content/guides/queues/expose-self-hosted-queues.mdx",
+            "apps/docs/content/guides/ai/automatic-embeddings.mdx",
+            "apps/docs/content/guides/platform/aws-marketplace.mdx",
+            "apps/docs/content/guides/queues/quickstart.mdx",
+            "apps/docs/content/guides/functions/secrets.mdx",
+            "apps/docs/content/guides/database/query-optimization.mdx"
+          ],
+          "rank": 13,
+          "relevant": [
+            "apps/docs/content/guides/queues.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        }
+      ],
+      "run": "lexical (raw only)",
+      "split": "dev",
+      "unknown": []
+    },
+    {
+      "metrics": {
+        "mean_ms": 576.1443366666666,
+        "mrr_at_5": 0.20833333333333334,
+        "ndcg_at_10": 0.2924375805738136,
+        "questions": 12,
+        "success_at_5": 0.4166666666666667
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-1514",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "apps/docs/content/guides/self-hosting/self-hosted-oauth.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx",
+            "apps/docs/content/guides/platform/sso/multiple-providers.mdx",
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/guides/platform/sso/choosing-login-flow.mdx",
+            "apps/docs/content/guides/auth/oauth-server/getting-started.mdx",
+            "apps/docs/content/troubleshooting/supavisor-faq-YyP5tI.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/guides/auth/passwords.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/guides/auth.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-21027",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/performing-administration-tasks-on-the-server-side-with-the-servicerole-secret-BYM4Fa.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/troubleshooting/cant-access-supabase-project-lovable-cloud.mdx",
+            "apps/docs/content/troubleshooting/disabling-prepared-statements-qL8lEL.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-oauth.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-functions.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-envoy.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side.mdx",
+            "apps/docs/content/guides/auth/auth-mfa.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32027",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/functions/examples/push-notifications.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32437",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/functions/cors.mdx",
+            "apps/docs/content/guides/functions/examples/cloudflare-turnstile.mdx",
+            "apps/docs/content/guides/functions/error-codes.mdx",
+            "apps/docs/content/troubleshooting/unable-to-call-edge-function.mdx",
+            "apps/docs/content/troubleshooting/edge-function-500-error-response.mdx",
+            "apps/docs/content/guides/functions/quickstart-dashboard.mdx",
+            "apps/docs/content/guides/functions/auth-legacy-jwt.mdx",
+            "apps/docs/content/guides/ai/hugging-face.mdx",
+            "apps/docs/content/guides/functions/examples/slack-bot-mention.mdx",
+            "apps/docs/content/troubleshooting/nextjs-1314-stale-data-when-changing-rls-or-table-data-85b8oQ.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/functions/secrets.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32666",
+          "ndcg_at_10": 0.2890648263178879,
+          "pages": [
+            "apps/docs/content/troubleshooting/edge-function-500-error-response.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-google.mdx",
+            "apps/docs/content/troubleshooting/edge-function-503-response.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/guides/realtime/protocol.mdx",
+            "apps/docs/content/troubleshooting/should-i-set-a-shorter-max-age-parameter-on-the-cookies-8sbF4V.mdx",
+            "apps/docs/content/guides/database/extensions/pgjwt.mdx",
+            "apps/docs/content/guides/auth/social-login.mdx",
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx"
+          ],
+          "rank": 10,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-33029",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx",
+            "apps/docs/content/guides/auth/native-mobile-deep-linking.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/guides/auth/auth-email-templates.mdx",
+            "apps/docs/content/guides/auth/auth-hooks/send-email-hook.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx",
+            "apps/docs/content/guides/getting-started/tutorials/with-sveltekit.mdx",
+            "apps/docs/content/guides/auth/sessions.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/guides/auth/sessions/pkce-flow.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-33340",
+          "ndcg_at_10": 0.3333333333333333,
+          "pages": [
+            "apps/docs/content/guides/realtime/presence.mdx",
+            "apps/docs/content/troubleshooting/realtime-client-presence-rate-limit-reached.mdx",
+            "apps/docs/content/guides/realtime/getting_started.mdx",
+            "apps/docs/content/guides/realtime/settings.mdx",
+            "apps/docs/content/guides/realtime/reports.mdx",
+            "apps/docs/content/guides/realtime.mdx",
+            "apps/docs/content/guides/realtime/limits.mdx",
+            "apps/docs/content/_partials/api_rate_limits.mdx",
+            "apps/docs/content/troubleshooting/realtime-egress-faq.mdx",
+            "apps/docs/content/guides/realtime/protocol.mdx"
+          ],
+          "rank": 7,
+          "relevant": [
+            "apps/docs/content/guides/realtime/limits.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-34447",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/redwoodjs.mdx",
+            "apps/docs/content/troubleshooting/realtime-warn-sending-broadcast-message.mdx",
+            "apps/docs/content/troubleshooting/http-api-issues.mdx",
+            "apps/docs/content/troubleshooting/seeing-no-pghbaconf-entry-for-host-errors-in-postgres-and-they-come-from-an-ip-address-that-i-dont-recognize-4gds9f.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/troubleshooting/error-no-pghbaconf-entry-for-host-xxxxxxxxxxx-user-postgres-database-postgres-ssl-off-GOt5Ja.mdx",
+            "apps/docs/content/troubleshooting/supavisor-faq-YyP5tI.mdx"
+          ],
+          "rank": 11,
+          "relevant": [
+            "apps/docs/content/guides/database/prisma.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-35974",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/guides/auth/auth-hooks.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx",
+            "apps/docs/content/guides/database/tables.mdx",
+            "apps/docs/content/guides/api/creating-routes.mdx",
+            "apps/docs/content/troubleshooting/rls-performance-and-best-practices-Z5Jjwv.mdx",
+            "apps/docs/content/guides/database/vault.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/guides/database/postgres/event-triggers.mdx"
+          ],
+          "rank": 3,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-36672",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "apps/docs/content/troubleshooting/resolving-database-hostname-and-managing-your-ip-address-pVlwE0.mdx",
+            "apps/docs/content/guides/platform/ipv4-address.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/content/troubleshooting/enabling-ipv4-addon.mdx",
+            "apps/docs/content/guides/platform/network-restrictions.mdx",
+            "apps/docs/content/guides/database/replication/manual-replication-faq.mdx",
+            "apps/docs/content/troubleshooting/using-sqlalchemy-with-supabase-FUqebT.mdx",
+            "apps/docs/content/guides/platform/temporary-access.mdx",
+            "apps/docs/content/guides/platform/manage-your-usage/ipv4.mdx"
+          ],
+          "rank": 3,
+          "relevant": [
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-37719",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/cron/quickstart.mdx",
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/guides/deployment/managing-environments.mdx",
+            "apps/docs/content/troubleshooting/pgcron-debugging-guide-n1KTaz.mdx",
+            "apps/docs/content/guides/cron.mdx",
+            "apps/docs/content/troubleshooting/pg_cron-launcher-crashes-with-duplicate-key-value-violates-unique-constraint-cc6472.mdx",
+            "apps/docs/content/guides/self-hosting/postgres-upgrade-17.mdx",
+            "apps/docs/content/guides/api/handling-errors-in-supabase-js.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-s3.mdx",
+            "apps/docs/content/guides/database/postgres/data-deletion.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/cron/quickstart.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-8508",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "apps/docs/content/guides/queues/pgmq.mdx",
+            "apps/docs/WORD_LIST.md",
+            "apps/docs/content/guides/queues.mdx",
+            "apps/docs/content/troubleshooting/edge-functions-worker-timeouts-and-websocket-drops.mdx",
+            "apps/docs/content/guides/queues/quickstart.mdx",
+            "apps/docs/content/guides/queues/expose-self-hosted-queues.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-s3.mdx",
+            "apps/docs/content/guides/self-hosting/postgres-upgrade-17.mdx",
+            "apps/docs/content/guides/platform/read-replicas/getting-started.mdx",
+            "apps/docs/content/guides/self-hosting/custom-postgres-extensions.mdx"
+          ],
+          "rank": 3,
+          "relevant": [
+            "apps/docs/content/guides/queues.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        }
+      ],
+      "run": "lexical (cards + raw)",
+      "split": "dev",
+      "unknown": []
+    },
+    {
+      "metrics": {
+        "mean_ms": 751.9442950000001,
+        "mrr_at_5": 0.3125,
+        "ndcg_at_10": 0.4113766991904941,
+        "questions": 12,
+        "success_at_5": 0.4166666666666667
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-1514",
+          "ndcg_at_10": 0.6131471927654584,
+          "pages": [
+            "apps/docs/content/guides/auth/redirect-urls.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-oauth.mdx",
+            "apps/docs/content/guides/platform/sso/multiple-providers.mdx",
+            "apps/docs/content/guides/auth/oauth-server/getting-started.mdx",
+            "apps/docs/content/guides/platform/sso/choosing-login-flow.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "DEVELOPERS.md",
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx",
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/auth.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-21027",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/performing-administration-tasks-on-the-server-side-with-the-servicerole-secret-BYM4Fa.mdx",
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/expo-react-native.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/troubleshooting/realtime-too-many-channels-error.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/how-to-migrate-from-supabase-auth-helpers-to-ssr-package-5NRunM.mdx",
+            "apps/docs/content/_partials/create_client_snippet.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/troubleshooting/cant-access-supabase-project-lovable-cloud.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side.mdx",
+            "apps/docs/content/guides/auth/auth-mfa.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32027",
+          "ndcg_at_10": 0.3010299956639812,
+          "pages": [
+            "apps/docs/content/guides/getting-started/tutorials/with-nextjs.mdx",
+            "apps/docs/content/guides/functions/examples/push-notifications.mdx",
+            "apps/docs/content/guides/functions/auth.mdx",
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/guides/getting-started/tutorials/with-redwoodjs.mdx",
+            "apps/docs/content/guides/auth/password-security.mdx",
+            "apps/docs/content/troubleshooting/unexpected-behavior-with-authupdateuser-phone-phone-linked-to-incorrect-user-id-45368f.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx"
+          ],
+          "rank": 9,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32437",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/functions/cors.mdx",
+            "apps/docs/content/guides/functions/quickstart-dashboard.mdx",
+            "apps/docs/content/troubleshooting/unable-to-call-edge-function.mdx",
+            "apps/docs/content/guides/ai/hugging-face.mdx",
+            "apps/docs/content/guides/functions/examples/cloudflare-turnstile.mdx",
+            "apps/docs/content/guides/functions/error-codes.mdx",
+            "apps/docs/content/guides/functions/quickstart.mdx",
+            "apps/docs/content/guides/functions/auth-headers.mdx",
+            "apps/docs/content/guides/database/extensions/pg_net.mdx",
+            "apps/docs/content/troubleshooting/edge-function-404-error-response.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/functions/secrets.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-32666",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/edge-function-500-error-response.mdx",
+            "apps/docs/content/troubleshooting/google-auth-fails-for-some-users-XcFXEu.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/troubleshooting/scan-error-on-column-confirmation_token-converting-null-to-string-is-unsupported-during-auth-login-a0c686.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-google.mdx",
+            "apps/docs/content/troubleshooting/edge-function-503-response.mdx",
+            "apps/docs/content/troubleshooting/fetch-requests-to-api-endpoints-arent-showing-the-session-UbUwRs.mdx",
+            "apps/docs/content/guides/realtime/protocol.mdx",
+            "apps/docs/content/troubleshooting/should-i-set-a-shorter-max-age-parameter-on-the-cookies-8sbF4V.mdx"
+          ],
+          "rank": 15,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-33029",
+          "ndcg_at_10": 0.2890648263178879,
+          "pages": [
+            "apps/docs/content/guides/auth/auth-hooks/send-email-hook.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx",
+            "apps/docs/content/guides/getting-started/tutorials/with-sveltekit.mdx",
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx",
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/guides/auth/native-mobile-deep-linking.mdx",
+            "apps/docs/content/guides/auth/auth-email-templates.mdx",
+            "apps/docs/content/_partials/auth_rate_limits.mdx",
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx"
+          ],
+          "rank": 10,
+          "relevant": [
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-33340",
+          "ndcg_at_10": 0.31546487678572877,
+          "pages": [
+            "apps/docs/content/guides/realtime/presence.mdx",
+            "apps/docs/content/troubleshooting/realtime-client-presence-rate-limit-reached.mdx",
+            "apps/docs/content/guides/realtime/settings.mdx",
+            "apps/docs/content/guides/realtime.mdx",
+            "apps/docs/content/guides/realtime/reports.mdx",
+            "apps/docs/content/guides/realtime/getting_started.mdx",
+            "apps/docs/content/guides/monitoring-and-debugging/reports.mdx",
+            "apps/docs/content/guides/realtime/limits.mdx",
+            "apps/docs/content/guides/realtime/realtime-user-presence.mdx",
+            "apps/docs/content/guides/realtime/authorization.mdx"
+          ],
+          "rank": 8,
+          "relevant": [
+            "apps/docs/content/guides/realtime/limits.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-34447",
+          "ndcg_at_10": 0.3562071871080222,
+          "pages": [
+            "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/redwoodjs.mdx",
+            "apps/docs/content/troubleshooting/http-api-issues.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/troubleshooting/error-no-pghbaconf-entry-for-host-xxxxxxxxxxx-user-postgres-database-postgres-ssl-off-GOt5Ja.mdx",
+            "apps/docs/content/guides/database/prisma.mdx",
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/troubleshooting/restore-project-after-90-days-pause.mdx",
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/troubleshooting/realtime-warn-sending-broadcast-message.mdx"
+          ],
+          "rank": 6,
+          "relevant": [
+            "apps/docs/content/guides/database/prisma.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-35974",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx",
+            "apps/docs/content/guides/auth/auth-hooks.mdx",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            "apps/docs/content/guides/platform/permissions.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/guides/database/postgres/roles.mdx",
+            "apps/docs/content/guides/database/tables.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-36672",
+          "ndcg_at_10": 0.43067655807339306,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/content/troubleshooting/resolving-database-hostname-and-managing-your-ip-address-pVlwE0.mdx",
+            "apps/docs/content/guides/platform/network-restrictions.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/troubleshooting/enabling-ipv4-addon.mdx",
+            "apps/docs/content/guides/platform/ipv4-address.mdx",
+            "apps/docs/content/guides/database/replication/manual-replication-faq.mdx",
+            "apps/docs/content/troubleshooting/using-sqlalchemy-with-supabase-FUqebT.mdx",
+            "apps/docs/content/troubleshooting/supavisor-faq-YyP5tI.mdx",
+            "apps/docs/content/troubleshooting/prisma-error-management-Cm5P_o.mdx"
+          ],
+          "rank": 4,
+          "relevant": [
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-37719",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/cron/quickstart.mdx",
+            "apps/docs/content/guides/deployment/managing-environments.mdx",
+            "apps/docs/content/troubleshooting/pgcron-debugging-guide-n1KTaz.mdx",
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/troubleshooting/pg_cron-launcher-crashes-with-duplicate-key-value-violates-unique-constraint-cc6472.mdx",
+            "apps/docs/content/guides/cron.mdx",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/guides/self-hosting/postgres-upgrade-17.mdx",
+            "apps/docs/content/troubleshooting/42501--permission-denied-for-table-httprequestqueue-KnozmQ.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/cron/quickstart.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "supabase::supabase-8508",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/queues.mdx",
+            "apps/docs/content/guides/queues/pgmq.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-s3.mdx",
+            "apps/docs/content/troubleshooting/edge-functions-worker-timeouts-and-websocket-drops.mdx",
+            "apps/docs/content/guides/queues/expose-self-hosted-queues.mdx",
+            "apps/docs/content/guides/queues/quickstart.mdx",
+            "apps/docs/content/guides/queues/consuming-messages-with-edge-functions.mdx",
+            "apps/docs/WORD_LIST.md",
+            "apps/docs/content/guides/platform/aws-marketplace.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/amazon-rds.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/queues.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        }
+      ],
+      "run": "hybrid (cards + raw + vectors)",
+      "split": "dev",
+      "unknown": []
+    }
+  ],
+  "search": {
+    "and_stopwords": false,
+    "embedding_text": "with-entities",
+    "questions_weight": 2.0,
+    "raw_list_weight": 1.0,
+    "rrf_k": 60.0
+  },
+  "seed": 20260922,
+  "split": "dev",
+  "split_counts": {
+    "dev": 15,
+    "holdout": 9,
+    "test": 28
+  },
+  "store": {
+    "docs": 836,
+    "failed": 0,
+    "pending": 0,
+    "sections": 6548,
+    "summarized": 6386,
+    "tombstoned": 0,
+    "total_cost_usd": 30.48358,
+    "total_input_tokens": 16615918,
+    "total_output_tokens": 2675968
+  }
+}

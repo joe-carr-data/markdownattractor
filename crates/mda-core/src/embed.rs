@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use crate::Error;
 use crate::Result;
 use crate::card::SectionSummary;
-use crate::config::{Config, Embeddings};
+use crate::config::{Config, EmbedText, Embeddings};
 
 /// Name stored with every vector produced by [`LocalEmbedder`]. Changing the model means
 /// changing this string, which invalidates every stored vector.
@@ -31,8 +31,9 @@ pub const EMBED_BATCH: usize = 32;
 
 /// Something that turns texts into vectors.
 pub trait Embedder: Send + Sync {
-    /// Stable model name, stored beside every vector.
-    fn model(&self) -> &'static str;
+    /// Stable model name, stored beside every vector (with the embedding-text variant's
+    /// suffix when one is configured, so vectors of different texts are never mixed).
+    fn model(&self) -> &str;
     /// Vector length.
     fn dim(&self) -> usize;
     /// `true` when [`Embedder::embed`] can run without fetching anything (model on disk or
@@ -43,31 +44,94 @@ pub trait Embedder: Send + Sync {
     fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>>;
 }
 
-/// A [`SectionSummary`] plus what surrounds it, flattened into the text that gets embedded.
-/// Cards, not raw text: the vector should match the questions people ask (plan §5).
+/// A [`SectionSummary`] plus what surrounds it, flattened into the text that gets embedded
+/// (the v1 order). Cards, not raw text: the vector should match the questions people ask
+/// (plan §5).
 #[must_use]
 pub fn embed_text(
     title: Option<&str>,
     heading_path: &[String],
     summary: &SectionSummary,
 ) -> String {
-    let mut parts: Vec<String> = Vec::with_capacity(6);
+    embed_text_as(EmbedText::V1, title, heading_path, summary)
+}
+
+/// The embedded text of a card under a configured variant (benchmark tuning, plan §3).
+#[must_use]
+pub fn embed_text_as(
+    variant: EmbedText,
+    title: Option<&str>,
+    heading_path: &[String],
+    summary: &SectionSummary,
+) -> String {
+    let mut parts: Vec<String> = Vec::with_capacity(8);
     if let Some(t) = title.filter(|t| !t.trim().is_empty()) {
         parts.push(t.trim().to_owned());
     }
     if !heading_path.is_empty() {
         parts.push(heading_path.join(" › "));
     }
+    let questions = summary.questions_answered.join(" ");
+    if variant.questions_first() && !questions.is_empty() {
+        parts.push(questions.clone());
+    }
     parts.push(summary.tldr.trim().to_owned());
     parts.push(summary.summary.trim().to_owned());
     if !summary.keywords.is_empty() {
         parts.push(summary.keywords.join(", "));
     }
-    if !summary.questions_answered.is_empty() {
-        parts.push(summary.questions_answered.join(" "));
+    if !variant.questions_first() && !questions.is_empty() {
+        parts.push(questions);
+    }
+    if variant.with_entities() {
+        let e = &summary.entities;
+        let entities: Vec<&str> = e
+            .people
+            .iter()
+            .chain(&e.orgs)
+            .chain(&e.products)
+            .chain(&e.technologies)
+            .chain(&e.files_paths)
+            .chain(&e.commands)
+            .map(String::as_str)
+            .collect();
+        if !entities.is_empty() {
+            parts.push(entities.join(", "));
+        }
     }
     parts.retain(|p| !p.is_empty());
     parts.join("\n")
+}
+
+/// An embedder whose model id carries the embedding-text variant, so the store keeps the
+/// vectors of each text apart (`bge-small-en-v1.5-q+questions-first`).
+pub struct VariantEmbedder {
+    inner: Arc<dyn Embedder>,
+    model: String,
+}
+
+impl VariantEmbedder {
+    /// Wrap `inner` for `variant`; the default text needs no wrapper.
+    #[must_use]
+    pub fn new(inner: Arc<dyn Embedder>, variant: EmbedText) -> Self {
+        let model = format!("{}{}", inner.model(), variant.suffix());
+        Self { inner, model }
+    }
+}
+
+impl Embedder for VariantEmbedder {
+    fn model(&self) -> &str {
+        &self.model
+    }
+    fn dim(&self) -> usize {
+        self.inner.dim()
+    }
+    fn ready(&self) -> bool {
+        self.inner.ready()
+    }
+    fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>> {
+        self.inner.embed(texts)
+    }
 }
 
 /// Scale `v` to unit length in place. A zero vector is left as is.
@@ -137,7 +201,8 @@ pub fn check(cfg: &Config) -> EmbedCheck {
         },
         Embeddings::LocalSmall => EmbedCheck {
             embeddings: Embeddings::LocalSmall,
-            model: Some(LOCAL_SMALL_MODEL.to_owned()),
+            // The identity the vectors are stored under: the model plus the text variant.
+            model: Some(format!("{LOCAL_SMALL_MODEL}{}", cfg.embedding_text.suffix())),
             cached: LocalEmbedder::is_cached(&dir),
             cache_dir: dir,
         },
@@ -151,7 +216,13 @@ pub fn embedder_for(cfg: &Config) -> Option<Arc<dyn Embedder>> {
     match cfg.embeddings {
         Embeddings::Off => None,
         #[cfg(feature = "embeddings")]
-        Embeddings::LocalSmall => Some(Arc::new(LocalEmbedder::new(cache_dir(cfg)))),
+        Embeddings::LocalSmall => {
+            let base: Arc<dyn Embedder> = Arc::new(LocalEmbedder::new(cache_dir(cfg)));
+            Some(match cfg.embedding_text {
+                EmbedText::V1 => base,
+                v => Arc::new(VariantEmbedder::new(base, v)),
+            })
+        }
         #[cfg(not(feature = "embeddings"))]
         Embeddings::LocalSmall => {
             tracing::warn!("built without the `embeddings` feature; search is lexical");
@@ -340,6 +411,50 @@ mod tests {
             decisions: vec![],
             action_items: vec![],
         }
+    }
+
+    #[test]
+    fn embed_text_variants_reorder_and_extend_the_text() {
+        let mut s = summary();
+        s.entities.products = vec!["deployctl".into()];
+        s.entities.files_paths = vec!["ops/rollback.md".into()];
+        let v1 = embed_text_as(EmbedText::V1, Some("Runbook"), &["Deploy".into()], &s);
+        let qf = embed_text_as(EmbedText::QuestionsFirst, Some("Runbook"), &["Deploy".into()], &s);
+        let we = embed_text_as(EmbedText::WithEntities, Some("Runbook"), &["Deploy".into()], &s);
+        assert_eq!(v1, embed_text(Some("Runbook"), &["Deploy".into()], &s));
+        let qf_lines: Vec<&str> = qf.lines().collect();
+        assert_eq!(qf_lines[2], "How do I roll back?", "questions before the tldr: {qf}");
+        assert_eq!(qf.lines().count(), v1.lines().count(), "same parts, another order");
+        assert!(we.starts_with(&v1) && we.ends_with("deployctl, ops/rollback.md"), "{we}");
+        let both = embed_text_as(
+            EmbedText::QuestionsFirstWithEntities,
+            Some("Runbook"),
+            &["Deploy".into()],
+            &s,
+        );
+        assert!(
+            both.lines().nth(2) == Some("How do I roll back?")
+                && both.ends_with("deployctl, ops/rollback.md"),
+            "{both}"
+        );
+        assert_eq!(
+            EmbedText::QuestionsFirstWithEntities.suffix(),
+            "+questions-first+with-entities"
+        );
+        let cfg = crate::config::Config {
+            embedding_text: EmbedText::QuestionsFirst,
+            ..crate::config::Config::default()
+        };
+        assert_eq!(
+            check(&cfg).model.as_deref(),
+            embedder_for(&cfg).map(|e| e.model().to_owned()).as_deref(),
+            "check and the embedder agree on the identity"
+        );
+        assert_eq!(EmbedText::V1.suffix(), "");
+        let inner: Arc<dyn Embedder> = Arc::new(HashEmbedder::new(8));
+        let v = VariantEmbedder::new(Arc::clone(&inner), EmbedText::QuestionsFirst);
+        assert_eq!(v.model(), format!("{}+questions-first", inner.model()));
+        assert_eq!(v.dim(), inner.dim());
     }
 
     #[test]
