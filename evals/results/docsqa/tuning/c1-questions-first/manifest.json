@@ -1,0 +1,44 @@
+{
+  "trial": "c1-questions-first",
+  "at": "2026-09-23T21:06:34Z",
+  "hypothesis_change": [
+    "embedding_text=questions-first"
+  ],
+  "base_before": [],
+  "base_fingerprint": "e3b0c44298fc1c14",
+  "code_sha": "6f7c397d32d35ad7880a2cbfc298bdfcf37ce877",
+  "binary_sha256": "b437c2c328c0c0aaf30b7b2b00f7df5ae0e5c768e9542f2f3db2646730e4e07b",
+  "frozen_md_sha256": "6f7afe6f62f03ddfb73b83bc2a86cdfd60ddab8078c1a7901d90a6b3b51a7d51",
+  "cards_sha256": [
+    "0788ea973eb4475bdc67357c640d85e259aa95b13724640d09a6cce4ce98dda2",
+    "ba0faa4ebb571a6a7940abdab73b019c920638f60ca795b05b01b6ac75e6b30c",
+    "8562fbb94d87a898e3d961871f3331ebac1b08d752c923ae04a30915836dfac8",
+    "ea8b35f86451da867d05db5c9f497e0ef65da6fffabd7556a7ba115acc15d766"
+  ],
+  "summary": {
+    "name": "c1-questions-first",
+    "tailwind": 0.72,
+    "supabase": 0.5,
+    "prisma": 0.2972972972972973,
+    "github": 0.4489795918367347,
+    "n": {
+      "tailwind": 25,
+      "supabase": 12,
+      "prisma": 37,
+      "github": 49
+    },
+    "objective": 0.491569222283508,
+    "mean_ms": 705.3623808223608,
+    "elapsed_s": 188,
+    "embedding_model": "bge-small-en-v1.5-q+questions-first",
+    "search": {
+      "and_stopwords": false,
+      "embedding_text": "questions-first",
+      "questions_weight": 2.0,
+      "raw_list_weight": 1.0,
+      "rrf_k": 60.0
+    }
+  },
+  "decision": "discard",
+  "per_project_results": "<project>.results.json beside this manifest (archived observations; metrics regenerate from their page lists through --arm-output)"
+}

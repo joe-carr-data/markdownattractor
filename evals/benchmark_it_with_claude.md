@@ -208,6 +208,17 @@ qmd's build makes no remote model call (local EmbeddingGemma-300M inference on M
 
 The greedy loop of the execution plan §3 runs with `scripts/eval/tune.sh` against the four carded stores. Every trial is archived under `evals/results/docsqa/tuning/<trial>/`: `manifest.json` (the change, the base it was applied to, code SHA, binary sha256, `FROZEN.md` and cards hashes, the summary with denominators, the decision) and the four `results.json`; `TUNING.md` is the ledger written from those files. Two checks, never mixed: **regeneration** (exact) recomputes a trial's metrics from its archived page lists without a store, exactly like the preflight's `regenerate` check (`--arm-output` on rows built from `<project>.results.json`); a **rerun** (`scripts/eval/tune.sh baseline`, then `trial <name> <key=value>…` replaying the manifests' changes in order with `keep` after each kept one, `fetch=<n>` for the fetch-depth candidate) searches again and must give the same rows with the same stores and the binary at the logged SHA, while latency and elapsed time differ by machine; an `embedding_text` change re-embeds every card under a new model id (local, ≈ 1 h for the four corpora). The winner's settings become the defaults of the frozen binary at M4 and appear in `FROZEN.md`'s search configuration line.
 
+## 4e. Pooled labels (plan §2.3; diagnostic at M3, the published second column at M4)
+
+```bash
+cd "$REPO"
+scripts/eval/pool.sh sample prisma dev 100 20260922          # 100 unlabelled top-5 pairs, seeded, round-robin over the arms → evals/results/docsqa/prisma/pool/dev-sample.jsonl (regeneration, exact)
+scripts/eval/pool.sh judge prisma dev fable                  # one panel member through your login: claude -p --model claude-fable-5-1, frozen 0/1/2 rubric, JSON schema → dev-judgments-fable.jsonl (independent rerun: a different sample of judgments is expected; publish beside the original)
+scripts/eval/pool.sh column prisma dev                       # every arm rescored over the judged questions with original ∪ pooled labels (a pair is relevant when the judges' mean ≥ 1) → dev-column.json (regeneration, exact, from the committed judgments)
+```
+
+The judge sees the question and the page's first 6,000 characters inside `<submission>` tags, never the arm; a judgment that is not a valid structured output is recorded as `null` and never as 0. The column is computed by the same scorer as every other number (`--extra-labels`, `--only-questions`), from the archived page lists; nothing is searched again. At M4 the sample is drawn from the final test-split runs and judged by both panel members (Astra through the Codex CLI, `panel.sh`); until then the numbers are labelled development.
+
 ## 5. Answer quality on the golden corpus
 
 **5a. Regeneration (exact).** The archived observations are `evals/ab/results/<date>-*.md` with their `runs.jsonl` and `grades.jsonl` under `evals/results/` (from M5; the 2026-09-22 runs predate the archive rule and are exploratory). Recompute the table from the archived `grades.jsonl` with `scripts/eval/grade.sh --table-only <questions> <dir>` (M5) and diff against the published file: it must be byte-identical.

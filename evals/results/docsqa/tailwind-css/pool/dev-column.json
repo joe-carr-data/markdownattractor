@@ -1,0 +1,164 @@
+{
+  "project": "tailwind-css",
+  "split": "dev",
+  "label": "pooled, model-assisted, 100 pairs/project, judges fable",
+  "sample_pairs": 100,
+  "pooled_relevant_pairs": 7,
+  "judged_questions": 25,
+  "rule": "a pair is relevant when the mean of the judges scores is >= 1; metrics over the judged questions only; original labels never removed",
+  "arms": [
+    {
+      "arm": "lexical (raw only)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.6,
+        "mrr_at_5": 0.34,
+        "ndcg_at_10": 0.41973933842368466,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.6,
+        "mrr_at_5": 0.34,
+        "ndcg_at_10": 0.4123542742494436,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "lexical (cards + raw)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.84,
+        "mrr_at_5": 0.4726666666666667,
+        "ndcg_at_10": 0.5959161961687283,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.84,
+        "mrr_at_5": 0.4726666666666667,
+        "ndcg_at_10": 0.5886648037197815,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "hybrid (cards + raw + vectors)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.8,
+        "mrr_at_5": 0.45733333333333326,
+        "ndcg_at_10": 0.5640333673733166,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.84,
+        "mrr_at_5": 0.46733333333333327,
+        "ndcg_at_10": 0.5634948580811867,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "BM25-over-files",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.64,
+        "mrr_at_5": 0.31799999999999995,
+        "ndcg_at_10": 0.4592626150297054,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.68,
+        "mrr_at_5": 0.33799999999999997,
+        "ndcg_at_10": 0.4763086814579672,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "graphify-haiku (query_graph)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.04,
+        "mrr_at_5": 0.013333333333333332,
+        "ndcg_at_10": 0.02,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.08,
+        "mrr_at_5": 0.03333333333333333,
+        "ndcg_at_10": 0.03184327643863461,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "graphify (query_graph)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.52,
+        "mrr_at_5": 0.28800000000000003,
+        "ndcg_at_10": 0.3768960444519079,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.6,
+        "mrr_at_5": 0.316,
+        "ndcg_at_10": 0.3937576174694272,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "qmd BM25 (MCP lex-only, rerank off)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.0,
+        "mrr_at_5": 0.0,
+        "ndcg_at_10": 0.0,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.0,
+        "mrr_at_5": 0.0,
+        "ndcg_at_10": 0.0,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "qmd full (MCP query, rerank)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.72,
+        "mrr_at_5": 0.39599999999999996,
+        "ndcg_at_10": 0.5589233515794215,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.76,
+        "mrr_at_5": 0.44133333333333324,
+        "ndcg_at_10": 0.5866257939619454,
+        "labels_added": 5
+      }
+    },
+    {
+      "arm": "qmd no-rerank (MCP query, rerank off)",
+      "original": {
+        "questions": 25,
+        "success_at_5": 0.64,
+        "mrr_at_5": 0.3473333333333333,
+        "ndcg_at_10": 0.5112496042182705,
+        "labels_added": 0
+      },
+      "pooled": {
+        "questions": 25,
+        "success_at_5": 0.68,
+        "mrr_at_5": 0.38733333333333336,
+        "ndcg_at_10": 0.5369394148683163,
+        "labels_added": 5
+      }
+    }
+  ]
+}
