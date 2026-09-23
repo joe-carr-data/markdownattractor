@@ -38,7 +38,10 @@ case "$cmd" in
     prompt="/graphify $G/src --no-viz
 You are running headless: there is no user to answer questions. Run the pipeline on the whole path exactly as given, never narrow to a subfolder even if the corpus is large (every arm of this benchmark indexes the whole corpus), never ask for confirmation. There is no API key of any kind and you must not look for one, install packages, or change the graphify installation: you and the subagents you dispatch are the model, exactly as the skill's 'host agent itself is the LLM' path says. Dispatch the semantic subagents as the skill says. When the pipeline is complete, print the final report."
     t0=$(date +%s)
-    ( cd "$G/src" && claude --print --setting-sources project --no-session-persistence --model "$model" --max-turns 600 \
+    # Headless Claude stops waiting for background subagents after 600 s by default and ends
+    # the session (the Prisma build died that way with one of 31 chunks still running);
+    # graphify's extraction dispatches dozens of them, so the ceiling is lifted.
+    ( cd "$G/src" && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude --print --setting-sources project --no-session-persistence --model "$model" --max-turns 600 \
         --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config \
         --allowedTools Bash Read Write Edit Glob Grep Agent -- "$prompt" ) > "$G/build.jsonl" 2>"$G/build.err" || echo "claude exited $?" >> "$G/build.err"
     t1=$(date +%s)

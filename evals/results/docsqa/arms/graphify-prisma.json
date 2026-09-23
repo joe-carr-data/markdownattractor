@@ -1,0 +1,9 @@
+{
+  "arm": "graphify",
+  "project": "prisma",
+  "build": {
+    "wall_s": 2044,
+    "completed": false
+  },
+  "note": "did not complete: no graphify-out/graph.json (rule 0.3: recorded, not dropped)"
+}
