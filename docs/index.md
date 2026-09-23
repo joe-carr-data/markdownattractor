@@ -5,7 +5,8 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | Date | Doc | What it is |
 |---|---|---|
 | 2026-09-22 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
-| 2026-09-22 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-09-23 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-09-23 | [plans/2026-09-benchmark-execution.md](plans/2026-09-benchmark-execution.md) | Status: **draft v1 for Codex pre-mortem** · 2026-09-23 · companion to `2026-09-benchmarks.md` v… |
 | 2026-09-22 | [plans/2026-09-phase4-launch.md](plans/2026-09-phase4-launch.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 4, §9 distribution, §9.5 first … |
 | 2026-09-22 | [plans/2026-09-phase2-search.md](plans/2026-09-phase2-search.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 2 · decisions in ADR-0004 · bra… |
 | 2026-09-22 | [plans/2026-09-phase1-engine.md](plans/2026-09-phase1-engine.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1 |
@@ -28,7 +29,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-mdx-ingestion.md](reviews/codex/2026-09-22-mdx-ingestion.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-lean-payload.md](reviews/codex/2026-09-22-lean-payload.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-first-run.md](reviews/codex/2026-09-22-first-run.md) | \ |
-| 2026-09-22 | [reviews/codex/2026-09-22-docsqa-adapter.md](reviews/codex/2026-09-22-docsqa-adapter.md) | \| \| \| |
+| 2026-09-22 | [reviews/codex/2026-09-22-docsqa-adapter.md](reviews/codex/2026-09-22-docsqa-adapter.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-daemon.md](reviews/codex/2026-09-22-daemon.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
