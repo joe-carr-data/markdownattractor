@@ -40,7 +40,7 @@ arms="$(sed -n '/^### Arms/,/^$/p' "$frozen" | sed -n 's/^- \([A-Za-z0-9._-]*\):
 [ -n "$arms" ] || die "$frozen lists no arms"
 # Activation probes exist for the arms an agent drives through a tool (rule 0.5); a control
 # scored from its own ranked lists (BM25-over-files) has no agent interface and no probe.
-PROBE_ARMS="mda grep qmd graphify"
+PROBE_ARMS="mda grep qmd graphify graphify-haiku"
 required="env build frozen model store regenerate replay reconstruction coverage-grep"
 probe_arms=""
 for a in $arms; do case " $PROBE_ARMS " in *" $a "*) required="$required probes-$a"; probe_arms="$probe_arms $a" ;; esac; done

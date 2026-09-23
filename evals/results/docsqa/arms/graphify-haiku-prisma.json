@@ -1,0 +1,62 @@
+{
+  "arm": "graphify-haiku",
+  "project": "prisma",
+  "version": "graphify 0.9.66",
+  "install": "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
+  "build": {
+    "wall_s": 340,
+    "completed": true,
+    "model_alias": "haiku",
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path)",
+    "turns": 1,
+    "cost_usd_list_price": 0.9677353999999998,
+    "is_error": false,
+    "result_tail": "ed successfully.**\n\nAll 32 document extraction chunks processed. Graph built with 2426 nodes, 951 edges, and 1488 communities. Outputs saved to `graphify-out/`.",
+    "usage": {
+      "uncached_input": 10,
+      "cache_creation": 1209,
+      "cache_read": 82035,
+      "output": 156
+    },
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 622,
+        "outputTokens": 73155,
+        "cacheReadInputTokens": 2520449,
+        "cacheCreationInputTokens": 237694,
+        "webSearchRequests": 0,
+        "costUSD": 0.9677353999999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 9336,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "assistant_messages": 280,
+    "models": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "subagents_dispatched": 6
+  },
+  "graph": {
+    "path": "\\~/.cache/markdownattractor/bench/graphify/prisma-haiku/graph.json",
+    "sha256": "7117e221b558ae31b50d0863deaee8abfdbc1617d051622d41d781af4d3a66aa",
+    "nodes": 2426,
+    "edges": 951
+  },
+  "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
+  "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
+  "coverage": {
+    "population": "dataset corpus pages (repository_source_path); source files on disk are a larger population, see the qmd record",
+    "corpus_pages": 685,
+    "corpus_pages_with_a_node": 585,
+    "coverage": 0.8540145985401459
+  },
+  "query_interface": {
+    "mcp": "graphify-mcp <graph.json>",
+    "tool": "query_graph",
+    "node_to_file": "each node of the response, its source file(s) in the order the tool lists them, deduplicated; the response size limit, if any, is the truncation"
+  }
+}
