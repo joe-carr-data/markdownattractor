@@ -75,36 +75,57 @@ case "$cmd" in
   drive)
     mode="${1:?full|no-rerank|bm25}"; out="${2:?out.jsonl}"; split="${3:-dev}"
     safe_target "$out"; [ ! -e "$out" ] || die "$out exists: one directory per attempt, nothing is overwritten"
+    client="${MCP_TIME:-$REPO/target/release/examples/mcp_time}"
+    [ -x "$client" ] || die "no MCP client at $client: cargo build --release --example mcp_time"
+    # The MCP `query` tool is the interface the table scores (plan §2.1): full = qmd's default
+    # (expansion, vectors, reranker); no-rerank = the same request with rerank:false (the
+    # configuration diff is that one field); bm25 = a lex-only sub-query with rerank:false
+    # (qmd's BM25 engine through the same tool; qmd's lex form ANDs every term and has no OR
+    # fallback, which is its documented behaviour). Two passes: limit 20, then limit 40 for
+    # the questions that came back with fewer than ten distinct pages and a full page of
+    # hits; a question still short of ten pages after a full 40 is `truncated` (the
+    # reranker's candidate limit, qmd's default, caps what a query can return).
     case "$mode" in
-      full) sub=(query); extra=() ;;
-      no-rerank) sub=(query); extra=(--no-rerank) ;;
-      bm25) sub=(search); extra=() ;;
+      full) template='{"query":"{query}","limit":LIMIT,"rerank":true}' ;;
+      no-rerank) template='{"query":"{query}","limit":LIMIT,"rerank":false}' ;;
+      bm25) template='{"searches":[{"type":"lex","query":"{query}"}],"limit":LIMIT,"rerank":false}' ;;
       *) die "mode must be full, no-rerank or bm25" ;;
     esac
-    # Every eligible question of the split, in dataset order, from the committed results
-    # (the raw row lists exactly the scored questions).
-    ids="$(jq -r --arg s "$split" '.runs[0].results[] | select(.split == $s) | .id' "$RESULTS/$project/results.json")"
-    n_total="$(printf '%s\n' "$ids" | grep -c .)"; i=0
-    while IFS= read -r qid; do
-      i=$((i + 1))
-      q="$(question_text "$project" "$qid" | tr '\n\r\t' '   ' | sed 's/  */ /g')"
-      n=20; pages='[]'; hits=0; truncated=false; t0=$(date +%s%N)
-      while :; do
-        raw="$( (cd "$corpus" && qmd --index "$project" "${sub[@]}" "$q" --format json -n "$n" --full-path "${extra[@]}" 2>>"$out.err") || echo '[]')"
-        hits="$(jq 'length' <<<"$raw" 2>/dev/null || echo 0)"
-        # Distinct files in rank order (chunks of one page collapse onto its first chunk).
-        pages="$(jq -c '[.[] | .file | sub("^\\./"; "")] | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)' <<<"$raw" 2>/dev/null || echo '[]')"
-        npages="$(jq 'length' <<<"$pages")"
-        if [ "$npages" -ge 10 ] || [ "$hits" -lt "$n" ]; then break; fi
-        if [ "$n" -ge 320 ]; then truncated=true; break; fi
-        n=$((n * 2))
-      done
-      t1=$(date +%s%N)
-      jq -nc --arg id "$qid" --argjson paths "$pages" --argjson truncated "$truncated" --argjson n "$n" --argjson hits "$hits" --arg q "$q" --arg mode "$mode" --argjson ms "$(( (t1 - t0) / 1000000 ))" \
-        '{question_id: $id, paths: $paths, truncated: $truncated, request: {command: (if $mode == "bm25" then "qmd search" else "qmd query" end), mode: $mode, n: $n, full_path: true, format: "json", query: $q}, hits: $hits, wall_ms: $ms}' >> "$out"
-      printf '%s/%s %s: %s pages from %s hits (n=%s, %s ms)%s\n' "$i" "$n_total" "$qid" "$npages" "$hits" "$n" "$(( (t1 - t0) / 1000000 ))" "$([ "$truncated" = true ] && echo ' TRUNCATED')"
-    done <<<"$ids"
-    echo "wrote $out ($n_total rows, mode $mode)"
+    work="$out.work"; mkdir -p "$work"
+    jq -r --arg s "$split" '.runs[0].results[] | select(.split == $s) | .id' "$RESULTS/$project/results.json" | while IFS= read -r qid; do
+      jq -nc --arg id "$qid" --arg q "$(question_text "$project" "$qid" | tr '\n\r\t' '   ' | sed 's/  */ /g')" '{id: $id, q: $q}'
+    done > "$work/pass1.jsonl"
+    pages_of() { # dump line -> distinct repository paths in rank order
+      jq -c --arg pre "$project/" '[.result.structuredContent.results[]? | .file | sub("^" + $pre; "")] | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)'
+    }
+    hits_of() { jq -r '.result.structuredContent.results | length' ; }
+    run_pass() { # queries.jsonl limit dump.jsonl times.jsonl
+      local t="${template//LIMIT/$2}"
+      ( cd "$corpus" && MCP_TIME_DUMP="$3" "$client" query "$t" "$1" -- qmd --index "$project" mcp ) > "$4" 2>>"$out.err"
+      jq -n --arg tool query --argjson args "$t" '{tool: $tool, arguments: $args, server: ["qmd", "--index", "'"$project"'", "mcp"]}' > "$work/request-limit$2.json"
+    }
+    run_pass "$work/pass1.jsonl" 20 "$work/dump1.jsonl" "$work/times1.jsonl"
+    : > "$work/pass2.jsonl"
+    while IFS= read -r line; do
+      id="$(jq -r .id <<<"$line")"; n="$(jq -c '.' <<<"$line" | pages_of | jq 'length')"; h="$(hits_of <<<"$line")"
+      if [ "$n" -lt 10 ] && [ "${h:-0}" -ge 20 ]; then jq -c --arg id "$id" 'select(.id == $id)' "$work/pass1.jsonl" >> "$work/pass2.jsonl"; fi
+    done < "$work/dump1.jsonl"
+    if [ -s "$work/pass2.jsonl" ]; then run_pass "$work/pass2.jsonl" 40 "$work/dump2.jsonl" "$work/times2.jsonl"; else : > "$work/dump2.jsonl"; : > "$work/times2.jsonl"; fi
+    while IFS= read -r line; do
+      id="$(jq -r .id <<<"$line")"
+      final="$line"; limit=20
+      if l2="$(jq -c --arg id "$id" 'select(.id == $id)' "$work/dump2.jsonl" | head -1)" && [ -n "$l2" ]; then final="$l2"; limit=40; fi
+      paths="$(pages_of <<<"$final")"; h="$(hits_of <<<"$final")"; ok="$(jq -r .ok <<<"$final")"
+      n="$(jq 'length' <<<"$paths")"; truncated=false
+      if [ "$n" -lt 10 ] && [ "$limit" = 40 ] && [ "${h:-0}" -ge 40 ]; then truncated=true; fi
+      ms="$(jq -r --arg id "$id" 'select(.id == $id) | .ms' "$work/times1.jsonl" | head -1)"
+      jq -nc --arg id "$id" --argjson paths "$paths" --argjson truncated "$truncated" --argjson limit "$limit" --argjson hits "${h:-0}" --argjson ok "$ok" --arg mode "$mode" --argjson ms "${ms:-null}" \
+        '{question_id: $id, paths: $paths, truncated: $truncated, request: {tool: "query", mode: $mode, limit: $limit}, hits: $hits, ok: $ok, first_pass_ms: $ms}' >> "$out"
+    done < "$work/dump1.jsonl"
+    n_rows="$(grep -c . "$out")"; n_err="$(jq -s 'map(select(.ok | not)) | length' "$out")"; n_tr="$(jq -s 'map(select(.truncated)) | length' "$out")"
+    cp "$work/request-limit20.json" "$out.request.json"
+    echo "wrote $out ($n_rows rows, mode $mode, $n_err failed calls, $n_tr truncated; requests in $work/, first-pass latency in $work/times1.jsonl)"
+    [ "$n_err" = 0 ] || echo "WARNING: $n_err question(s) had a failed MCP call (scored as empty lists, rule 0.3); see $out.err" >&2
     ;;
   status) qmd --index "$project" status ;;
   *) die "unknown command $cmd" ;;
