@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: 7a0969762f227585cb4db85eaf031e3092086de0 (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
+- source commit: bb263332887c2f363d6dcdd661c717bc2cc09b4d (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (regular files and the snapshot links the loader opens, each with the sha256 of its content; sha256 of the file 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -38,7 +38,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 - scripts/eval/ab.sh sha256: c469c9b14fc85388fc4eec51ece154c31ad59d7680743a5469916ede83eac36c
 - scripts/eval/grade.sh sha256: b9d79fb26807be4fb4f767067138b29cb5c0a24d739865db9a7714efcc323693
 - scripts/eval/probe.sh sha256: 1f2becd930256a7c9567b7b7348f6dfb2956e7071aa773230c9d7c27869d00c5
-- scripts/eval/preflight.sh sha256: 283be3d3bdef4546ef004dc80d9524cdbd14063943883e7f7d7544e02ebb1344
+- scripts/eval/preflight.sh sha256: 627f347ede2141d3b3e068d7e3480a6ada341680f8c8dd9602e8eb30ea1bb433
 - scripts/eval/freeze.sh sha256: 1345de3db8bc0f3f0f7a38cb82dd9ec75ed4db2bd6fc0d1f07983876683ead88
 - scripts/eval/lib.sh sha256: 545035d5295d890f5a6d9f8c5a9a89a75d216ccec7d3cebbe036243d6bf0ea70
 - scripts/eval/table.sh sha256: 6c62918e2572051be93483fce8017bf99a5b6483b3805e4fafd68d323cbd3c63
@@ -59,7 +59,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ## Runtime
 
-- frozen_at: 2026-09-23T07:10:01Z
+- frozen_at: 2026-09-23T07:11:25Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.280 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
