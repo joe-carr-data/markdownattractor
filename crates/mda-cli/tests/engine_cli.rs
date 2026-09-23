@@ -884,3 +884,238 @@ fn eval_docsqa_keeps_the_holdout_sealed_and_refuses_bad_output_targets() {
         );
     }
 }
+
+/// A card for `section_hash` whose `questions_answered` carries `question`, so a carded
+/// run can rank the page by the card alone.
+fn card_for(question: &str) -> serde_json::Value {
+    serde_json::json!({
+        "tldr": "How to roll back.",
+        "summary": "Explains the rollback command.",
+        "keywords": ["rollback", "deploy"],
+        "questions_answered": [question],
+        "entities": {"people": [], "orgs": [], "products": [], "technologies": [],
+                     "files_paths": [], "commands": ["deployctl rollback"]},
+        "mentioned_dates": [],
+        "decisions": [],
+        "action_items": []
+    })
+}
+
+#[test]
+#[allow(clippy::too_many_lines)] // one scenario: attach, export, rebuild, compare
+fn eval_docsqa_exports_cards_and_a_fresh_index_rebuilt_from_them_scores_the_same() {
+    let (dir, data, root) = docsqa_fixture();
+    // The embedding model must not be found on the developer's machine: the check is about
+    // cards, and a hybrid row would make the test depend on the cache.
+    let no_models = dir.path().join("no-models");
+    std::fs::create_dir_all(&no_models).unwrap();
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let hit = json_of(
+        &mda()
+            .args(["--json", "search", "deployctl rollback", "--raw", "--root"])
+            .arg(&root)
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    );
+    let id = hit["hits"][0]["section_id"].as_str().unwrap().to_owned();
+    let hash = json_of(
+        &mda()
+            .args(["--json", "card", &id, "--root"])
+            .arg(&root)
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    )["section_hash"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let cards = dir.path().join("cards.json");
+    std::fs::write(
+        &cards,
+        serde_json::json!({ &hash: card_for("how do I roll back a deploy") }).to_string(),
+    )
+    .unwrap();
+
+    // Attach the one card, export everything the store holds, score.
+    let exported = dir.path().join("export").join("cards-test.json");
+    let out1 = dir.path().join("out1");
+    let v1 = json_of(
+        &mda()
+            .env("MDA_MODEL_DIR", &no_models)
+            .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root)
+            .args(["--split", "all", "--cards"])
+            .arg(&cards)
+            .arg("--export-cards")
+            .arg(&exported)
+            .arg("--out")
+            .arg(&out1)
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    );
+    assert_eq!(v1["cards_attached"], 1, "{v1}");
+    assert_eq!(v1["cards_exported"], 1);
+    assert_eq!(v1["card_coverage"]["sections_carded"], 1);
+    assert_eq!(v1["card_coverage"]["complete"], false, "one card out of several sections");
+    assert_eq!(v1["runs"].as_array().unwrap().len(), 2, "raw and cards+raw, no vectors: {v1}");
+    let text = std::fs::read_to_string(&exported).unwrap();
+    let back: std::collections::BTreeMap<String, serde_json::Value> =
+        serde_json::from_str(&text).unwrap();
+    assert_eq!(back.len(), 1);
+    assert_eq!(back[&hash]["questions_answered"][0], "how do I roll back a deploy");
+    assert!(text.starts_with("{\n\"") && text.ends_with("}\n"), "one card per line: {text}");
+    let prov: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(dir.path().join("export").join("cards-test.json.provenance.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(prov["cards"], 1);
+    assert_eq!(
+        prov["by_backend"]["golden"], 1,
+        "attached cards carry the recorded provenance: {prov}"
+    );
+    assert_eq!(prov["complete"], false);
+
+    // A clean copy of the checkout, raw-indexed, with the exported cards attached, scores
+    // identically on every row and every question (the preflight's reconstruction check).
+    let copy = dir.path().join("copy");
+    std::fs::create_dir_all(&copy).unwrap();
+    for f in ["docs/rollback.mdx", "docs/paging.mdx", "docs/other.mdx"] {
+        write(&copy, f, &std::fs::read_to_string(root.join(f)).unwrap());
+    }
+    mda().args(["index", "--no-summarize", "--root"]).arg(&copy).assert().success();
+    let out2 = dir.path().join("out2");
+    let v2 = json_of(
+        &mda()
+            .env("MDA_MODEL_DIR", &no_models)
+            .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&copy)
+            .args(["--split", "all", "--cards"])
+            .arg(&exported)
+            .arg("--out")
+            .arg(&out2)
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    );
+    assert_eq!(v2["cards_attached"], 1);
+    let strip = |v: &serde_json::Value| -> serde_json::Value {
+        serde_json::json!(v["runs"].as_array().unwrap().iter().map(|r| serde_json::json!({
+            "run": r["run"],
+            "questions": r["metrics"]["questions"],
+            "success_at_5": r["metrics"]["success_at_5"],
+            "mrr_at_5": r["metrics"]["mrr_at_5"],
+            "ndcg_at_10": r["metrics"]["ndcg_at_10"],
+            "results": r["results"].as_array().unwrap().iter().map(|q| serde_json::json!({
+                "id": q["id"], "rank": q["rank"], "top": q["top"], "ndcg_at_10": q["ndcg_at_10"]
+            })).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>())
+    };
+    assert_eq!(strip(&v1), strip(&v2), "reconstruction differs:\n{v1}\n{v2}");
+    // Reports never land inside the checkout, for the export too.
+    mda()
+        .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "demo", "--root"])
+        .arg(&root)
+        .args(["--split", "all", "--export-cards"])
+        .arg(root.join("cards.json"))
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("inside the checkout"));
+}
+
+#[test]
+fn eval_docsqa_scores_an_external_arm_from_its_ranked_paths() {
+    let (dir, data, root) = docsqa_fixture();
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let arm = dir.path().join("qmd.jsonl");
+    // q1: the relevant page at rank 2 after `./` folding and page deduplication; q2: no row
+    // (a miss, listed); zz: not a question of the dataset (listed); q4 is not eligible so its
+    // row is unused.
+    std::fs::write(
+        &arm,
+        concat!(
+            r#"{"question_id":"q1","paths":["./docs/other.mdx","docs/other.mdx","/docs/rollback.mdx","docs/rollback.mdx"],"truncated":true}"#,
+            "\n",
+            r#"{"question_id":"zz","paths":["docs/other.mdx"]}"#,
+            "\n",
+            r#"{"question_id":"q4","paths":["docs/missing.mdx"]}"#,
+            "\n"
+        ),
+    )
+    .unwrap();
+    let v = json_of(
+        &mda()
+            .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root)
+            .args(["--split", "all", "--arm-output"])
+            .arg(&arm)
+            .args(["--arm-name", "qmd full"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    );
+    let runs = v["runs"].as_array().unwrap();
+    assert_eq!(runs.len(), 1, "only the arm row: {v}");
+    let r = &runs[0];
+    assert_eq!(r["run"], "qmd full");
+    assert_eq!(r["metrics"]["questions"], 2);
+    assert_eq!(r["metrics"]["success_at_5"], 0.5);
+    assert_eq!(r["metrics"]["mrr_at_5"], 0.25);
+    assert_eq!(r["metrics"]["mean_ms"], serde_json::Value::Null, "no latency column");
+    assert_eq!(r["missing"], serde_json::json!(["q2"]));
+    assert_eq!(r["unknown"], serde_json::json!(["zz"]));
+    let q1 = &r["results"][0];
+    assert_eq!(q1["id"], "q1");
+    assert_eq!(q1["rank"], 2);
+    assert_eq!(q1["top"], serde_json::json!(["docs/other.mdx", "docs/rollback.mdx"]));
+    assert_eq!(q1["truncated"], true);
+    assert_eq!(q1["fetched"], 4);
+    let q2 = &r["results"][1];
+    assert_eq!(q2["rank"], serde_json::Value::Null);
+    assert_eq!(q2["ndcg_at_10"], 0.0);
+    // The file's stem names the row when --arm-name is absent; a duplicated id is refused.
+    let v = json_of(
+        &mda()
+            .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root)
+            .args(["--split", "all", "--arm-output"])
+            .arg(&arm)
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    );
+    assert_eq!(v["runs"][0]["run"], "qmd");
+    std::fs::write(
+        &arm,
+        "{\"question_id\":\"q1\",\"paths\":[]}\n{\"question_id\":\"q1\",\"paths\":[]}\n",
+    )
+    .unwrap();
+    mda()
+        .args(["eval", "--dataset", "docsqa", "--data"])
+        .arg(&data)
+        .args(["--project", "demo", "--root"])
+        .arg(&root)
+        .args(["--split", "all", "--arm-output"])
+        .arg(&arm)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("appears twice"));
+}

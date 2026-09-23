@@ -1056,6 +1056,20 @@ impl Store {
         })
     }
 
+    /// How many current sections carry a summarized hash (the unit of card coverage a
+    /// benchmark row needs: `sections_carded == counts().sections` means every section has a
+    /// card, whatever the number of distinct hashes).
+    pub fn sections_carded(&self) -> Result<u64> {
+        let n: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM sections s
+             JOIN summaries m ON m.section_hash = s.section_hash
+             WHERE m.state = 'summarized'",
+            [],
+            |r| r.get(0),
+        )?;
+        Ok(u64::try_from(n).unwrap_or_default())
+    }
+
     /// Append an event to the timeline.
     pub fn record_event(&mut self, ev: &Event) -> Result<()> {
         insert_event(
