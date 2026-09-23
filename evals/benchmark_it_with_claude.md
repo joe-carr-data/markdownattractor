@@ -28,7 +28,7 @@ set -euo pipefail
 REPO="$HOME/markdownattractor"           # the source checkout; every later command is run from here or uses absolute paths
 RUN="$HOME/.cache/markdownattractor/bench"   # data and stores; a fresh run uses a fresh directory
 [ -z "${ANTHROPIC_API_KEY:-}" ] || { echo "unset ANTHROPIC_API_KEY: every model call goes through Claude Code's login"; exit 1; }
-EXPECT_SHA=41fdbb1e   # from the table's FROZEN.md (exploratory rows: 41fdbb1…); a table's section in §7 gives the full value
+EXPECT_SHA=$(sed -n 's/^- source commit: \([0-9a-f]\{40\}\).*/\1/p' "$HOME/markdownattractor/evals/results/docsqa/FROZEN.md")   # the frozen source commit (development protocol today; a published table's own FROZEN.md at §7); the exploratory rows of 2026-09-22 were produced at 41fdbb1
 EXPECT_VERSION="mda 0.1.1"
 cd "$REPO" && [ "$(git rev-parse HEAD)" = "$(git rev-parse "$EXPECT_SHA")" ] || { echo "checkout is not $EXPECT_SHA"; exit 1; }
 cargo build --release -p mda-cli && MDA="$REPO/target/release/mda" && [ "$("$MDA" --version)" = "$EXPECT_VERSION" ] || exit 1
@@ -39,8 +39,8 @@ export MDA_MODEL_DIR="$HOME/.cache/markdownattractor/models"
 The embedding model (`bge-small-en-v1.5-q`, 33 MB) downloads on the first embedding pass; after it, hash the files and compare with `FROZEN.md`:
 
 ```bash
-find "$MDA_MODEL_DIR" -type f -exec shasum -a 256 {} \; | sed "s|$MDA_MODEL_DIR/||" | sort > "$RUN/model.sha"
-diff "$RUN/model.sha" "$REPO/evals/results/docsqa/model.sha" || { echo "embedding model files differ from FROZEN.md (file written at M1)"; exit 1; }
+( cd "$MDA_MODEL_DIR" && find . -type f ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"; done ) > "$RUN/model.sha"
+diff "$RUN/model.sha" "$REPO/evals/results/docsqa/model.sha" || { echo "embedding model files differ from the committed model.sha (its own sha256 is in FROZEN.md)"; exit 1; }
 ```
 
 Prerequisites: macOS or Linux, ≈ 3 GB free (clones ≈ 300 MB, stores ≈ 330 MB; qmd's arm adds ≈ 2 GB of models), `git`, `python3`, `jq`, `curl`, the Rust toolchain (`rust-toolchain.toml` pins 1.98.1), Claude Code installed and logged in. The one model call that does not go through Claude Code is the Astra half of the grading panel, which goes through the Codex CLI (plan §2.4).
@@ -96,14 +96,43 @@ Expected raw-lexical dev row with `mda` 0.1.1 (exploratory): success@5 github-do
 
 ## 4. Cards
 
-**4a. Committed cards (regeneration, exact).** From milestone M1 the files `evals/results/docsqa/cards-<mda-version>-<project>.json` exist with their hashes in `FROZEN.md`. Assert the hash, attach, score:
+**4a. Committed cards (regeneration, exact).** Since milestone M1 the cards of the four corpora are committed as `evals/results/docsqa/cards-0.1.1-<project>.json` (one card per line, `{"<section_hash>": <SectionSummary>}`) with a `.provenance.json` beside each (backend `claude-cli`, model `claude-haiku-4-5`, prompt `section.v2`, a few tiny sections carded deterministically, time span, list-price usage). Their hashes are in `evals/results/docsqa/FROZEN.md` (protocol *development*, source commit in that file) and are, at the time of writing:
+
+| File | sha256 | Cards |
+|---|---|---|
+| `cards-0.1.1-github-docs.json` | `1872bcda4b507c6671811f181b26383fa7cf0aaf7759ca88e311b02757262481` | 20842 cards for 23066 of 23066 sections (complete: true) |
+| `cards-0.1.1-prisma.json` | `80a05cf7807989a21480c3e6c47e2591201c3aeb74dc0478b579ba01a48d0d87` | 8339 cards for 10438 of 10438 sections (complete: true) |
+| `cards-0.1.1-supabase.json` | `92027a0578c933e128cbec9aab201963b4829b8bf0c2b099e85501322c390692` | 6386 cards for 6548 of 6548 sections (complete: true) |
+| `cards-0.1.1-tailwind-css.json` | `4ba04219891dda408474711ddccff52fe85376260fe69febd96a25de4eebb041` | 1332 cards for 1518 of 1518 sections (complete: true) |
+
+Assert the hashes against `FROZEN.md` (never against this page), then attach and score on a **clean, raw-indexed copy** of each checkout: the point of the check is that the cards plus the hashed model files rebuild the index without a model.
 
 ```bash
-"$MDA" eval --dataset docsqa --data "$RUN/docsqa-data" --project prisma --root "$RUN/prisma" --split dev \
-  --cards "$REPO/evals/results/docsqa/cards-<version>-prisma.json" --out "$RUN/out/prisma-carded"
+cd "$REPO"
+for f in evals/results/docsqa/cards-0.1.1-*.json; do
+  grep -q "$(basename "$f"): sha256 $(shasum -a 256 "$f" | cut -c1-64)" evals/results/docsqa/FROZEN.md || { echo "$f does not match FROZEN.md"; exit 1; }
+done
+for p in tailwind-css:tailwindcss supabase:supabase prisma:prisma github-docs:github-docs; do
+  proj="${p%%:*}"; dir="${p##*:}"; copy="$RUN/reconstruct/$dir"
+  [ ! -e "$copy" ] || { echo "$copy exists: use a fresh RUN directory"; exit 1; }
+  mkdir -p "$copy" && rsync -a --exclude .markdownattractor --exclude .git "$RUN/$dir/" "$copy/"
+  "$MDA" index --no-summarize --root "$copy" && "$MDA" embeddings local-small --root "$copy"
+  "$MDA" eval --dataset docsqa --data "$RUN/docsqa-data" --project "$proj" --root "$copy" --split dev \
+    --cards "$REPO/evals/results/docsqa/cards-0.1.1-$proj.json" --out "$RUN/out/$proj-reconstructed"
+done
 ```
 
-`--cards` attaches every card whose section hash is in the store and embeds them with the hashed model files; `coverage`-style counts in the output must show 100% carded before a carded row means anything. The carded and hybrid rows are then exact.
+`--cards` attaches every card whose section hash is in the store (the `cards:` line of the output must read *N of N sections carded*; a carded row below full coverage is not publishable) and embeds them with the hashed model files; the raw, carded and hybrid rows must then be exact:
+
+```bash
+for proj in tailwind-css supabase prisma github-docs; do
+  diff <(jq -S '{runs: [.runs[] | {run, questions: .metrics.questions, success_at_5: .metrics.success_at_5, mrr_at_5: .metrics.mrr_at_5, ndcg_at_10: .metrics.ndcg_at_10, results: [.results[] | {id, rank, ndcg_at_10, top, truncated}]}]}' "$RUN/out/$proj-reconstructed/results.json") \
+       <(jq -S '{runs: [.runs[] | {run, questions: .metrics.questions, success_at_5: .metrics.success_at_5, mrr_at_5: .metrics.mrr_at_5, ndcg_at_10: .metrics.ndcg_at_10, results: [.results[] | {id, rank, ndcg_at_10, top, truncated}]}]}' "$REPO/evals/results/docsqa/$proj/results.json") \
+    && echo "reconstruction identical: $proj"
+done
+```
+
+This is exactly what `scripts/eval/preflight.sh development <project>` runs as its *reconstruction* check (plus the frozen-input, model-file, store-completeness, regeneration, coverage and activation-probe checks); its reports are committed under `evals/results/docsqa/preflight/` and a reproduction may simply run the script and compare its report. Expected development rows (dev split, one run, `mda 0.1.1` under the development freeze): the table on `docs/benchmarks.md` ("carded and hybrid rows at full coverage"), regenerated by `scripts/eval/table.sh`. `mean_ms` is not compared.
 
 **4b. Regenerated cards (independent rerun).** On each checkout, `"$MDA" backend claude-cli --i-accept-the-policy --root "$RUN/<dir>"` (your own Claude Code login: the acknowledged personal-use path of ADR-0002), then `"$MDA" index --root "$RUN/<dir>" --limit 500` in rounds until `"$MDA" status --root …` shows `pending 0`, then `"$MDA" rebuild --embeddings --root …`. Reference run (Apple M3 24 GB, Haiku 4.5 through Claude Code, 15–16 workers): tailwindcss 19 min, supabase 89 min, prisma 90 min, github-docs 3 h 59 min; 36,899 cards, 0 failures; list-price equivalent ≈ $176 (informational). Score as in 4a without `--cards`; publish beside the committed-card rows.
 
