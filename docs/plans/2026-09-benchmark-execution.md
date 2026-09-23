@@ -1,174 +1,179 @@
-# Benchmark execution plan — how we run it, and how we beat them
+# Benchmark execution plan — how we run it, and how we beat them credibly
 
-Status: **draft v1 for Codex pre-mortem** · 2026-09-23 · companion to `2026-09-benchmarks.md` v3.2 (the rules, axes, datasets and owner decisions there are unchanged and bind this file; where the two disagree, v3.2 wins and this file gets fixed) · owner intent: "tailored at beating competitors"
+Status: **v2 after the Codex pre-mortem (13 findings, all accepted)** · 2026-09-23 · companion to `2026-09-benchmarks.md` v3.2 (the rules, axes, datasets and owner decisions there bind this file; where the two disagree, v3.2 wins and this file gets fixed) · review: `docs/reviews/codex/2026-09-23-execution-plan.md` · owner intent: "tailored at beating competitors" and "reproducible for anyone in a Claude session" (`evals/benchmark_it_with_claude.md`)
 
-Goal: turn the strategy plan into a schedule of tables we can run one command at a time, each with a competitor profile that says where we expect to win, where we expect to lose, what would make us lose, and what we do then. "Beating" means: on the questions a Claude Code user actually asks of a folder of markdown, markdownattractor answers at least as well as qmd and graphify while reading fewer source tokens, staying fresh without a rebuild, and answering time questions they cannot; and the page shows the cases where that is not true.
+Goal: turn the strategy plan into ordered milestones, each a table we can run with one command, each preceded by a machine-checked preflight, each with a competitor profile that says where we expect to win, where we expect to lose, what would make us lose, and what we do then. "Beating" means: on the questions a Claude Code user asks of a folder of markdown, markdownattractor answers at least as well as qmd and graphify while reading fewer source tokens, is fresh within seconds without a rebuild, and answers time questions correctly with less effort at equal evidence; and the page shows every case where that is not true.
 
-## 0. What is already in hand (2026-09-23)
+## 0. What is in hand and what is not (2026-09-23)
 
 | Item | State |
 |---|---|
-| DocsQA-Repo, four projects at pinned commits | cloned, raw-indexed, **fully carded and embedded** (36,899 cards, 0 failures, 7 h 17 min through the owner's Claude Code login), coverage 100%, evidence anchors 100/100/98/82% (`docs/benchmarks.md`) |
+| DocsQA-Repo (`PowderXu/docsqa-data` @ `19af578`, manifest sha256 `c6193cc8…`), four projects at pinned commits | cloned, raw-indexed, **fully carded and embedded** (36,899 cards, 0 failures, 7 h 17 min through the owner's Claude Code login); coverage 100%; evidence anchors 100/100/98/82% (`docs/benchmarks.md`) |
 | Split | seeded (20260922), written per project: dev 30 / test 55 / holdout 15; holdout sealed behind `--open-holdout` |
-| Adapter | `mda eval --dataset docsqa`: page-level success@5, MRR@5, nDCG@10; coverage and anchor report; fetch until ten distinct pages |
-| Harness | `scripts/eval/ab.sh` (arms baseline/index, manifest, fail-loud), `scripts/eval/grade.sh` (`claude -p` grader, completeness check, conventional medians) |
-| Golden corpus | 32 docs; A/B at 11–12/12 parity; source tokens 762.5 vs 245.5 (the index loses on tiny corpora, published) |
-| Not yet | card export and commit (rule 0.9); `FROZEN.md` (rule 0.1); qmd and graphify installed; competitor arms in `ab.sh`; transcript-counted tokens (rule 0.7); grounding check (rule 0.4c); `panel.sh` (rule 0.8); freshness and temporal harnesses; card export tooling |
+| Adapter | `mda eval --dataset docsqa`: page-level success@5, MRR@5, nDCG@10; coverage and anchor report; fetch until ten distinct pages (truncation recorded) |
+| Harness | `scripts/eval/ab.sh` (baseline/index arms, manifest at the end of the loop, fail-loud), `scripts/eval/grade.sh` (`claude -p` grader, completeness check, conventional medians) |
+| **Exploratory numbers so far** | the DocsQA raw/carded rows on the dev split and the golden-corpus A/B are **exploratory** (no freeze predates them); they stay on the page under that label and are never the published T1/T2 numbers |
+| Not yet | card export and commit (rule 0.9); `FROZEN.md` writer and freeze lifecycle (§2.0); qmd and graphify installed; competitor arms; scorer for external ranked lists; pooled blinded judgments; paired-bootstrap analysis; transcript-counted tokens (rule 0.7); grounding check (rule 0.4c); panel scripts (rule 0.8); resumable runner with a manifest written first; freshness and temporal harnesses; the runbook |
 
 ## 1. Competitor profiles: where we win, where we lose, what would prove it
 
-Each profile ends with a **must-not-lose** line (the result that would contradict our pitch) and a **response** (what we do if it happens). Numbers marked *claimed* are theirs, unverified here.
+Each profile ends with a **must-not-lose** line (the result that contradicts the pitch) and a **response**. Claims marked *claimed* are theirs, unverified here. Fairness evidence for each arm (install recipe, effective configuration, coverage of the corpus, three activation probes with traces) is produced by the preflight of §2.0 and published with the table; a profile is opinion until that evidence exists.
 
 ### 1.1 qmd (tobi/qmd, `@tobilu/qmd` 2.8.3, MIT, ≈ 30K stars)
 
-What it is: an on-device markdown search engine. BM25 (SQLite FTS5) + vectors (EmbeddingGemma-300M) + LLM reranker (Qwen3-Reranker-0.6B) + a fine-tuned 1.7B query-expansion model, fused by reciprocal rank fusion with position-aware blending; 900-token chunks with 15% overlap; MCP server (`qmd mcp`: `query`, `get`, `multi_get`, `status`); CLI `qmd query` (hybrid), `qmd search` (BM25 only), `qmd vsearch` (vector only), `qmd query --no-rerank`; `qmd update` re-indexes incrementally on demand; no watch mode; Node ≥ 22 or Bun; ≈ 2 GB of models downloaded on first use.
+What it is: an on-device markdown search engine. BM25 (SQLite FTS5) + vectors (EmbeddingGemma-300M) + LLM reranker (Qwen3-Reranker-0.6B) + a fine-tuned 1.7B query-expansion model, fused by reciprocal rank fusion with position-aware blending; 900-token chunks with 15% overlap; MCP server (`qmd mcp`: `query`, `get`, `multi_get`, `status`); CLI `qmd query` (hybrid), `qmd search` (BM25 only), `qmd vsearch` (vector only), `qmd query --no-rerank`; `qmd update` re-indexes incrementally on demand; no watch mode; Node ≥ 22 or Bun; ≈ 2 GB of models on first use. To verify in preflight: whether it indexes `.mdx` (if not, its corpus coverage is smaller and the table says so), the resolved model revisions, and that `--no-rerank` changes nothing but reranking (configuration diff published).
 
 Where it is strong, and we should expect to lose or tie:
-- **Axis A with the reranker on.** A 300M embedder plus a cross-encoder reranker plus query expansion is a heavier retrieval stack than our 33M bge-small over cards. On paraphrased questions qmd's full configuration may beat our hybrid on success@5. This is the one table where "beating" is not the goal; **approaching it is**, and the honest comparison is three rows: qmd full, qmd `--no-rerank` (same fusion class as ours), mda hybrid.
+- **Axis A with the reranker on.** A 300M embedder plus a cross-encoder reranker plus query expansion is a heavier retrieval stack than our 33M bge-small over cards. **qmd full is the primary comparison** (strategy §1: "must at least match qmd on labels"); the `--no-rerank` and BM25-only rows are ablations that locate the gap, not the target.
 - Chunk-level snippets with query terms highlighted are good for exact identifiers.
 
 Where it is structurally weak, and the tables that show it:
-- **No cards.** A 900-token chunk is what the model reads; we hand back a ≈ 80-token card with `tldr` and then the exact lines. Axis B (source tokens per answer at parity) is where the difference in *what the model reads* shows, on corpora where grep is expensive.
-- **No watcher, no time model.** `qmd update` is a manual step; a section edited a minute ago is invisible until someone runs it, and nothing records when a section changed. Axes C (save → answer) and D (what changed / when) are ours by construction; rule 0.5 requires giving qmd the same evidence (a re-index command in the loop, the git history for D), and the table still shows the rebuild cost and the absence of section-level time.
-- **Cost to build and to run.** Vectors for 900-token chunks of a 23K-section corpus on a 300M model, plus a reranker call per query (0.6B model, CPU) → axis E build minutes and axis A latency columns. We publish their numbers next to ours without editorialising.
+- **No cards.** A 900-token chunk is what the model reads; we hand back a ≈ 80-token card and then the exact lines. T2 (source tokens per answer at parity) on corpora where grep is expensive.
+- **No watcher, no time model.** `qmd update` is a manual step; nothing records when a section changed. T4 gives qmd its documented update command inside the loop and measures the same endpoint for every arm (save → correct answer); T5 gives every arm the git history.
+- **Cost to build and to run.** Vectors for 900-token chunks of a 23K-section corpus on a 300M model and a reranker call per query → T3 build minutes per 1K sections and T1 latency, measured through its MCP server warm, with the cold first query separate (§2.7).
 
-Must-not-lose: mda hybrid below qmd `--no-rerank` on success@5 on the dev split of any DocsQA project by more than 0.05. Response: the tuning loop in §3 (card embedding text, fusion weights, fetch depth, a larger local embedder behind an ADR); if after tuning we still lose, the page says so and the pitch shifts weight to B/C/D, which do not depend on winning A.
+Must-not-lose: mda hybrid below **qmd full** on success@5 on the test split of any project, outside the paired 95% interval. Product target: match qmd full; publication target: the table is complete whatever the outcome. Response: the tuning loop of §3 on the dev split; if the vector-only ablation shows the embedder is the gap, an ADR for a larger local embedder as an *option* (download size and latency on the page); if we still lose, the page says so per project and the pitch rests on T2/T4/T5, which do not depend on winning T1.
 
-### 1.2 graphify (safishamsi/graphify, `graphifyy` v0.9.66, Apache-2.0, ≈ 120K stars)
+### 1.2 graphify (safishamsi/graphify, `graphifyy` 0.9.66, Apache-2.0, ≈ 120K stars)
 
-What it is: `/graphify .` builds a knowledge graph of a folder (code through tree-sitter locally; docs, PDFs and media through the assistant's model), tags edges EXTRACTED / INFERRED, writes `graph.json`, `GRAPH_REPORT.md` and an HTML view; `graphify query "…"` returns a scoped subgraph, `graphify path`, `graphify explain`; Claude Code integration through a PreToolUse hook nudging toward `graphify query`, a skill, and an MCP server (`query_graph`, `get_node`, `shortest_path`); rebuilds on commit through git hooks, `graphify update` incremental; benchmark *claimed*: LOCOMO recall@10 0.497, LongMemEval-S 76% QA accuracy.
+What it is: `/graphify .` builds a knowledge graph of a folder (code through tree-sitter locally; docs, PDFs and media through the assistant's model), tags edges EXTRACTED / INFERRED, writes `graph.json`, `GRAPH_REPORT.md` and an HTML view; Claude Code integration through a PreToolUse hook that nudges toward the graph, a skill, and an MCP server (`query_graph`, `get_node`, `shortest_path`); rebuilds on commit through git hooks, `graphify update` incremental; *claimed*: LOCOMO recall@10 0.497, LongMemEval-S 76%. Its arm uses the **MCP tools in both T1 and T2** (one interface, the one Claude would use); the CLI is not used for scoring.
 
-Where it is strong:
-- Scope (37 languages, PDFs, media) and structural questions ("what connects X to Y"). None of our axes measure that, and the page says so: we do not race on scope.
-- Community size and the hook pattern we adopted from it.
+Where it is strong: scope (37 languages, PDFs, media) and structural questions ("what connects X to Y"). None of our axes measure that; the page says so and we do not race on scope.
 
 Where it is structurally weak for the questions we measure:
-- **Prose retrieval is a side effect.** Nodes are concepts, not passages with line ranges; for "how do I roll back", the model gets a subgraph and still has to open files. Axis B measures source tokens per answer and tool calls; axis A measures whether the labelled page surfaces at all (through `query_graph`, mapped to the files its nodes cite).
-- **Rebuild, not live.** Git-hook rebuilds mean an uncommitted edit is invisible; the docs part of a rebuild is a model pass over the corpus (axis E build cost, in minutes and tokens; our incremental re-card of one edited section is seconds).
-- **No time model.** Axis D questions have no graph answer; with the git history as evidence (rule 0.5) the model can still answer through Bash, which is what the git baseline measures.
+- **Prose retrieval is a side effect.** Nodes are concepts, not passages with line ranges; T1 measures whether the labelled page surfaces through `query_graph` (node → source file, in the order the tool returns nodes, deduplicated; the mapping is frozen and published); T2 measures source tokens and tool calls to a graded answer.
+- **Rebuild, not live.** An uncommitted edit is invisible until a rebuild; the docs part of a rebuild is a model pass (T3 build cost; T4 with `graphify update` in the loop).
+- **No time model.** T5 gives it the git history like every arm; the question is correctness and effort at equal evidence, never "others score zero".
 
-Must-not-lose: graphify's arm at parity on axis B with fewer source tokens than ours on any DocsQA project. Response: that would mean the graph's summary beats our cards for those questions; we would publish it and examine the questions (document-level cards, plan v3.2 §4, are the planned answer for overview questions).
+Must-not-lose: graphify at parity on T2 with fewer source tokens than ours on any project, outside the paired interval. Response: publish it, examine the questions; document-level cards (strategy §4) are the planned answer for overview questions.
 
 ### 1.3 The baselines that keep us honest
 
-- **grep baseline** (Read/Grep/Glob, no index): wins on tiny corpora and on exact identifiers; our break-even corpus size is a published number, not a hidden one. Must-not-lose: parity gate (rule 0.4) failing on a DocsQA project; response: it is a quality problem before a cost problem, and no saving is claimed.
-- **BM25-over-files** (one FTS5 index over whole pages): the control for chunking; it separates "sections and cards help" from "any index helps".
-- **git baseline** (axis D): Claude with `git log`/`git diff` in Bash. Convenience and correctness at equal evidence is the claim; "others score zero" is not.
+- **grep baseline** (Read/Grep/Glob): wins on tiny corpora and exact identifiers; the break-even corpus size is published. Passing the rule-0.4 gate against grep establishes parity with grep only; parity with qmd and graphify is gated separately (§2.6).
+- **BM25-over-files** (one FTS5 index over whole pages): the control that separates "sections and cards help" from "any index helps".
+- **git baseline** (T5): Claude with `git log`/`git diff` in Bash; every answering arm may read history the same way.
 
-## 2. Tables, in the order they run
+## 2. Protocol, common to every table
 
-Every table: frozen inputs first (`FROZEN.md`), dev split for tuning, test split published, holdout sealed; raw logs, effective configs and traces under `evals/results/`; failures shown (rule 0.3).
+### 2.0 Freeze lifecycle and the preflight (rules 0.1, 0.5, 0.9)
 
-### T1. Axis A on DocsQA (retrieval) — first, because everything is in hand
+Three kinds of numbers, labelled on the page: **exploratory** (before any freeze: what exists today), **development** (after the development-protocol freeze, dev split only, used for tuning and pilots, published in `TUNING.md`, never as a result), **final** (after the per-table freeze, test split, published once per release with reuse stated).
 
-| Arm | Command (per project) | Config published |
+`FROZEN.md` per table (written by `scripts/eval/freeze.sh`, validated by every run, so a run against changed inputs refuses to start): dataset commit and manifest hash; the four repo SHAs; `mda` version and git SHA; embedding model name and revision; cards file hashes; every arm's version, resolved model ids and effective configuration; prompts and rubric hashes; the split file hash and the frozen question sample; the analysis script hash; hardware and OS.
+
+`scripts/eval/preflight.sh <table> <project>` is machine-checked and must pass before a table runs: `FROZEN.md` matches the inputs; corpus coverage per arm (pages indexed by the arm / pages in the dataset corpus, published: an arm that skips `.mdx` shows it here); a clean reconstruction check for mda (rebuild the index from the committed cards and re-embed → identical T1 metrics on three probe questions); **three activation probes per arm** with the traces proving the arm's tool was used (mda MCP, qmd MCP, graphify MCP and its hook, grep); timing boundaries recorded (§2.7).
+
+### 2.1 Arms and their fairness evidence
+
+| Arm | Install (pinned) | Index / build | Query interface for scoring |
+|---|---|---|---|
+| mda | this repo at the frozen SHA, `cargo build --release`, model `bge-small-en-v1.5-q` | `mda index --no-summarize`; cards from the committed files; `mda rebuild --embeddings` | `mda mcp` (`mda_search`, `k` up to the page rule) |
+| qmd full | `npm i -g @tobilu/qmd@2.8.3` | one collection per project (`qmd collection add <checkout> --name <p>`), `qmd update`, `qmd embed`; models and revisions recorded | `qmd mcp` `query` (defaults) |
+| qmd no-rerank | same | same index | `query` with reranking off (configuration diff published) |
+| qmd BM25 | same | same index | `qmd search` |
+| BM25-over-files | `scripts/eval/bm25-files.sh` (FTS5 over whole pages, unicode61) | one table per project | the script |
+| graphify | `uv tool install graphifyy==0.9.66` | `/graphify <checkout>` at the pinned version, the docs model recorded, build time and tokens recorded (T3) | MCP `query_graph` (node → file mapping frozen) |
+| grep | none | none | Read/Grep/Glob |
+
+### 2.2 Scoring external arms
+
+`mda eval --dataset docsqa … --arm-output <jsonl>` scores a ranked list of repository paths per question (`{"question_id": …, "paths": […], "truncated": bool}`) with the same metrics, exclusions, split and page rule as the mda rows. Every arm's driver requests enough results to reach ten distinct pages or exhaustion (qmd: raise `-n` until ten pages; graphify: all returned nodes), normalises paths to `repository_source_path`, deduplicates in rank order, and records truncation; a truncated question is scored and counted.
+
+### 2.3 Labels: original and pooled (axis A, second column)
+
+Original sparse labels first. Then, per project, pool the top-5 pages of every arm, sample 100 query-page pairs (seeded, stratified over arms), and have the Fable + Astra panel judge relevance blind to the arm and to each other (rubric: does this page answer the question, 0/1/2; the rubric text frozen). Both columns are published; pooled judgments are labelled model-assisted.
+
+### 2.4 Answer quality, grading, panel (T2)
+
+Three runs per arm per question; Sonnet answers through `claude -p`; Sonnet grades through `claude -p` with a JSON schema, the rubric as system prompt, the submission as tagged data, plus the grounding check (every claim supported by a cited page; pass/fail per answer; the denominator is graded answers). The panel (Fable through `claude -p --model <resolved id>`, Astra through the Codex CLI) re-grades 30 answers per project blind and audits 100 cards per corpus (dates and entities against the source); every individual score is kept; agreement published; **a disagreement of more than one point on the 0–6 scale is resolved by the panel mean** (rule 0.8 verbatim, no other threshold).
+
+### 2.5 Analysis (rule 0.4, implemented in `mda eval --analysis <grades.jsonl>`, in `mda_core::eval`, unit-tested)
+
+Question-level score per arm = median of its three runs (a question with a missing or failed run in either arm of a pair is excluded from that pair and counted); paired difference per question; 10,000 paired bootstrap resamples over questions; mean difference with the 95% interval; the three gates (interval lower bound ≥ −0.25; index mean ≥ 4.0; grounding pass ≥ 95%) **per comparator pair** (mda vs grep, mda vs qmd, mda vs graphify); savings claimed only for the pairs and projects that pass; per-question rows published.
+
+### 2.6 Runner (rule 0.3, resumable)
+
+`ab.sh` writes the manifest **before** the loop (question × arm × run ids), resumes by skipping rows already present, bounds concurrency, records retries and exit codes, and never counts a failed row; `grade.sh` checks completeness against the manifest. A development pilot (5 questions × 4 projects × all arms) measures runs per hour before T2 is scheduled.
+
+### 2.7 Timing boundaries
+
+Latency is measured through each tool's MCP server (one server per arm per project, started cold, the first query reported as the cold number including process start and model load, the rest as warm), with the same client (`scripts/eval/mcp-time.sh` over the rmcp client). In T2, every `claude -p` invocation starts every arm's MCP server cold, for every arm alike; the page says so and no warm-server advantage is claimed for anyone. Hardware, OS, cache state and the build profile (release) are in `FROZEN.md`.
+
+## 3. The tuning loop (development numbers only, T1; T2 gets a pilot, not tuning)
+
+Objective: mean success@5 over the four projects' dev splits, equal weights, with the guardrail that no project drops by more than 0.02 from the pre-tuning configuration. Candidates, pre-declared and bounded (at most eight, in this order; a candidate is one change):
+1. Card embedding text: add `entities`; drop `summary`; order `questions_answered` first.
+2. `cards_fts` weights: `questions_answered` 3; `tldr` 2.
+3. RRF: per-list weights cards 1.0 / raw 0.7 / vector 1.0; RRF k 30.
+4. Fetch depth 60 before page deduplication.
+5. Query form: stop-words dropped for the AND form before the OR fallback.
+6. Vector-only ablation (diagnostic, never a candidate configuration).
+7. Larger local embedder (bge-base) **only through an ADR**, only if 6 shows the embedder is the gap.
+8. Latency-only changes (candidate depth, prepared statements) that must not change any metric.
+
+Selection: the best aggregate objective among candidates that pass the guardrail; ties go to the simpler configuration; the pre-tuning configuration wins a tie against everything. Regressions are logged, not retried with variations. Every trial goes to `evals/results/docsqa/TUNING.md`: hypothesis, config diff, code SHA, cards and embeddings hashes, per-project metrics and denominators, latency, build cost, failures, elapsed time, decision. Stop: the list is exhausted, or the last two candidates both fail to improve the objective by ≥ 0.01. The winner becomes the product default in `config.toml`; test and holdout are never looked at; a test loss is a result, not a new round.
+
+## 4. Tables
+
+- **T1 axis A on DocsQA**: arms of §2.1; original and pooled columns (§2.3); latency (§2.7); per project, dev during tuning, test once. Acceptance: complete, with per-project intervals; the product target (match qmd full) is reported as met or not per project.
+- **T2 axis B on DocsQA**: arms grep, mda, qmd full, graphify; 25 frozen test questions per project (stratified from the test split, seed in `FROZEN.md`); reference answers from the dataset's `normalized_answer` (an export from the adapter, `--export-questions`); §2.4–2.6. Headline claims restricted to the projects and comparator pairs that pass §2.5.
+- **T3 axis E**: per arm and project: first build wall-clock, tokens, list-price equivalent, per 1K sections; incremental cost after one edited section; store size per 1K sections (mda today: 192 MB for GitHub Docs; FTS content duplication and f32 vectors are the levers).
+- **T4 axis C on Prisma**: one edit trigger (a dated sentence appended to one section), one update trigger per edit for the arms that need one (`qmd update && qmd embed`, `graphify update`), 1 s polling, 300 s timeout, twenty edits; endpoints: save → raw-searchable (mda, qmd BM25), save → card (mda only; n/a elsewhere), **save → correct grounded answer (every arm, the comparison endpoint)**; timeouts, fallback reads and raw-search latency published. Acceptance: complete; mda p50 save → card under 15 s (G1) reported against the goal.
+- **T5 axis D**: simulated historical replay (labelled as such): a fixed commit range per repository; per step, checkout, mtimes from the author date, `MDA_NOW=<author date>` (test-only override), `mda index`; stored timestamps validated against `git log`, table published, a failed validation voids the replay; 40 questions with git-computed ground truth; every arm gets `.git` and may read history in Bash; the git baseline is an arm. Criterion: paired bootstrap on per-question correctness, mda vs git baseline and mda vs each other arm; the claim is correctness and effort (tool calls, source tokens) at equal evidence.
+- **T6 own corpora**: golden set, this repo's `docs/`, the owner's private repo (supporting evidence only), rerun with the T2 method.
+
+## 5. Milestones (ordered; publication depends on completion and verification, not on a session number)
+
+| # | Milestone | Exit |
 |---|---|---|
-| mda raw | `mda eval --dataset docsqa … --split dev` row `lexical (raw only)` | bm25 weights, fetch |
-| mda cards | same, row `lexical (cards + raw)` | card fields and weights |
-| mda hybrid | same, row `hybrid` (bge-small-en-v1.5-q) | embedding text, RRF k, recency off |
-| qmd full | `qmd collection add <checkout> --name <p>`; `qmd update`; `qmd embed`; per question `qmd query "<q>" -n 30 --json` → page dedupe → same metrics | qmd version, models, chunking |
-| qmd no-rerank | `qmd query --no-rerank` | idem |
-| qmd BM25 | `qmd search` | idem |
-| BM25-over-files | a one-off FTS5 index over whole pages (script under `scripts/eval/`) | tokenizer |
-| graphify | `graphify query "<q>"` → the files its returned nodes cite, in order → same metrics | version, model used for docs, build time |
+| M1 | Card export and commit; `freeze.sh` and the development-protocol freeze; `preflight.sh` with reconstruction check and probes for the mda and grep arms; `--arm-output` scorer with tests; the runbook covers everything above | preflight passes for mda; runbook reproduces the exploratory rows exactly |
+| M2 | qmd and graphify installed and built on the four checkouts (times recorded); their drivers, coverage, probes and traces; BM25-over-files | preflight passes for every arm on every project |
+| M3 | T1 development rows for all arms; pooled judgments sampled and judged; tuning loop (§3) run and logged | `TUNING.md` complete; winner frozen |
+| M4 | T1 final freeze; test split once; page section with "where we lose"; Codex pass on the scorer, drivers and freeze | **T1 published** |
+| M5 | T2 harness: resumable runner, transcript tokens, grounding check, analysis command with tests, panel scripts, failure-matrix test, question export; development pilot (throughput measured); Codex pass on the harness (v3.2 §7 follow-up) | harness verified against rules 0.3, 0.4, 0.5, 0.7, 0.8 |
+| M6 | T2 final freeze; runs (4 projects × 4 arms × 25 × 3 = 1,200 answers, detached, resumable); grading; panel calibration and card audit; T3 | **T2, T3 published** |
+| M7 | T4 harness and runs | **T4 published** |
+| M8 | `MDA_NOW`, replay harness, validation, T5 | **T5 published** |
+| M9 | T6; README numbers row limited to gates passed; page restructured by axis; holdout still sealed | strategy v3.2 exit criteria ticked |
 
-Adapter work: a `--arm-output <jsonl>` mode of the DocsQA scorer that scores an externally produced ranked list of paths per question (one JSONL row `{question_id, paths[]}`), so competitor arms reuse the same metrics, exclusions and split. Published: one table per project, dev split during tuning, then the test split once, plus latency per query per arm and build minutes per arm (feeds T5).
+Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 throughput) and are written into the milestone when known; until then no dates. T1 and T2 are independent of T4/T5; a slip there never delays or changes a published T1/T2.
 
-Acceptance: mda hybrid ≥ qmd no-rerank − 0.05 on success@5 on every project's test split, or the loss stated per project with the tuning history.
-
-### T2. Axis B on DocsQA (answer quality and cost) — after T1's tuning is frozen
-
-Arms: grep baseline, mda, qmd (full), graphify. Sample: the 25-question frozen test sample per project (stratified from the test split, seed in `FROZEN.md`), three runs per arm per question, Sonnet answering through `claude -p`, Sonnet grading through `claude -p` with the grounding check, Fable + Astra panel on 30 answers per project (rule 0.8).
-
-Harness work (B0 leftovers): per-arm manifests in `ab.sh` (`--arm mda|qmd|graphify|grep`: tools, MCP config, skill/rules file, smoke-test question and the trace assertion that the arm's tool was used), transcript-counted tokens (rule 0.7), grounding check and citation extraction in `grade.sh`, `scripts/eval/panel.sh`, `FROZEN.md` writer, the harness failure-matrix shell test.
-
-Published per project: mean score with the paired-bootstrap CI, parity fraction, median source tokens, median total input tokens, tool calls, wall-clock, list-price equivalent; the rule-0.4 gate applied before any saving is claimed; the cold-first-question column.
-
-Acceptance: gates of rule 0.4 met for mda on at least three of four projects; source tokens per answer for mda below grep, qmd and graphify on those projects; where not, the "where we lose" section names the project and the reason.
-
-### T3. Axis E (cost to build) — measured alongside T1/T2
-
-Per arm and project: first index wall-clock, tokens and list-price equivalent; incremental re-index after one edited section (mda: seconds and one card; qmd: `qmd update` + `qmd embed` minutes; graphify: `graphify update` minutes and model tokens); store size in MB per 1K sections (mda: 192 MB for GitHub Docs today; the FTS content duplication and f32 vectors are the known levers, plan follow-up).
-
-### T4. Axis C (freshness) on Prisma
-
-Protocol from v3.2: same edit trigger (append a dated sentence to one section), fixed 1 s polling, 300 s timeout, three distributions per arm: save → raw-searchable, save → card, save → correct grounded answer. Arms: mda daemon, qmd (`qmd update && qmd embed` in the loop, its documented path), graphify (`graphify update`), grep (reads the file: the floor, always fresh, always expensive). Twenty edits per arm. Harness: `scripts/eval/freshness.sh`, new.
-
-Acceptance: mda p50 save → card under 15 s (G1) and save → correct answer under the others' rebuild time; fallback reads recorded.
-
-### T5. Axis D (time questions) on the DocsQA repositories
-
-Protocol from v3.2 (historical replay): a fixed range of real commits per repository; per step, check out, set mtimes from the commit author date, `MDA_NOW=<author date>` (test-only override to build in `file_times`, event timestamps and `first_seen_at`), `mda index`; validate stored timestamps against `git log` and publish the validation table; 40 questions with git-computed ground truth ("which pages changed between A and B", "when was P last changed", "which pages were added in month M", "which sections of P changed since D"). Arms: git baseline (Bash allowed), grep, mda (`mda_timeline`, `mda_recent`, section `updated_at`), qmd, graphify — every arm gets the repository with `.git`.
-
-Acceptance: mda success@5 and answer score at least the git baseline's on "which sections" questions and within its CI on the rest; the validation table has no unexplained mismatch.
-
-### T6. Own corpora and break-even (axis B on `evals/golden`, this repo's `docs/`, the owner's private repo)
-
-Already partly done for the golden set; rerun after T2's harness lands so the numbers share a method; the private repo appears in the "supporting evidence" table only.
-
-## 3. The tuning loop (dev split only, T1 then T2)
-
-Allowed knobs, each a one-line config or a documented option, each change logged in `evals/results/docsqa/TUNING.md` with the dev numbers before and after:
-1. Card embedding text (which fields, order): today `title + heading_path + tldr + summary + keywords + questions_answered`.
-2. `cards_fts` column weights (`heading_path` 3, `tldr` 3, `summary` 1, `keywords` 1, `questions_answered` 2, `entities` 1) and the raw list's weights.
-3. RRF constant and per-list weights (cards, raw, vector), fetch depth, and whether recency is off for frozen corpora (it is, in the adapter).
-4. Query form: the question as typed (default), or the question with stop-words dropped for the AND form before OR fallback.
-5. A larger local embedder as an option (bge-base or EmbeddingGemma-300M through fastembed) **only through an ADR** and only if the gap to qmd no-rerank is the embedder, shown by a vector-only ablation.
-6. Latency: candidate depth, one prepared statement per section lookup, release build. Reported, and never traded for quality without saying so.
-
-Forbidden: looking at test or holdout numbers while tuning; changing the split, the question sample, the grader or the rubric after `FROZEN.md`; per-project settings (one configuration for all four projects; the published config is the product default).
-
-Stop rule: tuning ends when two successive changes move dev success@5 by less than 0.01, or after the session budgeted for it (§4); the final dev configuration is frozen and becomes the product default in `config.toml` if it differs from today's.
-
-## 4. Schedule (sessions of ≈ 4 hours; each ends with its exit criterion met or the shortfall written down)
-
-| Session | Work | Exit |
-|---|---|---|
-| S5 | Card export (`--export-cards`), commit the four card files; `FROZEN.md` writer and the first `FROZEN.md`; `--arm-output` scorer; qmd installed and indexed on the four checkouts; mda rows (raw/cards/hybrid) on dev | T1 mda rows on dev published in a draft table; qmd indexes built with times recorded (T3) |
-| S6 | qmd rows (full, no-rerank, BM25), BM25-over-files, graphify install/build/rows on dev; tuning loop started | T1 dev table complete for all arms; `TUNING.md` started |
-| S7 | Tuning loop finished; freeze; T1 on the test split; the page's T1 section with "where we lose" | T1 published |
-| S8 | B0 leftovers: per-arm manifests with smoke traces, transcript tokens, grounding check, `panel.sh`, failure-matrix test; Codex pass on the harness (v3.2 §7 follow-up) | harness verified against rules 0.3, 0.5, 0.7, 0.8 |
-| S9 | T2 runs (four projects × four arms × 25 × 3) and grading; panel calibration; T3 | T2 and T3 published |
-| S10 | T4 freshness harness and runs | T4 published |
-| S11 | `MDA_NOW` + replay harness, validation, T5 questions and runs | T5 published |
-| S12 | T6 rerun, README numbers row, page restructured by axis, sealed holdout stays sealed | plan v3.2 exit criteria ticked |
-
-Wall-clock that does not fit a session runs detached (`nohup`, as the carding did) through the owner's Claude Code login (plan §0a.3; no dollar budget).
-
-## 5. Risks, and what we do
+## 6. Risks, and what we do
 
 | Risk | Signal | Response |
 |---|---|---|
-| qmd full beats mda hybrid on A by a wide margin | dev gap > 0.10 after knobs 1–4 | vector-only ablation; if the embedder is the gap, ADR for a larger embedder as an *option* (download size and latency on the page); the pitch does not depend on A |
-| Cards bias fusion (seen at 14% coverage) | any project with partial coverage | never publish a carded row below 100% coverage; product follow-up: fusion weights by coverage or cards-list off until backfill completes |
-| graphify build on 3.7K pages is slow or costly | build > 1 h or model errors | build once, record it (T3); if it cannot complete, the arm is reported as "did not complete" with the log (rule 0.3), not dropped |
-| Competitor arm not actually used by Claude (rule 0.5) | smoke trace shows no tool call | fix the arm's manifest/hook before the table; never publish a table whose trace assertion failed |
-| Grader drift or injection | panel disagreement > 1 point on > 10% of the calibration sample | publish the disagreement; move to the panel mean for the affected table |
-| Liquid includes on GitHub Docs (18% of anchors) | already known | stated per table; consider indexing `data/reusables` as support text for a second row |
-| Test-split reuse across releases | every release | stated on the page; holdout opened once at 1.0 |
-| Rate limits during long runs | rounds without progress | the runner sleeps and resumes; wall-clock published under T3 |
-| The harness itself is wrong | Codex harness pass (S8) | fix before T2; T1 numbers are recomputed from `results.json` by script, never retyped |
+| qmd full beats mda hybrid on T1 outside the interval | dev gap after the candidate list | vector-only ablation; ADR for a larger embedder as an option; the loss is published per project |
+| Small dev samples (Supabase: 12 eligible dev questions) | interval width | report intervals; the aggregate objective weights projects equally but the page shows each; no per-project tuning |
+| Cards bias fusion below full coverage | any partial index | never publish a carded row below 100% coverage; product follow-up (fusion by coverage) |
+| An arm skips `.mdx` or a directory | preflight coverage | published in the arm's coverage column; the arm is still run |
+| graphify build slow or failing on 3.7K pages | build > 1 h or errors | recorded in T3; a failed build is "did not complete" with the log (rule 0.3), never dropped |
+| Activation probe fails | trace without the tool call | fix the manifest/hook before the table; never publish without three passing probes |
+| Grader injection or drift | panel disagreement | published; the rule-0.8 adjudication applies per answer |
+| Liquid includes on GitHub Docs (18% of anchors) | known | stated per table; a second row with `data/reusables` indexed as support text is a follow-up |
+| Long runs interrupted or rate-limited | rows missing | resumable runner; wall-clock and retries published (T3) |
+| The harness or the analysis is wrong | Codex passes at M4 and M5 | fixed before publication; numbers regenerated by script from the raw files, never retyped |
 
-## 6. Deliverables
+## 7. Deliverables
 
-- `docs/benchmarks.md` restructured by axis: T1–T6 tables, one "where we lose" section that names corpus sizes and questions, one "what the model already knew" note (rule 0.6), links to raw logs, `FROZEN.md` and `TUNING.md`.
-- README: one numbers row with the three headline claims only when their tables pass their gates: fewer source tokens at parity (T2), fresh within seconds (T4), answers time questions the others cannot (T5).
-- `evals/results/docsqa/`: cards per project and version, `FROZEN.md`, `TUNING.md`, per-arm logs and traces.
+- `docs/benchmarks.md` by axis: T1–T6, "where we lose" (corpus sizes, projects, comparators), "what the model already knew" (rule 0.6), links to `FROZEN.md`, `TUNING.md`, raw logs and traces.
+- `evals/benchmark_it_with_claude.md`: the runbook any Claude session follows to reproduce every published table; **a table is published only after the runbook reproduces it** on a clean checkout (exact for retrieval given the committed cards, within stated tolerances for answer quality); `/benchmark` (`.claude/skills/benchmark`) invokes it.
+- README: one numbers row per headline claim, each limited to the projects and comparators whose gate passed, worded as measured: fewer source tokens at parity (T2), fresh within seconds (T4), time questions answered correctly with less effort at equal evidence (T5).
 
-## 7. Tasks
+## 8. Tasks
 
-- [ ] S5: card export + commit; `FROZEN.md` writer + first freeze; `--arm-output` scorer; qmd installed and indexed; mda dev rows.
-- [ ] S6: qmd rows, BM25-over-files, graphify rows on dev; tuning loop started.
-- [ ] S7: tuning frozen; T1 test split published; "where we lose" written.
-- [ ] S8: harness leftovers; Codex harness pass.
-- [ ] S9: T2 + T3 published; panel calibration.
-- [ ] S10: T4 published.
-- [ ] S11: T5 published (with `MDA_NOW`, validation table).
-- [ ] S12: T6, README row, page restructure.
+- [ ] M1 export, freeze, preflight, `--arm-output`, runbook v1.
+- [ ] M2 competitor arms installed, built, driven, probed.
+- [ ] M3 T1 development rows, pooled judgments, tuning loop.
+- [ ] M4 T1 published (test split), Codex pass.
+- [ ] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass.
+- [ ] M6 T2 + T3 published.
+- [ ] M7 T4 published.
+- [ ] M8 T5 published.
+- [ ] M9 T6, README row, page restructure.
 
-## 8. Exit criteria
+## 9. Exit criteria
 
-- [ ] T1–T6 published with the arms of §2, on the test split, `FROZEN.md` predating every number in git history.
-- [ ] For every competitor profile in §1, the must-not-lose line is either met or the loss is on the page with its reason.
-- [ ] The tuning history is public and the product default equals the published configuration.
-- [ ] Codex pre-mortem of this plan and the S8 harness pass triaged in `docs/reviews/codex/`.
+- [ ] T1–T6 published on the test split with the arms of §2.1, every table preceded in git history by its `FROZEN.md` and a passing preflight, and reproduced by the runbook on a clean checkout.
+- [ ] For every profile in §1, the must-not-lose line is met or the loss is on the page with its interval and reason.
+- [ ] `TUNING.md` public; the product default equals the published configuration.
+- [ ] Both Codex passes (M4, M5) triaged in `docs/reviews/codex/`.
