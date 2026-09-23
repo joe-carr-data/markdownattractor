@@ -38,8 +38,12 @@ dir="$(project_dir "$project")"; corpus="$RUN/$dir"; data="$RUN/docsqa-data"
 committed="$RESULTS/$project"
 arms="$(sed -n '/^### Arms/,/^$/p' "$frozen" | sed -n 's/^- \([A-Za-z0-9._-]*\):.*/\1/p' | tr '\n' ' ')"
 [ -n "$arms" ] || die "$frozen lists no arms"
+# Activation probes exist for the arms an agent drives through a tool (rule 0.5); a control
+# scored from its own ranked lists (BM25-over-files) has no agent interface and no probe.
+PROBE_ARMS="mda grep qmd graphify"
 required="env build frozen model store regenerate replay reconstruction coverage-grep"
-for a in $arms; do required="$required probes-$a"; done
+probe_arms=""
+for a in $arms; do case " $PROBE_ARMS " in *" $a "*) required="$required probes-$a"; probe_arms="$probe_arms $a" ;; esac; done
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 A="$RUN/preflight/$table/$project/$stamp"
 [ ! -e "$A" ] || die "$A exists"
@@ -180,10 +184,10 @@ jq -n --arg project "$project" --argjson total "$total" --argjson present "$pres
 if [ "$present" = "$total" ] && [ "$total" -gt 0 ]; then record coverage-grep ok "$present of $total corpus pages on disk"; else record coverage-grep FAIL "$present of $total corpus pages on disk"; fi
 
 # 10. Three activation probes per frozen arm, traces kept (a successful call of the arm's tool).
-if [ "$skip_probes" = 1 ]; then for arm in $arms; do record "probes-$arm" skipped "--skip-probes"; done
+if [ "$skip_probes" = 1 ]; then for arm in $probe_arms; do record "probes-$arm" skipped "--skip-probes"; done
 else
   : > "$OUT/probes/summary.jsonl"
-  for arm in $arms; do
+  for arm in $probe_arms; do
     n_ok=0; n=0
     for qid in $(probe_ids "$project"); do
       n=$((n + 1))
