@@ -182,7 +182,20 @@ for p in tailwind-css supabase prisma github-docs; do scripts/eval/bm25-files.sh
 scripts/eval/mcp-time.sh mda prisma "$RUN/latency/mda-prisma.jsonl"; scripts/eval/mcp-time.sh qmd prisma "$RUN/latency/qmd-prisma.jsonl"
 ```
 
-The graphify build is a model pass through your login and is the expensive step: Tailwind 825 s and 5.4M input tokens, Supabase 2,053 s and 64.6M (≈ $47 list-price equivalent); a build that does not complete is recorded as such in the arm record (rule 0.3), never dropped. Archived rows, scorer output, the request sent and the per-question latency of the first pass live under `evals/results/docsqa/<project>/arms/<arm>.{jsonl,results.json,request.json,times.jsonl}`; the development rows are rendered on `docs/benchmarks.md` by `scripts/eval/table.sh`. What each arm's row means and where it is truncated is in the arm record and in `docs/benchmarks.md`; the published T1 recipe (frozen versions, hashes, expected metrics) lands in §7 with the table.
+**The graphify build is a model pass through your login and is by far the most expensive step of the whole benchmark; budget for it before starting it.** Its skill makes the host agent dispatch one general-purpose subagent per 20–25 files; each subagent reads every file in full and writes an extraction JSON; the parent session then polls for completion, re-sending its own ~300K-token context on every poll turn (that is where the cache-read tokens go), and every subagent inherits the session model. Measured (`evals/results/docsqa/arms/graphify-<project>.json`, usage from the Claude Code transcript):
+
+- tailwind-css: 825 s, 83 turns, 5,354,245 input tokens (cache reads included), 96,346 output tokens, $10.25 list-price equivalent, model claude-sonnet-5
+- supabase: 2053 s, 264 turns, 64,604,023 input tokens (cache reads included), 171,803 output tokens, $47.17 list-price equivalent, model claude-sonnet-5
+- prisma: two attempts did not complete (the first killed by the headless 600 s background-wait ceiling with 30 of 31 chunks done, the second by the account's weekly usage limit after 69 turns and a $38 equivalent); github-docs: did not complete at 55 of 158 chunks (98 turns, $74 equivalent, weekly limit). The owner's weekly allowance was exhausted by these builds on 2026-09-23. Both were then rebuilt with **Haiku 4.5 as the extraction model** (`graphify.sh build <project> haiku`; graphify is host-model-agnostic), which the arm record states per project; the table says which model built each graph.
+
+For comparison, markdownattractor's own build of the same corpora is one bounded `claude -p` call per section (Haiku 4.5, hash-keyed, unchanged sections never re-summarised, no agent loop, no polling; `cards-0.1.1-<project>.json.provenance.json`):
+
+- tailwind-css: 1,332 cards for 1,518 sections, 3,591,960 input / 498,631 output tokens, $6.51
+- supabase: 6,386 cards for 6,548 sections, 16,615,918 input / 2,675,968 output tokens, $30.48
+- prisma: 8,339 cards for 10,438 sections, 21,679,828 input / 3,466,004 output tokens, $39.29
+- github-docs: 20,842 cards for 23,066 sections, 55,979,737 input / 8,635,389 output tokens, $99.93
+
+qmd's build has no model call at all (local EmbeddingGemma-300M on Metal: 161 / 394 / 494 / 1,390 s). These numbers feed the T3 table (axis E: tokens, minutes and list-price equivalent per 1K sections, first build and the incremental re-index after one edit); the wording of any claim on the page follows the plan's rule that a headline is worded as the measurement, at equal model tier, and the Codex discussion of 2026-09-23 on this point is in `docs/reviews/codex/`. A build that does not complete is recorded as such in the arm record (rule 0.3), never dropped. Archived rows, scorer output, the request sent and the per-question latency of the first pass live under `evals/results/docsqa/<project>/arms/<arm>.{jsonl,results.json,request.json,times.jsonl}`; the development rows are rendered on `docs/benchmarks.md` by `scripts/eval/table.sh`. What each arm's row means and where it is truncated is in the arm record and in `docs/benchmarks.md`; the published T1 recipe (frozen versions, hashes, expected metrics) lands in §7 with the table.
 
 ## 5. Answer quality on the golden corpus
 
