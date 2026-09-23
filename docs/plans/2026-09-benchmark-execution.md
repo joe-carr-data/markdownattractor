@@ -160,7 +160,7 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 ## 7. Deliverables
 
 - `docs/benchmarks.md` by axis: T1–T6, "where we lose" (corpus sizes, projects, comparators), "what the model already knew" (rule 0.6), links to `FROZEN.md`, `TUNING.md`, raw logs and traces.
-- `evals/benchmark_it_with_claude.md`: the runbook any Claude session follows to reproduce every published table; **a table is published only after the runbook regenerates it byte-identically from the archived observations on a clean checkout** (§2.0b); independent reruns of stochastic tables are published beside the original, never gated; the runbook grows a table-specific section (commands, expected artifacts, hashes) with every published table; `/benchmark` (`.claude/skills/benchmark`) invokes it.
+- `evals/benchmark_it_with_claude.md`: the runbook any Claude session follows to reproduce every published table; **updated in the same change as every harness, arm, freeze or table change (owner rule, 2026-09-23), never after**; **a table is published only after the runbook regenerates it byte-identically from the archived observations on a clean checkout** (§2.0b); independent reruns of stochastic tables are published beside the original, never gated; the runbook grows a table-specific section (commands, expected artifacts, hashes) with every published table; `/benchmark` (`.claude/skills/benchmark`) invokes it.
 - README: one numbers row per headline claim, each limited to the projects and comparators whose gate passed, worded as measured: fewer source tokens at parity (T2), fresh within seconds (T4), time questions answered correctly with less effort at equal evidence (T5).
 
 ## 8. Tasks
