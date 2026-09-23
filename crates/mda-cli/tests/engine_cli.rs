@@ -748,7 +748,7 @@ fn eval_docsqa_reports_coverage_split_and_page_metrics() {
     let results = runs[0]["results"].as_array().unwrap();
     assert_eq!(results[0]["id"], "q1");
     assert_eq!(results[0]["rank"], 1);
-    assert_eq!(results[0]["top"][0], "docs/rollback.mdx");
+    assert_eq!(results[0]["pages"][0], "docs/rollback.mdx");
     assert_eq!(results[0]["relevant"].as_array().unwrap().len(), 1, "deduplicated label");
     assert_eq!(results[0]["truncated"], false);
     let root_str = v["root"].as_str().unwrap();
@@ -1017,7 +1017,7 @@ fn eval_docsqa_exports_cards_and_a_fresh_index_rebuilt_from_them_scores_the_same
             "mrr_at_5": r["metrics"]["mrr_at_5"],
             "ndcg_at_10": r["metrics"]["ndcg_at_10"],
             "results": r["results"].as_array().unwrap().iter().map(|q| serde_json::json!({
-                "id": q["id"], "rank": q["rank"], "top": q["top"], "ndcg_at_10": q["ndcg_at_10"]
+                "id": q["id"], "rank": q["rank"], "pages": q["pages"], "ndcg_at_10": q["ndcg_at_10"]
             })).collect::<Vec<_>>(),
         })).collect::<Vec<_>>())
     };
@@ -1036,6 +1036,7 @@ fn eval_docsqa_exports_cards_and_a_fresh_index_rebuilt_from_them_scores_the_same
 }
 
 #[test]
+#[allow(clippy::too_many_lines)] // one scenario: score, regenerate from the archive, refuse bad input
 fn eval_docsqa_scores_an_external_arm_from_its_ranked_paths() {
     let (dir, data, root) = docsqa_fixture();
     mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
@@ -1082,12 +1083,68 @@ fn eval_docsqa_scores_an_external_arm_from_its_ranked_paths() {
     let q1 = &r["results"][0];
     assert_eq!(q1["id"], "q1");
     assert_eq!(q1["rank"], 2);
-    assert_eq!(q1["top"], serde_json::json!(["docs/other.mdx", "docs/rollback.mdx"]));
+    assert_eq!(q1["pages"], serde_json::json!(["docs/other.mdx", "docs/rollback.mdx"]));
     assert_eq!(q1["truncated"], true);
     assert_eq!(q1["fetched"], 4);
     let q2 = &r["results"][1];
     assert_eq!(q2["rank"], serde_json::Value::Null);
     assert_eq!(q2["ndcg_at_10"], 0.0);
+    // Regeneration (plan §2.0b): the store's own archived page lists, fed back as an arm,
+    // reproduce the store row's metrics and per-question results exactly, without the store
+    // being searched again.
+    let store_run = json_of(
+        &mda()
+            .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root)
+            .args(["--split", "all"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    )["runs"][0]
+        .clone();
+    let archived = dir.path().join("archived.jsonl");
+    let rows: Vec<String> = store_run["results"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|q| {
+            serde_json::json!({"question_id": q["id"], "paths": q["pages"], "truncated": q["truncated"]})
+                .to_string()
+        })
+        .collect();
+    std::fs::write(&archived, rows.join("\n") + "\n").unwrap();
+    let again = json_of(
+        &mda()
+            .args(["--json", "eval", "--dataset", "docsqa", "--data"])
+            .arg(&data)
+            .args(["--project", "demo", "--root"])
+            .arg(&root)
+            .args(["--split", "all", "--arm-output"])
+            .arg(&archived)
+            .args(["--arm-name", "lexical (raw only)"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    )["runs"][0]
+        .clone();
+    let metrics = |r: &serde_json::Value| {
+        let mut m = r["metrics"].clone();
+        m.as_object_mut().unwrap().remove("mean_ms");
+        m
+    };
+    assert_eq!(metrics(&store_run), metrics(&again), "{store_run}\n{again}");
+    let per_q = |r: &serde_json::Value| {
+        serde_json::json!(r["results"].as_array().unwrap().iter().map(|q| serde_json::json!({
+            "id": q["id"], "rank": q["rank"], "ndcg_at_10": q["ndcg_at_10"], "pages": q["pages"], "truncated": q["truncated"]
+        })).collect::<Vec<_>>())
+    };
+    assert_eq!(per_q(&store_run), per_q(&again));
+    assert_eq!(again["missing"], serde_json::json!([]));
+
     // The file's stem names the row when --arm-name is absent; a duplicated id is refused.
     let v = json_of(
         &mda()

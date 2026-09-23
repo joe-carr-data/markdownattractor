@@ -3,7 +3,8 @@
 # the few helpers every step repeats. Source it; never run it. Every path is absolute.
 #   REPO   the source checkout (this repository)
 #   RUN    the bench data: docsqa-data and the four checkouts with their stores
-#   MDA    the release binary built from REPO
+#   MDA    the release binary built from REPO (preflight replaces it with the artifact
+#          Cargo reports for the frozen commit and records its hash)
 #   MDA_MODEL_DIR  the embedding model cache (hashed into FROZEN.md and model.sha)
 REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 RUN="${RUN:-$HOME/.cache/markdownattractor/bench}"
@@ -17,16 +18,52 @@ PROJECTS="github-docs prisma supabase tailwind-css"
 # shellcheck disable=SC2034
 SEED=20260922
 
-sha256() { shasum -a 256 "$1" | cut -c1-64; }
+die() { echo "$*" >&2; exit 1; }
+
+# sha256 of one regular file; a missing, unreadable or non-regular file is fatal, never an
+# empty field (a freeze must not record a sentinel as an input).
+sha256() {
+  [ -f "$1" ] && [ ! -L "$1" ] || die "sha256: $1 is not a regular file"
+  shasum -a 256 "$1" | cut -c1-64
+}
+
+# A benchmark identifier (table, project, arm): one path component, no traversal.
+ident() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || die "not an identifier: $1"; }
+
+# A file we are about to write: refuse a symlink at the path or at any ancestor under
+# $REPO/evals/results or $RUN (the state-file rule of .claude/rules/rust.md, in shell).
+safe_target() {
+  local p="$1" d
+  [ ! -L "$p" ] || die "$p is a symlink"
+  d="$(dirname "$p")"
+  mkdir -p "$d"
+  while [ "$d" != "/" ] && [ "$d" != "$REPO" ] && [ "$d" != "$RUN" ] && [ "$d" != "$HOME" ]; do
+    [ ! -L "$d" ] || die "$d is a symlink"
+    d="$(dirname "$d")"
+  done
+}
 
 # The dataset names the Tailwind project tailwind-css; its checkout directory is tailwindcss.
 project_dir() { case "$1" in tailwind-css) echo tailwindcss ;; *) echo "$1" ;; esac; }
 
-# One line per model file (lock files excluded, symlinks excluded), path relative to the
-# cache, sorted: the content of evals/results/docsqa/model.sha.
+# One line per model artifact, path relative to the cache, sorted: every regular file (lock
+# files excluded) with its sha256, and every symlink (the snapshot paths the loader actually
+# opens) with the sha256 of the file it resolves to and its target, which must stay inside
+# the cache. A broken or outward link is fatal. This is evals/results/docsqa/model.sha.
 model_sha() {
-  ( cd "$MDA_MODEL_DIR" && find . -type f ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort \
-    | while IFS= read -r f; do printf '%s  %s\n' "$(sha256 "$f")" "$f"; done )
+  local f target resolved
+  ( cd "$MDA_MODEL_DIR" || exit 1
+    find . \( -type f -o -type l \) ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do
+      if [ -L "$f" ]; then
+        target="$(readlink "$f")"
+        resolved="$(cd "$(dirname "$f")" && cd "$(dirname "$target")" 2>/dev/null && pwd -P)/$(basename "$target")"
+        [ -f "$resolved" ] || die "model link $f -> $target does not resolve to a file"
+        case "$resolved" in "$(pwd -P)"/*) ;; *) die "model link $f -> $target leaves the cache" ;; esac
+        printf '%s  %s -> %s\n' "$(shasum -a 256 "$resolved" | cut -c1-64)" "$f" "$target"
+      else
+        printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"
+      fi
+    done )
 }
 
 # A run of `claude -p` from inside a Claude Code session refuses to start while these are set.
@@ -36,18 +73,32 @@ unset_nested_session() {
 }
 
 # The scored rows of a results.json without the machine-dependent parts (latency), sorted
-# keys: what "identical metrics on the whole split" compares.
+# keys, written to $2: what "identical on the whole split" compares. Fails on bad JSON.
 normalize_runs() {
   jq -S '{seed, split, fetch, runs: [.runs[] | {run, split, missing, unknown,
            questions: .metrics.questions, success_at_5: .metrics.success_at_5,
            mrr_at_5: .metrics.mrr_at_5, ndcg_at_10: .metrics.ndcg_at_10,
-           results: [.results[] | {id, split, rank, ndcg_at_10, fetched, truncated, top, relevant}]}]}' "$1"
+           results: [.results[] | {id, split, rank, ndcg_at_10, fetched, truncated, pages, relevant}]}]}' "$1" > "$2" \
+    || die "normalize_runs: cannot read $1"
+}
+
+# The archived page lists of one run of a results.json as --arm-output rows (plan §2.0b:
+# metrics regenerate from archived observations, not from a store).
+archived_rows() { # results.json run-index > rows.jsonl
+  jq -c --argjson i "$2" '.runs[$i].results[] | {question_id: .id, paths: .pages, truncated}' "$1"
 }
 
 # The first three eligible questions of the dev split of a project, from its committed
 # results (the raw row lists every scored question in dataset order): the probe questions.
 probe_ids() { jq -r '.runs[0].results[:3][].id' "$RESULTS/$1/results.json"; }
 
+# The text of one question of one project; exactly one row must match.
 question_text() { # project question_id
-  jq -r --arg id "$2" 'select(.question_id == $id) | .query' "$RUN/docsqa-data/data/questions.jsonl" | head -c 20000
+  local rows
+  rows="$(jq -c --arg p "$1" --arg id "$2" 'select(.project == $p and .question_id == $id) | .query' "$RUN/docsqa-data/data/questions.jsonl")"
+  [ "$(printf '%s\n' "$rows" | grep -c .)" = 1 ] || die "question $2 of $1: expected exactly one row in questions.jsonl"
+  jq -r . <<<"$rows"
 }
+
+# The split a question belongs to, from the committed split.json.
+question_split() { jq -r --arg id "$2" '.questions[] | select(.id == $id) | .split' "$RESULTS/$1/split.json"; }

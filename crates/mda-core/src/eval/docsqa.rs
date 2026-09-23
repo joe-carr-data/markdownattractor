@@ -385,8 +385,10 @@ pub struct QuestionResult {
     /// `true` when ten distinct pages were not reached within the fetch cap, so a relevant
     /// page beyond the fetched sections could be missing from `rank`.
     pub truncated: bool,
-    /// The top five pages returned.
-    pub top: Vec<String>,
+    /// The first ten distinct pages returned, best first: the archived observation from
+    /// which every metric of this question (rank, MRR@5, nDCG@10) recomputes without a
+    /// store (plan §2.0b: regeneration is done from archived ranked lists).
+    pub pages: Vec<String>,
     /// The relevant pages.
     pub relevant: Vec<String>,
 }
@@ -493,7 +495,7 @@ pub fn evaluate(
             ndcg_at_10: ndcg,
             fetched,
             truncated,
-            top: ranked.into_iter().take(5).collect(),
+            pages: ranked.into_iter().take(PAGES_NEEDED).collect(),
             relevant: q.relevant.clone(),
         });
     }
@@ -529,10 +531,18 @@ pub struct ArmRow {
 }
 
 /// Read an arm's rows from a JSONL file. A `question_id` that appears twice is an error
-/// (two ranked lists for one question cannot both be the arm's answer).
+/// (two ranked lists for one question cannot both be the arm's answer), and so is a path
+/// that folds to nothing (`""`, `"/"`, `"./"`): a store never returns an empty path, and
+/// dropping a driver's malformed entry silently would improve its list by one rank.
 pub fn read_arm_output(path: &Path) -> Result<HashMap<String, ArmRow>> {
     let mut rows = HashMap::new();
     for row in read_jsonl::<ArmRow>(path)? {
+        if let Some(bad) = row.paths.iter().find(|p| normalize_arm_path(p).is_empty()) {
+            return Err(Error::parse(
+                path,
+                format!("question {}: path {bad:?} folds to an empty path", row.question_id),
+            ));
+        }
         if rows.insert(row.question_id.clone(), row).is_some() {
             return Err(Error::parse(path, "a question_id appears twice"));
         }
@@ -600,7 +610,7 @@ pub fn score_arm(
             ndcg_at_10: ndcg,
             fetched,
             truncated,
-            top: ranked.into_iter().take(5).collect(),
+            pages: ranked.into_iter().take(PAGES_NEEDED).collect(),
             relevant: q.relevant.clone(),
         });
     }
@@ -654,6 +664,9 @@ mod tests {
         .unwrap();
         let err = read_arm_output(&f).unwrap_err().to_string();
         assert!(err.contains("appears twice"), "{err}");
+        std::fs::write(&f, "{\"question_id\":\"q1\",\"paths\":[\"a.md\", \"./\"]}\n").unwrap();
+        let err = read_arm_output(&f).unwrap_err().to_string();
+        assert!(err.contains("folds to an empty path"), "{err}");
     }
 
     #[test]

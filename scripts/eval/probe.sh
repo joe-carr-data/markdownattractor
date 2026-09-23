@@ -1,25 +1,31 @@
 #!/usr/bin/env bash
 # One activation probe (strategy rule 0.5, execution plan §2.0): run a dataset question
 # through headless `claude -p` with one arm's tool set and keep the transcript as the trace
-# proving the arm's tool was actually used. Three passing probes per arm and project are
-# required before a table runs; a probe whose trace shows no call of the arm's tool fails.
+# proving the arm's tool was actually used. "Used" means a call of the arm's tool that
+# returned a non-error result (a request that was denied or failed does not count, Codex M1
+# F5). Three passing probes per arm and project are required before a table runs.
 #
 # Usage: scripts/eval/probe.sh <arm: mda|grep> <project> <question_id> <trace.jsonl> [model=sonnet]
-# Prints one JSON line (arm, project, question, tools called, activated, turns, cost) and
-# exits 0 when the arm activated, 3 when it did not, 1 on a run error.
+# Prints one JSON line (arm, project, question, tools called with their outcome, activated,
+# turns, cost, the effective launch configuration) and exits 0 when the arm activated, 3 when
+# it did not, 1 on a run error. Holdout questions are refused (rule 0.2).
 # Every model call goes through the owner's own Claude Code login (plan §0a.3).
 set -euo pipefail
 # shellcheck source=scripts/eval/lib.sh
 . "$(dirname "$0")/lib.sh"
 arm="${1:?arm (mda|grep)}"; project="${2:?project}"; qid="${3:?question_id}"; trace="${4:?trace.jsonl}"
 model="${5:-sonnet}"
+ident "$arm"; ident "$project"
 corpus="$RUN/$(project_dir "$project")"
-[ -d "$corpus" ] || { echo "no checkout at $corpus" >&2; exit 1; }
+[ -d "$corpus" ] || die "no checkout at $corpus"
+[ "$(question_split "$project" "$qid")" != holdout ] || die "question $qid is in the sealed holdout (rule 0.2)"
 q="$(question_text "$project" "$qid")"
-[ -n "$q" ] || { echo "question $qid not in the dataset" >&2; exit 1; }
-mkdir -p "$(dirname "$trace")"; trace="$(cd "$(dirname "$trace")" && pwd)/$(basename "$trace")"
-[ ! -L "$trace" ] || { echo "$trace is a symlink" >&2; exit 1; }
+[ -n "$q" ] || die "question $qid of $project has no text"
+safe_target "$trace"; safe_target "$trace.err"
+trace="$(cd "$(dirname "$trace")" && pwd)/$(basename "$trace")"
 unset_nested_session
+mcp_cfg=""
+trap '[ -z "$mcp_cfg" ] || rm -f "$mcp_cfg"' EXIT
 common=(--print --setting-sources "" --no-session-persistence --model "$model" --max-turns 12
         --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config)
 case "$arm" in
@@ -33,24 +39,28 @@ case "$arm" in
   grep)
     args=(--tools Read Grep Glob --allowedTools Read Grep Glob)
     want='^(Grep|Read|Glob)$' ;;
-  *) echo "unknown arm $arm (mda|grep; qmd and graphify probes come with their arms)" >&2; exit 2 ;;
+  *) die "unknown arm $arm (mda|grep; qmd and graphify probes come with their arms)" ;;
 esac
 preamble="Answer from the documents in the current directory. Be concise (at most 6 lines). Cite the file and section you used."
+launch="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$corpus" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" \
+  --args '{claude_flags: $ARGS.positional, model: $model, cwd: $root, mcp: (if $arm == "mda" then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}} else null end), system_prompt_file: (if $arm == "mda" then $rules else null end)}' -- "${common[@]}" "${args[@]}")"
 t0=$(date +%s); rc=0
 (cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$trace" 2>"$trace.err") || rc=$?
 t1=$(date +%s)
-[ "$arm" != mda ] || rm -f "$mcp_cfg"
-summary="$(jq -c -s --arg arm "$arm" --arg project "$project" --arg qid "$qid" --arg want "$want" --argjson rc "$rc" --argjson wall "$((t1 - t0))" --arg trace "${trace#"$REPO"/}" '
+[ -s "$trace.err" ] || rm -f "$trace.err"
+summary="$(jq -c -s --arg arm "$arm" --arg project "$project" --arg qid "$qid" --arg want "$want" --argjson rc "$rc" --argjson wall "$((t1 - t0))" --arg trace "${trace#"$REPO"/}" --argjson launch "$launch" '
   (map(select(.type=="result")) | last) as $res |
-  (map(select(.type=="assistant")) | map(.message.content[]? | select(.type=="tool_use") | .name)) as $tools |
+  (map(select(.type=="assistant")) | map(.message.content[]? | select(.type=="tool_use") | {id, name})) as $uses |
+  (map(select(.type=="user")) | map(.message.content[]? | select(type=="object" and .type=="tool_result") | {id: .tool_use_id, error: (.is_error // false)})) as $results |
+  ($uses | map(. as $u | {name: $u.name, ok: (($results | map(select(.id == $u.id and (.error | not))) | length) > 0)})) as $calls |
   (map(select(.type=="assistant")) | map(.message.model // empty) | unique) as $models |
-  {arm: $arm, project: $project, question_id: $qid, tools: $tools,
-   activated: (($tools | map(select(test($want))) | length) > 0),
+  {arm: $arm, project: $project, question_id: $qid, calls: $calls, tools: ($calls | map(.name)),
+   activated: (($calls | map(select((.name | test($want)) and .ok)) | length) > 0),
    error: (($res == null) or ($res.is_error // false) or ($rc != 0) or (($res.result // "") | length == 0)),
    exit_code: $rc, turns: ($res.num_turns // null), cost_usd_list_price: ($res.total_cost_usd // null),
-   models: $models, wall_s: $wall, trace: $trace}' "$trace")"
+   models: $models, wall_s: $wall, trace: $trace, launch: $launch}' "$trace")"
 echo "$summary"
 if [ "$(jq -r .error <<<"$summary")" = true ]; then
   echo "probe $arm/$project/$qid: run error (exit $rc): $(tail -c 300 "$trace.err" 2>/dev/null | tr '\n' ' ')" >&2; exit 1
 fi
-[ "$(jq -r .activated <<<"$summary")" = true ] || { echo "probe $arm/$project/$qid: the trace shows no call of the arm's tool ($want); tools: $(jq -c .tools <<<"$summary")" >&2; exit 3; }
+[ "$(jq -r .activated <<<"$summary")" = true ] || { echo "probe $arm/$project/$qid: no successful call of the arm's tool ($want) in the trace; calls: $(jq -c .calls <<<"$summary")" >&2; exit 3; }
