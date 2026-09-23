@@ -25,7 +25,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
-| 2026-09-23 | [reviews/codex/2026-09-23-execution-plan.md](reviews/codex/2026-09-23-execution-plan.md) | \| \| \| |
+| 2026-09-23 | [reviews/codex/2026-09-23-execution-plan.md](reviews/codex/2026-09-23-execution-plan.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-phase2.md](reviews/codex/2026-09-22-phase2.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-mdx-ingestion.md](reviews/codex/2026-09-22-mdx-ingestion.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-lean-payload.md](reviews/codex/2026-09-22-lean-payload.md) | \ |

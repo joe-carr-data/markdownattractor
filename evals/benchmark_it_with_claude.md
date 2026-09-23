@@ -1,63 +1,86 @@
 # Benchmark it with Claude — the reproducibility runbook
 
-This file is written for a Claude Code session (or a person) that wants to reproduce the markdownattractor benchmark from public data and get the same numbers, or as close as the step's determinism allows. It is the human-readable twin of `scripts/eval/preflight.sh`: every published table on `docs/benchmarks.md` must be reproducible by following this file on a clean checkout before it is published (execution plan §7). `/benchmark` in this repository loads this file as a skill.
+Written for a Claude Code session (or a person) that wants to reproduce the markdownattractor benchmark from public data. It is the human-readable twin of `scripts/eval/preflight.sh` (execution plan §2.0). `/benchmark` loads it as a skill. Two different things are called "reproducing" here, and the two are never mixed (plan §2.0b):
 
-Rules for whoever runs it: do every step in order; never skip a checksum; write down every deviation (hardware, versions, a step that did not match) in your report; do not tune anything; if a step's number is outside its tolerance, that is a finding, not a reason to rerun until it matches.
+- **Regeneration**: recompute a published table from its archived raw observations on a clean checkout. Must be byte-identical. This is the gate every table passes before it is published.
+- **Independent rerun**: run the stochastic parts again (Claude answers, grades) with the frozen inputs and the same repeat count. Its result is published next to the original with the paired difference, whatever it shows. There is no pass/fail and nothing is rerun "until it matches".
 
-## 0. What you get, and how exact it is
+Rules for whoever runs it: do every step in order; every checksum line is an assertion, stop when one fails; never tune; never open the holdout; record every attempt in the report (§8), including the ones that failed; never write into `evals/results/docsqa/` or `docs/benchmarks.md` from a reproduction.
 
-| Step | Determinism | Tolerance |
+## 0. What each step gives you
+
+| Step | Kind | What "same" means |
 |---|---|---|
-| Dataset checksums, clones at the pinned commits, coverage and evidence-anchor counts | exact | none: any difference is a finding |
-| Raw and carded retrieval rows (`mda eval --dataset docsqa`) with the **committed cards** | exact (same cards, same binary version) | none |
-| Carded rows with **regenerated cards** (Haiku through Claude Code) | close: cards are model output | success@5 within ±0.03 per project |
-| Answer-quality rows (`claude -p` arms, `claude -p` grader) | statistical: sampled answers and grades | parity fraction within 2 questions of 12 on the golden set; medians within ±20%; T2 within the published 95% intervals |
-| Latency | machine-dependent | published with the hardware; compare ratios, not absolutes |
-| Carding wall-clock and list-price equivalent | machine- and plan-dependent | informational |
+| Dataset checksums, clone SHAs, file counts, coverage and anchor counts (§2–3) | regeneration | exact, any difference is a finding |
+| Raw-lexical retrieval rows with the same `mda` version (§3) | regeneration | exact metrics (same store, same binary) |
+| Carded and hybrid rows with the **committed cards** and the **hashed model files** (§4) | regeneration | exact metrics |
+| Carded rows with **regenerated cards** (§4b) | independent rerun | published beside the original; no tolerance |
+| Answer-quality tables from the **archived logs and grades** (§5a) | regeneration | byte-identical `parity.md` / analysis output |
+| Answer-quality tables **rerun** (§5b) | independent rerun | published beside the original; no tolerance |
+| Latency (§6) | machine-dependent | reported with hardware; compare ratios |
 
-## 1. Prerequisites
+Historical note: the numbers on `docs/benchmarks.md` labelled *exploratory* (the raw/carded dev rows of 2026-09-22 and the golden-corpus A/B) predate any freeze and were produced with `mda` 0.1.1 at `41fdbb1`. They regenerate exactly only with that binary; a later binary may rank differently on purpose (tuning, plan §3). Final tables each carry their own `FROZEN.md` and their own section here (§7).
 
-- macOS or Linux, ≈ 3 GB free (clones ≈ 300 MB, stores ≈ 330 MB, models 33 MB; plus qmd's ≈ 2 GB if you run its arm), `git`, `python3`, `jq`, `curl`.
-- Rust toolchain: `rust-toolchain.toml` pins it (1.98.1); `curl https://sh.rustup.rs -sSf | sh` installs rustup, the pinned toolchain follows on first `cargo` call.
-- Claude Code installed and logged in (for the answer-quality arms and for regenerating cards). Every model call in this benchmark goes through Claude Code's own login; **no API key is needed or used** (`ANTHROPIC_API_KEY` must not be set, so nothing can fall back to it).
-- This repository at the SHA named in the table's `FROZEN.md` (for the exploratory rows below: `main` at `41fdbb1` or later), built with `cargo build --release -p mda-cli`; `mda --version` must print the version in `FROZEN.md`.
-- The embedding model: `export MDA_MODEL_DIR=$HOME/.cache/markdownattractor/models`; the first `mda index` with cards downloads `bge-small-en-v1.5-q` (33 MB) there. Record the model directory's revision (`ls $MDA_MODEL_DIR`).
-
-## 2. Data, pinned
+## 1. Environment, asserted
 
 ```bash
-B=$HOME/.cache/markdownattractor/bench; mkdir -p "$B"; cd "$B"
-git clone https://github.com/PowderXu/docsqa-data.git docsqa-data
-git -C docsqa-data checkout 19af578bead6c8317d29598c409e982886951cbe
-shasum -a 256 docsqa-data/data/manifest.json     # c6193cc88cdf88adc2c8561441b03280415bf871e0b22f7d006a5968c714a361
-gunzip -k docsqa-data/data/corpus.jsonl.gz
-python3 docsqa-data/scripts/verify.py            # the dataset's own checksum check must pass
+set -euo pipefail
+REPO="$HOME/markdownattractor"           # the source checkout; every later command is run from here or uses absolute paths
+RUN="$HOME/.cache/markdownattractor/bench"   # data and stores; a fresh run uses a fresh directory
+[ -z "${ANTHROPIC_API_KEY:-}" ] || { echo "unset ANTHROPIC_API_KEY: every model call goes through Claude Code's login"; exit 1; }
+cd "$REPO" && git rev-parse HEAD                 # must equal the SHA in the table's FROZEN.md (exploratory rows: 41fdbb1)
+cargo build --release -p mda-cli && MDA="$REPO/target/release/mda" && "$MDA" --version   # must equal FROZEN.md's version (exploratory: mda 0.1.1)
+claude --version                                  # record it; the answering and grading model ids are read from each run's result JSON, not from the alias
+export MDA_MODEL_DIR="$HOME/.cache/markdownattractor/models"
 ```
 
-Four repositories, sparse and blob-filtered, at the exact commits the dataset pins (`docsqa-data/sources.json`):
+The embedding model (`bge-small-en-v1.5-q`, 33 MB) downloads on the first embedding pass; after it, hash the files and compare with `FROZEN.md`:
 
 ```bash
-clone() { rm -rf "$1"; mkdir -p "$1"; cd "$1"; git init -q; git remote add origin "$2"
-  git sparse-checkout init --cone; git sparse-checkout set "$4"
-  git fetch -q --depth 1 --filter=blob:none origin "$3"; git checkout -q FETCH_HEAD; echo "$3" > .mda-pinned; cd ..; }
+find "$MDA_MODEL_DIR" -type f -exec shasum -a 256 {} \; | sort > /tmp/model.sha; cat /tmp/model.sha
+```
+
+Prerequisites: macOS or Linux, ≈ 3 GB free (clones ≈ 300 MB, stores ≈ 330 MB; qmd's arm adds ≈ 2 GB of models), `git`, `python3`, `jq`, `curl`, the Rust toolchain (`rust-toolchain.toml` pins 1.98.1), Claude Code installed and logged in. The one model call that does not go through Claude Code is the Astra half of the grading panel, which goes through the Codex CLI (plan §2.4).
+
+## 2. Data, pinned and asserted
+
+```bash
+mkdir -p "$RUN" && cd "$RUN"
+[ ! -e docsqa-data ] || { echo "docsqa-data exists: use a fresh RUN directory, do not delete evidence"; exit 1; }
+git clone -q https://github.com/PowderXu/docsqa-data.git docsqa-data
+git -C docsqa-data checkout -q 19af578bead6c8317d29598c409e982886951cbe
+[ "$(git -C docsqa-data rev-parse HEAD)" = 19af578bead6c8317d29598c409e982886951cbe ] || exit 1
+[ "$(shasum -a 256 docsqa-data/data/manifest.json | cut -c1-64)" = c6193cc88cdf88adc2c8561441b03280415bf871e0b22f7d006a5968c714a361 ] || exit 1
+gunzip -k docsqa-data/data/corpus.jsonl.gz
+[ "$(shasum -a 256 docsqa-data/data/corpus.jsonl | cut -c1-64)" = d7ade1a007c04fcec5627b1583d31f360ef5f672da466599d5b156c3ea9ff1b4 ] || exit 1
+python3 docsqa-data/scripts/verify.py            # the dataset's own check must pass
+
+clone() { # dir url sha sparse-path — refuses an existing directory, asserts the checked-out SHA
+  [ ! -e "$1" ] || { echo "$1 exists"; exit 1; }
+  mkdir -p "$1" && ( cd "$1" && git init -q && git remote add origin "$2" && git sparse-checkout init --cone \
+    && git sparse-checkout set "$4" && git fetch -q --depth 1 --filter=blob:none origin "$3" && git checkout -q FETCH_HEAD \
+    && [ "$(git rev-parse HEAD)" = "$3" ] && echo "$3" > .mda-pinned )
+}
 clone github-docs https://github.com/github/docs.git c34e3dccad00f61133c799d20e7d1208a0e6cc92 content
 clone prisma      https://github.com/prisma/web.git   c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c apps/docs/content/docs
 clone tailwindcss https://github.com/tailwindlabs/tailwindcss.com.git bd868a314bd05ca78acd047e3da289274dd6ccd7 src/docs
 clone supabase    https://github.com/supabase/supabase.git 6ea3567948178e81369cd485bc06c5aa40009db3 apps/docs/content
 ```
 
-Expected file counts (`find <dir>/<path> -name '*.md' -o -name '*.mdx' | wc -l`): github-docs 3,740 · prisma 685 · tailwindcss 197 · supabase 829. The dataset calls the Tailwind project `tailwind-css`; the directory name does not matter because everything keys on `repository_source_path`.
+Expected markdown/MDX file counts inside the sparse path: github-docs 3,740 · prisma 685 · tailwindcss 197 · supabase 829. The sparse cone also checks out the repository's top-level files (README, CONTRIBUTING and the like), which is why the indexed document counts in §3 are slightly higher; the indexed-file list is `mda --json recent 100000 --root <dir>` and its hash belongs in your report. The dataset calls the Tailwind project `tailwind-css`; the directory name does not matter, everything keys on `repository_source_path`.
 
-## 3. Index (raw), then coverage and the ingestion gate
+## 3. Raw index, coverage, the ingestion gate (regeneration, exact)
 
 ```bash
-export MDA_MODEL_DIR=$HOME/.cache/markdownattractor/models
-for d in tailwindcss supabase prisma github-docs; do mda index --no-summarize --root "$B/$d"; done
-# tailwind-css ↔ tailwindcss, others share their name
-mda eval --dataset docsqa --data "$B/docsqa-data" --project prisma --root "$B/prisma" --split dev --out /tmp/docsqa/prisma
+cd "$REPO"
+for d in tailwindcss supabase prisma github-docs; do "$MDA" index --no-summarize --root "$RUN/$d"; done
+for p in tailwind-css:tailwindcss prisma:prisma supabase:supabase github-docs:github-docs; do
+  "$MDA" eval --dataset docsqa --data "$RUN/docsqa-data" --project "${p%%:*}" --root "$RUN/${p##*:}" --split dev --out "$RUN/out/${p%%:*}"
+  diff <(jq -S . "$RUN/out/${p%%:*}/split.json") <(jq -S . "$REPO/evals/results/docsqa/${p%%:*}/split.json") && echo "split identical: ${p%%:*}"
+done
 ```
 
-Expected (exact) per project, from `coverage.json`:
+Expected, exact, from `coverage.json`:
 
 | Project | docs / sections | labels indexed | anchors found | eligible / excluded (image evidence) | dev / test / holdout |
 |---|---|---|---|---|---|
@@ -66,26 +89,43 @@ Expected (exact) per project, from `coverage.json`:
 | supabase | 836 / 6,548 | 63 / 63 | 47 / 48 | 40 / 12 | 15 / 28 / 9 |
 | tailwind-css | 198 / 1,518 | 99 / 99 | 96 / 96 | 84 / 9 | 27 / 51 / 15 |
 
-Expected (exact) raw-lexical dev-split row: success@5 github-docs 0.306 · prisma 0.216 · supabase 0.333 · tailwind-css 0.600 (`docs/benchmarks.md`, exploratory). `split.json` must be byte-identical to `evals/results/docsqa/<project>/split.json` (same seed 20260922, same ids). Never pass `--open-holdout`.
+Expected raw-lexical dev row with `mda` 0.1.1 (exploratory): success@5 github-docs 0.306 · prisma 0.216 · supabase 0.333 · tailwind-css 0.600. Compare `runs[0].metrics` in `results.json` with `evals/results/docsqa/<project>/results.json` to three decimals; `mean_ms` is not compared. Never pass `--open-holdout`.
 
 ## 4. Cards
 
-Two ways. **Committed cards (exact):** once `evals/results/docsqa/cards-<version>-<project>.json` exist (milestone M1 of the execution plan), attach them: `mda eval … --cards evals/results/docsqa/cards-<version>-<project>.json`, which also embeds them; the carded and hybrid rows are then exact. **Regenerate (close):** on each checkout, `mda backend claude-cli --i-accept-the-policy --root "$B/<dir>"` (your own Claude Code login; this is the acknowledged personal-use path of ADR-0002), then `mda index --root "$B/<dir>"` in rounds (`--limit 500`) until `mda status` shows `pending 0`, then `mda rebuild --embeddings`. Reference run on an Apple M3, Haiku 4.5, 15–16 workers: tailwind 19 min, supabase 89 min, prisma 90 min, github-docs 3 h 59 min, 36,899 cards, 0 failures; list-price equivalent ≈ $176 (informational; through the login it cost nothing). A carded row is meaningful only at 100% coverage: check `mda status` before scoring.
-
-## 5. Answer quality on the golden corpus (statistical)
+**4a. Committed cards (regeneration, exact).** From milestone M1 the files `evals/results/docsqa/cards-<mda-version>-<project>.json` exist with their hashes in `FROZEN.md`. Assert the hash, attach, score:
 
 ```bash
-cp -R evals/golden/docs /tmp/golden && mda index /tmp/golden        # cards from evals/golden/cards.json are attached by `mda eval`; for the A/B, card the copy or attach as above
-MDA_BIN=$PWD/target/release/mda scripts/eval/ab.sh /tmp/golden evals/ab/questions.jsonl /tmp/ab-out 1 sonnet
-scripts/eval/grade.sh evals/ab/questions.jsonl /tmp/ab-out          # parity.md; a missing or failed run shows as ungraded/incomplete, never as zero
+"$MDA" eval --dataset docsqa --data "$RUN/docsqa-data" --project prisma --root "$RUN/prisma" --split dev \
+  --cards "$REPO/evals/results/docsqa/cards-<version>-prisma.json" --out "$RUN/out/prisma-carded"
 ```
 
-Reference (2026-09-22, lean payload): parity 11 of 12; index mean 5.50, baseline 5.42; median source tokens index 762.5, baseline 245.5 (all 12 questions; `evals/ab/results/2026-09-22-golden-lean.md`). Your run is a different sample of Sonnet answers: compare within the tolerances of §0.
+`--cards` attaches every card whose section hash is in the store and embeds them with the hashed model files; `coverage`-style counts in the output must show 100% carded before a carded row means anything. The carded and hybrid rows are then exact.
 
-## 6. Competitor arms (from milestone M2 on)
+**4b. Regenerated cards (independent rerun).** On each checkout, `"$MDA" backend claude-cli --i-accept-the-policy --root "$RUN/<dir>"` (your own Claude Code login: the acknowledged personal-use path of ADR-0002), then `"$MDA" index --root "$RUN/<dir>" --limit 500` in rounds until `"$MDA" status --root …` shows `pending 0`, then `"$MDA" rebuild --embeddings --root …`. Reference run (Apple M3 24 GB, Haiku 4.5 through Claude Code, 15–16 workers): tailwindcss 19 min, supabase 89 min, prisma 90 min, github-docs 3 h 59 min; 36,899 cards, 0 failures; list-price equivalent ≈ $176 (informational). Score as in 4a without `--cards`; publish beside the committed-card rows.
 
-Pinned installs and drivers are specified in the execution plan §2.1; this section is filled in when they land, with the exact commands, the coverage each arm reached and the three activation probes to rerun. Until then, competitor numbers on the page do not exist and none should be quoted.
+## 5. Answer quality on the golden corpus
 
-## 7. Report
+**5a. Regeneration (exact).** The archived observations are `evals/ab/results/<date>-*.md` with their `runs.jsonl` and `grades.jsonl` under `evals/results/` (from M5; the 2026-09-22 runs predate the archive rule and are exploratory). Recompute the table from the archived `grades.jsonl` with `scripts/eval/grade.sh --table-only <questions> <dir>` (M5) and diff against the published file: it must be byte-identical.
 
-Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, versions (`mda --version`, `claude --version`, model directory listing), the checksums of §2, the tables of §3 and §5 with your numbers next to the expected ones, tolerance verdict per row, deviations. A reproduction that finds a difference outside tolerance is the most valuable outcome this file can produce: open an issue with the report.
+**5b. Independent rerun.** Card the golden copy the same way as 4b (there is no committed card set for a scratch copy; the `evals/golden/cards.json` set is attached by `mda eval --golden`, which is the retrieval eval, not the A/B), then:
+
+```bash
+cd "$REPO"; cp -R evals/golden/docs /tmp/golden && "$MDA" backend claude-cli --i-accept-the-policy --root /tmp/golden && "$MDA" index --root /tmp/golden
+MDA_BIN="$MDA" scripts/eval/ab.sh /tmp/golden evals/ab/questions.jsonl /tmp/ab-out 1 sonnet   # refuses a directory that already has runs.jsonl
+scripts/eval/grade.sh evals/ab/questions.jsonl /tmp/ab-out                                # a failed run is ungraded/incomplete, never zero
+```
+
+Read the resolved model ids from `/tmp/ab-out/*.jsonl` (`model` in the result event) and record them. Reference (2026-09-22, exploratory, lean payload, one run): parity 11 of 12; index mean 5.50, baseline 5.42; median source tokens index 762.5, baseline 245.5 over all 12 questions (`evals/ab/results/2026-09-22-golden-lean.md`). Publish yours beside it with the paired difference; a different sample of Sonnet answers is expected to differ.
+
+## 6. Latency
+
+Through each tool's MCP server with the common client (`scripts/eval/mcp-time.sh`, M2): one server per arm per project, the first query reported as cold (process start and model load included), the rest warm; hardware, OS and the release build in the report. Ratios between arms on the same machine are the comparable quantity.
+
+## 7. Published tables
+
+One subsection per published table lands here with the table (plan §7): its `FROZEN.md` path, the exact regeneration command and expected artifact hashes, the competitor arm commands with the coverage each reached and the three activation probes to rerun, and the independent-rerun protocol. Until a table's subsection exists here, it is not published and must not be quoted.
+
+## 8. Report
+
+Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, `mda --version` and SHA, `claude --version`, the model file hashes, the checksums of §2, every attempt (timestamp, step, outcome) including failed ones, the tables of §3–§5 with your numbers next to the expected ones marked *regeneration* (exact match: yes/no) or *rerun* (paired difference), and every deviation. A regeneration that does not match is the most valuable outcome this file can produce: open an issue with the report.

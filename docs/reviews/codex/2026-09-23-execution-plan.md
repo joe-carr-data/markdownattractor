@@ -7,7 +7,7 @@
 | Reviewer | Codex CLI 0.155.1 via the shared companion runtime, model `gpt-6-astra` (reports itself as GPT-6), thread `01a0ccb1-a678-7041-9dad-1f08485d767f`, read-only |
 | Pinned to | `e023d65` (branch `plan/benchmark-execution`) |
 | Triaged by | Claude (Fable 5.1), same day |
-| Outcome | 13 findings (10 High, 3 Medium): **13 accepted**, folded into plan v2 on the same branch. Second pass on v2 requested. |
+| Outcome | 13 findings (10 High, 3 Medium): **13 accepted**, folded into plan v2. Second pass on v2 + runbook: 5 resolved, 8 partly, 1 new High (N1) and 9 runbook findings, all folded into v3 (§6 below). Third pass requested for the verdict. |
 
 ## 1. Packet
 
@@ -56,6 +56,21 @@ Answers, condensed: (1) rules 0.1/0.2 need a freeze lifecycle and an auditable s
 - **A published table has a preflight that a machine checks**: frozen inputs, coverage per arm, activation traces, reconstruction. "We ran it carefully" is not evidence.
 - **Comparisons are specified to the same standard on both sides**: page rule, timing boundary, interface, evidence given.
 - **A headline claim is worded as the measurement**: "correctly with less effort at equal evidence", never "the others cannot".
+
+## 6. Second pass (v2 at `70b4f62`) and what v3 changed
+
+| # | Verdict on v2 | v3 answer |
+|---|---|---|
+| F2 | partly: excluded failures could bias savings; seed, interval and denominator unspecified | §2.5: whole frozen sample; a failed run scores 0 and fails grounding; seed 20260922; percentile interval; per-pair gates; completed-only view for information |
+| F4 | partly: pooling on development runs, "unlabelled" missing, reconciliation and second column undefined | §2.3: on the final test runs, unlabelled pairs only, mean ≥ 1 of two judgments, column recomputed over judged questions with original ∪ pooled labels |
+| F5 | partly: graph exhaustion and multi-file nodes undefined; qmd MCP request unspecified | §2.1: node → file order frozen (tool order, then path), response limit recorded as truncation; MCP requests captured verbatim in preflight |
+| F6 | partly: project isolation, no-rerank MCP config, graphify skill/hook install | §2.1: one qmd home per project; no-rerank through MCP if exposed else CLI, said on the table; `graphify install` archived, build from a session recorded |
+| F7 | partly: CLI-only arms under an MCP timing rule; T2 cold starts vs rule 0.9 | §2.7: CLI-only arms have no latency column; the T2 deviation from rule 0.9 is named as a proposed amendment for the owner (M5) |
+| F8 | partly: multi-change candidates, unclear base, "simpler" undefined | §3: eight single changes, greedy forward selection from the current winner, "simpler" = fewer non-default settings |
+| F12 | partly: T5 criterion named a method, not a threshold | §4 T5: F1 ≥ 0.8 correctness, paired bootstrap, claim only when the correctness lower bound ≥ −0.05 and the effort upper bound < 0 |
+| F13 | partly: three-probe reconstruction; graph not archived; model verification | §2.0: whole-dev-split reconstruction, `graph.json` archived and hashed, model files hashed |
+| N1 | new High: publication conditioned on a stochastic rerun matching an interval | §2.0b: regeneration (byte-identical, the gate) vs independent rerun (published beside, never gated); runbook §0 rewritten on that split |
+| Runbook | working directory lost; checksums advisory; `rm -rf`; golden card provenance; count mismatch unexplained; tolerances undefined; prohibitions uncheckable | rewritten: absolute `$REPO`/`$RUN`/`$MDA`, asserted checksums and SHAs, refuse-existing clones, `ANTHROPIC_API_KEY` asserted unset, golden cards regenerated through the acknowledged backend, top-level files explain the counts, per-step regeneration/rerun kind, attempt ledger in the report, the Astra route named |
 
 ## 5. Follow-ups
 

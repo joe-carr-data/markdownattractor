@@ -1,6 +1,6 @@
 # Benchmark execution plan — how we run it, and how we beat them credibly
 
-Status: **v2 after the Codex pre-mortem (13 findings, all accepted)** · 2026-09-23 · companion to `2026-09-benchmarks.md` v3.2 (the rules, axes, datasets and owner decisions there bind this file; where the two disagree, v3.2 wins and this file gets fixed) · review: `docs/reviews/codex/2026-09-23-execution-plan.md` · owner intent: "tailored at beating competitors" and "reproducible for anyone in a Claude session" (`evals/benchmark_it_with_claude.md`)
+Status: **v3 after two Codex passes (13 findings accepted; second pass: 5 resolved, 8 partly, 1 new; all folded in here)** · 2026-09-23 · companion to `2026-09-benchmarks.md` v3.2 (the rules, axes, datasets and owner decisions there bind this file; where the two disagree, v3.2 wins and this file gets fixed) · review: `docs/reviews/codex/2026-09-23-execution-plan.md` · owner intent: "tailored at beating competitors" and "reproducible for anyone in a Claude session" (`evals/benchmark_it_with_claude.md`)
 
 Goal: turn the strategy plan into ordered milestones, each a table we can run with one command, each preceded by a machine-checked preflight, each with a competitor profile that says where we expect to win, where we expect to lose, what would make us lose, and what we do then. "Beating" means: on the questions a Claude Code user asks of a folder of markdown, markdownattractor answers at least as well as qmd and graphify while reading fewer source tokens, is fresh within seconds without a rebuild, and answers time questions correctly with less effort at equal evidence; and the page shows every case where that is not true.
 
@@ -61,18 +61,22 @@ Three kinds of numbers, labelled on the page: **exploratory** (before any freeze
 
 `FROZEN.md` per table (written by `scripts/eval/freeze.sh`, validated by every run, so a run against changed inputs refuses to start): dataset commit and manifest hash; the four repo SHAs; `mda` version and git SHA; embedding model name and revision; cards file hashes; every arm's version, resolved model ids and effective configuration; prompts and rubric hashes; the split file hash and the frozen question sample; the analysis script hash; hardware and OS.
 
-`scripts/eval/preflight.sh <table> <project>` is machine-checked and must pass before a table runs: `FROZEN.md` matches the inputs; corpus coverage per arm (pages indexed by the arm / pages in the dataset corpus, published: an arm that skips `.mdx` shows it here); a clean reconstruction check for mda (rebuild the index from the committed cards and re-embed → identical T1 metrics on three probe questions); **three activation probes per arm** with the traces proving the arm's tool was used (mda MCP, qmd MCP, graphify MCP and its hook, grep); timing boundaries recorded (§2.7).
+`scripts/eval/preflight.sh <table> <project>` is machine-checked and must pass before a table runs: `FROZEN.md` matches the inputs; corpus coverage per arm (pages indexed by the arm / pages in the dataset corpus, published: an arm that skips `.mdx` shows it here); a clean reconstruction check for mda (rebuild the index from the committed cards, re-embed with the hashed model files → identical T1 metrics on the whole dev split, not a sample); for graphify, the built `graph.json` is archived under `evals/results/` with its hash and reloaded for scoring; every artifact an arm scores from (cards, embeddings, qmd index, graph) has its hash in `FROZEN.md`; **three activation probes per arm** with the traces proving the arm's tool was used (mda MCP, qmd MCP, graphify MCP and its hook, grep); timing boundaries recorded (§2.7).
+
+### 2.0b Reproduction: regeneration is the gate, reruns are published, never a gate (Codex N1)
+
+Two different checks, never confused. **Regeneration**: every table is recomputed from its archived raw observations (logs, grades, ranked lists) by the analysis command on a clean checkout, and must be byte-identical; this is the publication gate. **Independent rerun**: for stochastic tables (T2, T4, T5) a preregistered rerun (same frozen inputs, same repeat count, fresh samples) is run once after publication and its results are published beside the original with the paired difference, whatever it shows; agreement is reported, it is not a pass/fail and never suppresses or replaces the original. The runbook (`evals/benchmark_it_with_claude.md`) states which check each step is.
 
 ### 2.1 Arms and their fairness evidence
 
 | Arm | Install (pinned) | Index / build | Query interface for scoring |
 |---|---|---|---|
 | mda | this repo at the frozen SHA, `cargo build --release`, model `bge-small-en-v1.5-q` | `mda index --no-summarize`; cards from the committed files; `mda rebuild --embeddings` | `mda mcp` (`mda_search`, `k` up to the page rule) |
-| qmd full | `npm i -g @tobilu/qmd@2.8.3` | one collection per project (`qmd collection add <checkout> --name <p>`), `qmd update`, `qmd embed`; models and revisions recorded | `qmd mcp` `query` (defaults) |
-| qmd no-rerank | same | same index | `query` with reranking off (configuration diff published) |
-| qmd BM25 | same | same index | `qmd search` |
-| BM25-over-files | `scripts/eval/bm25-files.sh` (FTS5 over whole pages, unicode61) | one table per project | the script |
-| graphify | `uv tool install graphifyy==0.9.66` | `/graphify <checkout>` at the pinned version, the docs model recorded, build time and tokens recorded (T3) | MCP `query_graph` (node → file mapping frozen) |
+| qmd full | `npm i -g @tobilu/qmd@2.8.3` | **one qmd home per project** (`QMD_HOME`/config dir, so a query cannot see another project's collection), `qmd collection add <checkout> --name <p>`, `qmd update`, `qmd embed`; model files hashed, revisions recorded | `qmd mcp` `query`; the request (including its result-count parameter and any collection filter) captured verbatim in preflight |
+| qmd no-rerank | same | same index | the MCP `query` with reranking disabled if the tool exposes it (request captured), else `qmd query --no-rerank` on the CLI and the table says which; the configuration diff against the full row is published and must contain nothing but reranking |
+| qmd BM25 | same | same index | `qmd search` (CLI; quality only, no latency column) |
+| BM25-over-files | `scripts/eval/bm25-files.sh` (FTS5 over whole pages, unicode61) | one table per project | the script (quality only, no latency column) |
+| graphify | `uv tool install graphifyy==0.9.66`, then `graphify install` (writes its skill and hook; the written files are archived) | `/graphify <checkout>` from a Claude Code session with the docs model recorded, `graph.json` archived and hashed, build time and tokens recorded (T3) | MCP `query_graph` (request captured; node → file mapping frozen: each node's source file(s) in the order the tool lists them, then by path; all nodes of the response are taken, and the response size limit, if any, is recorded as the truncation) |
 | grep | none | none | Read/Grep/Glob |
 
 ### 2.2 Scoring external arms
@@ -81,7 +85,7 @@ Three kinds of numbers, labelled on the page: **exploratory** (before any freeze
 
 ### 2.3 Labels: original and pooled (axis A, second column)
 
-Original sparse labels first. Then, per project, pool the top-5 pages of every arm, sample 100 query-page pairs (seeded, stratified over arms), and have the Fable + Astra panel judge relevance blind to the arm and to each other (rubric: does this page answer the question, 0/1/2; the rubric text frozen). Both columns are published; pooled judgments are labelled model-assisted.
+Original sparse labels first. Then, **on the final test-split runs** (after the freeze, M4), per project, pool the top-5 pages of every arm, keep the **unlabelled** query-page pairs, sample 100 (seeded, stratified over arms) and have the Fable + Astra panel judge each blind to the arm and to each other on a frozen 0/1/2 rubric ("does this page answer the question"). A pair is relevant when the mean of the two judgments is ≥ 1; every individual judgment and the agreement are published. The second column recomputes success@5, MRR@5 and nDCG@10 with labels = original ∪ pooled-relevant, over the judged questions, and is labelled "pooled, model-assisted, 100 pairs/project". The development pooled judgments of M3 are diagnostic only.
 
 ### 2.4 Answer quality, grading, panel (T2)
 
@@ -89,7 +93,7 @@ Three runs per arm per question; Sonnet answers through `claude -p`; Sonnet grad
 
 ### 2.5 Analysis (rule 0.4, implemented in `mda eval --analysis <grades.jsonl>`, in `mda_core::eval`, unit-tested)
 
-Question-level score per arm = median of its three runs (a question with a missing or failed run in either arm of a pair is excluded from that pair and counted); paired difference per question; 10,000 paired bootstrap resamples over questions; mean difference with the 95% interval; the three gates (interval lower bound ≥ −0.25; index mean ≥ 4.0; grounding pass ≥ 95%) **per comparator pair** (mda vs grep, mda vs qmd, mda vs graphify); savings claimed only for the pairs and projects that pass; per-question rows published.
+The sample is the frozen question set, whole. Question-level score per arm = median of its three runs; **a failed or missing run scores 0 for that run** (rule 0.3: a failure is a result) and fails grounding, so it lowers the arm's median and its grounding rate instead of vanishing; the number of such runs is published per arm. Paired difference per question over the whole sample; 10,000 paired bootstrap resamples over questions with seed 20260922; percentile 95% interval (2.5th and 97.5th); the three gates (interval lower bound ≥ −0.25; mda mean over the whole sample ≥ 4.0; grounding pass rate over all graded-or-failed answers ≥ 95%) **per comparator pair** (mda vs grep, mda vs qmd full, mda vs graphify); savings claimed only for the pairs and projects that pass; a secondary "completed runs only" view is published for information and never gates. Per-question rows published.
 
 ### 2.6 Runner (rule 0.3, resumable)
 
@@ -97,21 +101,21 @@ Question-level score per arm = median of its three runs (a question with a missi
 
 ### 2.7 Timing boundaries
 
-Latency is measured through each tool's MCP server (one server per arm per project, started cold, the first query reported as the cold number including process start and model load, the rest as warm), with the same client (`scripts/eval/mcp-time.sh` over the rmcp client). In T2, every `claude -p` invocation starts every arm's MCP server cold, for every arm alike; the page says so and no warm-server advantage is claimed for anyone. Hardware, OS, cache state and the build profile (release) are in `FROZEN.md`.
+Latency is measured through each tool's MCP server (one server per arm per project, started cold, the first query reported as the cold number including process start and model load, the rest as warm), with the same client (`scripts/eval/mcp-time.sh` over the rmcp client); arms without an MCP server (qmd BM25, BM25-over-files, grep) have no latency column. In T2, every `claude -p` invocation starts every arm's MCP server cold, for every arm alike; the page says so and no warm-server advantage is claimed for anyone. **This deviates from strategy rule 0.9's "one server per arm per run, warm after the first question"**, because `claude -p` owns the server lifecycle; the deviation is recorded here as a proposed amendment to v3.2 rule 0.9 (owner to accept at M5), and until accepted the T2 table carries the note. Hardware, OS, cache state and the build profile (release) are in `FROZEN.md`.
 
 ## 3. The tuning loop (development numbers only, T1; T2 gets a pilot, not tuning)
 
-Objective: mean success@5 over the four projects' dev splits, equal weights, with the guardrail that no project drops by more than 0.02 from the pre-tuning configuration. Candidates, pre-declared and bounded (at most eight, in this order; a candidate is one change):
-1. Card embedding text: add `entities`; drop `summary`; order `questions_answered` first.
-2. `cards_fts` weights: `questions_answered` 3; `tldr` 2.
-3. RRF: per-list weights cards 1.0 / raw 0.7 / vector 1.0; RRF k 30.
-4. Fetch depth 60 before page deduplication.
-5. Query form: stop-words dropped for the AND form before the OR fallback.
-6. Vector-only ablation (diagnostic, never a candidate configuration).
-7. Larger local embedder (bge-base) **only through an ADR**, only if 6 shows the embedder is the gap.
-8. Latency-only changes (candidate depth, prepared statements) that must not change any metric.
+Objective: mean success@5 over the four projects' dev splits, equal weights, with the guardrail that no project drops by more than 0.02 from the pre-tuning configuration. Candidates are pre-declared, **one change each, at most eight, applied by greedy forward selection**: each candidate is evaluated on top of the current winner (the pre-tuning configuration at the start), kept if it improves the objective by ≥ 0.01 and passes the guardrail, otherwise discarded; the list, in order:
+1. Card embedding text: prepend `questions_answered` before `tldr`.
+2. Card embedding text: append `entities`.
+3. `cards_fts` weight `questions_answered` 2 → 3.
+4. RRF per-list weight for the raw list 1.0 → 0.7.
+5. RRF k 60 → 30.
+6. Fetch depth 30 → 60 before page deduplication.
+7. Query form: stop-words dropped for the AND form before the OR fallback.
+8. Larger local embedder (bge-base) **only through an ADR**, and only if a vector-only diagnostic (run outside the candidate list, never selected) shows the embedder is the gap.
 
-Selection: the best aggregate objective among candidates that pass the guardrail; ties go to the simpler configuration; the pre-tuning configuration wins a tie against everything. Regressions are logged, not retried with variations. Every trial goes to `evals/results/docsqa/TUNING.md`: hypothesis, config diff, code SHA, cards and embeddings hashes, per-project metrics and denominators, latency, build cost, failures, elapsed time, decision. Stop: the list is exhausted, or the last two candidates both fail to improve the objective by ≥ 0.01. The winner becomes the product default in `config.toml`; test and holdout are never looked at; a test loss is a result, not a new round.
+Selection is the greedy rule above; "simpler" (for a tie within 0.01) means fewer settings different from the pre-tuning default, and the pre-tuning configuration wins a tie against everything. Regressions are logged, not retried with variations. Every trial goes to `evals/results/docsqa/TUNING.md`: hypothesis, config diff, code SHA, cards and embeddings hashes, per-project metrics and denominators, latency, build cost, failures, elapsed time, decision. Stop: the list is exhausted, or the last two candidates both fail to improve the objective by ≥ 0.01. The winner becomes the product default in `config.toml`; test and holdout are never looked at; a test loss is a result, not a new round.
 
 ## 4. Tables
 
@@ -119,7 +123,7 @@ Selection: the best aggregate objective among candidates that pass the guardrail
 - **T2 axis B on DocsQA**: arms grep, mda, qmd full, graphify; 25 frozen test questions per project (stratified from the test split, seed in `FROZEN.md`); reference answers from the dataset's `normalized_answer` (an export from the adapter, `--export-questions`); §2.4–2.6. Headline claims restricted to the projects and comparator pairs that pass §2.5.
 - **T3 axis E**: per arm and project: first build wall-clock, tokens, list-price equivalent, per 1K sections; incremental cost after one edited section; store size per 1K sections (mda today: 192 MB for GitHub Docs; FTS content duplication and f32 vectors are the levers).
 - **T4 axis C on Prisma**: one edit trigger (a dated sentence appended to one section), one update trigger per edit for the arms that need one (`qmd update && qmd embed`, `graphify update`), 1 s polling, 300 s timeout, twenty edits; endpoints: save → raw-searchable (mda, qmd BM25), save → card (mda only; n/a elsewhere), **save → correct grounded answer (every arm, the comparison endpoint)**; timeouts, fallback reads and raw-search latency published. Acceptance: complete; mda p50 save → card under 15 s (G1) reported against the goal.
-- **T5 axis D**: simulated historical replay (labelled as such): a fixed commit range per repository; per step, checkout, mtimes from the author date, `MDA_NOW=<author date>` (test-only override), `mda index`; stored timestamps validated against `git log`, table published, a failed validation voids the replay; 40 questions with git-computed ground truth; every arm gets `.git` and may read history in Bash; the git baseline is an arm. Criterion: paired bootstrap on per-question correctness, mda vs git baseline and mda vs each other arm; the claim is correctness and effort (tool calls, source tokens) at equal evidence.
+- **T5 axis D**: simulated historical replay (labelled as such): a fixed commit range per repository; per step, checkout, mtimes from the author date, `MDA_NOW=<author date>` (test-only override), `mda index`; stored timestamps validated against `git log`, table published, a failed validation voids the replay; 40 questions with git-computed ground truth; every arm gets `.git` and may read history in Bash; the git baseline is an arm. Score per question: the answer's set of pages (or sections) against the git ground truth, F1 ≥ 0.8 → 1, else 0; effort = tool calls and source tokens. Criterion, paired bootstrap over the 40 questions (seed 20260922), mda vs the git baseline and mda vs each other arm: the claim "correct with less effort at equal evidence" is made for a pair only when the interval lower bound of the correctness difference is ≥ −0.05 and the effort difference's upper bound is < 0; otherwise the row is published without the claim.
 - **T6 own corpora**: golden set, this repo's `docs/`, the owner's private repo (supporting evidence only), rerun with the T2 method.
 
 ## 5. Milestones (ordered; publication depends on completion and verification, not on a session number)
@@ -156,7 +160,7 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 ## 7. Deliverables
 
 - `docs/benchmarks.md` by axis: T1–T6, "where we lose" (corpus sizes, projects, comparators), "what the model already knew" (rule 0.6), links to `FROZEN.md`, `TUNING.md`, raw logs and traces.
-- `evals/benchmark_it_with_claude.md`: the runbook any Claude session follows to reproduce every published table; **a table is published only after the runbook reproduces it** on a clean checkout (exact for retrieval given the committed cards, within stated tolerances for answer quality); `/benchmark` (`.claude/skills/benchmark`) invokes it.
+- `evals/benchmark_it_with_claude.md`: the runbook any Claude session follows to reproduce every published table; **a table is published only after the runbook regenerates it byte-identically from the archived observations on a clean checkout** (§2.0b); independent reruns of stochastic tables are published beside the original, never gated; the runbook grows a table-specific section (commands, expected artifacts, hashes) with every published table; `/benchmark` (`.claude/skills/benchmark`) invokes it.
 - README: one numbers row per headline claim, each limited to the projects and comparators whose gate passed, worded as measured: fewer source tokens at parity (T2), fresh within seconds (T4), time questions answered correctly with less effort at equal evidence (T5).
 
 ## 8. Tasks
@@ -173,7 +177,7 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 
 ## 9. Exit criteria
 
-- [ ] T1–T6 published on the test split with the arms of §2.1, every table preceded in git history by its `FROZEN.md` and a passing preflight, and reproduced by the runbook on a clean checkout.
+- [ ] T1–T6 published on the test split with the arms of §2.1, every table preceded in git history by its `FROZEN.md` and a passing preflight, regenerated byte-identically by the runbook on a clean checkout, and (T2, T4, T5) followed by one published independent rerun.
 - [ ] For every profile in §1, the must-not-lose line is met or the loss is on the page with its interval and reason.
 - [ ] `TUNING.md` public; the product default equals the published configuration.
 - [ ] Both Codex passes (M4, M5) triaged in `docs/reviews/codex/`.
