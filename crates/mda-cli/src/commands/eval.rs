@@ -1,4 +1,7 @@
-//! `mda eval --golden <dir>` — retrieval metrics on a golden set, offline.
+//! `mda eval --golden <dir>` — retrieval metrics on a golden set, offline; and
+//! `mda eval --dataset docsqa --data <dir> --project <p> --root <checkout>` — the DocsQA-Repo
+//! adapter of the benchmark plan (page-level metrics, coverage report, seeded split), over a
+//! root that was indexed beforehand (`mda index --no-summarize <checkout>`).
 //!
 //! The golden directory holds `docs/` (a markdown corpus) and `queries.jsonl`, one query
 //! per line: `{"q": "...", "expect": [{"path": "a.md", "heading": "Rollback"}], "temporal":
@@ -28,16 +31,50 @@ use crate::output::{self, Style};
 /// Arguments for `mda eval`.
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    /// Directory with `docs/`, `queries.jsonl` and optionally `cards.json`.
-    #[arg(long, default_value = "evals/golden")]
-    pub golden: PathBuf,
-    /// Cutoff for recall@k.
+    /// Directory with `docs/`, `queries.jsonl` and optionally `cards.json` (default
+    /// `evals/golden` when no `--dataset` is given).
+    #[arg(long, conflicts_with = "dataset")]
+    pub golden: Option<PathBuf>,
+    /// Cutoff for recall@k (golden set).
     #[arg(short, long, default_value_t = 5)]
     pub k: usize,
     /// Produce `cards.json` by summarizing the corpus with the configured backend (spends
-    /// money on the `api` backend), then evaluate.
+    /// money on the `api` backend), then evaluate (golden set).
     #[arg(long)]
     pub record: bool,
+    /// A public dataset adapter: `docsqa` (DocsQA-Repo, `PowderXu/docsqa-data`).
+    #[arg(long, value_parser = ["docsqa"], requires = "data", requires = "project", requires = "root")]
+    pub dataset: Option<String>,
+    /// The dataset checkout (for `docsqa`: the directory holding `data/questions.jsonl`,
+    /// `data/answers.jsonl` and the decompressed `data/corpus.jsonl`).
+    #[arg(long)]
+    pub data: Option<PathBuf>,
+    /// The project inside the dataset (`github-docs`, `prisma`, `supabase`, `tailwind-css`).
+    #[arg(long)]
+    pub project: Option<String>,
+    /// The indexed checkout of that project's repository at the pinned commit.
+    #[arg(long)]
+    pub root: Option<PathBuf>,
+    /// Which split to score: `dev`, `test`, `holdout`, or `all` (plan rule 0.2). The sealed
+    /// holdout is scored only with `--open-holdout`.
+    #[arg(long, default_value = "dev")]
+    pub split: String,
+    /// Score the sealed holdout too (plan rule 0.2: once, at 1.0).
+    #[arg(long)]
+    pub open_holdout: bool,
+    /// Seed of the dev/test/holdout split.
+    #[arg(long, default_value_t = 20_260_922)]
+    pub seed: u64,
+    /// Recorded cards (`{"<section_hash>": <SectionSummary>}`) to attach before scoring, so
+    /// the hybrid runs need no model.
+    #[arg(long)]
+    pub cards: Option<PathBuf>,
+    /// Sections fetched per query before page deduplication.
+    #[arg(long, default_value_t = 30)]
+    pub fetch: usize,
+    /// Write `coverage.json`, `split.json` and `results.json` here.
+    #[arg(long)]
+    pub out: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -87,10 +124,13 @@ pub struct Miss {
 
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
-    let golden = args
-        .golden
+    if args.dataset.as_deref() == Some("docsqa") {
+        return run_docsqa(args, json);
+    }
+    let golden_arg = args.golden.clone().unwrap_or_else(|| PathBuf::from("evals/golden"));
+    let golden = golden_arg
         .canonicalize()
-        .with_context(|| format!("golden set {}", args.golden.display()))?;
+        .with_context(|| format!("golden set {}", golden_arg.display()))?;
     let queries = load_queries(&golden.join("queries.jsonl"))?;
     let cards: Option<HashMap<String, SectionSummary>> =
         match std::fs::read_to_string(golden.join("cards.json")) {
@@ -179,6 +219,217 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         );
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// The DocsQA-Repo adapter: coverage first, then one row per configuration over the split.
+#[allow(clippy::too_many_lines)]
+fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    use mda_core::eval::Split;
+    use mda_core::eval::docsqa::{self, RunOptions};
+    let (Some(data), Some(project), Some(root)) = (&args.data, &args.project, &args.root) else {
+        anyhow::bail!("--dataset docsqa needs --data, --project and --root");
+    };
+    let split = match args.split.as_str() {
+        "all" => None,
+        s => Some(Split::parse(s).ok_or_else(|| {
+            anyhow::anyhow!("--split must be dev, test, holdout or all, not {s:?}")
+        })?),
+    };
+    if split == Some(Split::Holdout) && !args.open_holdout {
+        anyhow::bail!(
+            "the holdout is sealed until 1.0 (plan rule 0.2); pass --open-holdout to score it"
+        );
+    }
+    if args.open_holdout {
+        tracing::warn!("scoring the sealed holdout: plan rule 0.2 opens it once, at 1.0");
+    }
+    let root = root.canonicalize().with_context(|| format!("root {}", root.display()))?;
+    let out = args.out.as_deref().map(|o| report_dir(o, &root)).transpose()?;
+    anyhow::ensure!(
+        root.join(mda_core::config::STATE_DIR).join("index.sqlite").is_file(),
+        "{} is not indexed yet: run `mda index --no-summarize {}` first",
+        root.display(),
+        root.display()
+    );
+    let dataset = docsqa::Dataset::load(data, project)
+        .with_context(|| format!("loading {project} from {}", data.display()))?;
+    let mut engine = Engine::open(&root)?;
+    let mut attached = 0;
+    if let Some(cards) = &args.cards {
+        let text = std::fs::read_to_string(cards).with_context(|| cards.display().to_string())?;
+        let cards: HashMap<String, SectionSummary> =
+            serde_json::from_str(&text).context("cards")?;
+        attached = attach_cards(engine.store_mut(), &cards)?;
+    }
+    let counts = engine.store().counts()?;
+    let coverage = docsqa::coverage(&dataset, engine.store())?;
+    let splits = dataset.split(args.seed);
+    let split_counts: HashMap<String, usize> =
+        splits.values().fold(HashMap::new(), |mut acc, s| {
+            *acc.entry(format!("{s:?}").to_lowercase()).or_default() += 1;
+            acc
+        });
+
+    let embedder = super::embedder_for(engine.config()).filter(|e| e.ready());
+    let mut vectors = 0;
+    if let Some(e) = &embedder
+        && counts.summarized > 0
+    {
+        vectors = engine.embed_pending(&**e, usize::MAX)?.embedded;
+    }
+    let mut runs = Vec::new();
+    let opts = |name: &str, raw_only: bool| RunOptions {
+        name: name.to_owned(),
+        raw_only,
+        fetch: args.fetch,
+        include_holdout: args.open_holdout,
+    };
+    let raw = opts("lexical (raw only)", true);
+    runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &raw)?);
+    if engine.store().counts()?.summarized > 0 {
+        let lex = opts("lexical (cards + raw)", false);
+        runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &lex)?);
+        if embedder.is_some() {
+            let hyb = opts("hybrid (cards + raw + vectors)", false);
+            runs.push(docsqa::evaluate(
+                engine.store(),
+                embedder.as_deref(),
+                &dataset,
+                &splits,
+                split,
+                &hyb,
+            )?);
+        }
+    }
+    tracing::info!(attached, vectors, "docsqa cards attached");
+
+    let report = serde_json::json!({
+        "dataset": "docsqa",
+        "data": portable(data),
+        "project": project,
+        "root": portable(&root),
+        "mda_version": mda_core::VERSION,
+        "store": counts,
+        "cards_attached": attached,
+        "embedding_model": embedder.as_ref().map(|e| e.model().to_owned()),
+        "coverage": coverage,
+        "seed": args.seed,
+        "split": split,
+        "split_counts": split_counts,
+        "fetch": args.fetch,
+        "runs": runs,
+    });
+    if let Some(out) = &out {
+        write_report(&out.join("coverage.json"), &serde_json::to_string_pretty(&coverage)?)?;
+        let mut split_rows: Vec<(&String, &Split)> = splits.iter().collect();
+        split_rows.sort_by(|a, b| a.0.cmp(b.0));
+        write_report(
+            &out.join("split.json"),
+            &serde_json::to_string_pretty(&serde_json::json!({
+                "seed": args.seed, "project": project,
+                "questions": split_rows.iter().map(|(id, s)| serde_json::json!({"id": id, "split": s})).collect::<Vec<_>>(),
+            }))?,
+        )?;
+        write_report(&out.join("results.json"), &serde_json::to_string_pretty(&report)?)?;
+    }
+    if json {
+        output::json(&report);
+        return Ok(ExitCode::SUCCESS);
+    }
+    let st = Style::auto();
+    println!(
+        "{} docsqa/{} · {} docs · {} sections ({} carded) · split {} (seed {}) · dev/test/holdout {}/{}/{}",
+        st.bold("eval"),
+        project,
+        counts.docs,
+        counts.sections,
+        counts.summarized,
+        args.split,
+        args.seed,
+        split_counts.get("dev").copied().unwrap_or(0),
+        split_counts.get("test").copied().unwrap_or(0),
+        split_counts.get("holdout").copied().unwrap_or(0),
+    );
+    println!(
+        "evidence: {} of {} anchors found in the indexed text; {} eligible question(s) with a missing anchor{}",
+        coverage.anchors_found,
+        coverage.anchors,
+        coverage.questions_with_missing_anchor,
+        if coverage.missing_anchor_ids.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", coverage.missing_anchor_ids.join(", "))
+        }
+    );
+    println!(
+        "coverage: {:.1}% of {} qrels indexed ({} unmapped) · {} of {} corpus pages indexed · {} questions: {} eligible, {} excluded (image evidence), {} excluded (page missing); {} need multimodal grading",
+        coverage.qrel_coverage * 100.0,
+        coverage.qrels,
+        coverage.qrels_unmapped,
+        coverage.corpus_pages_indexed,
+        coverage.corpus_pages,
+        coverage.questions,
+        coverage.eligible,
+        coverage.excluded_image_evidence,
+        coverage.excluded_missing_page,
+        coverage.multimodal_judgment,
+    );
+    if coverage.qrel_coverage < 0.95 {
+        println!("  {} coverage is below the plan's 95% gate", st.warn("gate:"));
+    }
+    println!(
+        "{:<34} {:>5} {:>9} {:>7} {:>8} {:>8}",
+        "run", "n", "success@5", "MRR@5", "nDCG@10", "mean ms"
+    );
+    for r in &runs {
+        println!(
+            "{:<34} {:>5} {:>9.3} {:>7.3} {:>8.3} {:>8.1}",
+            r.run,
+            r.metrics.questions,
+            r.metrics.success_at_5,
+            r.metrics.mrr_at_5,
+            r.metrics.ndcg_at_10,
+            r.metrics.mean_ms
+        );
+    }
+    if let Some(out) = &out {
+        println!("  {} {}", st.dim("written:"), out.display());
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// The report directory: created, canonicalized, and never inside the checkout being
+/// scored (a report must not land among the source files).
+fn report_dir(out: &Path, root: &Path) -> anyhow::Result<PathBuf> {
+    std::fs::create_dir_all(out).with_context(|| out.display().to_string())?;
+    let out = out.canonicalize().with_context(|| out.display().to_string())?;
+    anyhow::ensure!(
+        !out.starts_with(root),
+        "--out {} is inside the checkout {}; write reports elsewhere",
+        out.display(),
+        root.display()
+    );
+    Ok(out)
+}
+
+/// Write a report file, replacing a previous plain file but never following a symlink.
+fn write_report(path: &Path, text: &str) -> anyhow::Result<()> {
+    if let Ok(meta) = std::fs::symlink_metadata(path) {
+        anyhow::ensure!(meta.is_file(), "{} exists and is not a plain file", path.display());
+    }
+    std::fs::write(path, text).with_context(|| path.display().to_string())
+}
+
+/// A path with the home directory replaced by `~`, so a report can be committed as is.
+fn portable(path: &Path) -> String {
+    let s = path.display().to_string();
+    match std::env::home_dir() {
+        Some(home) if !home.as_os_str().is_empty() => {
+            let home = home.display().to_string();
+            s.strip_prefix(&home).map_or(s.clone(), |rest| format!("~{rest}"))
+        }
+        _ => s,
+    }
 }
 
 /// Summarize the corpus with the configured backend and write `cards.json` next to it.

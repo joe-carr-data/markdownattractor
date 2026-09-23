@@ -11,6 +11,19 @@ Numbers live in `docs/benchmarks.md`. The corpus is fixed: do not edit documents
 
 `spike/` holds the Phase 0 measurement scripts.
 
+## DocsQA-Repo adapter (`mda eval --dataset docsqa`)
+
+The benchmark plan's primary dataset (`PowderXu/docsqa-data`, schema v3: 467 real community questions over four documentation repositories pinned to commits, sparse page-level labels). We index the repository *source* at the pinned commit, not the dataset's rendered text, so every label (`qrel_ids` → `corpus.jsonl` → `repository_source_path`) is looked up in our store by relative path. The adapter reports coverage before any number (plan §2 F1), assigns every question of a project to a seeded split (rule 0.2: 30% dev, 55% test, 15% sealed holdout; seed 20260922; `blake3(seed ‖ question_id)` order, stratified per project), and scores at **page** granularity: a section list is deduplicated by path in rank order, then success@5, MRR@5 and nDCG@10 (binary gains) against the labelled pages.
+
+```
+git clone https://github.com/PowderXu/docsqa-data && gunzip -k docsqa-data/data/corpus.jsonl.gz
+# one sparse checkout per project at the pinned commit (sources.json), e.g. prisma/web@c4ac0e9 apps/docs/content/docs
+mda index --no-summarize <checkout>                     # raw index; add --cards <file> below for the carded runs
+mda eval --dataset docsqa --data docsqa-data --project prisma --root <checkout> --split dev --out evals/results/docsqa/prisma
+```
+
+Rows: `lexical (raw only)`; with cards attached (`--cards`, recorded per corpus and `mda` version under `evals/results/docsqa/`) also `lexical (cards + raw)` and, when the embedding model is on disk, `hybrid`. `--out` writes `coverage.json`, `split.json` (every question's split, so the sealed holdout is visible and never touched) and `results.json` (per-question ranks and the top pages). Excluded and stated: questions whose reference evidence is image-derived text (`image_text_evidence_used`), and questions with a label we cannot map or did not index. `requires_multimodal_judgment` is counted for the answer-quality axis. `--split holdout` is refused by convention until 1.0 (it prints a warning; rule 0.2).
+
 ## A/B parity protocol (`ab/`)
 
 Plan §11: the same question through headless `claude -p`, once **without** the index (Claude has `Read`, `Grep`, `Glob` over the corpus) and once **with** it (the same tools plus the `mda` MCP server and the search-first rules), N runs each; every answer is graded against a reference by Sonnet (correctness 0–3, completeness 0–3); token savings are only reported for questions where the with-index score is at least the baseline's.
