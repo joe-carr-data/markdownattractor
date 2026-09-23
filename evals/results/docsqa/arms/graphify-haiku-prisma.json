@@ -6,13 +6,16 @@
   "build": {
     "wall_s": 340,
     "completed": true,
-    "model_alias": "haiku",
-    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path)",
+    "claude_exit": 0,
+    "host_model_alias": "haiku",
+    "wakeup_calls": 0,
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path, --setting-sources project)",
     "turns": 1,
     "cost_usd_list_price": 0.9677353999999998,
     "is_error": false,
     "result_tail": "ed successfully.**\n\nAll 32 document extraction chunks processed. Graph built with 2426 nodes, 951 edges, and 1488 communities. Outputs saved to `graphify-out/`.",
-    "usage": {
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
       "uncached_input": 10,
       "cache_creation": 1209,
       "cache_read": 82035,
@@ -20,18 +23,11 @@
     },
     "model_usage": {
       "claude-haiku-4-5-20251001": {
-        "inputTokens": 622,
-        "outputTokens": 73155,
-        "cacheReadInputTokens": 2520449,
-        "cacheCreationInputTokens": 237694,
-        "webSearchRequests": 0,
-        "costUSD": 0.9677353999999998,
-        "contextWindow": 200000,
-        "maxOutputTokens": 32000,
-        "thinkingTokens": 9336,
-        "canonicalModel": "claude-haiku-4-5",
-        "provider": "firstParty",
-        "costBasis": "list"
+        "uncached_input": 622,
+        "cache_creation": 237694,
+        "cache_read": 2520449,
+        "output": 73155,
+        "cost_usd_list_price": 0.9677353999999998
       }
     },
     "assistant_messages": 280,
@@ -40,11 +36,32 @@
     ],
     "subagents_dispatched": 6
   },
+  "failed_attempts": [
+    {
+      "attempt_dir": "\\~/.cache/markdownattractor/bench/graphify/prisma-haiku.attempt1-wakeup",
+      "turns": 1,
+      "cost_usd_list_price": 4.283638900000002,
+      "models": [
+        "claude-haiku-4-5-20251001"
+      ],
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "cache_read": 9283229,
+          "cache_creation": 1210664,
+          "output": 352683
+        }
+      },
+      "result_tail": "Chunk 29 complete (47 nodes, 50 edges). All major chunks done. Now waiting for scheduled wakeup to begin graph merge..."
+    }
+  ],
   "graph": {
     "path": "\\~/.cache/markdownattractor/bench/graphify/prisma-haiku/graph.json",
+    "archived": "evals/results/docsqa/arms/graphs/graphify-haiku-prisma.graph.json.gz",
     "sha256": "7117e221b558ae31b50d0863deaee8abfdbc1617d051622d41d781af4d3a66aa",
     "nodes": 2426,
-    "edges": 951
+    "edges": 951,
+    "nodes_with_source_file": 2424,
+    "distinct_source_files": 625
   },
   "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
   "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
@@ -57,6 +74,10 @@
   "query_interface": {
     "mcp": "graphify-mcp <graph.json>",
     "tool": "query_graph",
-    "node_to_file": "each node of the response, its source file(s) in the order the tool lists them, deduplicated; the response size limit, if any, is the truncation"
+    "arguments": {
+      "question": "<question text>",
+      "token_budget": "default 2000, then 8000 when fewer than ten distinct pages came back"
+    },
+    "node_to_file": "each NODE line of the response, its src in the order the tool lists them, deduplicated; the [!] TRUNCATED marker at 8000 is the truncation"
   }
 }

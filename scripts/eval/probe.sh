@@ -84,8 +84,10 @@ summary="$(jq -c -s --arg arm "$arm" --arg project "$project" --arg qid "$qid" -
   (map(select(.type=="assistant")) | map(.message.content[]? | select(.type=="tool_use") | {id, name})) as $uses |
   (map(select(.type=="user")) | map(.message.content[]? | select(type=="object" and .type=="tool_result") | {id: .tool_use_id, error: (.is_error // false)})) as $results |
   ($uses | map(. as $u | {name: $u.name, ok: (($results | map(select(.id == $u.id and (.error | not))) | length) > 0)})) as $calls |
+  # Evidence that the graphify PreToolUse hook-guard ran: an errored tool_result whose text names graphify (the refusal the hook prints).
+  (map(select(.type=="user")) | map(.message.content[]? | select(type=="object" and .type=="tool_result" and (.is_error // false)) | (.content | if type=="string" then . else (map(.text? // "") | join("")) end)) | map(select(test("graphify"; "i"))) | length) as $hook_blocks |
   (map(select(.type=="assistant")) | map(.message.model // empty) | unique) as $models |
-  {arm: $arm, project: $project, question_id: $qid, calls: $calls, tools: ($calls | map(.name)),
+  {arm: $arm, project: $project, question_id: $qid, calls: $calls, tools: ($calls | map(.name)), hook_blocks: $hook_blocks,
    activated: (($calls | map(select((.name | test($want)) and .ok)) | length) > 0),
    error: (($res == null) or ($res.is_error // false) or ($rc != 0) or (($res.result // "") | length == 0)),
    exit_code: $rc, turns: ($res.num_turns // null), cost_usd_list_price: ($res.total_cost_usd // null),

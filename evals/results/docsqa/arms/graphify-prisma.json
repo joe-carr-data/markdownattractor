@@ -3,7 +3,55 @@
   "project": "prisma",
   "build": {
     "wall_s": 2518,
-    "completed": false
+    "completed": false,
+    "claude_exit": 1,
+    "host_model_alias": "sonnet",
+    "attempt_dir": "\\~/.cache/markdownattractor/bench/graphify/prisma",
+    "ended_through": [],
+    "turns": 69,
+    "cost_usd_list_price": 38.30073320000002,
+    "is_error": true,
+    "result_tail": "You've hit your weekly limit · resets Sep 28 at 6am (Asia/Dubai)",
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
+      "uncached_input": 38,
+      "cache_creation": 108140,
+      "cache_read": 1404662,
+      "output": 29375
+    },
+    "model_usage": {
+      "claude-sonnet-5": {
+        "uncached_input": 428,
+        "cache_creation": 5870444,
+        "cache_read": 12647686,
+        "output": 2093202,
+        "cost_usd_list_price": 38.30073320000002
+      }
+    },
+    "assistant_messages": 1037,
+    "models": [
+      "<synthetic>",
+      "claude-sonnet-5"
+    ],
+    "subagents_dispatched": 49
   },
-  "note": "did not complete: no graphify-out/graph.json (rule 0.3: recorded, not dropped)"
+  "failed_attempts": [
+    {
+      "attempt_dir": "\\~/.cache/markdownattractor/bench/graphify/prisma.attempt1-terminated-600s",
+      "turns": 2,
+      "cost_usd_list_price": 44.472807900000014,
+      "models": [
+        "claude-sonnet-5"
+      ],
+      "model_usage": {
+        "claude-sonnet-5": {
+          "cache_read": 25512667,
+          "cache_creation": 7063179,
+          "output": 2124274
+        }
+      },
+      "result_tail": "Confirmed: 30 of 31. Only chunk 21 left."
+    }
+  ],
+  "note": "did not complete (rule 0.3: recorded, not dropped; the result_tail says why the session ended; any partial graph is quarantined and never scored)"
 }

@@ -6,13 +6,16 @@
   "build": {
     "wall_s": 454,
     "completed": true,
-    "model_alias": "haiku",
-    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path)",
+    "claude_exit": 0,
+    "host_model_alias": "haiku",
+    "wakeup_calls": 0,
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path, --setting-sources project)",
     "turns": 11,
     "cost_usd_list_price": 1.5991865499999995,
     "is_error": false,
     "result_tail": "he core graph remains usable for analysis.\n\nThe knowledge graph is now ready for querying via `graphify query` or exploration through the interactive structure.",
-    "usage": {
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
       "uncached_input": 94,
       "cache_creation": 9649,
       "cache_read": 696970,
@@ -20,18 +23,11 @@
     },
     "model_usage": {
       "claude-haiku-4-5-20251001": {
-        "inputTokens": 1428,
-        "outputTokens": 118463,
-        "cacheReadInputTokens": 4809358,
-        "cacheCreationInputTokens": 386512,
-        "webSearchRequests": 0,
-        "costUSD": 1.5991865499999995,
-        "contextWindow": 200000,
-        "maxOutputTokens": 32000,
-        "thinkingTokens": 18603,
-        "canonicalModel": "claude-haiku-4-5",
-        "provider": "firstParty",
-        "costBasis": "list"
+        "uncached_input": 1428,
+        "cache_creation": 386512,
+        "cache_read": 4809358,
+        "output": 118463,
+        "cost_usd_list_price": 1.5991865499999995
       }
     },
     "assistant_messages": 418,
@@ -40,11 +36,32 @@
     ],
     "subagents_dispatched": 11
   },
+  "failed_attempts": [
+    {
+      "attempt_dir": "\\~/.cache/markdownattractor/bench/graphify/github-docs-haiku.attempt1-wakeup",
+      "turns": 11,
+      "cost_usd_list_price": 0.6245767,
+      "models": [
+        "claude-haiku-4-5-20251001"
+      ],
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "cache_read": 2346287,
+          "cache_creation": 126523,
+          "output": 38434
+        }
+      },
+      "result_tail": " cumulative tokens\n\n---\n\n**Pipeline succeeded.** Graph is ready for querying or visualization. Use `graphify query \"<question>\"` to explore the graph structure."
+    }
+  ],
   "graph": {
     "path": "\\~/.cache/markdownattractor/bench/graphify/github-docs-haiku/graph.json",
+    "archived": "evals/results/docsqa/arms/graphs/graphify-haiku-github-docs.graph.json.gz",
     "sha256": "cca9c0ceb967e9031114b0795f47f16510e55adb8bee5b11caa7d16c0b77f80d",
     "nodes": 45756,
-    "edges": 22922
+    "edges": 22922,
+    "nodes_with_source_file": 45752,
+    "distinct_source_files": 3614
   },
   "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
   "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
@@ -57,6 +74,10 @@
   "query_interface": {
     "mcp": "graphify-mcp <graph.json>",
     "tool": "query_graph",
-    "node_to_file": "each node of the response, its source file(s) in the order the tool lists them, deduplicated; the response size limit, if any, is the truncation"
+    "arguments": {
+      "question": "<question text>",
+      "token_budget": "default 2000, then 8000 when fewer than ten distinct pages came back"
+    },
+    "node_to_file": "each NODE line of the response, its src in the order the tool lists them, deduplicated; the [!] TRUNCATED marker at 8000 is the truncation"
   }
 }

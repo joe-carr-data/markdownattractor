@@ -53,7 +53,9 @@ PY
     out="${1:?out.jsonl}"; split="${2:-dev}"
     safe_target "$out"; [ ! -e "$out" ] || die "$out exists"
     [ -f "$db" ] || die "no $db: build first"
-    jq -r --arg s "$split" '.runs[0].results[] | select(.split == $s) | .id' "$RESULTS/$project/results.json" > "$out.ids"
+    [ "$split" != holdout ] || die "the holdout is sealed (rule 0.2)"
+    jq -r --arg s "$split" '.questions[] | select(.split == $s) | .id' "$RESULTS/$project/split.json" > "$out.ids"
+    [ -s "$out.ids" ] || die "no questions in split $split for $project"
     python3 - "$db" "$RUN/docsqa-data/data/questions.jsonl" "$project" "$out.ids" "$out" <<'PY'
 import json, sqlite3, sys, time
 db, qfile, project, idfile, out = sys.argv[1:6]

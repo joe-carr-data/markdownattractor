@@ -92,9 +92,13 @@ case "$cmd" in
       *) die "mode must be full, no-rerank or bm25" ;;
     esac
     work="$out.work"; mkdir -p "$work"
-    jq -r --arg s "$split" '.runs[0].results[] | select(.split == $s) | .id' "$RESULTS/$project/results.json" | while IFS= read -r qid; do
+    [ "$split" != holdout ] || die "the holdout is sealed (rule 0.2)"
+    unset_provider_keys
+    # Question ids: the frozen split (the scorer applies eligibility; an ineligible id costs one unused query).
+    jq -r --arg s "$split" '.questions[] | select(.split == $s) | .id' "$RESULTS/$project/split.json" | while IFS= read -r qid; do
       jq -nc --arg id "$qid" --arg q "$(question_text "$project" "$qid" | tr '\n\r\t' '   ' | sed 's/  */ /g')" '{id: $id, q: $q}'
     done > "$work/pass1.jsonl"
+    [ -s "$work/pass1.jsonl" ] || die "no questions in split $split for $project"
     pages_of() { # dump line -> distinct repository paths in rank order
       jq -c --arg pre "$project/" '[.result.structuredContent.results[]? | .file | sub("^" + $pre; "")] | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)'
     }

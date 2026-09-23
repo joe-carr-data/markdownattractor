@@ -41,7 +41,7 @@ arms="$(sed -n '/^### Arms/,/^$/p' "$frozen" | sed -n 's/^- \([A-Za-z0-9._-]*\):
 # Activation probes exist for the arms an agent drives through a tool (rule 0.5); a control
 # scored from its own ranked lists (BM25-over-files) has no agent interface and no probe.
 PROBE_ARMS="mda grep qmd graphify graphify-haiku"
-required="env build frozen model store regenerate replay reconstruction coverage-grep"
+required="env build frozen model store regenerate artifacts replay reconstruction coverage-grep"
 probe_arms=""
 for a in $arms; do case " $PROBE_ARMS " in *" $a "*) required="$required probes-$a"; probe_arms="$probe_arms $a" ;; esac; done
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -131,8 +131,39 @@ for ((i = 0; i < nruns; i++)); do
      && regen_norm "$A/regen-$i.json" 0 > "$A/regen-$i.norm" && regen_norm "$committed/results.json" "$i" > "$A/committed-$i.norm" \
      && diff "$A/regen-$i.norm" "$A/committed-$i.norm" > "$A/regen-$i.diff"; then :; else bad="$bad '$name'"; fi
 done
-hashes="$(jq -n --arg r "$(sha256 "$committed/results.json")" --arg c "$(sha256 "$committed/coverage.json")" --arg s "$(sha256 "$committed/split.json")" '{results_sha256: $r, coverage_sha256: $c, split_sha256: $s}')"
-if [ -z "$bad" ]; then record regenerate ok "$nruns committed run(s) regenerate from their archived page lists (results.json sha256 $(jq -r .results_sha256 <<<"$hashes"))" "$hashes"; else record regenerate FAIL "runs that do not regenerate:$bad (see $A/regen-*.diff)" "$hashes"; fi
+# External arms too (Codex M2 F1): every committed <project>/arms/<arm>.jsonl scored again must
+# give its committed <arm>.results.json (metrics and per-question results).
+n_ext=0
+for rows in "$committed"/arms/*.jsonl; do
+  [ -f "$rows" ] || continue
+  a="$(basename "$rows" .jsonl)"; [ -f "$committed/arms/$a.results.json" ] || { bad="$bad '$a (no results.json)'"; continue; }
+  n_ext=$((n_ext + 1))
+  name="$(jq -r '.runs[0].run' "$committed/arms/$a.results.json")"
+  if "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split "$split" --arm-output "$rows" --arm-name "$name" > "$A/regen-$a.json" 2>"$A/regen-$a.err" \
+     && regen_norm "$A/regen-$a.json" 0 > "$A/regen-$a.norm" && regen_norm "$committed/arms/$a.results.json" 0 > "$A/committed-$a.norm" \
+     && diff "$A/regen-$a.norm" "$A/committed-$a.norm" > "$A/regen-$a.diff"; then :; else bad="$bad '$a'"; fi
+done
+hashes="$(jq -n --arg r "$(sha256 "$committed/results.json")" --arg c "$(sha256 "$committed/coverage.json")" --arg s "$(sha256 "$committed/split.json")" --argjson n "$n_ext" '{results_sha256: $r, coverage_sha256: $c, split_sha256: $s, external_arm_files: $n}')"
+if [ -z "$bad" ]; then record regenerate ok "$nruns committed run(s) and $n_ext external arm file(s) regenerate from their archived page lists (results.json sha256 $(jq -r .results_sha256 <<<"$hashes"))" "$hashes"; else record regenerate FAIL "do not regenerate:$bad (see $A/regen-*.diff)" "$hashes"; fi
+
+# Artifact identity (Codex M2 F1): the live artifacts the arms score from are the frozen
+# ones: qmd's index (checkpointed, then hashed) and each graphify configuration's graph
+# (the served file equals the archived copy), as FROZEN.md records them.
+art_bad=""
+for a in $arms; do
+  case "$a" in
+    qmd) if [ -f "$HOME/.cache/qmd/$project.sqlite" ]; then
+           sqlite3 "$HOME/.cache/qmd/$project.sqlite" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
+           h="$(sha256 "$HOME/.cache/qmd/$project.sqlite")"; grep -q "qmd-$project.*index sha256 $h" "$frozen" || art_bad="$art_bad qmd(index $h)"
+         else art_bad="$art_bad qmd(no index)"; fi ;;
+    graphify|graphify-*) rec="$RESULTS/arms/$a-$project.json"
+         if [ -f "$rec" ] && [ "$(jq -r '.build.completed' "$rec")" = true ]; then
+           g="$RUN/graphify/$project"; [ "$a" = graphify ] || g="$RUN/graphify/$project-${a#graphify-}"
+           [ -f "$g/graph.json" ] && [ "$(sha256 "$g/graph.json")" = "$(jq -r .graph.sha256 "$rec")" ] && [ "$(gunzip -c "$RESULTS/arms/graphs/$a-$project.graph.json.gz" | shasum -a 256 | cut -c1-64)" = "$(jq -r .graph.sha256 "$rec")" ] || art_bad="$art_bad $a(graph)"
+         fi ;;
+  esac
+done
+if [ -z "$art_bad" ]; then record artifacts ok "live qmd index and graphify graphs match the frozen records"; else record artifacts FAIL "live artifacts differ from the frozen records:$art_bad"; fi
 
 # 7. Replay: the committed rows come back exactly from the committed store.
 t0=$(date +%s)
@@ -190,7 +221,7 @@ else
   for arm in $probe_arms; do
     # An arm whose build did not complete on this project has no interface to probe: its
     # record is the evidence (rule 0.3), the probe is not applicable rather than failed.
-    if [ -f "$RESULTS/arms/$arm-$project.json" ] && [ "$(jq -r '.build.completed // true' "$RESULTS/arms/$arm-$project.json")" = false ]; then
+    if [ -f "$RESULTS/arms/$arm-$project.json" ] && [ "$(jq -r 'if .build.completed == false then "false" else "true" end' "$RESULTS/arms/$arm-$project.json")" = false ]; then
       record "probes-$arm" ok "not applicable: the arm's build did not complete on $project (recorded in arms/$arm-$project.json)"; continue
     fi
     n_ok=0; n=0
