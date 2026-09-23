@@ -6,7 +6,7 @@ Claude Code session: https://claude.ai/code/session_016dTZj7CmBSJeFLDCwUCxEF
 
 ## 0. One-paragraph state
 
-Milestone M1 of the execution plan (`docs/plans/2026-09-benchmark-execution.md` §5) is implemented on branch `feat/bench-m1`: the four DocsQA corpora's cards are committed (`evals/results/docsqa/cards-0.1.1-<project>.json` + `.provenance.json`, 38 MB), `model.sha` hashes the embedding model files and the snapshot links, `mda eval --dataset docsqa` gained `--export-cards`, `--arm-output` and `--arm-name`, `results.json` archives ten pages per question, and `scripts/eval/{lib,freeze,preflight,probe,table}.sh` exist. The **first carded and hybrid development rows at full coverage** are on `docs/benchmarks.md` (success@5 raw → cards → hybrid: github-docs 0.306 → 0.388 → 0.408, prisma 0.216 → 0.297 → 0.297, supabase 0.333 → 0.417 → 0.500, tailwind-css 0.600 → 0.840 → 0.800). Codex reviewed M1 (`docs/reviews/codex/2026-09-23-bench-m1.md`, 10 findings, 9 fixed, 1 in part); the freeze was rewritten on the fixed scripts (`evals/results/docsqa/FROZEN.md`, source commit `bb26333`); the four preflights were rerun under it (see §2 for the outcome at the time of writing). qmd 2.8.3 and graphify 0.9.66 are installed on this machine; qmd's models are pulled.
+Milestone M1 of the execution plan (`docs/plans/2026-09-benchmark-execution.md` §5) is implemented on branch `feat/bench-m1`: the four DocsQA corpora's cards are committed (`evals/results/docsqa/cards-0.1.1-<project>.json` + `.provenance.json`, 38 MB), `model.sha` hashes the embedding model files and the snapshot links, `mda eval --dataset docsqa` gained `--export-cards`, `--arm-output` and `--arm-name`, `results.json` archives ten pages per question, and `scripts/eval/{lib,freeze,preflight,probe,table}.sh` exist. The **first carded and hybrid development rows at full coverage** are on `docs/benchmarks.md` (success@5 raw → cards → hybrid: github-docs 0.306 → 0.388 → 0.408, prisma 0.216 → 0.297 → 0.297, supabase 0.333 → 0.417 → 0.500, tailwind-css 0.600 → 0.840 → 0.800). Codex reviewed M1 (`docs/reviews/codex/2026-09-23-bench-m1.md`, 10 findings, 9 fixed, 1 in part); the freeze was rewritten on the fixed scripts (`evals/results/docsqa/FROZEN.md`, source commit `bb26333`); the four preflights were rerun under it (§2). qmd 2.8.3 and graphify 0.9.66 are installed on this machine; qmd's models are pulled.
 
 ## 1. Branch, commits, PR
 
@@ -25,10 +25,12 @@ Under the **previous** freeze (old scripts, before the Codex fixes) all checks p
 
 | Project | Result | reconstruction (index s / attach+embed+score s) |
 |---|---|---|
-| tailwind-css | | |
-| supabase | | |
-| prisma | | |
-| github-docs | | |
+| tailwind-css | 11/11 passed | 0 / 117 |
+| supabase | 11/11 passed | 1 / 612 |
+| prisma | 11/11 passed | 2 / 975 |
+| github-docs | 11/11 passed (attempt 2; attempt 1 10/11, see below) | 7 / 2165 |
+
+The github-docs first attempt under the new freeze (`~/.cache/markdownattractor/bench/preflight/development/github-docs/20260923T074625Z/`, report copy there) passed every check but `probes-grep`: on question `github-docs::118629` the grep arm made eleven successful Grep calls and hit the 12-turn budget without answering (rule 0.3: a run error). The probe rule requires a successful run, so the preflight was rerun once (attempt `20260923T083238Z`): 11/11, the same question answered in 4 turns. The first attempt stays on record; the grep arm's turn budget on a 3.7K-file corpus is something T2 will see in the failure counts (rule 0.3), not something to tune away.
 
 ## 3. What changed in the code and why (M1)
 

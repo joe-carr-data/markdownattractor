@@ -1,6 +1,6 @@
 # STATUS (updated 2026-09-23 by Claude)
 **Start here after compaction: `docs/handoffs/2026-09-23-session4-final-handoff.md` (then the session-3 handoff for releases and recipes).**
-Phase: benchmarks — **M1 (export, freeze, preflight, arm scorer) in progress on `feat/bench-m1`; first carded/hybrid development rows measured**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
+Phase: benchmarks — **M1 done on `feat/bench-m1` (PR open): cards committed, development freeze, preflight 11/11 on all four projects, first carded/hybrid development rows**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - **v0.1.0 + v0.1.1 released** (five archives + `SHA256SUMS` each). Marketplace install verified end to end from a clean state: hook downloads the binary, daemon starts, MCP answers. v0.1.1 fixed the manifest (standard component paths must not be listed in `plugin.json`).
 
 ## Next (in order)
-1. **M1 close**: preflight reports for the four projects under the re-freeze (`evals/results/docsqa/preflight/`), PR `feat/bench-m1` merged. Then **M2** (execution plan §5): qmd 2.8.3 and graphify 0.9.66 installed and built on the four checkouts (times recorded), drivers writing `{question_id, paths[], truncated}` rows for `--arm-output`, coverage, three probes per arm, `mcp-time.sh`; BM25-over-files; exit: preflight passes for every arm on every project.
+1. Merge PR `feat/bench-m1` on eleven green jobs. Then **M2** (groundwork on `feat/bench-m2`, worktree `~/mda-worktrees/m2`; owner decision needed: the llama-server holding 10.5 GB blocks qmd's GPU path, see the session-5 handoff §5) (execution plan §5): qmd 2.8.3 and graphify 0.9.66 installed and built on the four checkouts (times recorded), drivers writing `{question_id, paths[], truncated}` rows for `--arm-output`, coverage, three probes per arm, `mcp-time.sh`; BM25-over-files; exit: preflight passes for every arm on every project.
 2. **M3–M4**: T1 development rows for all arms, pooled judgments, the greedy tuning loop (`TUNING.md`; the hybrid-below-cards result on Tailwind and the flat Prisma hybrid are the first hypotheses), final freeze, test split once, "where we lose", Codex pass → T1 published with its runbook §7 section. Product lever before axis B: adapter/query latency (candidate depth, one query embedding per question).
 3. **M5+**: T2 harness (resumable runner, transcript tokens, grounding, `--analysis`, `panel.sh`, `--export-questions`), pilot, owner decision on the rule-0.9 amendment; launch checklist in parallel.
 
