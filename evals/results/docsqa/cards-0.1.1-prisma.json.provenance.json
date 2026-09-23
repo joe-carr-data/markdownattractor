@@ -1,0 +1,31 @@
+{
+  "by_backend": {
+    "claude-cli": 8034,
+    "deterministic": 305
+  },
+  "by_model": {
+    "claude-haiku-4-5": 8034,
+    "none": 305
+  },
+  "by_prompt_version": {
+    "deterministic": 305,
+    "section.v2": 8034
+  },
+  "by_schema_version": {
+    "1": 8339
+  },
+  "cards": 8339,
+  "complete": true,
+  "mda_version": "0.1.1",
+  "project": "prisma",
+  "sections": 10438,
+  "sections_carded": 10438,
+  "summarized_from": "2026-09-22T21:36:54.596035Z",
+  "summarized_to": "2026-09-22T23:07:12.236533Z",
+  "truncated": 3,
+  "usage": {
+    "cost_usd_list_price_equivalent": 39.294496,
+    "input_tokens": 21679828,
+    "output_tokens": 3466004
+  }
+}

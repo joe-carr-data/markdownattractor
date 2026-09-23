@@ -1,0 +1,8 @@
+{
+  "arm": "grep",
+  "project": "prisma",
+  "corpus_pages": 685,
+  "pages_on_disk": 685,
+  "coverage": 1,
+  "note": "grep sees every file in the checkout; coverage is the dataset pages present at the pinned commit"
+}

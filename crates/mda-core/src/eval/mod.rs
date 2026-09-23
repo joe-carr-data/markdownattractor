@@ -80,8 +80,9 @@ pub struct Metrics {
     pub mrr_at_5: f64,
     /// Mean normalised DCG at 10 with binary gains over the relevant pages.
     pub ndcg_at_10: f64,
-    /// Mean query latency in milliseconds.
-    pub mean_ms: f64,
+    /// Mean query latency in milliseconds; `None` for an external arm scored from its
+    /// ranked lists (plan §2.7: arms without a measured interface have no latency column).
+    pub mean_ms: Option<f64>,
 }
 
 /// Score one ranked list of pages (deduplicated, best first) against the relevant pages.

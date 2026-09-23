@@ -1,0 +1,11 @@
+13582bcf2effc85b7bf3d3f5532e686bc1c9ce86bb009d10f0ec33cbe92299dd  models--Qdrant--bge-small-en-v1.5-onnx-Q/blobs/0d7726d0cdccb62ee17c03bd1595cff07199b8f8
+51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431  models--Qdrant--bge-small-en-v1.5-onnx-Q/blobs/51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431
+d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66  models--Qdrant--bge-small-en-v1.5-onnx-Q/blobs/688882a79f44442ddc1f60d70334a7ff5df0fb47
+0b29c7bfc889e53b36d9dd3e686dd4300f6525110eaa98c76a5dafceb2029f53  models--Qdrant--bge-small-en-v1.5-onnx-Q/blobs/75305659f7795d4549f0e23688b52fa20a32f925
+5d5b662e421ea9fac075174bb0688ee0d9431699900b90662acd44b2a350503a  models--Qdrant--bge-small-en-v1.5-onnx-Q/blobs/9bbecc17cabbcbd3112c14d6982b51403b264bfa
+89a5786cc0fad0c4d18ddfb01fa32db81d29f681681fcbc290fe68e9c2db87ca  models--Qdrant--bge-small-en-v1.5-onnx-Q/refs/main
+13582bcf2effc85b7bf3d3f5532e686bc1c9ce86bb009d10f0ec33cbe92299dd  models--Qdrant--bge-small-en-v1.5-onnx-Q/snapshots/52398278842ec682c6f32300af41344b1c0b0bb2/config.json -> ../../blobs/0d7726d0cdccb62ee17c03bd1595cff07199b8f8
+51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431  models--Qdrant--bge-small-en-v1.5-onnx-Q/snapshots/52398278842ec682c6f32300af41344b1c0b0bb2/model_optimized.onnx -> ../../blobs/51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431
+5d5b662e421ea9fac075174bb0688ee0d9431699900b90662acd44b2a350503a  models--Qdrant--bge-small-en-v1.5-onnx-Q/snapshots/52398278842ec682c6f32300af41344b1c0b0bb2/special_tokens_map.json -> ../../blobs/9bbecc17cabbcbd3112c14d6982b51403b264bfa
+d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66  models--Qdrant--bge-small-en-v1.5-onnx-Q/snapshots/52398278842ec682c6f32300af41344b1c0b0bb2/tokenizer.json -> ../../blobs/688882a79f44442ddc1f60d70334a7ff5df0fb47
+0b29c7bfc889e53b36d9dd3e686dd4300f6525110eaa98c76a5dafceb2029f53  models--Qdrant--bge-small-en-v1.5-onnx-Q/snapshots/52398278842ec682c6f32300af41344b1c0b0bb2/tokenizer_config.json -> ../../blobs/75305659f7795d4549f0e23688b52fa20a32f925

@@ -1,0 +1,31 @@
+{
+  "by_backend": {
+    "claude-cli": 1316,
+    "deterministic": 16
+  },
+  "by_model": {
+    "claude-haiku-4-5": 1316,
+    "none": 16
+  },
+  "by_prompt_version": {
+    "deterministic": 16,
+    "section.v2": 1316
+  },
+  "by_schema_version": {
+    "1": 1332
+  },
+  "cards": 1332,
+  "complete": true,
+  "mda_version": "0.1.1",
+  "project": "tailwind-css",
+  "sections": 1518,
+  "sections_carded": 1518,
+  "summarized_from": "2026-09-22T19:25:43.31624Z",
+  "summarized_to": "2026-09-22T20:07:51.686782Z",
+  "truncated": 1,
+  "usage": {
+    "cost_usd_list_price_equivalent": 6.507617,
+    "input_tokens": 3591960,
+    "output_tokens": 498631
+  }
+}

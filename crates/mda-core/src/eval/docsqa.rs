@@ -385,8 +385,10 @@ pub struct QuestionResult {
     /// `true` when ten distinct pages were not reached within the fetch cap, so a relevant
     /// page beyond the fetched sections could be missing from `rank`.
     pub truncated: bool,
-    /// The top five pages returned.
-    pub top: Vec<String>,
+    /// The first ten distinct pages returned, best first: the archived observation from
+    /// which every metric of this question (rank, MRR@5, nDCG@10) recomputes without a
+    /// store (plan §2.0b: regeneration is done from archived ranked lists).
+    pub pages: Vec<String>,
     /// The relevant pages.
     pub relevant: Vec<String>,
 }
@@ -402,6 +404,14 @@ pub struct Run {
     pub metrics: Metrics,
     /// Per question.
     pub results: Vec<QuestionResult>,
+    /// Scored questions for which an external arm returned no row (plan §2.2): each is
+    /// scored as a miss and counted in every denominator. Empty for the store's own rows.
+    #[serde(default)]
+    pub missing: Vec<String>,
+    /// Rows of an external arm whose `question_id` is not in the dataset at all (a driver
+    /// bug worth seeing); rows for questions outside the scored split are simply unused.
+    #[serde(default)]
+    pub unknown: Vec<String>,
 }
 
 /// How to run one configuration.
@@ -485,7 +495,7 @@ pub fn evaluate(
             ndcg_at_10: ndcg,
             fetched,
             truncated,
-            top: ranked.into_iter().take(5).collect(),
+            pages: ranked.into_iter().take(PAGES_NEEDED).collect(),
             relevant: q.relevant.clone(),
         });
     }
@@ -498,15 +508,166 @@ pub fn evaluate(
             success_at_5: hits5 as f64 / n,
             mrr_at_5: rr_sum / n,
             ndcg_at_10: ndcg_sum / n,
-            mean_ms: ms_sum / n,
+            mean_ms: Some(ms_sum / n),
         },
         results,
+        missing: Vec::new(),
+        unknown: Vec::new(),
+    })
+}
+
+/// One row of an external arm's output (`--arm-output`, plan §2.2): the ranked repository
+/// paths the arm's driver returned for one question, and whether the driver hit a limit
+/// before reaching ten distinct pages or exhaustion.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArmRow {
+    /// `question_id`.
+    pub question_id: String,
+    /// Repository-relative paths, best first; duplicates and `./` prefixes are tolerated.
+    pub paths: Vec<String>,
+    /// The driver could not reach ten distinct pages or exhaustion (scored and counted).
+    #[serde(default)]
+    pub truncated: bool,
+}
+
+/// Read an arm's rows from a JSONL file. A `question_id` that appears twice is an error
+/// (two ranked lists for one question cannot both be the arm's answer), and so is a path
+/// that folds to nothing (`""`, `"/"`, `"./"`): a store never returns an empty path, and
+/// dropping a driver's malformed entry silently would improve its list by one rank.
+pub fn read_arm_output(path: &Path) -> Result<HashMap<String, ArmRow>> {
+    let mut rows = HashMap::new();
+    for row in read_jsonl::<ArmRow>(path)? {
+        if let Some(bad) = row.paths.iter().find(|p| normalize_arm_path(p).is_empty()) {
+            return Err(Error::parse(
+                path,
+                format!("question {}: path {bad:?} folds to an empty path", row.question_id),
+            ));
+        }
+        if rows.insert(row.question_id.clone(), row).is_some() {
+            return Err(Error::parse(path, "a question_id appears twice"));
+        }
+    }
+    Ok(rows)
+}
+
+/// A path as a driver may write it, folded to the store's form: backslashes to slashes,
+/// leading `./` and `/` removed, repeated slashes collapsed.
+#[must_use]
+pub fn normalize_arm_path(path: &str) -> String {
+    let mut p = path.trim().replace('\\', "/");
+    while p.starts_with("./") || p.starts_with('/') {
+        p = p.trim_start_matches("./").trim_start_matches('/').to_owned();
+    }
+    p.split('/').filter(|seg| !seg.is_empty() && *seg != ".").collect::<Vec<_>>().join("/")
+}
+
+/// Score an external arm's ranked lists with the same eligibility (the store decides which
+/// labels are indexed), split, page rule and metrics as the store's own rows (plan §2.2).
+/// A scored question without a row is a miss, listed in [`Run::missing`].
+#[allow(clippy::cast_precision_loss, clippy::implicit_hasher)] // `splits` comes from `split_ids`
+pub fn score_arm(
+    store: &Store,
+    dataset: &Dataset,
+    splits: &HashMap<String, Split>,
+    split: Option<Split>,
+    rows: &HashMap<String, ArmRow>,
+    name: &str,
+    include_holdout: bool,
+) -> Result<Run> {
+    let indexed: HashSet<String> = store.documents()?.into_iter().map(|d| d.rel_path).collect();
+    let known: HashSet<&str> = dataset.questions.iter().map(|q| q.id.as_str()).collect();
+    let mut unknown: Vec<String> =
+        rows.keys().filter(|id| !known.contains(id.as_str())).cloned().collect();
+    unknown.sort();
+    let mut results = Vec::new();
+    let mut missing = Vec::new();
+    let (mut hits5, mut rr_sum, mut ndcg_sum) = (0usize, 0.0f64, 0.0f64);
+    for q in &dataset.questions {
+        let q_split = *splits.get(&q.id).unwrap_or(&Split::Holdout);
+        if !eligible(q, &indexed) || split.is_some_and(|s| s != q_split) {
+            continue;
+        }
+        if q_split == Split::Holdout && !include_holdout {
+            continue;
+        }
+        let (ranked, fetched, truncated) = if let Some(row) = rows.get(&q.id) {
+            let paths: Vec<String> = row.paths.iter().map(|p| normalize_arm_path(p)).collect();
+            (pages_of(paths.iter().map(String::as_str)), row.paths.len(), row.truncated)
+        } else {
+            missing.push(q.id.clone());
+            (Vec::new(), 0, false)
+        };
+        let (rank, rr, ndcg) = score_pages(&ranked, &q.relevant);
+        if rank.is_some_and(|r| r <= 5) {
+            hits5 += 1;
+        }
+        rr_sum += rr;
+        ndcg_sum += ndcg;
+        results.push(QuestionResult {
+            id: q.id.clone(),
+            split: q_split,
+            rank,
+            ndcg_at_10: ndcg,
+            fetched,
+            truncated,
+            pages: ranked.into_iter().take(PAGES_NEEDED).collect(),
+            relevant: q.relevant.clone(),
+        });
+    }
+    let n = results.len().max(1) as f64;
+    Ok(Run {
+        run: name.to_owned(),
+        split,
+        metrics: Metrics {
+            questions: results.len(),
+            success_at_5: hits5 as f64 / n,
+            mrr_at_5: rr_sum / n,
+            ndcg_at_10: ndcg_sum / n,
+            mean_ms: None,
+        },
+        results,
+        missing,
+        unknown,
     })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_heading;
+    use super::{normalize_arm_path, normalize_heading, read_arm_output};
+
+    #[test]
+    fn arm_paths_fold_to_the_store_form() {
+        assert_eq!(normalize_arm_path("./docs/a.md"), "docs/a.md");
+        assert_eq!(normalize_arm_path("/docs//a.md"), "docs/a.md");
+        assert_eq!(normalize_arm_path(".//./docs/./a.md "), "docs/a.md");
+        assert_eq!(normalize_arm_path("docs\\win\\a.mdx"), "docs/win/a.mdx");
+        assert_eq!(normalize_arm_path("docs/a.md"), "docs/a.md");
+        assert_eq!(normalize_arm_path(""), "");
+    }
+
+    #[test]
+    fn arm_output_rejects_a_duplicated_question() {
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join("arm.jsonl");
+        std::fs::write(
+            &f,
+            "{\"question_id\":\"q1\",\"paths\":[\"a.md\"]}\n{\"question_id\":\"q2\",\"paths\":[],\"truncated\":true}\n",
+        )
+        .unwrap();
+        let rows = read_arm_output(&f).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert!(rows["q2"].truncated && !rows["q1"].truncated);
+        std::fs::write(
+            &f,
+            "{\"question_id\":\"q1\",\"paths\":[]}\n{\"question_id\":\"q1\",\"paths\":[]}\n",
+        )
+        .unwrap();
+        let err = read_arm_output(&f).unwrap_err().to_string();
+        assert!(err.contains("appears twice"), "{err}");
+        std::fs::write(&f, "{\"question_id\":\"q1\",\"paths\":[\"a.md\", \"./\"]}\n").unwrap();
+        let err = read_arm_output(&f).unwrap_err().to_string();
+        assert!(err.contains("folds to an empty path"), "{err}");
+    }
 
     #[test]
     fn headings_normalise_like_the_dataset_renders_them() {

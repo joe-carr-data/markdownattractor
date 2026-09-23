@@ -75,6 +75,20 @@ pub struct Args {
     /// Write `coverage.json`, `split.json` and `results.json` here.
     #[arg(long)]
     pub out: Option<PathBuf>,
+    /// Write every card of the indexed root to this file as `{"<section_hash>":
+    /// <SectionSummary>}` (the shape `--cards` reads back; one card per line, hashes sorted)
+    /// and its provenance summary to `<file>.provenance.json`, before scoring (plan rule
+    /// 0.9: the committed cards rebuild an index without a model). Never inside the checkout.
+    #[arg(long)]
+    pub export_cards: Option<PathBuf>,
+    /// Score an external arm instead of the store's own configurations: a JSONL file of
+    /// `{"question_id": …, "paths": […], "truncated": bool}` rows, ranked repository paths
+    /// best first (plan §2.2). Same eligibility, split, page rule and metrics; no latency.
+    #[arg(long)]
+    pub arm_output: Option<PathBuf>,
+    /// Row name for `--arm-output` (default: the file's stem).
+    #[arg(long, requires = "arm_output")]
+    pub arm_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -261,7 +275,12 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             serde_json::from_str(&text).context("cards")?;
         attached = attach_cards(engine.store_mut(), &cards)?;
     }
+    let mut exported = None;
+    if let Some(file) = &args.export_cards {
+        exported = Some(export_cards(engine.store(), file, &root, project)?);
+    }
     let counts = engine.store().counts()?;
+    let sections_carded = engine.store().sections_carded()?;
     let coverage = docsqa::coverage(&dataset, engine.store())?;
     let splits = dataset.split(args.seed);
     let split_counts: HashMap<String, usize> =
@@ -274,6 +293,7 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let mut vectors = 0;
     if let Some(e) = &embedder
         && counts.summarized > 0
+        && args.arm_output.is_none()
     {
         vectors = engine.embed_pending(&**e, usize::MAX)?.embedded;
     }
@@ -284,9 +304,28 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         fetch: args.fetch,
         include_holdout: args.open_holdout,
     };
-    let raw = opts("lexical (raw only)", true);
-    runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &raw)?);
-    if engine.store().counts()?.summarized > 0 {
+    if let Some(arm) = &args.arm_output {
+        let rows = docsqa::read_arm_output(arm).with_context(|| arm.display().to_string())?;
+        let name = match &args.arm_name {
+            Some(n) => n.clone(),
+            None => arm
+                .file_stem()
+                .map_or_else(|| "arm".to_owned(), |s| s.to_string_lossy().into_owned()),
+        };
+        runs.push(docsqa::score_arm(
+            engine.store(),
+            &dataset,
+            &splits,
+            split,
+            &rows,
+            &name,
+            args.open_holdout,
+        )?);
+    } else {
+        let raw = opts("lexical (raw only)", true);
+        runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &raw)?);
+    }
+    if args.arm_output.is_none() && engine.store().counts()?.summarized > 0 {
         let lex = opts("lexical (cards + raw)", false);
         runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &lex)?);
         if embedder.is_some() {
@@ -310,7 +349,14 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         "root": portable(&root),
         "mda_version": mda_core::VERSION,
         "store": counts,
+        "card_coverage": {
+            "sections": counts.sections,
+            "sections_carded": sections_carded,
+            "complete": sections_carded == counts.sections,
+        },
         "cards_attached": attached,
+        "cards_exported": exported,
+        "arm_output": args.arm_output.as_deref().map(portable),
         "embedding_model": embedder.as_ref().map(|e| e.model().to_owned()),
         "coverage": coverage,
         "seed": args.seed,
@@ -378,19 +424,42 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         println!("  {} coverage is below the plan's 95% gate", st.warn("gate:"));
     }
     println!(
+        "cards: {} of {} sections carded{}{}",
+        sections_carded,
+        counts.sections,
+        if sections_carded == counts.sections {
+            String::new()
+        } else {
+            format!(" ({})", st.warn("partial: carded rows are not publishable"))
+        },
+        exported.as_ref().map(|n| format!(" · {n} exported")).unwrap_or_default()
+    );
+    println!(
         "{:<34} {:>5} {:>9} {:>7} {:>8} {:>8}",
         "run", "n", "success@5", "MRR@5", "nDCG@10", "mean ms"
     );
     for r in &runs {
         println!(
-            "{:<34} {:>5} {:>9.3} {:>7.3} {:>8.3} {:>8.1}",
+            "{:<34} {:>5} {:>9.3} {:>7.3} {:>8.3} {:>8}",
             r.run,
             r.metrics.questions,
             r.metrics.success_at_5,
             r.metrics.mrr_at_5,
             r.metrics.ndcg_at_10,
-            r.metrics.mean_ms
+            r.metrics.mean_ms.map_or_else(|| "n/a".to_owned(), |ms| format!("{ms:.1}"))
         );
+        if !r.missing.is_empty() || !r.unknown.is_empty() {
+            println!(
+                "  {} {} scored question(s) without a row (scored as misses){}",
+                st.warn("arm:"),
+                r.missing.len(),
+                if r.unknown.is_empty() {
+                    String::new()
+                } else {
+                    format!("; {} row(s) for unknown question ids", r.unknown.len())
+                }
+            );
+        }
     }
     if let Some(out) = &out {
         println!("  {} {}", st.dim("written:"), out.display());
@@ -418,6 +487,84 @@ fn write_report(path: &Path, text: &str) -> anyhow::Result<()> {
         anyhow::ensure!(meta.is_file(), "{} exists and is not a plain file", path.display());
     }
     std::fs::write(path, text).with_context(|| path.display().to_string())
+}
+
+/// Write every card of the store to `file` as `{"<section_hash>": <SectionSummary>}`, one
+/// card per line with the hashes sorted (so the file diffs and hashes stably), and a
+/// provenance summary to `<file>.provenance.json` (backend, model, prompt and schema
+/// versions, the time span, the usage the cards cost). Refuses a target inside the checkout
+/// and never writes through a symlink. Returns the number of cards written.
+fn export_cards(store: &Store, file: &Path, root: &Path, project: &str) -> anyhow::Result<usize> {
+    let parent = file.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    let parent = report_dir(parent, root)?;
+    let name = file.file_name().context("--export-cards needs a file name")?;
+    let file = parent.join(name);
+    let mut cards: std::collections::BTreeMap<String, SectionSummary> =
+        std::collections::BTreeMap::new();
+    let mut by_backend: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    let mut by_model: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+    let mut by_prompt: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    let mut by_schema: std::collections::BTreeMap<u16, usize> = std::collections::BTreeMap::new();
+    let (mut truncated, mut sections, mut sections_carded) = (0usize, 0usize, 0usize);
+    let (mut first, mut last): (Option<jiff::Timestamp>, Option<jiff::Timestamp>) = (None, None);
+    for doc in store.documents()? {
+        for s in store.sections_of(&doc.doc_id)? {
+            sections += 1;
+            let Some(summary) = s.summary else { continue };
+            sections_carded += 1;
+            if cards.contains_key(&s.section_hash) {
+                continue;
+            }
+            if let Some(p) = &s.provenance {
+                *by_backend.entry(p.backend.clone()).or_default() += 1;
+                *by_model.entry(p.model.clone()).or_default() += 1;
+                *by_prompt.entry(p.prompt_version.clone()).or_default() += 1;
+                *by_schema.entry(p.schema_version).or_default() += 1;
+                truncated += usize::from(p.truncated);
+                first = Some(first.map_or(p.summarized_at, |f| f.min(p.summarized_at)));
+                last = Some(last.map_or(p.summarized_at, |l| l.max(p.summarized_at)));
+            }
+            cards.insert(s.section_hash, summary);
+        }
+    }
+    let mut text = String::with_capacity(cards.len() * 700);
+    text.push_str("{\n");
+    let n = cards.len();
+    for (i, (hash, card)) in cards.iter().enumerate() {
+        text.push_str(&serde_json::to_string(hash)?);
+        text.push_str(": ");
+        text.push_str(&serde_json::to_string(card)?);
+        text.push_str(if i + 1 == n { "\n" } else { ",\n" });
+    }
+    text.push_str("}\n");
+    write_report(&file, &text)?;
+    let counts = store.counts()?;
+    let prov = serde_json::json!({
+        "project": project,
+        "mda_version": mda_core::VERSION,
+        "cards": n,
+        "sections": sections,
+        "sections_carded": sections_carded,
+        "complete": sections == sections_carded,
+        "by_backend": by_backend,
+        "by_model": by_model,
+        "by_prompt_version": by_prompt,
+        "by_schema_version": by_schema,
+        "truncated": truncated,
+        "summarized_from": first.map(|t| t.to_string()),
+        "summarized_to": last.map(|t| t.to_string()),
+        "usage": {
+            "input_tokens": counts.total_input_tokens,
+            "output_tokens": counts.total_output_tokens,
+            "cost_usd_list_price_equivalent": counts.total_cost_usd,
+        },
+    });
+    let mut prov_name = name.to_os_string();
+    prov_name.push(".provenance.json");
+    write_report(&parent.join(prov_name), &serde_json::to_string_pretty(&prov)?)?;
+    Ok(n)
 }
 
 /// A path with the home directory replaced by `~`, so a report can be committed as is.
