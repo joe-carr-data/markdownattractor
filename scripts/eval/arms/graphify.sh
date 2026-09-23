@@ -55,9 +55,17 @@ You are running headless: there is no user to answer questions. Run the pipeline
     # resolved model and per token category (uncached input, cache creation, cache reads,
     # output): list-price equivalents are labelled as such, never as charges.
     res="$(jq -c -s '(map(select(.type=="result")) | last) as $r | {turns: ($r.num_turns // null), cost_usd_list_price: ($r.total_cost_usd // null), is_error: ($r.is_error // false), result_tail: (($r.result // "") | .[-160:]), usage: {uncached_input: ($r.usage.input_tokens // 0), cache_creation: ($r.usage.cache_creation_input_tokens // 0), cache_read: ($r.usage.cache_read_input_tokens // 0), output: ($r.usage.output_tokens // 0)}, model_usage: ($r.modelUsage // {}), assistant_messages: (map(select(.type=="assistant")) | length), models: (map(select(.type=="assistant")) | map(.message.model // empty) | unique), subagents_dispatched: (map(select(.type=="assistant")) | map(.message.content[]? | select(.type=="tool_use" and .name=="Agent")) | length)}' "$G/build.jsonl")"
+    # A graph.json alone does not mean the pipeline ran to its end: a session that scheduled
+    # a wakeup or ended in error left a partial graph (the GitHub Docs Haiku attempt of
+    # 2026-09-23 wrote 30K nodes after 3 of 171 extraction chunks). Completed means: the
+    # file exists, the session did not end in error and never called a wakeup or cron tool.
+    ended_early="$(jq -c -s '[.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and (.name | test("^(ScheduleWakeup|Cron)"))) | .name] | unique' "$G/build.jsonl")"
+    if [ -f "$graph" ] && [ "$ended_early" != "[]" ]; then
+      mv "$graph" "$graph.partial"; echo "graph.json written by a session that ended through $ended_early: kept as graph.json.partial, build recorded as did not complete" >> "$G/build.err"
+    fi
     if [ ! -f "$graph" ]; then
       jq -n --arg arm "$arm" --arg project "$project" --arg model "$model" --argjson s "$((t1 - t0))" --argjson res "$res" --arg attempt "${G/#$HOME/\~}" \
-        '{arm: $arm, project: $project, build: ({wall_s: $s, completed: false, model_alias: $model, attempt_dir: $attempt} + $res), note: "did not complete: no graphify-out/graph.json (rule 0.3: recorded, not dropped; the result_tail says why the session ended)"}' > "$ARMS/$arm-$project.json"
+        --argjson early "$ended_early" '{arm: $arm, project: $project, build: ({wall_s: $s, completed: false, model_alias: $model, attempt_dir: $attempt, ended_through: $early} + $res), note: "did not complete: no complete graphify-out/graph.json (rule 0.3: recorded, not dropped; the result_tail says why the session ended)"}' > "$ARMS/$arm-$project.json"
       die "graphify build of $project did not produce graph.json after $((t1 - t0)) s (see $G/build.err, $G/build.jsonl)"
     fi
     cp "$graph" "$G/graph.json"
