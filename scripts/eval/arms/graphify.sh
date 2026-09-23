@@ -27,7 +27,7 @@ dir="$(project_dir "$project")"; corpus="$RUN/$dir"
 # `graphify` arm, a Haiku-built graph is the `graphify-haiku` arm, never mixed, each with
 # its own copy, cache, record and rows.
 model="${GRAPHIFY_MODEL:-sonnet}"
-case "$cmd" in build) model="${3:-sonnet}" ;; esac
+case "$cmd" in build) model="${1:-sonnet}" ;; esac   # after the two positional shifts, the model is $1
 arm="graphify"; [ "$model" = sonnet ] || arm="graphify-$model"
 G="$RUN/graphify/$project"; [ "$model" = sonnet ] || G="$RUN/graphify/$project-$model"
 ARMS="$RESULTS/arms"; mkdir -p "$ARMS"
