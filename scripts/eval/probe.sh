@@ -25,7 +25,8 @@ safe_target "$trace"; safe_target "$trace.err"
 trace="$(cd "$(dirname "$trace")" && pwd)/$(basename "$trace")"
 unset_nested_session
 mcp_cfg=""
-trap '[ -z "$mcp_cfg" ] || rm -f "$mcp_cfg"' EXIT
+skill=""
+trap '[ -z "$mcp_cfg" ] || rm -f "$mcp_cfg"; [ -z "$skill" ] || rm -f "$skill"' EXIT
 common=(--print --setting-sources "" --no-session-persistence --model "$model" --max-turns 12
         --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config)
 case "$arm" in
@@ -39,11 +40,26 @@ case "$arm" in
   grep)
     args=(--tools Read Grep Glob --allowedTools Read Grep Glob)
     want='^(Grep|Read|Glob)$' ;;
-  *) die "unknown arm $arm (mda|grep; qmd and graphify probes come with their arms)" ;;
+  qmd)
+    # qmd's own MCP server on the project's index, with qmd's own agent skill as the
+    # instructions (`qmd skills get qmd --full`, archived beside the trace), the counterpart
+    # of mda's search-first rules; the tools are the ones the skill allows.
+    [ -f "$HOME/.config/qmd/$project.yml" ] || die "no qmd index for $project (scripts/eval/arms/qmd.sh build)"
+    mcp_cfg="$(mktemp -t mda-probe-mcp.XXXXXX)"
+    jq -n --arg project "$project" '{mcpServers: {qmd: {command: "qmd", args: ["--index", $project, "mcp"]}}}' > "$mcp_cfg"
+    skill="$(mktemp -t qmd-skill.XXXXXX)"; qmd skills get qmd --full > "$skill" 2>/dev/null || die "qmd skills get failed"
+    args=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__qmd__*"
+          --append-system-prompt-file "$skill")
+    want='^mcp__qmd__query$' ;;
+  *) die "unknown arm $arm (mda|grep|qmd; the graphify probe comes with its arm)" ;;
 esac
 preamble="Answer from the documents in the current directory. Be concise (at most 6 lines). Cite the file and section you used."
-launch="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$corpus" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" \
-  --args '{claude_flags: $ARGS.positional, model: $model, cwd: $root, mcp: (if $arm == "mda" then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}} else null end), system_prompt_file: (if $arm == "mda" then $rules else null end)}' -- "${common[@]}" "${args[@]}")"
+launch="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$corpus" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" \
+  --arg skill_sha "$( [ -n "$skill" ] && shasum -a 256 "$skill" | cut -c1-64 || true)" \
+  --args '{claude_flags: $ARGS.positional, model: $model, cwd: $root,
+           mcp: (if $arm == "mda" then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
+                 elif $arm == "qmd" then {server: "qmd", command: "qmd", args: ["--index", $project, "mcp"]} else null end),
+           system_prompt: (if $arm == "mda" then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} else null end)}' -- "${common[@]}" "${args[@]}")"
 t0=$(date +%s); rc=0
 (cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$trace" 2>"$trace.err") || rc=$?
 t1=$(date +%s)

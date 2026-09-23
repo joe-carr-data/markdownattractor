@@ -1,0 +1,49 @@
+{
+  "arm": "qmd",
+  "project": "tailwind-css",
+  "version": "qmd 2.8.3 (facd35e)",
+  "node": "v22.17.1",
+  "install": "npm i -g @tobilu/qmd@2.8.3",
+  "index": "~/.cache/qmd/tailwind-css.sqlite",
+  "collection": "~/.config/qmd/tailwind-css.yml",
+  "config": {
+    "mask": "**/*.{md,mdx,markdown}",
+    "candidate_limit": 40,
+    "results_default": 5,
+    "rerank": "Qwen3-Reranker-0.6B (default on)",
+    "expansion": "qmd-query-expansion-1.7B (default on)",
+    "embed": "EmbeddingGemma-300M",
+    "gpu": "metal (default)",
+    "mcp_request": {
+      "tool": "query",
+      "arguments": {
+        "query": "<question text>",
+        "limit": "<20, then 40 when fewer than ten distinct pages came back>",
+        "rerank": "<true for the full row, false for the no-rerank row>"
+      }
+    }
+  },
+  "build": {
+    "collection_add_s": 0,
+    "update_s": 1,
+    "embed_s": 161,
+    "total_s": 162
+  },
+  "coverage": {
+    "files_indexed": 198,
+    "markdown_files_on_disk": 198,
+    "corpus_pages": 197,
+    "corpus_pages_indexed": 197,
+    "coverage": 1,
+    "missing_pages": []
+  },
+  "models_sha256": [
+    "c8a75807c61b34aa7500dc53788ff8e414437a8df948aa2876939f31942bf991  embeddinggemma-300M-Q8_0.gguf.etag",
+    "b5ce9d77a3fc4b3b39ccb5643c36777911cc4eb46a66962eadfa3f5f60490d63  hf_ggml-org_embeddinggemma-300M-Q8_0.gguf",
+    "22c9979ce4fbcdc5acdc310c6641c32797eff1aa980b8f7a2db8a8ea23429a48  hf_ggml-org_qwen3-reranker-0.6b-q8_0.gguf",
+    "000dfb1c06efa6a049e9f64ba921c3740e2454f62abab6fa10e77bd30bb2bcc0  hf_tobil_qmd-query-expansion-1.7B-q4_k_m.gguf",
+    "ca78bdd53acd7236ee21bc89f4c91f6af7757b41431f176239b5c1905607e783  qmd-query-expansion-1.7B-q4_k_m.gguf.etag",
+    "9ed3b143b6334a1e97d2fcec4a6bcbdfdb12465295dd1784bbfde55f70d0af9b  qwen3-reranker-0.6b-q8_0.gguf.etag"
+  ],
+  "status": "QMD Status\n\nIndex: /Users/jcarr/.cache/qmd/tailwind-css.sqlite\nSize:  7.6 MB\n\nDocuments\n  Total:    198 files indexed\n  Vectors:  1007 embedded\n  Updated:  13h ago\n\nAST Chunking\n  Status:   active\n  Languages: typescript, tsx, javascript, python, go, rust\n\nCollections\n  tailwind-css (qmd://tailwind-css/)\n    Pattern:  **/*.{md,mdx,markdown}\n    Files:    198 (updated 13h ago)\n\nExamples\n  # List files in a collection\n  qmd ls tailwind-css\n  # Get a document\n  qmd get qmd://tailwind-css/path/to/file.md\n  # Search within a collection\n  qmd search \"query\" -c tailwind-css\n\nModels\n  Embedding:   https://huggingface.co/ggml-org/embeddinggemma-300M-GGUF\n  Reranking:   https://huggingface.co/ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF\n  Generation:  https://huggingface.co/tobil/qmd-query-expansion-1.7B-gguf\n\nTips\n  Add context to collections for better search results: tailwind-css\n    qmd context add qmd://<name>/ \"What this collection contains\"\n    qmd context add qmd://<name>/meeting-notes \"Weekly team meeting notes\""
+}
