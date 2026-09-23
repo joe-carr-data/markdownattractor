@@ -136,7 +136,8 @@ done
 n_ext=0
 for rows in "$committed"/arms/*.jsonl; do
   [ -f "$rows" ] || continue
-  a="$(basename "$rows" .jsonl)"; [ -f "$committed/arms/$a.results.json" ] || { bad="$bad '$a (no results.json)'"; continue; }
+  a="$(basename "$rows" .jsonl)"; case "$a" in *.times) continue ;; esac   # latency files are not rows
+  [ -f "$committed/arms/$a.results.json" ] || { bad="$bad '$a (no results.json)'"; continue; }
   n_ext=$((n_ext + 1))
   name="$(jq -r '.runs[0].run' "$committed/arms/$a.results.json")"
   if "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split "$split" --arm-output "$rows" --arm-name "$name" > "$A/regen-$a.json" 2>"$A/regen-$a.err" \
