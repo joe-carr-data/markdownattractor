@@ -10,6 +10,8 @@ RUN="${RUN:-$HOME/.cache/markdownattractor/bench}"
 MDA="${MDA:-$REPO/target/release/mda}"
 export MDA_MODEL_DIR="${MDA_MODEL_DIR:-$HOME/.cache/markdownattractor/models}"
 RESULTS="$REPO/evals/results/docsqa"
+# The Rust toolchain, for the recorded rustc version and the release build.
+[ ! -f "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 # shellcheck disable=SC2034  # used by the scripts that source this file
 PROJECTS="github-docs prisma supabase tailwind-css"
 # shellcheck disable=SC2034

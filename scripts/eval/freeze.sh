@@ -130,7 +130,7 @@ else
   {
     echo "# FROZEN — DocsQA-Repo, protocol: $protocol${table:+, table $table}"
     echo
-    echo "Written by \`scripts/eval/freeze.sh\` (execution plan §2.0). The **Inputs** section is compared byte for byte by \`scripts/eval/preflight.sh\` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *$protocol*${note:+. $note}."
+    echo "Written by \`scripts/eval/freeze.sh\` (execution plan §2.0). The **Inputs** section is compared byte for byte by \`scripts/eval/preflight.sh\` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *$protocol*.${note:+ $note}"
     echo
     echo "## Inputs"
     echo
