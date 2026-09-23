@@ -830,8 +830,9 @@ fn eval_docsqa_fetches_past_a_page_that_hogs_the_list() {
 
 #[test]
 fn eval_docsqa_keeps_the_holdout_sealed_and_refuses_bad_output_targets() {
-    // `_dir` keeps the fixture alive; only the Unix symlink block below reads it.
-    let (_dir, data, root) = docsqa_fixture();
+    let (dir, data, root) = docsqa_fixture();
+    let out = dir.path().join("out");
+    std::fs::create_dir_all(&out).unwrap();
     mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
     let base = || {
         let mut c = mda();
@@ -867,8 +868,6 @@ fn eval_docsqa_keeps_the_holdout_sealed_and_refuses_bad_output_targets() {
         .stdout(predicate::str::contains("inside the checkout"));
     #[cfg(unix)]
     {
-        let out = _dir.path().join("out");
-        std::fs::create_dir_all(&out).unwrap();
         let victim = root.join("docs/rollback.mdx");
         let before = std::fs::read_to_string(&victim).unwrap();
         std::os::unix::fs::symlink(&victim, out.join("results.json")).unwrap();
