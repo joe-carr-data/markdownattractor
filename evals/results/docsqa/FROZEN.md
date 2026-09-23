@@ -1,6 +1,6 @@
 # FROZEN — DocsQA-Repo, protocol: development
 
-Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *development*. Development-protocol freeze for M1 after the Codex review (docs/reviews/codex/2026-09-23-bench-m1.md): the four DocsQA corpora carded and embedded, the raw/cards/hybrid dev rows produced under it.
+Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *development*. Second development-protocol freeze (M2): the competitor arms qmd (full, no-rerank, BM25), graphify (Sonnet-built where it completed), graphify-haiku and BM25-over-files with their records, drivers, probes and rows.
 
 ## Inputs
 
@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: bb263332887c2f363d6dcdd661c717bc2cc09b4d (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
+- source commit: 8e3a12c3f332bedd8e91a6d404f8712e3e79639a (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (regular files and the snapshot links the loader opens, each with the sha256 of its content; sha256 of the file 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -37,11 +37,11 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 - skills/search-first/SKILL.md sha256: d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732
 - scripts/eval/ab.sh sha256: c469c9b14fc85388fc4eec51ece154c31ad59d7680743a5469916ede83eac36c
 - scripts/eval/grade.sh sha256: b9d79fb26807be4fb4f767067138b29cb5c0a24d739865db9a7714efcc323693
-- scripts/eval/probe.sh sha256: 1f2becd930256a7c9567b7b7348f6dfb2956e7071aa773230c9d7c27869d00c5
-- scripts/eval/preflight.sh sha256: 627f347ede2141d3b3e068d7e3480a6ada341680f8c8dd9602e8eb30ea1bb433
-- scripts/eval/freeze.sh sha256: 1345de3db8bc0f3f0f7a38cb82dd9ec75ed4db2bd6fc0d1f07983876683ead88
-- scripts/eval/lib.sh sha256: 545035d5295d890f5a6d9f8c5a9a89a75d216ccec7d3cebbe036243d6bf0ea70
-- scripts/eval/table.sh sha256: 6c62918e2572051be93483fce8017bf99a5b6483b3805e4fafd68d323cbd3c63
+- scripts/eval/probe.sh sha256: 2151c19e5d48bde826c783d62d187f025096a1438effa2357719374b15118595
+- scripts/eval/preflight.sh sha256: 3c859a2385a6da58d7dfbbb5972b42198b05b3648ef49148bad6dfe4196d7837
+- scripts/eval/freeze.sh sha256: 4c8b666261a452b9ce3be0d6e6c05ad06461e113a894f716fc99bdcb2b48c35e
+- scripts/eval/lib.sh sha256: 43ee5e3564b073ffec3795613f5ba419d14047ed438c8586e8d057a229e97c8e
+- scripts/eval/table.sh sha256: bab1f61064a4ef2eea36f332e7850ca9ce3e14500fb4122cc4512b1cec0638ab
 
 ### Split and question sample (seed 20260922; `blake3(seed ‖ id)` order; dev 30% / test 55% / holdout 15%, sealed)
 - github-docs: split.json sha256 913c6260f40ec602c8d8a4ec0b1d437fa0209ed02836c87cce99074efe240cbb · dev 59 ids sha256 cdef7fcf2e443f3bb3e1539097e82516f8835964986627bdded65fc33ee74a7c · test 108 ids sha256 59d5294ae1ec70f81e4831dd44848952e8c9273bc8d5de2af336795cb3c02cc3 · holdout 30 (never scored before 1.0)
@@ -56,10 +56,14 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 ### Arms
 - mda: this binary through `mda mcp` (`mda_search`, default k 5, up to 50; `mda_open`); the search-first rules `skills/search-first/SKILL.md`; store per checkout under `.markdownattractor/` (`backend = claude-cli`, `claude_cli_policy_ack = true`, `embeddings = local-small`); the adapter scores the store directly
 - grep: Claude Code's own Read, Grep and Glob over the checkout, no MCP server, no extra instructions beyond the probe preamble (`scripts/eval/probe.sh`)
+- bm25-files: bm25-files-github-docs (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · sha256 e5c8742cb590821e0ac1d42882af3174026f381674f5d8449d4ffd5c19bff0ee); bm25-files-prisma (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · sha256 0922e80e2425635380bc33718005205de6af55ec177dca2bbc60ed923fcae78a); bm25-files-supabase (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · sha256 584873cb5734591ed256e5df2d4cc10d876e586215d61e49fa997b40dbd0ca0c);
+- graphify: graphify-github-docs (version ? · did not complete · sha256 5aa7a8ad9b94cb414c541e41a8f428f061ef6cfae4792f8ed81e31680c1758f4); graphify-prisma (version ? · did not complete · sha256 34e3baa2b78f4730c51250ba3243afd9850528e322253c9be2121993ca61fcde); graphify-supabase (version graphify 0.9.66 · coverage 0.961038961038961 · sha256 9e3cd97ae8964ffd4fc492d62106b7ea399c55ae0f3c56b6bd1c15e42e414df3); graphify-tailwind-css (version graphify 0.9.66 · coverage 1 · sha256 9c90b70cc87c9121efabb9adae748fc7187d39fa7cc526c73af6b5b63351cde9);
+- graphify-haiku: graphify-haiku-github-docs (version graphify 0.9.66 · coverage 0.9953241895261845 · sha256 0a8932a2456d9264500ecd63c86dc477250dec7a69842cedd1ced1cd79f81825); graphify-haiku-prisma (version graphify 0.9.66 · coverage 0.8540145985401459 · sha256 a17e7452d93a7dc4b7503596ea2b964d556047eb8378eb1dd787ffc5f295001e); graphify-haiku-supabase (version graphify 0.9.66 · coverage 0.05714285714285714 · sha256 eed58cf177aca23d8ac45bac699d0ce5bb65ef72a148b231f53262f2bd9f38c7); graphify-haiku-tailwind-css (version graphify 0.9.66 · coverage 0.2436548223350254 · sha256 d0433f8098847cc9dbf6ad61e31ee1b8ce89ae8838167de124de542361ba2aad);
+- qmd: qmd-github-docs (version qmd 2.8.3 (facd35e) · coverage 1 · sha256 0a41a2e9ed46e7112af2a512e526047adc68d007ac8fe664f465cef01662ae8f); qmd-prisma (version qmd 2.8.3 (facd35e) · coverage 1 · sha256 64ea62673c42cb625f46279701b5a3e711889df661763041698fc939cbf599ef); qmd-supabase (version qmd 2.8.3 (facd35e) · coverage 1 · sha256 edc7f47bf3bcb04a15538250ae8fdeead5dc2960a19fd9f958a6621205d46300); qmd-tailwind-css (version qmd 2.8.3 (facd35e) · coverage 1 · sha256 77a684e54b0d98bbc08b60ddbea17265eb61271995c243e82ef6a22efa72f061);
 
 ## Runtime
 
-- frozen_at: 2026-09-23T07:11:25Z
+- frozen_at: 2026-09-23T15:08:03Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.280 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
