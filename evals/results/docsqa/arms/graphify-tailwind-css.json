@@ -1,0 +1,38 @@
+{
+  "arm": "graphify",
+  "project": "tailwind-css",
+  "version": "graphify 0.9.66",
+  "install": "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
+  "build": {
+    "wall_s": 825,
+    "completed": true,
+    "model_alias": "sonnet",
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path)",
+    "turns": 83,
+    "cost_usd_list_price": 10.245025200000006,
+    "input_tokens": 5354245,
+    "output_tokens": 96346,
+    "is_error": false,
+    "models": [
+      "claude-sonnet-5"
+    ]
+  },
+  "graph": {
+    "path": "\\~/.cache/markdownattractor/bench/graphify/tailwind-css/graph.json",
+    "sha256": "316b55639f58bf7fa351dde8e5fdd102e974b0bf9cb4d5e2024a925ffc02cbcd",
+    "nodes": 566,
+    "edges": 507
+  },
+  "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
+  "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
+  "coverage": {
+    "corpus_pages": 197,
+    "corpus_pages_with_a_node": 197,
+    "coverage": 1
+  },
+  "query_interface": {
+    "mcp": "graphify-mcp <graph.json>",
+    "tool": "query_graph",
+    "node_to_file": "each node of the response, its source file(s) in the order the tool lists them, deduplicated; the response size limit, if any, is the truncation"
+  }
+}

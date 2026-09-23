@@ -49,7 +49,7 @@ You are running headless: there is no user to answer questions. Run the pipeline
     fi
     cp "$graph" "$G/graph.json"
     res="$(jq -c -s '(map(select(.type=="result")) | last) as $r | {turns: ($r.num_turns // null), cost_usd_list_price: ($r.total_cost_usd // null), input_tokens: (($r.usage.input_tokens // 0) + ($r.usage.cache_read_input_tokens // 0) + ($r.usage.cache_creation_input_tokens // 0)), output_tokens: ($r.usage.output_tokens // 0), is_error: ($r.is_error // false), models: (map(select(.type=="assistant")) | map(.message.model // empty) | unique)}' "$G/build.jsonl")"
-    nodes="$(jq '.nodes | length' "$G/graph.json")"; edges="$(jq '.edges | length' "$G/graph.json")"
+    nodes="$(jq '.nodes | length' "$G/graph.json")"; edges="$(jq '(.links // .edges) | length' "$G/graph.json")"
     # Coverage: which dataset pages appear as a node source file (the frozen node → file mapping
     # reads the same fields, see `drive`).
     jq -r '[.nodes[] | (.source_file // .file // .path // empty), (.source_files[]? // empty)] | unique | .[]' "$G/graph.json" | sed "s|^$G/src/||; s|^\./||" | LC_ALL=C sort -u > "$G/node-files.txt"
@@ -75,17 +75,34 @@ You are running headless: there is no user to answer questions. Run the pipeline
     jq -r --arg s "$split" '.runs[0].results[] | select(.split == $s) | .id' "$RESULTS/$project/results.json" | while IFS= read -r qid; do
       jq -nc --arg id "$qid" --arg q "$(question_text "$project" "$qid" | tr '\n\r\t' '   ' | sed 's/  */ /g')" '{id: $id, q: $q}'
     done > "$work/queries.jsonl"
-    template='{"query":"{query}"}'
-    ( cd "$G/src" && MCP_TIME_DUMP="$work/dump.jsonl" "$client" query_graph "$template" "$work/queries.jsonl" -- graphify-mcp "$G/graph.json" ) > "$work/times.jsonl" 2>>"$out.err"
-    jq -n --arg tool query_graph --argjson args "$template" --arg graph "$G/graph.json" '{tool: $tool, arguments: $args, server: ["graphify-mcp", $graph]}' > "$out.request.json"
-    # Node → file mapping (frozen): every node of the response in tool order, its source
-    # file(s), repository-relative, deduplicated in rank order.
+    # `query_graph` answers with text: one `NODE <label> [src=<file> …]` line per node in the
+    # tool's order, cut to its token budget (2,000 by default) with a `[!] TRUNCATED` marker.
+    # The frozen node → file mapping takes every NODE line's src in order, deduplicated.
+    # Two passes like every driver: the default budget first (what an agent gets), then
+    # token_budget 8000 for the questions still short of ten distinct pages under the cut;
+    # a question still short at 8000 is `truncated` (the response size limit, plan §2.1).
+    client_run() { # queries.jsonl template dump times
+      ( cd "$G/src" && MCP_TIME_DUMP="$3" "$client" query_graph "$2" "$1" -- graphify-mcp "$G/graph.json" ) > "$4" 2>>"$out.err"
+    }
+    pages_of() { jq -c '[(.result.content[]? | select(.type=="text") | .text) // "" | scan("NODE [^\\n]*?\\[src=([^ \\]]+)") | .[0]] | map(sub("^\\./"; "")) | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)'; }
+    cut_of() { jq -r '[(.result.content[]? | select(.type=="text") | .text) // ""] | join("") | test("\\[!\\] TRUNCATED")'; }
+    t1='{"question":"{query}"}'; t2='{"question":"{query}","token_budget":8000}'
+    client_run "$work/queries.jsonl" "$t1" "$work/dump1.jsonl" "$work/times1.jsonl"
+    : > "$work/pass2.jsonl"
     while IFS= read -r line; do
-      id="$(jq -r .id <<<"$line")"; ok="$(jq -r .ok <<<"$line")"
-      paths="$(jq -c --arg pre "$G/src/" '[(.result.structuredContent // {}) as $sc | ($sc.nodes // $sc.results // []) | .[] | ((.source_file // .file // .path // empty), (.source_files[]? // empty))] | map(sub("^" + $pre; "") | sub("^\\./"; "")) | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)' <<<"$line" 2>/dev/null || echo '[]')"
-      ms="$(jq -r --arg id "$id" 'select(.id == $id) | .ms' "$work/times.jsonl" | head -1)"
-      jq -nc --arg id "$id" --argjson paths "$paths" --argjson ok "$ok" --argjson ms "${ms:-null}" '{question_id: $id, paths: $paths, truncated: false, request: {tool: "query_graph"}, ok: $ok, first_pass_ms: $ms}' >> "$out"
-    done < "$work/dump.jsonl"
+      id="$(jq -r .id <<<"$line")"; n="$(pages_of <<<"$line" | jq 'length')"; cut="$(cut_of <<<"$line")"
+      if [ "$n" -lt 10 ] && [ "$cut" = true ]; then jq -c --arg id "$id" 'select(.id == $id)' "$work/queries.jsonl" >> "$work/pass2.jsonl"; fi
+    done < "$work/dump1.jsonl"
+    if [ -s "$work/pass2.jsonl" ]; then client_run "$work/pass2.jsonl" "$t2" "$work/dump2.jsonl" "$work/times2.jsonl"; else : > "$work/dump2.jsonl"; fi
+    jq -n --arg tool query_graph --argjson a1 "$t1" --argjson a2 "$t2" --arg graph "$G/graph.json" '{tool: $tool, arguments: $a1, second_pass: $a2, server: ["graphify-mcp", $graph]}' > "$out.request.json"
+    while IFS= read -r line; do
+      id="$(jq -r .id <<<"$line")"; final="$line"; budget=2000
+      if l2="$(jq -c --arg id "$id" 'select(.id == $id)' "$work/dump2.jsonl" | head -1)" && [ -n "$l2" ]; then final="$l2"; budget=8000; fi
+      paths="$(pages_of <<<"$final")"; ok="$(jq -r .ok <<<"$final")"; n="$(jq 'length' <<<"$paths")"; cut="$(cut_of <<<"$final")"
+      truncated=false; [ "$n" -ge 10 ] || [ "$cut" != true ] || truncated=true
+      ms="$(jq -r --arg id "$id" 'select(.id == $id) | .ms' "$work/times1.jsonl" | head -1)"
+      jq -nc --arg id "$id" --argjson paths "$paths" --argjson truncated "$truncated" --argjson ok "$ok" --argjson budget "$budget" --argjson ms "${ms:-null}" '{question_id: $id, paths: $paths, truncated: $truncated, request: {tool: "query_graph", token_budget: $budget}, ok: $ok, first_pass_ms: $ms}' >> "$out"
+    done < "$work/dump1.jsonl"
     echo "wrote $out ($(grep -c . "$out") rows)"
     ;;
   *) die "unknown command $cmd" ;;
