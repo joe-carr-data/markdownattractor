@@ -41,7 +41,9 @@ report="$RESULTS/preflight/$table-$project.json"
 checks='[]'; failed=0; skipped=0
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*"; }
 record() { # name status detail [extra-json]
-  checks="$(jq -c --arg n "$1" --arg s "$2" --arg d "$3" --argjson x "${4:-{\}}" '. + [{name: $n, status: $s, detail: $d} + $x]' <<<"$checks")"
+  local extra="${4:-}"
+  [ -n "$extra" ] || extra='{}'
+  checks="$(jq -c --arg n "$1" --arg s "$2" --arg d "$3" --argjson x "$extra" '. + [{name: $n, status: $s, detail: $d} + $x]' <<<"$checks")"
   case "$2" in FAIL) failed=$((failed + 1)) ;; skipped) skipped=$((skipped + 1)) ;; esac
   log "$2 $1: $3"
 }
