@@ -66,6 +66,17 @@ model_sha() {
     done )
 }
 
+# No arm may reach a model through a provider key (plan §0a.3: every model call goes through
+# the owner's Claude Code login). The owner's shell exports such keys; a headless graphify
+# session found GEMINI_API_KEY and ran its extraction through Gemini until this was added.
+unset_provider_keys() {
+  local v
+  for v in $(env | grep -oE '^[A-Z0-9_]*(API_KEY|_TOKEN)=' | sed 's/=$//'); do
+    case "$v" in GITHUB_TOKEN|GH_TOKEN) ;; *) unset "$v" ;; esac
+  done
+  unset GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY 2>/dev/null || true
+}
+
 # A run of `claude -p` from inside a Claude Code session refuses to start while these are set.
 unset_nested_session() {
   local v

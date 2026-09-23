@@ -70,7 +70,7 @@ case "$cmd" in
     ( cd "$corpus" && qmd --index "$project" embed --timeout 0 ) >>"$log" 2>&1
     t3=$(date +%s)
     record_arm "$((t1 - t0))" "$((t2 - t1))" "$((t3 - t2))"
-    echo "built qmd index $project: add $((t1 - t0)) s · update $((t2 - t1)) s · embed $((t3 - t2)) s · $present of $total corpus pages indexed · $ARMS/qmd-$project.json"
+    echo "built qmd index $project: add $((t1 - t0)) s · update $((t2 - t1)) s · embed $((t3 - t2)) s"
     ;;
   drive)
     mode="${1:?full|no-rerank|bm25}"; out="${2:?out.jsonl}"; split="${3:-dev}"

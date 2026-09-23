@@ -83,7 +83,8 @@ finish() {
 trap 'finish' EXIT
 
 # 1. Environment.
-if [ -n "${ANTHROPIC_API_KEY:-}" ]; then record env FAIL "ANTHROPIC_API_KEY is set: every model call goes through the Claude Code login"; else
+keys="$(env | grep -oE '^[A-Z0-9_]*(API_KEY)=' | sed 's/=$//' | tr '\n' ' ')"
+if [ -n "$keys" ]; then record env FAIL "provider keys in the environment ($keys): every model call goes through the Claude Code login; unset them (the arm scripts unset them themselves, the preflight refuses to certify with them present)"; else
   if command -v claude >/dev/null && command -v jq >/dev/null && command -v rsync >/dev/null; then record env ok "ANTHROPIC_API_KEY unset · claude $(claude --version 2>/dev/null | head -1) · jq $(jq --version)"; else record env FAIL "claude, jq or rsync missing from PATH"; fi
 fi
 
