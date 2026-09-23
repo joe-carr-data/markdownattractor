@@ -1,0 +1,31 @@
+{
+  "by_backend": {
+    "claude-cli": 6160,
+    "deterministic": 226
+  },
+  "by_model": {
+    "claude-haiku-4-5": 6160,
+    "none": 226
+  },
+  "by_prompt_version": {
+    "deterministic": 226,
+    "section.v2": 6160
+  },
+  "by_schema_version": {
+    "1": 6386
+  },
+  "cards": 6386,
+  "complete": true,
+  "mda_version": "0.1.1",
+  "project": "supabase",
+  "sections": 6548,
+  "sections_carded": 6548,
+  "summarized_from": "2026-09-22T20:08:18.76831Z",
+  "summarized_to": "2026-09-22T21:36:36.489919Z",
+  "truncated": 4,
+  "usage": {
+    "cost_usd_list_price_equivalent": 30.48358,
+    "input_tokens": 16615918,
+    "output_tokens": 2675968
+  }
+}
