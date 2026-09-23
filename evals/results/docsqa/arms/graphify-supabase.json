@@ -1,0 +1,66 @@
+{
+  "arm": "graphify",
+  "project": "supabase",
+  "version": "graphify 0.9.66",
+  "install": "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
+  "build": {
+    "wall_s": 2053,
+    "completed": true,
+    "claude_exit": 0,
+    "host_model_alias": "sonnet",
+    "wakeup_calls": 71,
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path, --setting-sources project)",
+    "turns": 264,
+    "cost_usd_list_price": 47.1723897,
+    "is_error": false,
+    "result_tail": "g (SSR) Guide` and `SAML SSO Guide`?** — it's flagged AMBIGUOUS and bridges the auth server-side and enterprise-SSO documentation clusters. Want me to trace it?",
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
+      "uncached_input": 464,
+      "cache_creation": 349003,
+      "cache_read": 64254556,
+      "output": 171803
+    },
+    "model_usage": {
+      "claude-sonnet-5": {
+        "uncached_input": 886,
+        "cache_creation": 5523288,
+        "cache_read": 75038416,
+        "output": 1783121,
+        "cost_usd_list_price": 47.1723897
+      }
+    },
+    "assistant_messages": 1606,
+    "models": [
+      "claude-sonnet-5"
+    ],
+    "subagents_dispatched": 37
+  },
+  "failed_attempts": [],
+  "graph": {
+    "path": "\\~/.cache/markdownattractor/bench/graphify/supabase/graph.json",
+    "archived": "evals/results/docsqa/arms/graphs/graphify-supabase.graph.json.gz",
+    "sha256": "ade877996d6aac620d429733d0567dbff65480985361574a2fb5a18cb9d9635b",
+    "nodes": 2248,
+    "edges": 2408,
+    "nodes_with_source_file": 2243,
+    "distinct_source_files": 843
+  },
+  "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
+  "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
+  "coverage": {
+    "population": "dataset corpus pages (repository_source_path); source files on disk are a larger population, see the qmd record",
+    "corpus_pages": 770,
+    "corpus_pages_with_a_node": 740,
+    "coverage": 0.961038961038961
+  },
+  "query_interface": {
+    "mcp": "graphify-mcp <graph.json>",
+    "tool": "query_graph",
+    "arguments": {
+      "question": "<question text>",
+      "token_budget": "default 2000, then 8000 when fewer than ten distinct pages came back"
+    },
+    "node_to_file": "each NODE line of the response, its src in the order the tool lists them, deduplicated; the [!] TRUNCATED marker at 8000 is the truncation"
+  }
+}

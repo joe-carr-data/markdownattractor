@@ -1,0 +1,14 @@
+{
+  "tool": "query_graph",
+  "arguments": {
+    "question": "{query}"
+  },
+  "second_pass": {
+    "question": "{query}",
+    "token_budget": 8000
+  },
+  "server": [
+    "graphify-mcp",
+    "/Users/jcarr/.cache/markdownattractor/bench/graphify/github-docs-haiku/graph.json"
+  ]
+}

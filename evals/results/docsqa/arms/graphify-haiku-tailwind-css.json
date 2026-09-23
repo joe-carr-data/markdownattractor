@@ -1,0 +1,66 @@
+{
+  "arm": "graphify-haiku",
+  "project": "tailwind-css",
+  "version": "graphify 0.9.66",
+  "install": "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
+  "build": {
+    "wall_s": 342,
+    "completed": true,
+    "claude_exit": 0,
+    "host_model_alias": "haiku",
+    "wakeup_calls": 0,
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path, --setting-sources project)",
+    "turns": 40,
+    "cost_usd_list_price": 2.3059716000000003,
+    "is_error": false,
+    "result_tail": "\n**Next steps:** Use `graphify query \"<question>\"` to explore the graph interactively, or examine specific communities in GRAPH_REPORT.md for detailed analysis.",
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
+      "uncached_input": 252,
+      "cache_creation": 91401,
+      "cache_read": 1855104,
+      "output": 34969
+    },
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "uncached_input": 812,
+        "cache_creation": 867863,
+        "cache_read": 4336851,
+        "output": 143619,
+        "cost_usd_list_price": 2.3059716000000003
+      }
+    },
+    "assistant_messages": 409,
+    "models": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "subagents_dispatched": 10
+  },
+  "failed_attempts": [],
+  "graph": {
+    "path": "\\~/.cache/markdownattractor/bench/graphify/tailwind-css-haiku/graph.json",
+    "archived": "evals/results/docsqa/arms/graphs/graphify-haiku-tailwind-css.graph.json.gz",
+    "sha256": "90fd58f8b010227745643f65679a1329b0ffff0d8f83a54186a73abb412d3dd0",
+    "nodes": 470,
+    "edges": 631,
+    "nodes_with_source_file": 213,
+    "distinct_source_files": 82
+  },
+  "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
+  "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
+  "coverage": {
+    "population": "dataset corpus pages (repository_source_path); source files on disk are a larger population, see the qmd record",
+    "corpus_pages": 197,
+    "corpus_pages_with_a_node": 48,
+    "coverage": 0.2436548223350254
+  },
+  "query_interface": {
+    "mcp": "graphify-mcp <graph.json>",
+    "tool": "query_graph",
+    "arguments": {
+      "question": "<question text>",
+      "token_budget": "default 2000, then 8000 when fewer than ten distinct pages came back"
+    },
+    "node_to_file": "each NODE line of the response, its src in the order the tool lists them, deduplicated; the [!] TRUNCATED marker at 8000 is the truncation"
+  }
+}

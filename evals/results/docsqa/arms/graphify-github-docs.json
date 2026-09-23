@@ -1,0 +1,40 @@
+{
+  "arm": "graphify",
+  "project": "github-docs",
+  "build": {
+    "wall_s": 4745,
+    "completed": false,
+    "claude_exit": 1,
+    "host_model_alias": "sonnet",
+    "attempt_dir": "\\~/.cache/markdownattractor/bench/graphify/github-docs",
+    "ended_through": [],
+    "turns": 98,
+    "cost_usd_list_price": 73.54498010000007,
+    "is_error": true,
+    "result_tail": "You've hit your weekly limit · resets Sep 28 at 6am (Asia/Dubai)",
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
+      "uncached_input": 42,
+      "cache_creation": 132674,
+      "cache_read": 1511488,
+      "output": 39439
+    },
+    "model_usage": {
+      "claude-sonnet-5": {
+        "uncached_input": 818,
+        "cache_creation": 11469837,
+        "cache_read": 19976803,
+        "output": 4067438,
+        "cost_usd_list_price": 73.54498010000007
+      }
+    },
+    "assistant_messages": 2329,
+    "models": [
+      "<synthetic>",
+      "claude-sonnet-5"
+    ],
+    "subagents_dispatched": 82
+  },
+  "failed_attempts": [],
+  "note": "did not complete (rule 0.3: recorded, not dropped; the result_tail says why the session ended; any partial graph is quarantined and never scored)"
+}

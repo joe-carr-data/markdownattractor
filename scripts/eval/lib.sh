@@ -66,6 +66,17 @@ model_sha() {
     done )
 }
 
+# No arm may reach a model through a provider key (plan §0a.3: every model call goes through
+# the owner's Claude Code login). The owner's shell exports such keys; a headless graphify
+# session found GEMINI_API_KEY and ran its extraction through Gemini until this was added.
+unset_provider_keys() {
+  local v
+  for v in $(env | grep -oE '^[A-Z0-9_]*(API_KEY|_TOKEN)=' | sed 's/=$//'); do
+    case "$v" in GITHUB_TOKEN|GH_TOKEN) ;; *) unset "$v" ;; esac
+  done
+  unset GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY 2>/dev/null || true
+}
+
 # A run of `claude -p` from inside a Claude Code session refuses to start while these are set.
 unset_nested_session() {
   local v
@@ -98,6 +109,20 @@ question_text() { # project question_id
   rows="$(jq -c --arg p "$1" --arg id "$2" 'select(.project == $p and .question_id == $id) | .query' "$RUN/docsqa-data/data/questions.jsonl")"
   [ "$(printf '%s\n' "$rows" | grep -c .)" = 1 ] || die "question $2 of $1: expected exactly one row in questions.jsonl"
   jq -r . <<<"$rows"
+}
+
+# The identity of a qmd index: a sha256 over the rows of every table but `llm_cache` (qmd
+# writes its query-expansion and rerank results there on every full query, so the file's own
+# hash changes when the index is merely used) and the sqlite internals; the vec0 virtual
+# tables are read through their shadow tables. Stable across queries, changed by any
+# re-index or re-embed.
+qmd_fingerprint() { # index-name
+  local db="$HOME/.cache/qmd/$1.sqlite" t
+  [ -f "$db" ] || die "no qmd index $db"
+  sqlite3 "$db" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
+  for t in $(sqlite3 "$db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'llm_cache' AND name NOT IN ('vectors_vec') ORDER BY name"); do
+    printf '%s\n' "$t"; sqlite3 "$db" "SELECT * FROM \"$t\" ORDER BY 1" 2>/dev/null || printf 'unreadable\n'
+  done | shasum -a 256 | cut -c1-64
 }
 
 # The split a question belongs to, from the committed split.json.

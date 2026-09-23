@@ -1,0 +1,924 @@
+{
+  "arm_output": "~/.cache/markdownattractor/bench/bm25-runs/prisma.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 10438,
+    "sections_carded": 10438
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 176,
+    "anchors_found": 176,
+    "corpus_pages": 685,
+    "corpus_pages_indexed": 685,
+    "eligible": 118,
+    "excluded_image_evidence": 7,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [],
+    "multimodal_judgment": 11,
+    "project": "prisma",
+    "qrel_coverage": 1.0,
+    "qrels": 179,
+    "qrels_indexed": 179,
+    "qrels_unmapped": 0,
+    "questions": 125,
+    "questions_with_missing_anchor": 0
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "project": "prisma",
+  "root": "~/.cache/markdownattractor/bench/prisma",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.13108108108108107,
+        "ndcg_at_10": 0.1569050464581465,
+        "questions": 37,
+        "success_at_5": 0.24324324324324326
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-11775",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/filtering-and-sorting.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/filtering-and-sorting.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/crud.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/cursor.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/fundamentals/writing-data.mdx",
+            "apps/docs/content/docs/ai/tools/cursor.mdx",
+            "apps/docs/content/docs/orm/fundamentals/reading-data.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/special-fields-and-types/working-with-json-fields.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/fundamentals/relations-and-joins.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-11833",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/connection-management.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/databases-connections/connection-management.mdx",
+            "apps/docs/content/docs/accelerate/getting-started.mdx",
+            "apps/docs/content/docs/orm/v6/overview/prisma-in-your-stack/is-prisma-an-orm.mdx",
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/orm/v6/overview/databases/planetscale.mdx",
+            "apps/docs/content/docs/orm/v6/more/dev-environment/environment-variables.mdx",
+            "apps/docs/content/docs/orm/v7/more/dev-environment/environment-variables.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-11838",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/many-to-many-relations.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/many-to-many-relations.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-migrate/workflows/prototyping-your-schema.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-migrate/workflows/prototyping-your-schema.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/testing/integration-testing.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-11877",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/client-extensions/result.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/client-extensions/result.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/filtering-and-sorting.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/composite-types.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12292",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/relation-queries.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/crud.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/aggregation-grouping-summarizing.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/aggregation-grouping-summarizing.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/advanced/query-optimization-performance.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/query-optimization-performance.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/index.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/fundamentals/relations-and-joins.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12314",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/guides/postgres/vercel.mdx",
+            "apps/docs/content/docs/ai/prompts/turborepo.mdx",
+            "apps/docs/content/docs/guides/deployment/turborepo.mdx",
+            "apps/docs/content/docs/orm/v6/overview/introduction/should-you-use-prisma.mdx",
+            "apps/docs/content/docs/(index)/v7/getting-started.mdx",
+            "apps/docs/content/docs/ai/tools/tabnine.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/tabnine.mdx",
+            "apps/docs/content/docs/guides/deployment/bun-workspaces.mdx",
+            "apps/docs/content/docs/guides/deployment/pnpm-workspaces.mdx",
+            "apps/docs/content/docs/orm/v7/index.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/introduction.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12375",
+          "ndcg_at_10": 0.17723928678404774,
+          "pages": [
+            "apps/docs/content/docs/orm/data-modeling/mongodb.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/referential-actions/special-rules-for-referential-actions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/troubleshooting-relations.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/troubleshooting-relations.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/referential-actions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/many-to-many-relations.mdx",
+            "apps/docs/content/docs/orm/v6/reference/error-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/introspection.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/introspection.mdx"
+          ],
+          "rank": 10,
+          "relevant": [
+            "apps/docs/content/docs/orm/data-modeling/relational-databases.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/introspection.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12403",
+          "ndcg_at_10": 0.2640681225725909,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/ai/tools/windsurf.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/indexes.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/windsurf.mdx",
+            "apps/docs/content/docs/orm/reference/sql-query-builder.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/ai/tools/tabnine.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/tabnine.mdx"
+          ],
+          "rank": 4,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/indexes.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12468",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/reference/orm-client.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/reference/error-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/relation-queries.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx",
+            "apps/docs/content/docs/cli/error-reference.mdx",
+            "apps/docs/content/docs/ai/tutorials/typefully-clone.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/client-extensions/index.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12600",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/prisma-client/testing/integration-testing.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/testing/integration-testing.mdx",
+            "apps/docs/content/docs/guides/deployment/docker.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v7.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/overview/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/overview/index.mdx",
+            "apps/docs/content/docs/compute/faq.mdx",
+            "apps/docs/content/docs/orm/core-concepts.mdx",
+            "apps/docs/content/docs/console/concepts.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/more/dev-environment/environment-variables.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-12752",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v7.mdx",
+            "apps/docs/content/docs/orm/v6/more/upgrades/to-v7.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/ai/prompts/prisma-7.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-cli-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-cli-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/overview/location.mdx",
+            "apps/docs/content/docs/guides/deployment/bun-workspaces.mdx",
+            "apps/docs/content/docs/guides/v7/runtimes/bun.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/cli/v7/db/seed.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-13391",
+          "ndcg_at_10": 0.17723928678404774,
+          "pages": [
+            "apps/docs/content/docs/guides/integrations/permit-io.mdx",
+            "apps/docs/content/docs/orm/reference/orm-client.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/one-to-one-relations.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/index.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v6/more/troubleshooting/many-to-many-relations.mdx",
+            "apps/docs/content/docs/orm/v7/more/troubleshooting/many-to-many-relations.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/one-to-one-relations.mdx",
+            "apps/docs/content/docs/orm/fundamentals/relations-and-joins.mdx"
+          ],
+          "rank": 10,
+          "relevant": [
+            "apps/docs/content/docs/orm/fundamentals/relations-and-joins.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-13432",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/more/dev-environment/environment-variables.mdx",
+            "apps/docs/content/docs/orm/v7/more/dev-environment/environment-variables.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/deployment/serverless/deploy-to-aws-lambda.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/deployment/edge/deploy-to-cloudflare.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/deployment/serverless/deploy-to-aws-lambda.mdx",
+            "apps/docs/content/docs/guides/integrations/ai-sdk.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/ai/tutorials/typefully-clone.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/guides/integrations/datadog.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/more/dev-environment/environment-variables.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-13477",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/fundamentals/relations-and-joins.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/pagination.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/one-to-one-relations.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/table-inheritance.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/table-inheritance.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/many-to-many-relations.mdx",
+            "apps/docs/content/docs/ai/tutorials/linktree-clone.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/index.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-13540",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/referential-actions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/referential-actions/special-rules-for-referential-actions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/referential-actions/index.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v3.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/relation-mode.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/relation-mode.mdx",
+            "apps/docs/content/docs/orm/v6/overview/databases/planetscale.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/many-to-many-relations.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-13900",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/data-modeling/index.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/mongodb.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/orm/v7/index.mdx",
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/connection-pool.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/databases-connections/connection-pool.mdx",
+            "apps/docs/content/docs/orm/reference/orm-client.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/observability-and-logging/logging.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-14092",
+          "ndcg_at_10": 0.23719771276929622,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/more/internals/engines.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/deployment/serverless/deploy-to-aws-lambda.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/deployment/deploy-to-a-different-os.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/deployment/caveats-when-deploying-to-aws-platforms.mdx",
+            "apps/docs/content/docs/orm/v6/reference/environment-variables-reference.mdx",
+            "apps/docs/content/docs/orm/v7/reference/system-requirements.mdx",
+            "apps/docs/content/docs/orm/v6/reference/system-requirements.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/guides/deployment/docker.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx"
+          ],
+          "rank": 5,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/environment-variables-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/environment-variables-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-14316",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/reference/sql-query-builder.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-sequelize.mdx",
+            "apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-sequelize.mdx",
+            "apps/docs/content/docs/orm/fundamentals/advanced-queries.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/overview/generators.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/overview/generators.mdx",
+            "apps/docs/content/docs/postgres/error-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/indexes.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-14592",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v6/overview/databases/mongodb.mdx",
+            "apps/docs/content/docs/orm/v7/core-concepts/supported-databases/mongodb.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/indexes.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/index.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/indexes.mdx",
+            "apps/docs/content/docs/orm/data-modeling/index.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/client-extensions/index.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-14665",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/reference/error-reference.mdx",
+            "apps/docs/content/docs/orm/v6/overview/prisma-in-your-stack/is-prisma-an-orm.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v7/reference/error-reference.mdx",
+            "apps/docs/content/docs/ai/tutorials/linktree-clone.mdx",
+            "apps/docs/content/docs/orm/reference/error-reference.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/fundamentals/transactions.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-15462",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/special-fields-and-types/working-with-json-fields.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx",
+            "apps/docs/content/docs/orm/reference/orm-client.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/relation-queries.mdx",
+            "apps/docs/content/docs/orm/reference/sql-query-builder.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/aggregation-grouping-summarizing.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/filtering-and-sorting.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-15506",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/v6/reference/error-reference.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/orm/reference/error-reference.mdx",
+            "apps/docs/content/docs/orm/migrations/rollbacks-and-recovery.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/orm/fundamentals/writing-data.mdx",
+            "apps/docs/content/docs/(index)/prisma-orm/index.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-15990",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/one-to-one-relations.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/introspection.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/introspection.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/one-to-one-relations.mdx",
+            "apps/docs/content/docs/orm/data-modeling/relational-databases.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-migrate/workflows/customizing-migrations.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-migrate/workflows/customizing-migrations.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx"
+          ],
+          "rank": 5,
+          "relevant": [
+            "apps/docs/content/docs/orm/data-modeling/relational-databases.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-16083",
+          "ndcg_at_10": 0.3010299956639812,
+          "pages": [
+            "apps/docs/content/docs/compute/image-transformations.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/aggregation-grouping-summarizing.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/aggregation-grouping-summarizing.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/special-fields-and-types/composite-types.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/composite-types.mdx",
+            "apps/docs/content/docs/ai/tutorials/typefully-clone.mdx",
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx"
+          ],
+          "rank": 9,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-16127",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/more/upgrades/from-v1.mdx",
+            "apps/docs/content/docs/orm/v6/overview/prisma-in-your-stack/is-prisma-an-orm.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/postgresql.mdx",
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/orm/v6/overview/introduction/data-modeling.mdx",
+            "apps/docs/content/docs/orm/v7/core-concepts/data-modeling.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-migrate/understanding-prisma-migrate/legacy-migrate.mdx",
+            "apps/docs/content/docs/guides/making-guides.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/windsurf.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/migrations/how-migrations-work.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 2,
+          "id": "prisma::prisma-16219",
+          "ndcg_at_10": 0.6131471927654584,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-17205",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/more/troubleshooting/nextjs.mdx",
+            "apps/docs/content/docs/orm/v6/more/troubleshooting/nextjs.mdx",
+            "apps/docs/content/docs/ai/tutorials/typefully-clone.mdx",
+            "apps/docs/content/docs/orm/v6/more/dev-environment/environment-variables.mdx",
+            "apps/docs/content/docs/orm/v7/more/dev-environment/environment-variables.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/guides/integrations/embed-studio.mdx",
+            "apps/docs/content/docs/guides/postgres/vercel.mdx",
+            "apps/docs/content/docs/guides/integrations/ai-sdk.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/deployment/serverless/deploy-to-aws-lambda.mdx"
+          ],
+          "rank": 5,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/more/dev-environment/environment-variables.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-17479",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/guides/integrations/permit-io.mdx",
+            "apps/docs/content/docs/orm/v6/overview/introduction/should-you-use-prisma.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v5.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+            "apps/docs/content/docs/console/concepts.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/table-inheritance.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/table-inheritance.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/accelerate/more/known-limitations.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-schema/overview/generators.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-17624",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+            "apps/docs/content/docs/guides/authentication/authjs/nextjs.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/models.mdx",
+            "apps/docs/content/docs/orm/v7/core-concepts/supported-databases/mongodb.mdx",
+            "apps/docs/content/docs/orm/v6/overview/databases/mongodb.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/crud.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/views.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/views.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/data-modeling/relational-databases.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/index.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-18138",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/(index)/prisma-orm/index.mdx",
+            "apps/docs/content/docs/orm/migrations/rollbacks-and-recovery.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/guides/frameworks/astro.mdx",
+            "apps/docs/content/docs/guides/runtimes/bun.mdx",
+            "apps/docs/content/docs/(index)/getting-started.mdx",
+            "apps/docs/content/docs/guides/frameworks/tanstack-start.mdx",
+            "apps/docs/content/docs/guides/frameworks/hono.mdx",
+            "apps/docs/content/docs/(index)/index.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-cli-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-20323",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-schema/overview/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/overview/index.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/excluding-fields.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/type-safety/prisma-type-system.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/type-safety/prisma-type-system.mdx",
+            "apps/docs/content/docs/ai/tools/github-copilot.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/github-copilot.mdx",
+            "apps/docs/content/docs/ai/tools/windsurf.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/windsurf.mdx",
+            "apps/docs/content/docs/orm/v6/more/ai-tools/cursor.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-21534",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/type-safety/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/type-safety/index.mdx",
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/guides/integrations/embed-studio.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx",
+            "apps/docs/content/docs/orm/v7/more/troubleshooting/nextjs.mdx",
+            "apps/docs/content/docs/orm/v6/more/troubleshooting/nextjs.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-client-reference.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-21929",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/referential-actions.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/referential-actions/index.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/referential-actions/special-rules-for-referential-actions.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v3.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/relation-mode.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/relation-mode.mdx",
+            "apps/docs/content/docs/orm/v6/more/upgrades/older-versions.mdx",
+            "apps/docs/content/docs/ai/tools/mcp-server.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/postgresql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/many-to-many-relations.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/referential-actions.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-27080",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-schema/overview/generators.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-schema/overview/generators.mdx",
+            "apps/docs/content/docs/ai/prompts/prisma-7.mdx",
+            "apps/docs/content/docs/guides/deployment/turborepo.mdx",
+            "apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-drizzle.mdx",
+            "apps/docs/content/docs/compute/faq.mdx",
+            "apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-drizzle.mdx",
+            "apps/docs/content/docs/guides/v7/runtimes/bun.mdx",
+            "apps/docs/content/docs/(index)/v7/prisma-orm/add-to-existing-project/mongodb.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v7.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-schema/overview/generators.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-28310",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/reference/sql-query-builder.mdx",
+            "apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-sequelize.mdx",
+            "apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-sequelize.mdx",
+            "apps/docs/content/docs/orm/v6/overview/prisma-in-your-stack/is-prisma-an-orm.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/typedsql.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/queries/case-sensitivity.mdx",
+            "apps/docs/content/docs/orm/migrations/generating-a-migration.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/custom-model-and-field-names.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/client-extensions/index.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-28691",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v7/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/orm/v6/reference/prisma-config-reference.mdx",
+            "apps/docs/content/docs/guides/deployment/cloudflare-d1.mdx",
+            "apps/docs/content/docs/guides/upgrade-prisma-orm/v7.mdx",
+            "apps/docs/content/docs/ai/prompts/nextjs.mdx",
+            "apps/docs/content/docs/orm/v6/more/upgrades/to-v7.mdx",
+            "apps/docs/content/docs/ai/prompts/nuxt.mdx",
+            "apps/docs/content/docs/orm/v7/core-concepts/supported-databases/sqlite.mdx",
+            "apps/docs/content/docs/ai/prompts/prisma-7.mdx",
+            "apps/docs/content/docs/guides/v7/runtimes/deno.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v6/overview/databases/cloudflare-d1.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "prisma::prisma-9273",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/databases-connections/index.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/databases-connections/connection-pool.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/index.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/connection-pool.mdx",
+            "apps/docs/content/docs/postgres/faq.mdx",
+            "apps/docs/content/docs/accelerate/more/faq.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/deployment/serverless/deploy-to-aws-lambda.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/deployment/serverless/deploy-to-aws-lambda.mdx",
+            "apps/docs/content/docs/orm/v6/prisma-client/setup-and-configuration/databases-connections/pgbouncer.mdx",
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/pgbouncer.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/connection-management.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        }
+      ],
+      "run": "BM25-over-files",
+      "split": "dev",
+      "unknown": []
+    }
+  ],
+  "seed": 20260922,
+  "split": "dev",
+  "split_counts": {
+    "dev": 37,
+    "holdout": 20,
+    "test": 68
+  },
+  "store": {
+    "docs": 693,
+    "failed": 0,
+    "pending": 0,
+    "sections": 10438,
+    "summarized": 8339,
+    "tombstoned": 0,
+    "total_cost_usd": 39.294496,
+    "total_input_tokens": 21679828,
+    "total_output_tokens": 3466004
+  }
+}

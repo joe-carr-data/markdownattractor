@@ -2,17 +2,21 @@
   "table": "development",
   "project": "prisma",
   "split": "dev",
-  "run_at": "20260923T072635Z",
+  "run_at": "20260923T163251Z",
   "status": "completed",
   "passed": true,
-  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/development/prisma/20260923T072635Z",
+  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/development/prisma/20260923T163251Z",
   "frozen": "evals/results/docsqa/FROZEN.md",
   "mda": "mda 0.1.1",
-  "mda_sha256": "95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439",
-  "source_commit": "f3f517db972373afe2812987618e4042b6565f93",
+  "mda_sha256": "50554505b66d69ab66524dc05fed1012fa7074ca0bc5cbdcb705d71c822bfbab",
+  "source_commit": "334fe48735190519a9c096f410634294040559e6",
   "arms": [
     "mda",
-    "grep"
+    "grep",
+    "bm25-files",
+    "graphify",
+    "graphify-haiku",
+    "qmd"
   ],
   "required": [
     "env",
@@ -21,11 +25,15 @@
     "model",
     "store",
     "regenerate",
+    "artifacts",
     "replay",
     "reconstruction",
     "coverage-grep",
     "probes-mda",
-    "probes-grep"
+    "probes-grep",
+    "probes-graphify",
+    "probes-graphify-haiku",
+    "probes-qmd"
   ],
   "timing": {
     "build_profile": "release",
@@ -43,14 +51,14 @@
     {
       "name": "build",
       "status": "ok",
-      "detail": "mda 0.1.1 at f3f517d · /Users/jcarr/markdownattractor/target/release/mda · sha256 95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439",
-      "executable": "/Users/jcarr/markdownattractor/target/release/mda",
-      "sha256": "95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439"
+      "detail": "mda 0.1.1 at 334fe48 · /Users/jcarr/mda-worktrees/m2/target/release/mda · sha256 50554505b66d69ab66524dc05fed1012fa7074ca0bc5cbdcb705d71c822bfbab",
+      "executable": "/Users/jcarr/mda-worktrees/m2/target/release/mda",
+      "sha256": "50554505b66d69ab66524dc05fed1012fa7074ca0bc5cbdcb705d71c822bfbab"
     },
     {
       "name": "frozen",
       "status": "ok",
-      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/FROZEN.md (source commit bb263332887c2f363d6dcdd661c717bc2cc09b4d, HEAD f3f517db972373afe2812987618e4042b6565f93)"
+      "detail": "frozen inputs match /Users/jcarr/mda-worktrees/m2/evals/results/docsqa/FROZEN.md (source commit c246bb1decb1c571c3e48ef5c6bff4b6ada6aaf3, HEAD 334fe48735190519a9c096f410634294040559e6)"
     },
     {
       "name": "model",
@@ -65,22 +73,28 @@
     {
       "name": "regenerate",
       "status": "ok",
-      "detail": "3 committed run(s) regenerate from their archived page lists (results.json sha256 292216cdbf385edffb6f6331c549dd0cb5854ecb67a802cf6b5ae6464d1c604d)",
+      "detail": "3 committed run(s) and 5 external arm file(s) regenerate from their archived page lists (results.json sha256 292216cdbf385edffb6f6331c549dd0cb5854ecb67a802cf6b5ae6464d1c604d)",
       "results_sha256": "292216cdbf385edffb6f6331c549dd0cb5854ecb67a802cf6b5ae6464d1c604d",
       "coverage_sha256": "c7b70337fcfe3b523e5b39ce7ef770c0133e5b896fb7219a019ba3e0bff56a35",
-      "split_sha256": "5dc54a10988b03304f1fa6fe9b4cf8003515512075ef3b88ea07decf73763fa9"
+      "split_sha256": "5dc54a10988b03304f1fa6fe9b4cf8003515512075ef3b88ea07decf73763fa9",
+      "external_arm_files": 5
+    },
+    {
+      "name": "artifacts",
+      "status": "ok",
+      "detail": "live qmd index and graphify graphs match the frozen records"
     },
     {
       "name": "replay",
       "status": "ok",
-      "detail": "coverage, split and every row/question identical to evals/results/docsqa/prisma (lexical (raw only): success@5 0.21621621621621623 n 37 · lexical (cards + raw): success@5 0.2972972972972973 n 37 · hybrid (cards + raw + vectors): success@5 0.2972972972972973 n 37) in 77 s"
+      "detail": "coverage, split and every row/question identical to evals/results/docsqa/prisma (lexical (raw only): success@5 0.21621621621621623 n 37 · lexical (cards + raw): success@5 0.2972972972972973 n 37 · hybrid (cards + raw + vectors): success@5 0.2972972972972973 n 37) in 60 s"
     },
     {
       "name": "reconstruction",
       "status": "ok",
-      "detail": "identical on every row and question · same inventory {\"docs\":693,\"sections\":10438,\"carded\":10438} · 8339 cards attached · raw index 2 s · attach+embed+score 975 s",
-      "index_s": 2,
-      "attach_embed_score_s": 975,
+      "detail": "identical on every row and question · same inventory {\"docs\":693,\"sections\":10438,\"carded\":10438} · 8339 cards attached · raw index 1 s · attach+embed+score 778 s",
+      "index_s": 1,
+      "attach_embed_score_s": 778,
       "cards_attached": 8339,
       "inventory": {
         "docs": 693,
@@ -100,6 +114,21 @@
     },
     {
       "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-prisma/probes/)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "not applicable: the arm's build did not complete on prisma (recorded in arms/graphify-prisma.json)"
+    },
+    {
+      "name": "probes-graphify-haiku",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-prisma/probes/)"
+    },
+    {
+      "name": "probes-qmd",
       "status": "ok",
       "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-prisma/probes/)"
     }

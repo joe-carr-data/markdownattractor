@@ -1,0 +1,66 @@
+{
+  "arm": "graphify-haiku",
+  "project": "supabase",
+  "version": "graphify 0.9.66",
+  "install": "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
+  "build": {
+    "wall_s": 451,
+    "completed": true,
+    "claude_exit": 0,
+    "host_model_alias": "haiku",
+    "wakeup_calls": 0,
+    "command": "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path, --setting-sources project)",
+    "turns": 71,
+    "cost_usd_list_price": 6.142967199999999,
+    "is_error": false,
+    "result_tail": "Graph reveals tight integration around scripts, package management, and the graphify skill itself, with Supabase platform docs forming a dense knowledge domain.",
+    "terminal_result_usage": {
+      "scope": "the terminal result event as Claude Code reports it",
+      "uncached_input": 212,
+      "cache_creation": 130963,
+      "cache_read": 2276185,
+      "output": 27585
+    },
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "uncached_input": 2618,
+        "cache_creation": 2213973,
+        "cache_read": 10692057,
+        "output": 441091,
+        "cost_usd_list_price": 6.142967199999999
+      }
+    },
+    "assistant_messages": 1356,
+    "models": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "subagents_dispatched": 49
+  },
+  "failed_attempts": [],
+  "graph": {
+    "path": "\\~/.cache/markdownattractor/bench/graphify/supabase-haiku/graph.json",
+    "archived": "evals/results/docsqa/arms/graphs/graphify-haiku-supabase.graph.json.gz",
+    "sha256": "565ce68aa2aecbe916e99c23fb8ede831156e498beb56e37d404e1400301903b",
+    "nodes": 1991,
+    "edges": 1969,
+    "nodes_with_source_file": 582,
+    "distinct_source_files": 108
+  },
+  "skill_sha256": "3e4d30df5a936965acaa25117230a6f3ff44353c137e63030e85e3bc3a391fb7",
+  "hooks_settings_sha256": "6150edf44c68a31969bf1453eb8c4a0263cb150fee228d468b487b0dc36fb84a",
+  "coverage": {
+    "population": "dataset corpus pages (repository_source_path); source files on disk are a larger population, see the qmd record",
+    "corpus_pages": 770,
+    "corpus_pages_with_a_node": 44,
+    "coverage": 0.05714285714285714
+  },
+  "query_interface": {
+    "mcp": "graphify-mcp <graph.json>",
+    "tool": "query_graph",
+    "arguments": {
+      "question": "<question text>",
+      "token_budget": "default 2000, then 8000 when fewer than ten distinct pages came back"
+    },
+    "node_to_file": "each NODE line of the response, its src in the order the tool lists them, deduplicated; the [!] TRUNCATED marker at 8000 is the truncation"
+  }
+}

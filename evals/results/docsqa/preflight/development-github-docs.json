@@ -2,17 +2,21 @@
   "table": "development",
   "project": "github-docs",
   "split": "dev",
-  "run_at": "20260923T083238Z",
+  "run_at": "20260923T165125Z",
   "status": "completed",
   "passed": true,
-  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/development/github-docs/20260923T083238Z",
+  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/development/github-docs/20260923T165125Z",
   "frozen": "evals/results/docsqa/FROZEN.md",
   "mda": "mda 0.1.1",
-  "mda_sha256": "95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439",
-  "source_commit": "4e55e70329a7cf2862f7a3cfaf7fdd89d276b9f9",
+  "mda_sha256": "50554505b66d69ab66524dc05fed1012fa7074ca0bc5cbdcb705d71c822bfbab",
+  "source_commit": "ab07348182f3f39085a5f1b38b88eebee8939df5",
   "arms": [
     "mda",
-    "grep"
+    "grep",
+    "bm25-files",
+    "graphify",
+    "graphify-haiku",
+    "qmd"
   ],
   "required": [
     "env",
@@ -21,11 +25,15 @@
     "model",
     "store",
     "regenerate",
+    "artifacts",
     "replay",
     "reconstruction",
     "coverage-grep",
     "probes-mda",
-    "probes-grep"
+    "probes-grep",
+    "probes-graphify",
+    "probes-graphify-haiku",
+    "probes-qmd"
   ],
   "timing": {
     "build_profile": "release",
@@ -43,14 +51,14 @@
     {
       "name": "build",
       "status": "ok",
-      "detail": "mda 0.1.1 at 4e55e70 · /Users/jcarr/markdownattractor/target/release/mda · sha256 95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439",
-      "executable": "/Users/jcarr/markdownattractor/target/release/mda",
-      "sha256": "95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439"
+      "detail": "mda 0.1.1 at 334fe48 · /Users/jcarr/mda-worktrees/m2/target/release/mda · sha256 50554505b66d69ab66524dc05fed1012fa7074ca0bc5cbdcb705d71c822bfbab",
+      "executable": "/Users/jcarr/mda-worktrees/m2/target/release/mda",
+      "sha256": "50554505b66d69ab66524dc05fed1012fa7074ca0bc5cbdcb705d71c822bfbab"
     },
     {
       "name": "frozen",
       "status": "ok",
-      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/FROZEN.md (source commit bb263332887c2f363d6dcdd661c717bc2cc09b4d, HEAD 4e55e70329a7cf2862f7a3cfaf7fdd89d276b9f9)"
+      "detail": "frozen inputs match /Users/jcarr/mda-worktrees/m2/evals/results/docsqa/FROZEN.md (source commit c246bb1decb1c571c3e48ef5c6bff4b6ada6aaf3, HEAD 334fe48735190519a9c096f410634294040559e6)"
     },
     {
       "name": "model",
@@ -65,22 +73,28 @@
     {
       "name": "regenerate",
       "status": "ok",
-      "detail": "3 committed run(s) regenerate from their archived page lists (results.json sha256 4e0d43a25f6ec1d2f5f00ef476adba93d538476bafb56ef20122635462221087)",
+      "detail": "3 committed run(s) and 5 external arm file(s) regenerate from their archived page lists (results.json sha256 4e0d43a25f6ec1d2f5f00ef476adba93d538476bafb56ef20122635462221087)",
       "results_sha256": "4e0d43a25f6ec1d2f5f00ef476adba93d538476bafb56ef20122635462221087",
       "coverage_sha256": "d3d22f47ae4100f14182d41c0b3374115eb3573de059cf81811eb7803fe841fb",
-      "split_sha256": "913c6260f40ec602c8d8a4ec0b1d437fa0209ed02836c87cce99074efe240cbb"
+      "split_sha256": "913c6260f40ec602c8d8a4ec0b1d437fa0209ed02836c87cce99074efe240cbb",
+      "external_arm_files": 5
+    },
+    {
+      "name": "artifacts",
+      "status": "ok",
+      "detail": "live qmd index and graphify graphs match the frozen records"
     },
     {
       "name": "replay",
       "status": "ok",
-      "detail": "coverage, split and every row/question identical to evals/results/docsqa/github-docs (lexical (raw only): success@5 0.30612244897959184 n 49 · lexical (cards + raw): success@5 0.3877551020408163 n 49 · hybrid (cards + raw + vectors): success@5 0.40816326530612246 n 49) in 109 s"
+      "detail": "coverage, split and every row/question identical to evals/results/docsqa/github-docs (lexical (raw only): success@5 0.30612244897959184 n 49 · lexical (cards + raw): success@5 0.3877551020408163 n 49 · hybrid (cards + raw + vectors): success@5 0.40816326530612246 n 49) in 97 s"
     },
     {
       "name": "reconstruction",
       "status": "ok",
-      "detail": "identical on every row and question · same inventory {\"docs\":3742,\"sections\":23066,\"carded\":23066} · 20842 cards attached · raw index 7 s · attach+embed+score 2165 s",
-      "index_s": 7,
-      "attach_embed_score_s": 2165,
+      "detail": "identical on every row and question · same inventory {\"docs\":3742,\"sections\":23066,\"carded\":23066} · 20842 cards attached · raw index 6 s · attach+embed+score 1932 s",
+      "index_s": 6,
+      "attach_embed_score_s": 1932,
       "cards_attached": 20842,
       "inventory": {
         "docs": 3742,
@@ -100,6 +114,21 @@
     },
     {
       "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-github-docs/probes/)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "not applicable: the arm's build did not complete on github-docs (recorded in arms/graphify-github-docs.json)"
+    },
+    {
+      "name": "probes-graphify-haiku",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-github-docs/probes/)"
+    },
+    {
+      "name": "probes-qmd",
       "status": "ok",
       "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-github-docs/probes/)"
     }

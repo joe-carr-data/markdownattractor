@@ -1,0 +1,322 @@
+{
+  "arm_output": "~/.cache/markdownattractor/bench/graphify-runs/supabase-haiku.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 6548,
+    "sections_carded": 6548
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 48,
+    "anchors_found": 47,
+    "corpus_pages": 770,
+    "corpus_pages_indexed": 770,
+    "eligible": 40,
+    "excluded_image_evidence": 12,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "supabase::supabase-30447"
+    ],
+    "multimodal_judgment": 7,
+    "project": "supabase",
+    "qrel_coverage": 1.0,
+    "qrels": 63,
+    "qrels_indexed": 63,
+    "qrels_unmapped": 0,
+    "questions": 52,
+    "questions_with_missing_anchor": 1
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "project": "supabase",
+  "root": "~/.cache/markdownattractor/bench/supabase",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.0,
+        "ndcg_at_10": 0.0,
+        "questions": 12,
+        "success_at_5": 0.0
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 13,
+          "id": "supabase::supabase-1514",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "DEVELOPERS.md",
+            "apps/docs/package.json",
+            "apps/docs/tsconfig.json",
+            "CLAUDE.md",
+            "prettier.config.mjs",
+            "apps/docs/postcss.config.cjs",
+            "package.json",
+            "apps/docs/middleware.ts",
+            ".claude/skills/graphify/SKILL.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth.mdx",
+            "apps/docs/content/guides/auth/redirect-urls.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 9,
+          "id": "supabase::supabase-21027",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/content/navigation.references.ts",
+            "README.md",
+            "apps/docs/middleware.test.ts",
+            "CLAUDE.md",
+            "apps/docs/package.json",
+            "apps/docs/content/troubleshooting/scan-error-on-column-confirmation_token-converting-null-to-string-is-unsupported-during-auth-login-a0c686.mdx",
+            "apps/docs/CONTRIBUTING.md",
+            "package.json"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side.mdx",
+            "apps/docs/content/guides/auth/auth-mfa.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-32027",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 18,
+          "id": "supabase::supabase-32437",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/seeing-no-pghbaconf-entry-for-host-errors-in-postgres-and-they-come-from-an-ip-address-that-i-dont-recognize-4gds9f.mdx",
+            "apps/docs/tsconfig.json",
+            "apps/docs/content/guides/functions/storage-caching.mdx",
+            "apps/docs/codegen.ts",
+            "apps/docs/package.json",
+            "apps/docs/sentry.edge.config.ts",
+            "package.json",
+            "apps/docs/instrumentation-client.ts",
+            "CLAUDE.md",
+            "apps/docs/content/troubleshooting/supabase-project-provisioned-via-bolt-not-visible-in-dashboard-7188fc.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/functions/secrets.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 5,
+          "id": "supabase::supabase-32666",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase-cli-failed-sasl-auth-or-invalid-scram-server-final-message.mdx",
+            "apps/docs/content/troubleshooting/scan-error-on-column-confirmation_token-converting-null-to-string-is-unsupported-during-auth-login-a0c686.mdx",
+            "apps/docs/codegen.ts",
+            "apps/docs/package.json",
+            "apps/docs/content/troubleshooting/supabase-cli-transport-error-antivirus-firewall-tls-interception.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx"
+          ],
+          "split": "dev",
+          "truncated": true
+        },
+        {
+          "fetched": 16,
+          "id": "supabase::supabase-33029",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/security-of-anonymous-sign-ins-iOrGCL.mdx",
+            "apps/docs/tsconfig.json",
+            "apps/docs/content/troubleshooting/supabase-grafana-memory-charts.mdx",
+            "apps/docs/codegen.ts",
+            "apps/docs/content/troubleshooting/scan-error-on-column-confirmation_token-converting-null-to-string-is-unsupported-during-auth-login-a0c686.mdx",
+            "apps/docs/content/navigation.references.ts",
+            "package.json",
+            "apps/docs/instrumentation-client.ts",
+            "CLAUDE.md",
+            "apps/docs/content/troubleshooting/running-explain-analyze-on-functions.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 3,
+          "id": "supabase::supabase-33340",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/storage-error-database-schema-is-incompatible-when-uploading-files-988baa.mdx",
+            "apps/docs/package.json",
+            ".claude/skills/graphify/references/transcribe.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/realtime/limits.mdx"
+          ],
+          "split": "dev",
+          "truncated": true
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-34447",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase-project-provisioned-via-bolt-not-visible-in-dashboard-7188fc.mdx",
+            "apps/docs/package.json",
+            "package.json",
+            "apps/docs/tsconfig.json",
+            "apps/docs/middleware.test.ts",
+            "CLAUDE.md",
+            "apps/docs/content/troubleshooting/storage-error-403-forbidden-new-row-violates-row-level-security-policy-on-upload-a94384.mdx",
+            "apps/docs/vitest.globalSetup.ts",
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            ".claude/skills/graphify/SKILL.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/prisma.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 6,
+          "id": "supabase::supabase-35974",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/sso-error-you-do-not-have-permissions-to-join-this-organization-or-prompts-to-create-new-organization.mdx",
+            "package.json",
+            "apps/docs/middleware.test.ts",
+            "apps/docs/tsconfig.json",
+            "apps/docs/content/troubleshooting/schema-pg_pgrst_no_exposed_schemas-does-not-exist.mdx",
+            "apps/docs/package.json"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 11,
+          "id": "supabase::supabase-36672",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/package.json",
+            "apps/docs/instrumentation-client.ts",
+            "apps/docs/content/troubleshooting/seeing-no-pghbaconf-entry-for-host-errors-in-postgres-and-they-come-from-an-ip-address-that-i-dont-recognize-4gds9f.mdx",
+            "apps/docs/content/troubleshooting/supabase-project-provisioned-via-bolt-not-visible-in-dashboard-7188fc.mdx",
+            "apps/docs/next.config.mjs",
+            "apps/docs/middleware.ts",
+            "apps/docs/content/navigation.references.ts",
+            "apps/docs/instrumentation.ts",
+            "apps/docs/sentry.edge.config.ts"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 11,
+          "id": "supabase::supabase-37719",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/sso-error-you-do-not-have-permissions-to-join-this-organization-or-prompts-to-create-new-organization.mdx",
+            "apps/docs/package.json",
+            "apps/docs/content/troubleshooting/running-explain-analyze-on-functions.mdx",
+            "apps/docs/README.md",
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/content/troubleshooting/rls-simplified-BJTcS8.mdx",
+            "apps/docs/content/troubleshooting/steps-to-improve-query-performance-with-indexes-q8PoC9.mdx",
+            "apps/docs/content/guides/storage/buckets/fundamentals.mdx",
+            "apps/docs/content/troubleshooting/supabase-grafana-memory-charts.mdx",
+            "apps/docs/content/troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/cron/quickstart.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-8508",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP.mdx",
+            "apps/docs/content/troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd.mdx",
+            "apps/docs/middleware.test.ts",
+            "apps/docs/package.json",
+            "apps/docs/content/troubleshooting/seeing-no-pghbaconf-entry-for-host-errors-in-postgres-and-they-come-from-an-ip-address-that-i-dont-recognize-4gds9f.mdx",
+            "apps/docs/middleware.ts",
+            "apps/docs/content/troubleshooting/rls-simplified-BJTcS8.mdx",
+            "apps/docs/content/troubleshooting/security-of-anonymous-sign-ins-iOrGCL.mdx",
+            "apps/docs/content/navigation.references.ts",
+            "apps/docs/content/troubleshooting/steps-to-improve-query-performance-with-indexes-q8PoC9.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/queues.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        }
+      ],
+      "run": "graphify-haiku (query_graph)",
+      "split": "dev",
+      "unknown": []
+    }
+  ],
+  "seed": 20260922,
+  "split": "dev",
+  "split_counts": {
+    "dev": 15,
+    "holdout": 9,
+    "test": 28
+  },
+  "store": {
+    "docs": 836,
+    "failed": 0,
+    "pending": 0,
+    "sections": 6548,
+    "summarized": 6386,
+    "tombstoned": 0,
+    "total_cost_usd": 30.48358,
+    "total_input_tokens": 16615918,
+    "total_output_tokens": 2675968
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "arm": "bm25-files",
+  "project": "prisma",
+  "version": "python3 sqlite3 3.43.2 FTS5",
+  "config": {
+    "tokenize": "unicode61 remove_diacritics 2",
+    "unit": "whole page",
+    "query": "every term double-quoted, AND; OR fallback when AND matches nothing",
+    "rank": "bm25()"
+  },
+  "build": {
+    "index_s": 1
+  },
+  "coverage": {
+    "files_indexed": 693,
+    "corpus_pages": 685,
+    "corpus_pages_indexed": 685,
+    "coverage": 1
+  },
+  "db": "\\~/.cache/markdownattractor/bench/bm25-files/prisma.sqlite",
+  "latency": "none (quality only, plan §2.1)"
+}
