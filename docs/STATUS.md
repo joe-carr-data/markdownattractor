@@ -1,6 +1,6 @@
 # STATUS (updated 2026-09-22 by Claude)
-**Start here after compaction: `docs/handoffs/2026-09-22-session4-handoff.md` (then the session-3 handoff for releases and recipes).**
-Phase: benchmarks — **B0a, B0b, the DocsQA adapter and the B2 ingestion gate done (100% coverage); cards for the four corpora next**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md
+**Start here after compaction: `docs/handoffs/2026-09-23-session4-final-handoff.md` (then the session-3 handoff for releases and recipes).**
+Phase: benchmarks — **all four DocsQA corpora carded (36,899 cards, 0 failures); execution plan drafted**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
@@ -22,4 +22,4 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
-## Last Codex review: 2026-09-22 (docs/reviews/codex/2026-09-22-docsqa-adapter.md) — DocsQA adapter, 6 findings, all fixed before merge
+## Last Codex review: 2026-09-23 (docs/reviews/codex/2026-09-23-execution-plan.md) — execution plan pre-mortem, three passes, verdict quoted; qualifications = M1–M5
