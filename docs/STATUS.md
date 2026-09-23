@@ -1,6 +1,6 @@
 # STATUS (updated 2026-09-23 by Claude)
 **Start here after compaction: `docs/handoffs/2026-09-23-session4-final-handoff.md` (then the session-3 handoff for releases and recipes).**
-Phase: benchmarks — **M1 and M2 merged (PRs #22, #23); M3 on `feat/bench-m3` (PR open): tuning knobs in config, the greedy loop ran (stop rule after the two embedding-text candidates; pre-tuning defaults win), pooled-label diagnostic on the four dev splits**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
+Phase: benchmarks — **M1 and M2 merged (PRs #22, #23); M3 on `feat/bench-m3` (PR #24 open, CI running): tuning knobs in config, the greedy loop ran (stop rule after the two embedding-text candidates; pre-tuning defaults win), pooled-label diagnostic on the four dev splits**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
