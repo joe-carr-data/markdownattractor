@@ -23,11 +23,12 @@ q="$(question_text "$project" "$qid")"
 [ -n "$q" ] || die "question $qid of $project has no text"
 safe_target "$trace"; safe_target "$trace.err"
 trace="$(cd "$(dirname "$trace")" && pwd)/$(basename "$trace")"
-unset_nested_session
+unset_nested_session; unset_provider_keys
 mcp_cfg=""
 skill=""
 trap '[ -z "$mcp_cfg" ] || rm -f "$mcp_cfg"; [ -z "$skill" ] || rm -f "$skill"' EXIT
-common=(--print --setting-sources "" --no-session-persistence --model "$model" --max-turns 12
+setting_sources=""
+common=(--print --no-session-persistence --model "$model" --max-turns 12
         --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config)
 case "$arm" in
   mda)
@@ -51,17 +52,30 @@ case "$arm" in
     args=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__qmd__*"
           --append-system-prompt-file "$skill")
     want='^mcp__qmd__query$' ;;
-  *) die "unknown arm $arm (mda|grep|qmd; the graphify probe comes with its arm)" ;;
+  graphify)
+    # graphify's MCP server on the archived graph, run from the checkout COPY the graph was
+    # built on (its project-level .claude/ holds graphify's skill, PreToolUse hooks and
+    # CLAUDE.md nudge: --setting-sources project loads them, so the hook is live).
+    G="$RUN/graphify/$project"
+    [ -f "$G/graph.json" ] && [ -f "$G/src/.claude/settings.json" ] || die "no graphify build for $project (scripts/eval/arms/graphify.sh build)"
+    corpus="$G/src"
+    mcp_cfg="$(mktemp -t mda-probe-mcp.XXXXXX)"
+    jq -n --arg graph "$G/graph.json" '{mcpServers: {graphify: {command: "graphify-mcp", args: [$graph]}}}' > "$mcp_cfg"
+    args=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__graphify__*")
+    setting_sources=project
+    want='^mcp__graphify__(query_graph|get_node|get_neighbors|get_community|god_nodes|shortest_path)$' ;;
+  *) die "unknown arm $arm (mda|grep|qmd|graphify)" ;;
 esac
 preamble="Answer from the documents in the current directory. Be concise (at most 6 lines). Cite the file and section you used."
-launch="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$corpus" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" \
+launch="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$corpus" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" --arg sources "$setting_sources" \
   --arg skill_sha "$( [ -n "$skill" ] && shasum -a 256 "$skill" | cut -c1-64 || true)" \
-  --args '{claude_flags: $ARGS.positional, model: $model, cwd: $root,
+  --args '{claude_flags: ($ARGS.positional + ["--setting-sources", $sources]), model: $model, cwd: $root,
            mcp: (if $arm == "mda" then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
-                 elif $arm == "qmd" then {server: "qmd", command: "qmd", args: ["--index", $project, "mcp"]} else null end),
-           system_prompt: (if $arm == "mda" then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} else null end)}' -- "${common[@]}" "${args[@]}")"
+                 elif $arm == "qmd" then {server: "qmd", command: "qmd", args: ["--index", $project, "mcp"]}
+                 elif $arm == "graphify" then {server: "graphify", command: "graphify-mcp", args: [($root + "/../graph.json")], project_settings: ($root + "/.claude")} else null end),
+           system_prompt: (if $arm == "mda" then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} elif $arm == "graphify" then {source: "project .claude/ written by graphify install --project (skill, hooks, CLAUDE.md)"} else null end)}' -- "${common[@]}" "${args[@]}")"
 t0=$(date +%s); rc=0
-(cd "$corpus" && claude "${common[@]}" "${args[@]}" -- "$preamble $q" </dev/null > "$trace" 2>"$trace.err") || rc=$?
+(cd "$corpus" && claude "${common[@]}" --setting-sources "$setting_sources" "${args[@]}" -- "$preamble $q" </dev/null > "$trace" 2>"$trace.err") || rc=$?
 t1=$(date +%s)
 [ -s "$trace.err" ] || rm -f "$trace.err"
 summary="$(jq -c -s --arg arm "$arm" --arg project "$project" --arg qid "$qid" --arg want "$want" --argjson rc "$rc" --argjson wall "$((t1 - t0))" --arg trace "${trace#"$REPO"/}" --argjson launch "$launch" '
