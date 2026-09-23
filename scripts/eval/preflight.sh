@@ -114,14 +114,16 @@ if [ "$pend" = 0 ] && [ "$fail" = 0 ] && [ "$carded" = "$embedded" ] && [ "$card
 
 # 6. Regeneration from archived observations (plan §2.0b): each committed run's page lists,
 #    fed back as an arm, must give the same metrics and per-question results, no store search.
-regen_norm() { jq -S '{run: .runs[0].run, questions: .runs[0].metrics.questions, success_at_5: .runs[0].metrics.success_at_5, mrr_at_5: .runs[0].metrics.mrr_at_5, ndcg_at_10: .runs[0].metrics.ndcg_at_10, results: [.runs[0].results[] | {id, split, rank, ndcg_at_10, pages, truncated}]}' "$1"; }
-committed_norm() { jq -S --argjson i "$2" '{run: .runs[$i].run, questions: .runs[$i].metrics.questions, success_at_5: .runs[$i].metrics.success_at_5, mrr_at_5: .runs[$i].metrics.mrr_at_5, ndcg_at_10: .runs[$i].metrics.ndcg_at_10, results: [.runs[$i].results[] | {id, split, rank, ndcg_at_10, pages, truncated}]}' "$1"; }
+#    The archive holds ten pages per question; a rank the store found beyond ten (from its
+#    deeper fetch) is kept in results.json for the reader but no metric depends on it, so
+#    ranks are compared up to ten.
+regen_norm() { jq -S --argjson i "${2:-0}" '{run: .runs[$i].run, questions: .runs[$i].metrics.questions, success_at_5: .runs[$i].metrics.success_at_5, mrr_at_5: .runs[$i].metrics.mrr_at_5, ndcg_at_10: .runs[$i].metrics.ndcg_at_10, results: [.runs[$i].results[] | {id, split, rank: (if .rank != null and .rank <= 10 then .rank else null end), ndcg_at_10, pages, truncated}]}' "$1"; }
 nruns="$(jq '.runs | length' "$committed/results.json")"; bad=""
 for ((i = 0; i < nruns; i++)); do
   name="$(jq -r --argjson i "$i" '.runs[$i].run' "$committed/results.json")"
   archived_rows "$committed/results.json" "$i" > "$A/archived-$i.jsonl"
   if "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split "$split" --arm-output "$A/archived-$i.jsonl" --arm-name "$name" > "$A/regen-$i.json" 2>"$A/regen-$i.err" \
-     && regen_norm "$A/regen-$i.json" > "$A/regen-$i.norm" && committed_norm "$committed/results.json" "$i" > "$A/committed-$i.norm" \
+     && regen_norm "$A/regen-$i.json" 0 > "$A/regen-$i.norm" && regen_norm "$committed/results.json" "$i" > "$A/committed-$i.norm" \
      && diff "$A/regen-$i.norm" "$A/committed-$i.norm" > "$A/regen-$i.diff"; then :; else bad="$bad '$name'"; fi
 done
 hashes="$(jq -n --arg r "$(sha256 "$committed/results.json")" --arg c "$(sha256 "$committed/coverage.json")" --arg s "$(sha256 "$committed/split.json")" '{results_sha256: $r, coverage_sha256: $c, split_sha256: $s}')"
