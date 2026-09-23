@@ -1,6 +1,6 @@
 # FROZEN — DocsQA-Repo, protocol: development
 
-Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *development*. The first development-protocol freeze (M1): the four DocsQA corpora carded and embedded, the raw/cards/hybrid dev rows produced under it.
+Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *development*.
 
 ## Inputs
 
@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: 09bdec885578a125b51e93bd3ff239606d2a3af8 (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml; a check requires them unchanged since this commit)
+- source commit: e388c65fe1f3e30002311db379dd8d0f8c0ad12f (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml; a check requires them unchanged since this commit)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (sha256 152c2d0ba35a04ac44c16682d17678fd4f5b0188a23349850c0477baf1b7ebd9)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -38,7 +38,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 - scripts/eval/ab.sh sha256: c469c9b14fc85388fc4eec51ece154c31ad59d7680743a5469916ede83eac36c
 - scripts/eval/grade.sh sha256: b9d79fb26807be4fb4f767067138b29cb5c0a24d739865db9a7714efcc323693
 - scripts/eval/probe.sh sha256: b58437cc1898ebf9fce475e13c4c7bbb50c3274b7b3fce7f25ad1de3f7e4c2e6
-- scripts/eval/preflight.sh sha256: 4be4f3df3276cca2e1dbd79dabffd16b7fb39540e10036672151985479df4ef9
+- scripts/eval/preflight.sh sha256: ae72af83123627412a7552a3a7da8e11f2363a15ac918f3d517a2af087972299
 - scripts/eval/freeze.sh sha256: 768e77fbd727b57ffb611d975af9162e8cf4c2bd43c59681811fef6e9e446667
 - scripts/eval/lib.sh sha256: 99f712ad14c2885a8bb0567535800ec59809f5176f3ad6c97562d9807ea7ad09
 
@@ -58,7 +58,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ## Runtime
 
-- frozen_at: 2026-09-23T06:07:55Z
+- frozen_at: 2026-09-23T06:08:39Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.280 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
