@@ -146,9 +146,7 @@ inputs() {
       # checkpoint; a graphify graph as recorded (the preflight requires the served file to match).
       local art=""
       case "$arm" in
-        qmd) [ -f "$HOME/.cache/qmd/$pr.sqlite" ] || die "qmd index for $pr missing (~/.cache/qmd/$pr.sqlite)"
-             sqlite3 "$HOME/.cache/qmd/$pr.sqlite" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
-             art=" · index sha256 $(sha256 "$HOME/.cache/qmd/$pr.sqlite")" ;;
+        qmd) art=" · index fingerprint $(qmd_fingerprint "$pr")" ;;
         graphify|graphify-*) [ "$(jq -r '.build.completed' "$f")" != true ] || art=" · graph sha256 $(jq -r .graph.sha256 "$f")" ;;
       esac
       line="$line $(basename "$f" .json) (version $(jq -r '.version // "?"' "$f") · $(jq -r 'if .build.completed == false then "did not complete" else "coverage \(.coverage.coverage // "?")" end' "$f") · record sha256 $h$art);"

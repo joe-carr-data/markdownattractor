@@ -154,8 +154,7 @@ art_bad=""
 for a in $arms; do
   case "$a" in
     qmd) if [ -f "$HOME/.cache/qmd/$project.sqlite" ]; then
-           sqlite3 "$HOME/.cache/qmd/$project.sqlite" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
-           h="$(sha256 "$HOME/.cache/qmd/$project.sqlite")"; grep -q "qmd-$project.*index sha256 $h" "$frozen" || art_bad="$art_bad qmd(index $h)"
+           h="$(qmd_fingerprint "$project")"; grep -q "qmd-$project ([^;]*index fingerprint $h" "$frozen" || art_bad="$art_bad qmd(index fingerprint $h)"
          else art_bad="$art_bad qmd(no index)"; fi ;;
     graphify|graphify-*) rec="$RESULTS/arms/$a-$project.json"
          if [ -f "$rec" ] && [ "$(jq -r '.build.completed' "$rec")" = true ]; then

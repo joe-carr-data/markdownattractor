@@ -111,5 +111,19 @@ question_text() { # project question_id
   jq -r . <<<"$rows"
 }
 
+# The identity of a qmd index: a sha256 over the rows of every table but `llm_cache` (qmd
+# writes its query-expansion and rerank results there on every full query, so the file's own
+# hash changes when the index is merely used) and the sqlite internals; the vec0 virtual
+# tables are read through their shadow tables. Stable across queries, changed by any
+# re-index or re-embed.
+qmd_fingerprint() { # index-name
+  local db="$HOME/.cache/qmd/$1.sqlite" t
+  [ -f "$db" ] || die "no qmd index $db"
+  sqlite3 "$db" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
+  for t in $(sqlite3 "$db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'llm_cache' AND name NOT IN ('vectors_vec') ORDER BY name"); do
+    printf '%s\n' "$t"; sqlite3 "$db" "SELECT * FROM \"$t\" ORDER BY 1" 2>/dev/null || printf 'unreadable\n'
+  done | shasum -a 256 | cut -c1-64
+}
+
 # The split a question belongs to, from the committed split.json.
 question_split() { jq -r --arg id "$2" '.questions[] | select(.id == $id) | .split' "$RESULTS/$1/split.json"; }
