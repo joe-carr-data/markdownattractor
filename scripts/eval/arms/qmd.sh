@@ -10,6 +10,7 @@
 #   scripts/eval/arms/qmd.sh build <project>                      # collection add + update + embed; times, coverage, arm.json
 #   scripts/eval/arms/qmd.sh drive <project> <full|no-rerank|bm25> <out.jsonl> [split=dev]
 #   scripts/eval/arms/qmd.sh status <project>
+#   scripts/eval/arms/qmd.sh record <project> [add_s update_s embed_s]   # rewrite the arm record without rebuilding
 # One index per project (`qmd --index <project>`, its collection registered in
 # ~/.config/qmd/<project>.yml and its data in ~/.cache/qmd/<project>.sqlite), so a query can
 # never see another project's collection. The collection mask includes .mdx and .markdown
@@ -28,7 +29,36 @@ ARMS="$RESULTS/arms"; mkdir -p "$ARMS"
 qmd_version() { qmd --version 2>/dev/null | head -1; }
 models_sha() { ( cd "$HOME/.cache/qmd/models" 2>/dev/null && find . -type f | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"; done ); }
 
+# The arm record (evals/results/docsqa/arms/qmd-<project>.json): version, install, effective
+# configuration, build times, coverage against the dataset corpus (which of its pages the
+# index lists), the model files' hashes, the status text.
+record_arm() { # add_s update_s embed_s
+  local status files on_disk total present missing listed p
+  status="$(qmd --index "$project" status 2>&1)"
+  listed="$(qmd --index "$project" ls "$project" 2>/dev/null | sed -n 's|.*qmd://'"$project"'/||p')"
+  files="$(printf '%s\n' "$listed" | grep -c . || true)"
+  on_disk="$(find "$corpus" -type f \( -name '*.md' -o -name '*.mdx' -o -name '*.markdown' \) -not -path '*/.markdownattractor/*' -not -path '*/.git/*' | wc -l | tr -d ' ')"
+  total=0; present=0; missing='[]'
+  while IFS= read -r p; do
+    total=$((total + 1))
+    if grep -qxF "$p" <<<"$listed"; then present=$((present + 1)); else missing="$(jq -c --arg p "$p" '. + [$p]' <<<"$missing")"; fi
+  done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
+  jq -n --arg arm qmd --arg project "$project" --arg version "$(qmd_version)" --arg node "$(node --version)" --arg mask "$MASK" \
+    --argjson add_s "$1" --argjson update_s "$2" --argjson embed_s "$3" \
+    --arg status "$status" --argjson files "${files:-0}" --argjson on_disk "$on_disk" --argjson total "$total" --argjson present "$present" --argjson missing "$missing" \
+    --arg models "$(models_sha)" \
+    '{arm: $arm, project: $project, version: $version, node: $node,
+      install: "npm i -g @tobilu/qmd@2.8.3", index: ("~/.cache/qmd/" + $project + ".sqlite"), collection: ("~/.config/qmd/" + $project + ".yml"),
+      config: {mask: $mask, candidate_limit: 40, results_default: 5, rerank: "Qwen3-Reranker-0.6B (default on)", expansion: "qmd-query-expansion-1.7B (default on)", embed: "EmbeddingGemma-300M", gpu: "metal (default)",
+               mcp_request: {tool: "query", arguments: {query: "<question text>", limit: "<20, then 40 when fewer than ten distinct pages came back>", rerank: "<true for the full row, false for the no-rerank row>"}}},
+      build: {collection_add_s: $add_s, update_s: $update_s, embed_s: $embed_s, total_s: ($add_s + $update_s + $embed_s)},
+      coverage: {files_indexed: $files, markdown_files_on_disk: $on_disk, corpus_pages: $total, corpus_pages_indexed: $present, coverage: (if $total == 0 then 0 else $present / $total end), missing_pages: $missing},
+      models_sha256: ($models | split("\n") | map(select(. != ""))), status: $status}' > "$ARMS/qmd-$project.json"
+  echo "qmd $project: $present of $total corpus pages indexed ($files files) · $ARMS/qmd-$project.json"
+}
+
 case "$cmd" in
+  record) record_arm "${1:-0}" "${2:-0}" "${3:-0}" ;;
   build)
     [ ! -f "$HOME/.config/qmd/$project.yml" ] || die "index $project already registered (~/.config/qmd/$project.yml): remove it first, a build is done once per freeze"
     log="$RUN/qmd-build-$project.log"; : > "$log"
@@ -39,26 +69,7 @@ case "$cmd" in
     t2=$(date +%s)
     ( cd "$corpus" && qmd --index "$project" embed --timeout 0 ) >>"$log" 2>&1
     t3=$(date +%s)
-    status="$(qmd --index "$project" status 2>&1)"
-    files="$(qmd --index "$project" ls 2>/dev/null | grep -cE '^\s+\S' || true)"
-    on_disk="$(find "$corpus" -type f \( -name '*.md' -o -name '*.mdx' -o -name '*.markdown' \) -not -path '*/.markdownattractor/*' -not -path '*/.git/*' | wc -l | tr -d ' ')"
-    # Coverage against the dataset corpus: which of its pages the index lists.
-    total=0; present=0; missing='[]'
-    listed="$(qmd --index "$project" ls "$project" 2>/dev/null | sed -n 's|^\s*qmd://'"$project"'/||p' | sed 's/\s.*$//')"
-    while IFS= read -r p; do
-      total=$((total + 1))
-      if grep -qxF "$p" <<<"$listed"; then present=$((present + 1)); else missing="$(jq -c --arg p "$p" '. + [$p]' <<<"$missing")"; fi
-    done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
-    jq -n --arg arm qmd --arg project "$project" --arg version "$(qmd_version)" --arg node "$(node --version)" --arg mask "$MASK" \
-      --argjson add_s "$((t1 - t0))" --argjson update_s "$((t2 - t1))" --argjson embed_s "$((t3 - t2))" \
-      --arg status "$status" --argjson files "${files:-0}" --argjson on_disk "$on_disk" --argjson total "$total" --argjson present "$present" --argjson missing "$missing" \
-      --arg models "$(models_sha)" \
-      '{arm: $arm, project: $project, version: $version, node: $node,
-        install: "npm i -g @tobilu/qmd@2.8.3", index: ("~/.cache/qmd/" + $project + ".sqlite"), collection: ("~/.config/qmd/" + $project + ".yml"),
-        config: {mask: $mask, candidate_limit: 40, results_default: 5, rerank: "Qwen3-Reranker-0.6B (default on)", expansion: "qmd-query-expansion-1.7B (default on)", embed: "EmbeddingGemma-300M", gpu: "metal (default)"},
-        build: {collection_add_s: $add_s, update_s: $update_s, embed_s: $embed_s, total_s: ($add_s + $update_s + $embed_s)},
-        coverage: {files_indexed: $files, markdown_files_on_disk: $on_disk, corpus_pages: $total, corpus_pages_indexed: $present, coverage: (if $total == 0 then 0 else $present / $total end), missing_pages: $missing},
-        models_sha256: ($models | split("\n") | map(select(. != ""))), status: $status}' > "$ARMS/qmd-$project.json"
+    record_arm "$((t1 - t0))" "$((t2 - t1))" "$((t3 - t2))"
     echo "built qmd index $project: add $((t1 - t0)) s · update $((t2 - t1)) s · embed $((t3 - t2)) s · $present of $total corpus pages indexed · $ARMS/qmd-$project.json"
     ;;
   drive)
