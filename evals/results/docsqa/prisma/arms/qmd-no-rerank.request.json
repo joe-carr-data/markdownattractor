@@ -1,0 +1,14 @@
+{
+  "tool": "query",
+  "arguments": {
+    "query": "{query}",
+    "limit": 20,
+    "rerank": false
+  },
+  "server": [
+    "qmd",
+    "--index",
+    "prisma",
+    "mcp"
+  ]
+}

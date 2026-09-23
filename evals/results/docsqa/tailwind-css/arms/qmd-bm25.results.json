@@ -1,0 +1,372 @@
+{
+  "arm_output": "~/.cache/markdownattractor/bench/qmd-runs/tailwind-css-bm25.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 1518,
+    "sections_carded": 1518
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 96,
+    "anchors_found": 96,
+    "corpus_pages": 197,
+    "corpus_pages_indexed": 197,
+    "eligible": 84,
+    "excluded_image_evidence": 9,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [],
+    "multimodal_judgment": 10,
+    "project": "tailwind-css",
+    "qrel_coverage": 1.0,
+    "qrels": 99,
+    "qrels_indexed": 99,
+    "qrels_unmapped": 0,
+    "questions": 93,
+    "questions_with_missing_anchor": 0
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "project": "tailwind-css",
+  "root": "~/.cache/markdownattractor/bench/tailwindcss",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.0,
+        "ndcg_at_10": 0.0,
+        "questions": 25,
+        "success_at_5": 0.0
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-11515",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-14375",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-14974",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-15019",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-16299",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/font-size.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17063",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17086",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx",
+            "src/docs/margin.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17186",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17487",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/functions-and-directives.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17561",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17641",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-17967",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18123",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18456",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18580",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/styling-with-utility-classes.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18691",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18753",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/box-shadow.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18759",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-18845",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/colors.mdx",
+            "src/docs/font-family.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-1910",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-19128",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-19267",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-19887",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-20272",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "tailwind-css::tailwind-6921",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "dev",
+          "truncated": false
+        }
+      ],
+      "run": "qmd BM25 (MCP lex-only, rerank off)",
+      "split": "dev",
+      "unknown": []
+    }
+  ],
+  "seed": 20260922,
+  "split": "dev",
+  "split_counts": {
+    "dev": 27,
+    "holdout": 15,
+    "test": 51
+  },
+  "store": {
+    "docs": 198,
+    "failed": 0,
+    "pending": 0,
+    "sections": 1518,
+    "summarized": 1332,
+    "tombstoned": 0,
+    "total_cost_usd": 6.507617,
+    "total_input_tokens": 3591960,
+    "total_output_tokens": 498631
+  }
+}
