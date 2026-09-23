@@ -1,11 +1,11 @@
 {
   "table": "development",
-  "project": "tailwind-css",
+  "project": "supabase",
   "split": "dev",
-  "run_at": "20260923T071126Z",
+  "run_at": "20260923T071448Z",
   "status": "completed",
   "passed": true,
-  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/development/tailwind-css/20260923T071126Z",
+  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/development/supabase/20260923T071448Z",
   "frozen": "evals/results/docsqa/FROZEN.md",
   "mda": "mda 0.1.1",
   "mda_sha256": "95c2d8c61b960edba71c80844ce98f3f419abc1b4c5034f48e0f95041711d439",
@@ -60,48 +60,48 @@
     {
       "name": "store",
       "status": "ok",
-      "detail": "pending 0 · failed 0 · 1332 of 1332 carded hashes embedded"
+      "detail": "pending 0 · failed 0 · 6386 of 6386 carded hashes embedded"
     },
     {
       "name": "regenerate",
       "status": "ok",
-      "detail": "3 committed run(s) regenerate from their archived page lists (results.json sha256 ac742e13d5cc06b8d04935b06d59593d81a762e6a1c22a01094f7ed897854390)",
-      "results_sha256": "ac742e13d5cc06b8d04935b06d59593d81a762e6a1c22a01094f7ed897854390",
-      "coverage_sha256": "b1cfd3716976ca3995dc7905741df91c35e8440838e1e0fff3711d1e5ea15128",
-      "split_sha256": "554de8e865a4f2c268e8bb9666ae9c35532f5b3ef8f191f9b71edde799029990"
+      "detail": "3 committed run(s) regenerate from their archived page lists (results.json sha256 ae5519dc2426448e1a48ee4c01bc6700895e2d76bce313781c691098f8aed3c8)",
+      "results_sha256": "ae5519dc2426448e1a48ee4c01bc6700895e2d76bce313781c691098f8aed3c8",
+      "coverage_sha256": "1d465af76ab87504cfdc280a37e623f6c19062e2f31e8aae2991aff07638c817",
+      "split_sha256": "955587e23940d562544d1304efb81a2b92aa30d4c8da7ef7edaf1bb6b629806a"
     },
     {
       "name": "replay",
       "status": "ok",
-      "detail": "coverage, split and every row/question identical to evals/results/docsqa/tailwind-css (lexical (raw only): success@5 0.6 n 25 · lexical (cards + raw): success@5 0.84 n 25 · hybrid (cards + raw + vectors): success@5 0.8 n 25) in 11 s"
+      "detail": "coverage, split and every row/question identical to evals/results/docsqa/supabase (lexical (raw only): success@5 0.3333333333333333 n 12 · lexical (cards + raw): success@5 0.4166666666666667 n 12 · hybrid (cards + raw + vectors): success@5 0.5 n 12) in 25 s"
     },
     {
       "name": "reconstruction",
       "status": "ok",
-      "detail": "identical on every row and question · same inventory {\"docs\":198,\"sections\":1518,\"carded\":1518} · 1332 cards attached · raw index 0 s · attach+embed+score 117 s",
-      "index_s": 0,
-      "attach_embed_score_s": 117,
-      "cards_attached": 1332,
+      "detail": "identical on every row and question · same inventory {\"docs\":836,\"sections\":6548,\"carded\":6548} · 6386 cards attached · raw index 1 s · attach+embed+score 612 s",
+      "index_s": 1,
+      "attach_embed_score_s": 612,
+      "cards_attached": 6386,
       "inventory": {
-        "docs": 198,
-        "sections": 1518,
-        "carded": 1518
+        "docs": 836,
+        "sections": 6548,
+        "carded": 6548
       }
     },
     {
       "name": "coverage-grep",
       "status": "ok",
-      "detail": "197 of 197 corpus pages on disk"
+      "detail": "770 of 770 corpus pages on disk"
     },
     {
       "name": "probes-mda",
       "status": "ok",
-      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-tailwind-css/probes/)"
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-supabase/probes/)"
     },
     {
       "name": "probes-grep",
       "status": "ok",
-      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-tailwind-css/probes/)"
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/development-supabase/probes/)"
     }
   ]
 }
