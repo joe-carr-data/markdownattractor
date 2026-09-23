@@ -131,7 +131,13 @@ inputs() {
   # (arms/<arm>-<project>.json: version, effective configuration, build, coverage, hashes).
   local arm pr
   # arm name = file name minus "-<project>.json" (arm names may carry dashes: graphify-haiku)
-  for arm in $(for f in "$RESULTS"/arms/*.json; do [ -f "$f" ] || continue; n="$(basename "$f" .json)"; for pr in $PROJECTS; do case "$n" in *"-$pr") echo "${n%-$pr}" ;; esac; done; done | LC_ALL=C sort -u); do
+  local names=""
+  for f in "$RESULTS"/arms/*.json; do
+    [ -f "$f" ] || continue
+    local n; n="$(basename "$f" .json)"
+    for pr in $PROJECTS; do [ "${n%-$pr}" = "$n" ] || names="$names ${n%-$pr}"; done
+  done
+  for arm in $(printf '%s\n' $names | LC_ALL=C sort -u); do
     local line="- $arm:"
     for pr in $PROJECTS; do
       f="$RESULTS/arms/$arm-$pr.json"; [ -f "$f" ] || continue
