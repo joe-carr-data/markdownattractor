@@ -23,11 +23,16 @@ set -euo pipefail
 cmd="${1:?build|drive}"; project="${2:?project}"; shift 2
 ident "$project"
 dir="$(project_dir "$project")"; corpus="$RUN/$dir"
-G="$RUN/graphify/$project"
+# One configuration per host model (Codex 2026-09-23): the Sonnet-built graphs are the
+# `graphify` arm, a Haiku-built graph is the `graphify-haiku` arm, never mixed, each with
+# its own copy, cache, record and rows.
+model="${GRAPHIFY_MODEL:-sonnet}"
+case "$cmd" in build) model="${3:-sonnet}" ;; esac
+arm="graphify"; [ "$model" = sonnet ] || arm="graphify-$model"
+G="$RUN/graphify/$project"; [ "$model" = sonnet ] || G="$RUN/graphify/$project-$model"
 ARMS="$RESULTS/arms"; mkdir -p "$ARMS"
 case "$cmd" in
   build)
-    model="${1:-sonnet}"
     [ ! -e "$G" ] || die "$G exists: a build is done once per freeze (move it aside to rebuild)"
     mkdir -p "$G/src"
     rsync -a --exclude .markdownattractor --exclude .git "$corpus/" "$G/src/"
@@ -46,27 +51,32 @@ You are running headless: there is no user to answer questions. Run the pipeline
         --allowedTools Bash Read Write Edit Glob Grep Agent -- "$prompt" ) > "$G/build.jsonl" 2>"$G/build.err" || echo "claude exited $?" >> "$G/build.err"
     t1=$(date +%s)
     graph="$G/src/graphify-out/graph.json"
+    # Usage as Claude Code reports it for the whole session (parent and subagents), per
+    # resolved model and per token category (uncached input, cache creation, cache reads,
+    # output): list-price equivalents are labelled as such, never as charges.
+    res="$(jq -c -s '(map(select(.type=="result")) | last) as $r | {turns: ($r.num_turns // null), cost_usd_list_price: ($r.total_cost_usd // null), is_error: ($r.is_error // false), result_tail: (($r.result // "") | .[-160:]), usage: {uncached_input: ($r.usage.input_tokens // 0), cache_creation: ($r.usage.cache_creation_input_tokens // 0), cache_read: ($r.usage.cache_read_input_tokens // 0), output: ($r.usage.output_tokens // 0)}, model_usage: ($r.modelUsage // {}), assistant_messages: (map(select(.type=="assistant")) | length), models: (map(select(.type=="assistant")) | map(.message.model // empty) | unique), subagents_dispatched: (map(select(.type=="assistant")) | map(.message.content[]? | select(.type=="tool_use" and .name=="Agent")) | length)}' "$G/build.jsonl")"
     if [ ! -f "$graph" ]; then
-      jq -n --arg project "$project" --argjson s "$((t1 - t0))" '{arm: "graphify", project: $project, build: {wall_s: $s, completed: false}, note: "did not complete: no graphify-out/graph.json (rule 0.3: recorded, not dropped)"}' > "$ARMS/graphify-$project.json"
+      jq -n --arg arm "$arm" --arg project "$project" --arg model "$model" --argjson s "$((t1 - t0))" --argjson res "$res" --arg attempt "${G/#$HOME/\~}" \
+        '{arm: $arm, project: $project, build: ({wall_s: $s, completed: false, model_alias: $model, attempt_dir: $attempt} + $res), note: "did not complete: no graphify-out/graph.json (rule 0.3: recorded, not dropped; the result_tail says why the session ended)"}' > "$ARMS/$arm-$project.json"
       die "graphify build of $project did not produce graph.json after $((t1 - t0)) s (see $G/build.err, $G/build.jsonl)"
     fi
     cp "$graph" "$G/graph.json"
-    res="$(jq -c -s '(map(select(.type=="result")) | last) as $r | {turns: ($r.num_turns // null), cost_usd_list_price: ($r.total_cost_usd // null), input_tokens: (($r.usage.input_tokens // 0) + ($r.usage.cache_read_input_tokens // 0) + ($r.usage.cache_creation_input_tokens // 0)), output_tokens: ($r.usage.output_tokens // 0), is_error: ($r.is_error // false), models: (map(select(.type=="assistant")) | map(.message.model // empty) | unique)}' "$G/build.jsonl")"
+    mkdir -p "$ARMS/graphs"; gzip -9 -c "$G/graph.json" > "$ARMS/graphs/$arm-$project.graph.json.gz"   # durable copy (plan §2.0: archived under evals/results/)
     nodes="$(jq '.nodes | length' "$G/graph.json")"; edges="$(jq '(.links // .edges) | length' "$G/graph.json")"
     # Coverage: which dataset pages appear as a node source file (the frozen node → file mapping
     # reads the same fields, see `drive`).
     jq -r '[.nodes[] | (.source_file // .file // .path // empty), (.source_files[]? // empty)] | unique | .[]' "$G/graph.json" | sed "s|^$G/src/||; s|^\./||" | LC_ALL=C sort -u > "$G/node-files.txt"
     total=0; present=0
     while IFS= read -r p; do total=$((total + 1)); grep -qxF "$p" "$G/node-files.txt" && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
-    jq -n --arg project "$project" --arg version "$(graphify --version 2>/dev/null | head -1)" --arg model "$model" --argjson res "$res" --argjson s "$((t1 - t0))" \
+    jq -n --arg arm "$arm" --arg project "$project" --arg version "$(graphify --version 2>/dev/null | head -1)" --arg model "$model" --argjson res "$res" --argjson s "$((t1 - t0))" \
       --argjson nodes "$nodes" --argjson edges "$edges" --arg sha "$(sha256 "$G/graph.json")" --argjson total "$total" --argjson present "$present" \
       --arg skill_sha "$(sha256 "$G/src/.claude/skills/graphify/SKILL.md")" --arg hooks_sha "$(sha256 "$G/src/.claude/settings.json")" --arg graph "${G/#$HOME/\~}/graph.json" \
-      '{arm: "graphify", project: $project, version: $version, install: "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
+      '{arm: $arm, project: $project, version: $version, install: "uv tool install graphifyy[mcp]==0.9.66; graphify install --project --platform claude inside the checkout copy (skill, PreToolUse hooks, CLAUDE.md nudge; archived as installed-dot-claude/)",
         build: ({wall_s: $s, completed: (($res.is_error | not)), model_alias: $model, command: "claude -p \"/graphify <copy of checkout> --no-viz\" (headless, whole path)"} + $res),
         graph: {path: $graph, sha256: $sha, nodes: $nodes, edges: $edges}, skill_sha256: $skill_sha, hooks_settings_sha256: $hooks_sha,
-        coverage: {corpus_pages: $total, corpus_pages_with_a_node: $present, coverage: (if $total == 0 then 0 else $present / $total end)},
-        query_interface: {mcp: "graphify-mcp <graph.json>", tool: "query_graph", node_to_file: "each node of the response, its source file(s) in the order the tool lists them, deduplicated; the response size limit, if any, is the truncation"}}' > "$ARMS/graphify-$project.json"
-    echo "graphify $project: $nodes nodes, $edges edges in $((t1 - t0)) s · $present of $total corpus pages have a node · $ARMS/graphify-$project.json"
+        coverage: {population: "dataset corpus pages (repository_source_path); source files on disk are a larger population, see the qmd record", corpus_pages: $total, corpus_pages_with_a_node: $present, coverage: (if $total == 0 then 0 else $present / $total end)},
+        query_interface: {mcp: "graphify-mcp <graph.json>", tool: "query_graph", node_to_file: "each node of the response, its source file(s) in the order the tool lists them, deduplicated; the response size limit, if any, is the truncation"}}' > "$ARMS/$arm-$project.json"
+    echo "$arm $project: $nodes nodes, $edges edges in $((t1 - t0)) s · $present of $total corpus pages have a node · $ARMS/$arm-$project.json"
     ;;
   drive)
     out="${1:?out.jsonl}"; split="${2:-dev}"
