@@ -146,6 +146,9 @@ pub enum EmbedText {
     QuestionsFirst,
     /// The v1 text with the card's entities appended (plan §3 candidate 2).
     WithEntities,
+    /// Both changes: questions first and entities appended (candidate 2 applied on top of a
+    /// kept candidate 1; greedy forward selection adds one change, never reverses one).
+    QuestionsFirstWithEntities,
 }
 
 impl EmbedText {
@@ -156,7 +159,20 @@ impl EmbedText {
             Self::V1 => "",
             Self::QuestionsFirst => "+questions-first",
             Self::WithEntities => "+with-entities",
+            Self::QuestionsFirstWithEntities => "+questions-first+with-entities",
         }
+    }
+
+    /// Whether the questions come before the tldr.
+    #[must_use]
+    pub fn questions_first(self) -> bool {
+        matches!(self, Self::QuestionsFirst | Self::QuestionsFirstWithEntities)
+    }
+
+    /// Whether the entities are appended.
+    #[must_use]
+    pub fn with_entities(self) -> bool {
+        matches!(self, Self::WithEntities | Self::QuestionsFirstWithEntities)
     }
 }
 
@@ -372,13 +388,15 @@ impl Config {
         if self.concurrency == Some(0) {
             return Err(Error::Config("concurrency must be at least 1 (or unset for auto)".into()));
         }
-        let bad = |v: f64, min: f64| v.is_nan() || v < min;
-        if bad(self.search_rrf_k, f64::MIN_POSITIVE)
-            || bad(self.search_raw_weight, 0.0)
-            || bad(self.search_questions_weight, 0.0)
+        // Finite and bounded: an infinite k zeroes every contribution, an infinite weight
+        // makes scores infinite, and FTS5's bm25() returns NULL for absurd weights.
+        let bad = |v: f64, min: f64, max: f64| !v.is_finite() || v < min || v > max;
+        if bad(self.search_rrf_k, 1.0, 1.0e6)
+            || bad(self.search_raw_weight, 0.0, 100.0)
+            || bad(self.search_questions_weight, 0.0, 100.0)
         {
             return Err(Error::Config(
-                "search_rrf_k must be positive and the search weights non-negative".into(),
+                "search_rrf_k must be in 1..=1e6 and the search weights in 0..=100 (finite)".into(),
             ));
         }
         if self.per_call_budget_usd.is_nan() || self.per_call_budget_usd <= 0.0 {
@@ -510,6 +528,8 @@ mod tests {
         );
         let bad = Config { search_rrf_k: -1.0, ..Config::default() };
         assert!(bad.validate().is_err());
+        let inf = Config { search_raw_weight: f64::INFINITY, ..Config::default() };
+        assert!(inf.validate().is_err());
         assert!(dir.path().join(STATE_DIR).join(CONFIG_FILE).exists());
     }
 }

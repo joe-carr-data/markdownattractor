@@ -22,11 +22,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let counts = engine.store().counts()?;
     let cfg = engine.config();
     let live = super::live_status(engine.root());
-    let mut embed_check = mda_core::embed::check(cfg);
-    // The id the vectors are stored under carries the embedding-text variant.
-    if let Some(e) = mda_core::embed::embedder_for(cfg) {
-        embed_check.model = Some(e.model().to_owned());
-    }
+    let embed_check = mda_core::embed::check(cfg);
     let embed_counts = match &embed_check.model {
         Some(m) => Some(engine.store().embedding_counts(m)?),
         None => None,

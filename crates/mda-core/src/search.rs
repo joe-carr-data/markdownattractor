@@ -66,10 +66,13 @@ impl SearchOptions {
     /// The defaults with the tunables a root's `config.toml` sets (benchmark tuning, plan §3).
     #[must_use]
     pub fn for_config(cfg: &crate::config::Config) -> Self {
+        let finite = |v: f64, lo: f64, hi: f64, dflt: f64| {
+            if v.is_finite() { v.clamp(lo, hi) } else { dflt }
+        };
         Self {
-            rrf_k: if cfg.search_rrf_k > 0.0 { cfg.search_rrf_k } else { RRF_K },
-            raw_list_weight: cfg.search_raw_weight.max(0.0),
-            questions_weight: cfg.search_questions_weight.max(0.0),
+            rrf_k: finite(cfg.search_rrf_k, 1.0, 1.0e6, RRF_K),
+            raw_list_weight: finite(cfg.search_raw_weight, 0.0, 100.0, 1.0),
+            questions_weight: finite(cfg.search_questions_weight, 0.0, 100.0, 2.0),
             and_stopwords: cfg.search_and_stopwords,
             ..Self::default()
         }
@@ -331,20 +334,24 @@ fn fuse(
             vector: None,
         })
     }
+    // Options built by hand bypass the config's validation: clamp here too.
+    let k = if opts.rrf_k.is_finite() { opts.rrf_k.clamp(1.0, 1.0e6) } else { RRF_K };
+    let raw_w =
+        if opts.raw_list_weight.is_finite() { opts.raw_list_weight.clamp(0.0, 100.0) } else { 1.0 };
     let mut fused: std::collections::HashMap<String, Acc> = std::collections::HashMap::new();
     for (rank, h) in lexical.cards.iter().enumerate() {
         let e = entry(&mut fused, &h.section_id);
-        e.score += rrf(rank, opts.rrf_k);
+        e.score += rrf(rank, k);
         e.cards = true;
     }
     for (rank, h) in lexical.raw.iter().enumerate() {
         let e = entry(&mut fused, &h.section_id);
-        e.score += rrf(rank, opts.rrf_k) * opts.raw_list_weight;
+        e.score += rrf(rank, k) * raw_w;
         e.raw = true;
     }
     for (rank, (id, cosine)) in vector.iter().enumerate() {
         let e = entry(&mut fused, id);
-        e.score += rrf(rank, opts.rrf_k);
+        e.score += rrf(rank, k);
         e.vector = Some(*cosine);
     }
 
@@ -622,8 +629,23 @@ mod tests {
         let o = SearchOptions::for_config(&cfg);
         assert!((o.rrf_k - 30.0).abs() < 1e-9 && (o.raw_list_weight - 0.5).abs() < 1e-9);
         assert!((o.questions_weight - 3.0).abs() < 1e-9 && o.and_stopwords);
-        let bad = crate::config::Config { search_rrf_k: 0.0, ..crate::config::Config::default() };
-        assert!((SearchOptions::for_config(&bad).rrf_k - RRF_K).abs() < 1e-9, "a bad k falls back");
+        let bad = crate::config::Config {
+            search_rrf_k: f64::INFINITY,
+            ..crate::config::Config::default()
+        };
+        assert!(
+            (SearchOptions::for_config(&bad).rrf_k - RRF_K).abs() < 1e-9,
+            "a non-finite k falls back"
+        );
+        let huge = SearchOptions {
+            raw_list_weight: f64::INFINITY,
+            rrf_k: f64::NAN,
+            ..SearchOptions::default()
+        };
+        let (store2, _, _) = carded_store();
+        for h in search(&store2, "deployctl", &huge).unwrap() {
+            assert!(h.score.is_finite(), "clamped: {}", h.score);
+        }
         // With the raw list weighted 0, a section found by the raw index alone scores 0 and
         // sinks below one found by the cards index.
         let (store, _, _) = carded_store();

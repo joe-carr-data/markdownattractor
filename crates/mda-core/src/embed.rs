@@ -72,7 +72,7 @@ pub fn embed_text_as(
         parts.push(heading_path.join(" › "));
     }
     let questions = summary.questions_answered.join(" ");
-    if variant == EmbedText::QuestionsFirst && !questions.is_empty() {
+    if variant.questions_first() && !questions.is_empty() {
         parts.push(questions.clone());
     }
     parts.push(summary.tldr.trim().to_owned());
@@ -80,10 +80,10 @@ pub fn embed_text_as(
     if !summary.keywords.is_empty() {
         parts.push(summary.keywords.join(", "));
     }
-    if variant != EmbedText::QuestionsFirst && !questions.is_empty() {
+    if !variant.questions_first() && !questions.is_empty() {
         parts.push(questions);
     }
-    if variant == EmbedText::WithEntities {
+    if variant.with_entities() {
         let e = &summary.entities;
         let entities: Vec<&str> = e
             .people
@@ -201,7 +201,8 @@ pub fn check(cfg: &Config) -> EmbedCheck {
         },
         Embeddings::LocalSmall => EmbedCheck {
             embeddings: Embeddings::LocalSmall,
-            model: Some(LOCAL_SMALL_MODEL.to_owned()),
+            // The identity the vectors are stored under: the model plus the text variant.
+            model: Some(format!("{LOCAL_SMALL_MODEL}{}", cfg.embedding_text.suffix())),
             cached: LocalEmbedder::is_cached(&dir),
             cache_dir: dir,
         },
@@ -425,6 +426,30 @@ mod tests {
         assert_eq!(qf_lines[2], "How do I roll back?", "questions before the tldr: {qf}");
         assert_eq!(qf.lines().count(), v1.lines().count(), "same parts, another order");
         assert!(we.starts_with(&v1) && we.ends_with("deployctl, ops/rollback.md"), "{we}");
+        let both = embed_text_as(
+            EmbedText::QuestionsFirstWithEntities,
+            Some("Runbook"),
+            &["Deploy".into()],
+            &s,
+        );
+        assert!(
+            both.lines().nth(2) == Some("How do I roll back?")
+                && both.ends_with("deployctl, ops/rollback.md"),
+            "{both}"
+        );
+        assert_eq!(
+            EmbedText::QuestionsFirstWithEntities.suffix(),
+            "+questions-first+with-entities"
+        );
+        let cfg = crate::config::Config {
+            embedding_text: EmbedText::QuestionsFirst,
+            ..crate::config::Config::default()
+        };
+        assert_eq!(
+            check(&cfg).model.as_deref(),
+            embedder_for(&cfg).map(|e| e.model().to_owned()).as_deref(),
+            "check and the embedder agree on the identity"
+        );
         assert_eq!(EmbedText::V1.suffix(), "");
         let inner: Arc<dyn Embedder> = Arc::new(HashEmbedder::new(8));
         let v = VariantEmbedder::new(Arc::clone(&inner), EmbedText::QuestionsFirst);

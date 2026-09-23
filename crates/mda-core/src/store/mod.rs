@@ -1022,16 +1022,23 @@ impl Store {
         k: usize,
         questions_weight: f64,
     ) -> Result<Vec<FtsHit>> {
-        let w = if questions_weight.is_finite() && questions_weight >= 0.0 {
+        // Bound, never formatted: no rounding, no SQL text built from a number.
+        let w = if questions_weight.is_finite() && (0.0..=100.0).contains(&questions_weight) {
             questions_weight
         } else {
             2.0
         };
-        let sql = format!(
-            "SELECT section_id, bm25(cards_fts, 0.0, 3.0, 3.0, 1.0, 1.0, {w:.3}, 1.0) AS score FROM cards_fts
-             WHERE cards_fts MATCH ?1 ORDER BY score, section_id LIMIT ?2"
-        );
-        self.search(&sql, fts_expr, k)
+        if fts_expr.trim().is_empty() || k == 0 {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT section_id, bm25(cards_fts, 0.0, 3.0, 3.0, 1.0, 1.0, ?3, 1.0) AS score FROM cards_fts
+             WHERE cards_fts MATCH ?1 ORDER BY score, section_id LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![fts_expr, to_i64(k as u64), w], |r| {
+            Ok(FtsHit { section_id: r.get(0)?, bm25: -r.get::<_, f64>(1)? })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
     fn search(&self, sql: &str, fts_expr: &str, k: usize) -> Result<Vec<FtsHit>> {

@@ -1,98 +1,135 @@
 #!/usr/bin/env bash
 # The tuning loop of the execution plan §3, one trial at a time: apply one pre-declared
-# single change to the four DocsQA stores' config.toml (development numbers, dev split only),
-# score the raw / cards / hybrid rows on each project, append the trial to
-# evals/results/docsqa/TUNING.md with the objective (mean success@5 of the hybrid row over
-# the four projects, equal weights), the guardrail (no project below the reference by more
-# than 0.02), latency and elapsed time, then restore the previous config. The greedy
-# decision (keep if the objective improves by ≥ 0.01 and the guardrail holds) is written by
-# the caller with `decide`; a kept candidate becomes the base of the next trial.
+# single change on top of the current base to the four DocsQA stores' config.toml
+# (development numbers, dev split only), score the hybrid row on each project, archive the
+# trial (manifest + the four results.json, committed under evals/results/docsqa/tuning/), append
+# the row to evals/results/docsqa/TUNING.md with the objective (mean success@5 of the hybrid
+# row over the four projects, equal weights), the guardrail (no project below the reference
+# by more than 0.02), latency and elapsed time, then restore the base. The greedy decision
+# (keep if the objective improves by ≥ 0.01 over the best so far and the guardrail holds) is
+# written into the trial's manifest; `keep <name>` adopts a kept candidate as the new base
+# and refuses a discarded or stale one. Every failure restores the base and exits non-zero.
 #
 # Usage:
-#   scripts/eval/tune.sh baseline                         # the pre-tuning reference (current config, hybrid row)
-#   scripts/eval/tune.sh trial <name> <key=value>...      # one candidate on top of the current base
-#   scripts/eval/tune.sh keep <name>                      # adopt the candidate's settings as the new base (winner so far)
-# Keys are config.toml keys: search_rrf_k, search_raw_weight, search_questions_weight,
-# search_and_stopwords, embedding_text (v1|questions-first|with-entities); the adapter's
-# fetch depth is FETCH=<n> in the environment (candidate 6). An embedding_text change
-# re-embeds every card under a new model id (local, no model call; ≈ 1.5 h for all four).
-# Every trial's raw reports stay under $RUN/tuning/<name>/<project>/.
+#   scripts/eval/tune.sh baseline                         # the pre-tuning reference (current config)
+#   scripts/eval/tune.sh trial <name> [key=value]...      # one candidate on top of the current base
+#   scripts/eval/tune.sh keep <name>                      # adopt the candidate's settings as the new base
+#   scripts/eval/tune.sh base                             # print the current base (settings and fetch)
+# Keys: the config.toml keys search_rrf_k, search_raw_weight, search_questions_weight,
+# search_and_stopwords, embedding_text (v1|questions-first|with-entities|
+# questions-first-with-entities) and the adapter parameter fetch=<n> (plan §3 candidate 6),
+# all persisted in the base. An embedding_text change re-embeds every card under a new
+# model id (local, no model call; ≈ 1 h for all four corpora, kept in the stores).
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
-cmd="${1:?baseline|trial|keep}"; shift
-T="$RUN/tuning"; mkdir -p "$T"; LOG="$RESULTS/TUNING.md"; BASE="$T/base.env"
-[ -f "$BASE" ] || : > "$BASE"
-cfg_get() { grep -E "^$2 = " "$RUN/$1/.markdownattractor/config.toml" | sed 's/^[^=]*= //' || true; }
-cfg_set() { # dir key value
-  local f="$RUN/$1/.markdownattractor/config.toml"
+cmd="${1:?baseline|trial|keep|base}"; shift
+T="$RUN/tuning"; mkdir -p "$T"; LOG="$RESULTS/TUNING.md"; ARCH="$RESULTS/tuning"; mkdir -p "$ARCH"
+BASE="$T/base.kv"; [ -f "$BASE" ] || : > "$BASE"
+HYBRID="hybrid (cards + raw + vectors)"
+cfg_file() { echo "$RUN/$(project_dir "$1")/.markdownattractor/config.toml"; }
+cfg_set() { # project key value(toml)
+  local f; f="$(cfg_file "$1")"
   if grep -qE "^$2 = " "$f"; then sed -i '' -E "s|^$2 = .*|$2 = $3|" "$f"; else printf '%s = %s\n' "$2" "$3" >> "$f"; fi
 }
+cfg_del() { local f; f="$(cfg_file "$1")"; sed -i '' -E "/^$2 = /d" "$f"; }
 toml_value() { case "$1" in true|false) echo "$1" ;; *[!0-9.]*) echo "\"$1\"" ;; *) echo "$1" ;; esac; }
-run_all() { # name -> writes $T/<name>/<project>/results.json and prints the summary json
-  local name="$1" p dir out t0 t1
+base_fetch() { grep -E '^fetch=' "$BASE" | tail -1 | sed 's/^fetch=//' || true; }
+base_fingerprint() { sort "$BASE" | shasum -a 256 | cut -c1-16; }
+# Snapshot the four configs and restore them on every exit path, so a failed or interrupted
+# trial never leaves candidate settings installed (Codex M3 F1).
+snap=""
+snapshot() { snap="$(mktemp -d -t mda-tune-snap.XXXXXX)"; local p; for p in $PROJECTS; do cp "$(cfg_file "$p")" "$snap/$p.toml"; done; trap 'restore' EXIT; }
+restore() { local p; [ -n "$snap" ] || return 0; for p in $PROJECTS; do cp "$snap/$p.toml" "$(cfg_file "$p")"; done; rm -rf "$snap"; snap=""; }
+apply_base() { local -a base_kvs=(); while IFS= read -r l; do [ -n "$l" ] && base_kvs+=("$l"); done < "$BASE"; [ "${#base_kvs[@]}" = 0 ] || apply_kv "${base_kvs[@]}"; }
+apply_kv() { # key=value ... (fetch=<n> is not a config key)
+  local kv key val p
+  for kv in "$@"; do
+    key="${kv%%=*}"; val="${kv#*=}"
+    [ "$key" != fetch ] || continue
+    for p in $PROJECTS; do cfg_set "$p" "$key" "$(toml_value "$val")"; done
+  done
+}
+fetch_of() { local kv; for kv in "$@"; do [ "${kv%%=*}" = fetch ] && echo "${kv#*=}"; done; base_fetch; }
+run_all() { # name fetch -> $T/<name>/<project>/… and the summary json; requires the hybrid row on every project
+  local name="$1" fetch="$2" p dir out t0 t1 args=()
+  [ -z "$fetch" ] || args=(--fetch "$fetch")
   for p in $PROJECTS; do
     dir="$(project_dir "$p")"; out="$T/$name/$p"; rm -rf "$out"; mkdir -p "$out"
     t0=$(date +%s)
-    FETCH_ARG=(); [ -z "${FETCH:-}" ] || FETCH_ARG=(--fetch "$FETCH")
-    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$p" --root "$RUN/$dir" --split dev ${FETCH_ARG[@]+"${FETCH_ARG[@]}"} --out "$out" > "$out/report.json" 2>"$out/err.log" || die "eval failed on $p (see $out/err.log)"
+    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$p" --root "$RUN/$dir" --split dev ${args[@]+"${args[@]}"} --out "$out" > "$out/report.json" 2>"$out/err.log" || die "eval failed on $p (see $out/err.log)"
     t1=$(date +%s); echo "$((t1 - t0))" > "$out/elapsed_s"
+    jq -e --arg h "$HYBRID" '.runs[] | select(.run == $h) | select(.metrics.questions > 0)' "$out/results.json" >/dev/null || die "no hybrid row on $p: embeddings off or model missing (see $out/report.json)"
+    [ "$(jq -r '.card_coverage.complete' "$out/results.json")" = true ] || die "$p: card coverage incomplete"
   done
-  jq -n --arg name "$name" --argjson tw "$(jq '{s: .runs[-1].metrics.success_at_5, ms: .runs[-1].metrics.mean_ms, run: .runs[-1].run}' "$T/$name/tailwind-css/results.json")" \
-        --argjson su "$(jq '{s: .runs[-1].metrics.success_at_5, ms: .runs[-1].metrics.mean_ms}' "$T/$name/supabase/results.json")" \
-        --argjson pr "$(jq '{s: .runs[-1].metrics.success_at_5, ms: .runs[-1].metrics.mean_ms}' "$T/$name/prisma/results.json")" \
-        --argjson gh "$(jq '{s: .runs[-1].metrics.success_at_5, ms: .runs[-1].metrics.mean_ms}' "$T/$name/github-docs/results.json")" \
+  m() { jq --arg h "$HYBRID" '.runs[] | select(.run == $h) | {s: .metrics.success_at_5, ms: .metrics.mean_ms, n: .metrics.questions, model: input_filename}' "$T/$name/$1/results.json" | jq --slurpfile r "$T/$name/$1/results.json" '. + {embedding_model: $r[0].embedding_model, search: $r[0].search}'; }
+  jq -n --arg name "$name" --argjson tw "$(m tailwind-css)" --argjson su "$(m supabase)" --argjson pr "$(m prisma)" --argjson gh "$(m github-docs)" \
         --argjson el "$(( $(cat "$T/$name"/*/elapsed_s | paste -sd+ -) ))" \
-        '{name: $name, row: $tw.run, tailwind: $tw.s, supabase: $su.s, prisma: $pr.s, github: $gh.s, objective: (($tw.s + $su.s + $pr.s + $gh.s) / 4), mean_ms: (($tw.ms + $su.ms + $pr.ms + $gh.ms) / 4), elapsed_s: $el}'
+        '{name: $name, tailwind: $tw.s, supabase: $su.s, prisma: $pr.s, github: $gh.s, n: {tailwind: $tw.n, supabase: $su.n, prisma: $pr.n, github: $gh.n},
+          objective: (($tw.s + $su.s + $pr.s + $gh.s) / 4), mean_ms: (($tw.ms + $su.ms + $pr.ms + $gh.ms) / 4), elapsed_s: $el,
+          embedding_model: $tw.embedding_model, search: $tw.search}'
 }
-log_line() { # summary.json config-diff decision
-  local s="$1"
-  printf '| %s | `%s` | %s | %.3f | %.3f | %.3f | %.3f | **%.4f** | %.0f | %s | %s |\n' \
-    "$(jq -r .name <<<"$s")" "$2" "$(git -C "$REPO" rev-parse --short HEAD)" \
-    "$(jq -r .tailwind <<<"$s")" "$(jq -r .supabase <<<"$s")" "$(jq -r .prisma <<<"$s")" "$(jq -r .github <<<"$s")" \
-    "$(jq -r .objective <<<"$s")" "$(jq -r .mean_ms <<<"$s")" "$(jq -r .elapsed_s <<<"$s")s" "$3" >> "$LOG"
+archive() { # name summary-json kv-list decision
+  local name="$1" s="$2" kvs="$3" decision="$4" p d
+  d="$ARCH/$name"; rm -rf "$d"; mkdir -p "$d"
+  for p in $PROJECTS; do cp "$T/$name/$p/results.json" "$d/$p.results.json"; done
+  jq -n --arg name "$name" --argjson s "$s" --arg kvs "$kvs" --arg decision "$decision" --arg sha "$(git -C "$REPO" rev-parse HEAD)" \
+     --arg bin "$(sha256 "$MDA")" --arg base "$(sort "$BASE" | tr '\n' ' ')" --arg base_fp "$(base_fingerprint)" --arg frozen "$(sha256 "$RESULTS/FROZEN.md")" \
+     --arg cards "$(grep -E '^- cards-' "$RESULTS/FROZEN.md" | sed -E 's/.*sha256 ([0-9a-f]{64}).*/\1/' | tr '\n' ' ')" --arg at "$(date -u +%FT%TZ)" \
+     '{trial: $name, at: $at, hypothesis_change: ($kvs | split(" ") | map(select(. != ""))), base_before: ($base | split(" ") | map(select(. != ""))), base_fingerprint: $base_fp,
+       code_sha: $sha, binary_sha256: $bin, frozen_md_sha256: $frozen, cards_sha256: ($cards | split(" ") | map(select(. != ""))), summary: $s, decision: $decision,
+       per_project_results: "<project>.results.json beside this manifest (archived observations; metrics regenerate from their page lists through --arm-output)"}' > "$d/manifest.json"
+}
+log_line() { # name kvs summary decision
+  local s="$3"
+  printf '| %s | `%s` | %s | %.3f (%s) | %.3f (%s) | %.3f (%s) | %.3f (%s) | **%.4f** | %.0f | %ss | %s |\n' \
+    "$1" "${2:-(pre-tuning defaults)}" "$(git -C "$REPO" rev-parse --short HEAD)" \
+    "$(jq -r .tailwind <<<"$s")" "$(jq -r .n.tailwind <<<"$s")" "$(jq -r .supabase <<<"$s")" "$(jq -r .n.supabase <<<"$s")" \
+    "$(jq -r .prisma <<<"$s")" "$(jq -r .n.prisma <<<"$s")" "$(jq -r .github <<<"$s")" "$(jq -r .n.github <<<"$s")" \
+    "$(jq -r .objective <<<"$s")" "$(jq -r .mean_ms <<<"$s")" "$(jq -r .elapsed_s <<<"$s")" "$4" >> "$LOG"
 }
 ensure_log() {
   [ -f "$LOG" ] && return
   cat > "$LOG" <<'MD'
 # TUNING — the greedy loop of the execution plan §3 (development numbers, dev split only)
 
-Objective: mean success@5 of the hybrid row over the four projects' dev splits, equal weights. Guardrail: no project drops by more than 0.02 from the pre-tuning reference. Candidates are the eight single changes of plan §3 in order, each evaluated on top of the current winner, kept when it improves the objective by ≥ 0.01 and passes the guardrail, otherwise discarded (a regression is logged, never retried with variations). Stop when the list is exhausted or the last two candidates both fail to improve by ≥ 0.01. Test and holdout are never looked at. Every trial's raw reports are under `~/.cache/markdownattractor/bench/tuning/<name>/<project>/` (development artifacts, not committed); the rows here are copied by `scripts/eval/tune.sh` from those files. Latency is the adapter in-process, release build, mean over the hybrid row's questions.
+Objective: mean success@5 of the hybrid row over the four projects' dev splits, equal weights (denominators in parentheses). Guardrail: no project drops by more than 0.02 from the pre-tuning reference. Candidates are the single changes of plan §3 in order, each evaluated on top of the current base (the winner so far), kept when it improves the objective by ≥ 0.01 and passes the guardrail, otherwise discarded (a regression is logged, never retried with variations; a tie within 0.01 keeps the simpler base). Stop when the list is exhausted or two consecutive candidates fail to improve the objective by ≥ 0.01 (a guardrail-only discard does not count). Candidate 8 (a larger embedder) is not run without the vector-only diagnostic and an ADR. Test and holdout are never looked at. Each trial's manifest (hypothesis, base before, code SHA, binary sha256, cards hashes, decision) and its four `results.json` are archived under `evals/results/docsqa/tuning/<trial>/`; the rows here are written by `scripts/eval/tune.sh` from those files. Latency is the adapter in-process, release build, mean over the hybrid row's questions; elapsed includes re-embedding when the embedding text changed.
 
-| trial | config diff (on top of the base at that time) | code SHA | tailwind | supabase | prisma | github-docs | objective | mean ms | elapsed | decision |
+| trial | change (on top of the base at that time) | code SHA | tailwind (n) | supabase (n) | prisma (n) | github-docs (n) | objective | mean ms | elapsed | decision |
 |---|---|---|---|---|---|---|---|---|---|---|
 MD
 }
 case "$cmd" in
+  base) cat "$BASE"; echo "fingerprint $(base_fingerprint)" ;;
   baseline)
-    ensure_log
-    s="$(run_all baseline)"; echo "$s" > "$T/baseline.json"; cp "$T/baseline.json" "$T/best.json"
-    log_line "$s" "(pre-tuning defaults)" "reference"; echo "$s" ;;
+    ensure_log; snapshot; apply_base
+    s="$(run_all baseline "$(base_fetch)")"; echo "$s" > "$T/baseline.json"; cp "$T/baseline.json" "$T/best.json"
+    archive baseline "$s" "" "reference"; log_line baseline "" "$s" "reference"; echo "$s" ;;
   trial)
     name="${1:?trial name}"; shift; ident "$name"
     ensure_log; [ -f "$T/best.json" ] || die "run baseline first"
-    # apply the candidate on top of the base on every store; remember the previous values
-    : > "$T/$name.restore"; printf '%s\n' "$@" > "$T/$name.kv"
-    for kv in "$@"; do
-      key="${kv%%=*}"; val="${kv#*=}"
-      for p in $PROJECTS; do dir="$(project_dir "$p")"; prev="$(cfg_get "$dir" "$key")"; printf '%s\t%s\t%s\n' "$dir" "$key" "${prev:-__absent__}" >> "$T/$name.restore"; cfg_set "$dir" "$key" "$(toml_value "$val")"; done
-    done
-    s="$(run_all "$name")"; echo "$s" > "$T/$name.json"
-    diff_txt="$*${FETCH:+ FETCH=$FETCH}"
-    best="$(jq -r .objective "$T/best.json")"; obj="$(jq -r .objective <<<"$s")"; ref="$T/baseline.json"
-    guard_ok="$(jq -n --argjson s "$s" --argjson r "$(cat "$ref")" '[$s.tailwind - $r.tailwind, $s.supabase - $r.supabase, $s.prisma - $r.prisma, $s.github - $r.github] | all(. >= -0.02)')"
-    improved="$(jq -n --argjson o "$obj" --argjson b "$best" '$o - $b >= 0.01')"
-    if [ "$improved" = true ] && [ "$guard_ok" = true ]; then decision="**keep** (+$(jq -n --argjson o "$obj" --argjson b "$best" '(($o - $b) * 1000 | round) / 1000') vs best $best)"; else decision="discard ($( [ "$guard_ok" = true ] && echo "Δ objective $(jq -n --argjson o "$obj" --argjson b "$best" '(($o - $b) * 1000 | round) / 1000') < 0.01" || echo "guardrail: a project dropped more than 0.02"))"; fi
-    log_line "$s" "$diff_txt" "$decision"
-    echo "$s"; echo "decision: $decision"
-    # restore the base; `keep <name>` re-applies the winner
-    while IFS=$'\t' read -r dir key prev; do if [ "$prev" = __absent__ ]; then sed -i '' -E "/^$key = /d" "$RUN/$dir/.markdownattractor/config.toml"; else cfg_set "$dir" "$key" "$prev"; fi; done < "$T/$name.restore" ;;
+    [ ! -d "$ARCH/$name" ] || die "trial $name already archived: trial names are immutable"
+    snapshot; apply_base; apply_kv "$@"; fetch="$(fetch_of "$@")"
+    s="$(run_all "$name" "$fetch")"; echo "$s" > "$T/$name.json"
+    best="$(jq -r .objective "$T/best.json")"; obj="$(jq -r .objective <<<"$s")"
+    guard_ok="$(jq -n --argjson s "$s" --argjson r "$(cat "$T/baseline.json")" '[$s.tailwind - $r.tailwind, $s.supabase - $r.supabase, $s.prisma - $r.prisma, $s.github - $r.github] | all(. >= -0.02)')"
+    delta="$(jq -n --argjson o "$obj" --argjson b "$best" '(($o - $b) * 10000 | round) / 10000')"
+    improved="$(jq -n --argjson d "$delta" '$d >= 0.01')"
+    if [ "$improved" = true ] && [ "$guard_ok" = true ]; then decision="keep"; text="**keep** (Δ objective +$delta vs best $best)"
+    elif [ "$improved" = true ]; then decision="discard-guardrail"; text="discard: guardrail (a project dropped more than 0.02 from the reference; Δ objective +$delta)"
+    else decision="discard"; text="discard (Δ objective $delta < 0.01; the simpler base stays)"; fi
+    printf '%s\n' "$@" > "$T/$name.kv"; jq -n --arg d "$decision" --arg fp "$(base_fingerprint)" '{decision: $d, base_fingerprint: $fp}' > "$T/$name.decision.json"
+    archive "$name" "$s" "$*" "$decision"; log_line "$name" "$*" "$s" "$text"
+    echo "$s"; echo "decision: $decision" ;;
   keep)
     name="${1:?trial name}"; ident "$name"
-    [ -f "$T/$name.kv" ] && [ -f "$T/$name.json" ] || die "no trial $name"
-    # re-apply the candidate's settings permanently (the base moves forward) and record it as best
-    while IFS= read -r kv; do [ -n "$kv" ] || continue; key="${kv%%=*}"; val="${kv#*=}"; for p in $PROJECTS; do cfg_set "$(project_dir "$p")" "$key" "$(toml_value "$val")"; done; done < "$T/$name.kv"
-    cp "$T/$name.json" "$T/best.json"; printf '| — | base ← `%s` | | | | | | | | | winner so far |\n' "$name" >> "$LOG"
-    echo "base is now $name" ;;
+    [ -f "$T/$name.decision.json" ] || die "no decided trial $name"
+    [ "$(jq -r .decision "$T/$name.decision.json")" = keep ] || die "trial $name was not a keep"
+    [ "$(jq -r .base_fingerprint "$T/$name.decision.json")" = "$(base_fingerprint)" ] || die "trial $name was evaluated on another base (stale)"
+    # the base moves forward: its key=value pairs join the base (later values win), permanently applied
+    { cat "$BASE"; cat "$T/$name.kv"; } | awk -F= '!/^$/ {v[$1]=$0} END {for (k in v) print v[k]}' | sort > "$BASE.new" && mv "$BASE.new" "$BASE"
+    apply_base
+    cp "$T/$name.json" "$T/best.json"; printf '| — | base ← `%s` (fingerprint %s) | | | | | | | | | winner so far |\n' "$name" "$(base_fingerprint)" >> "$LOG"
+    echo "base is now $name: $(sort "$BASE" | tr '\n' ' ')" ;;
   *) die "unknown command $cmd" ;;
 esac
