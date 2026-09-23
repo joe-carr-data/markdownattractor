@@ -17,6 +17,7 @@ Rules for whoever runs it: do every step in order; every checksum line is an ass
 | Carded rows with **regenerated cards** (§4b) | independent rerun | published beside the original; no tolerance |
 | Answer-quality tables from the **archived logs and grades** (§5a) | regeneration | byte-identical `parity.md` / analysis output |
 | Answer-quality tables **rerun** (§5b) | independent rerun | published beside the original; no tolerance |
+| Competitor arm builds and rows (§4c) | independent rerun for graphify (a model pass), regeneration for qmd and BM25-over-files (deterministic indexes, hashed models) | graphify: published beside the original; qmd/BM25: exact rows from the same index, latency machine-dependent |
 | Latency (§6) | machine-dependent | reported with hardware; compare ratios |
 
 Historical note: the numbers on `docs/benchmarks.md` labelled *exploratory* (the raw/carded dev rows of 2026-09-22 and the golden-corpus A/B) predate any freeze and were produced with `mda` 0.1.1 at `41fdbb1`. They regenerate exactly only with that binary; a later binary may rank differently on purpose (tuning, plan §3). Final tables each carry their own `FROZEN.md` and their own section here (§7).
@@ -150,6 +151,38 @@ done
 ```
 
 **4b. Regenerated cards (independent rerun).** On each checkout, `"$MDA" backend claude-cli --i-accept-the-policy --root "$RUN/<dir>"` (your own Claude Code login: the acknowledged personal-use path of ADR-0002), then `"$MDA" index --root "$RUN/<dir>" --limit 500` in rounds until `"$MDA" status --root …` shows `pending 0`, then `"$MDA" rebuild --embeddings --root …`. Reference run (Apple M3 24 GB, Haiku 4.5 through Claude Code, 15–16 workers): tailwindcss 19 min, supabase 89 min, prisma 90 min, github-docs 3 h 59 min; 36,899 cards, 0 failures; list-price equivalent ≈ $176 (informational). Score as in 4a without `--cards`; publish beside the committed-card rows.
+
+## 4c. Competitor arms (M2; development rows today, the T1 recipe once frozen)
+
+Every arm is built and driven by a script under `scripts/eval/arms/`, with the same three rules: one build per freeze (a second build refuses to overwrite the first), the arm's own documented interface for scoring (its MCP tool, never our re-implementation), and the timed call is the scored call (`crates/mda-cli/examples/mcp_time.rs` spawns the arm's MCP server over stdio, records the cold first call and the warm ones, and dumps every result the driver then maps to repository paths). The arm records (`evals/results/docsqa/arms/<arm>-<project>.json`: version, install, effective configuration, build times, coverage against the dataset corpus, model or graph hashes) are what `FROZEN.md`'s Arms section lists, and a probe (`scripts/eval/probe.sh <arm> <project> <question_id> <trace>`) proves the arm's tool was actually used (a call with a non-error result) before any table.
+
+Three rules learned on the first day and now enforced by the scripts, which a reproduction must respect too:
+
+- **No provider key in the environment.** Every arm script unsets `*_API_KEY` before spawning anything and the preflight refuses to certify with one present: a headless graphify session found `GEMINI_API_KEY` in the shell and ran its whole extraction through Gemini instead of the Claude login (that attempt was discarded).
+- **The GPU must be free.** qmd's query expansion and reranker run on Metal; another model server holding the unified memory makes every `query` fail (`kIOGPUCommandBufferCallbackErrorOutOfMemory`), and CPU mode is unusable (5–6 min per question). Stop such servers before the qmd rows.
+- **Lift the headless background-wait ceiling** for graphify builds (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, set by the script): graphify dispatches dozens of extraction subagents and `claude -p` otherwise ends the session after 600 s with chunks still running.
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --example mcp_time; export MCP_TIME="$REPO/target/release/examples/mcp_time"
+# qmd 2.8.3 (Node ≥ 22): one index per project, the collection mask widened to MDX (qmd's own option; its default **/*.md would skip three of the four corpora)
+npm i -g @tobilu/qmd@2.8.3 && qmd pull                      # ≈ 2 GB of models under ~/.cache/qmd/models, hashed into the arm record
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/arms/qmd.sh build "$p"; done          # collection add --mask '**/*.{md,mdx,markdown}', update, embed; times recorded
+for p in tailwind-css supabase prisma github-docs; do for m in full no-rerank bm25; do scripts/eval/arms/qmd.sh drive "$p" "$m" "$RUN/qmd-runs/$p-$m.jsonl"; done; done
+#   full = MCP `query` {query, limit 20 → 40, rerank true}; no-rerank = the same with rerank false (the whole configuration diff);
+#   bm25 = a lex-only sub-query with rerank false (qmd's lexical form ANDs every term and has no OR fallback: near-zero on long questions by design)
+# graphify 0.9.66: built on a COPY of the checkout with graphify's skill and hooks installed at project level inside the copy (never into your Claude Code config)
+uv tool install "graphifyy[mcp]==0.9.66"
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/arms/graphify.sh build "$p"; done      # headless `claude -p "/graphify <copy> --no-viz"` through your login; whole path, no narrowing; graph.json archived and hashed
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/arms/graphify.sh drive "$p" "$RUN/graphify-runs/$p.jsonl"; done   # MCP query_graph, every NODE's src in tool order; token_budget 8000 when under ten pages
+# BM25-over-files control (no model): FTS5 over whole pages with mda's query form
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/bm25-files.sh build "$p"; scripts/eval/bm25-files.sh drive "$p" "$RUN/bm25-runs/$p.jsonl"; done
+# score any arm output with the same page rule as the mda rows (a missing question is a miss, listed; no latency column)
+"$MDA" eval --dataset docsqa --data "$RUN/docsqa-data" --project prisma --root "$RUN/prisma" --split dev --arm-output "$RUN/qmd-runs/prisma-full.jsonl" --arm-name "qmd full (MCP query, rerank)" --out "$RUN/out/prisma-qmd-full"
+# latency through each arm's MCP server, cold first call separate
+scripts/eval/mcp-time.sh mda prisma "$RUN/latency/mda-prisma.jsonl"; scripts/eval/mcp-time.sh qmd prisma "$RUN/latency/qmd-prisma.jsonl"
+```
+
+The graphify build is a model pass through your login and is the expensive step: Tailwind 825 s and 5.4M input tokens, Supabase 2,053 s and 64.6M (≈ $47 list-price equivalent); a build that does not complete is recorded as such in the arm record (rule 0.3), never dropped. Archived rows, scorer output, the request sent and the per-question latency of the first pass live under `evals/results/docsqa/<project>/arms/<arm>.{jsonl,results.json,request.json,times.jsonl}`; the development rows are rendered on `docs/benchmarks.md` by `scripts/eval/table.sh`. What each arm's row means and where it is truncated is in the arm record and in `docs/benchmarks.md`; the published T1 recipe (frozen versions, hashes, expected metrics) lands in §7 with the table.
 
 ## 5. Answer quality on the golden corpus
 
