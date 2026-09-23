@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - **v0.1.0 + v0.1.1 released** (five archives + `SHA256SUMS` each). Marketplace install verified end to end from a clean state: hook downloads the binary, daemon starts, MCP answers. v0.1.1 fixed the manifest (standard component paths must not be listed in `plugin.json`).
 
 ## Next (in order)
-1. **M1 close**: preflight reports for the four projects committed (`evals/results/docsqa/preflight/`), Codex review of the M1 change (scorer, export, scripts), PR `feat/bench-m1` merged. Then **M2** (execution plan §5): qmd 2.8.3 and graphify 0.9.66 installed and built on the four checkouts (times recorded), drivers writing `{question_id, paths[], truncated}` rows for `--arm-output`, coverage, three probes per arm, `mcp-time.sh`; BM25-over-files; exit: preflight passes for every arm on every project.
+1. **M1 close**: preflight reports for the four projects under the re-freeze (`evals/results/docsqa/preflight/`), PR `feat/bench-m1` merged. Then **M2** (execution plan §5): qmd 2.8.3 and graphify 0.9.66 installed and built on the four checkouts (times recorded), drivers writing `{question_id, paths[], truncated}` rows for `--arm-output`, coverage, three probes per arm, `mcp-time.sh`; BM25-over-files; exit: preflight passes for every arm on every project.
 2. **M3–M4**: T1 development rows for all arms, pooled judgments, the greedy tuning loop (`TUNING.md`; the hybrid-below-cards result on Tailwind and the flat Prisma hybrid are the first hypotheses), final freeze, test split once, "where we lose", Codex pass → T1 published with its runbook §7 section. Product lever before axis B: adapter/query latency (candidate depth, one query embedding per question).
 3. **M5+**: T2 harness (resumable runner, transcript tokens, grounding, `--analysis`, `panel.sh`, `--export-questions`), pilot, owner decision on the rule-0.9 amendment; launch checklist in parallel.
 
@@ -21,4 +21,4 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
-## Last Codex review: 2026-09-23 (docs/reviews/codex/2026-09-23-execution-plan.md) — execution plan pre-mortem, three passes, verdict quoted; qualifications = M1–M5. M1 code review pending.
+## Last Codex review: 2026-09-23 (docs/reviews/codex/2026-09-23-bench-m1.md) — M1 export, arm scorer, freeze, preflight, probes: 10 findings (5 High), 9 fixed + 1 in part; the preflight is now a real gate (interrupted runs fail, model links hashed, successful tool results required, regeneration from archived page lists). Execution-plan pre-mortem: 2026-09-23-execution-plan.md.
