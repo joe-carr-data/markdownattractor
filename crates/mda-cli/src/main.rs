@@ -76,7 +76,7 @@ enum Command {
     /// Serve the index to Claude over MCP (stdio).
     Mcp(commands::mcp::Args),
     /// Retrieval metrics (recall@k, MRR) on a golden set, offline.
-    Eval(commands::eval::Args),
+    Eval(Box<commands::eval::Args>),
     /// What summarization cost, per day and per model, from the usage ledger.
     Cost(commands::cost::Args),
     /// Write a redacted diagnostics bundle to attach to an issue.

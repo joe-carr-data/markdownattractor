@@ -89,6 +89,15 @@ pub struct Args {
     /// Row name for `--arm-output` (default: the file's stem).
     #[arg(long, requires = "arm_output")]
     pub arm_name: Option<String>,
+    /// Extra labels added to the dataset's (plan §2.3, the pooled column): a JSONL file of
+    /// `{"question_id": …, "page": …}` pairs judged relevant. The original labels stay; the
+    /// report says how many were added and names the file.
+    #[arg(long)]
+    pub extra_labels: Option<PathBuf>,
+    /// Score only the question ids listed in this file (one per line, or JSONL rows with a
+    /// `question_id`): the pooled column is computed over the judged questions (plan §2.3).
+    #[arg(long)]
+    pub only_questions: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -265,8 +274,17 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         root.display(),
         root.display()
     );
-    let dataset = docsqa::Dataset::load(data, project)
+    let mut dataset = docsqa::Dataset::load(data, project)
         .with_context(|| format!("loading {project} from {}", data.display()))?;
+    let mut extra_labels_added = 0usize;
+    let mut extra_labels_unknown: Vec<String> = Vec::new();
+    if let Some(f) = &args.extra_labels {
+        let extra = docsqa::read_extra_labels(f).with_context(|| f.display().to_string())?;
+        let before: usize = dataset.questions.iter().map(|q| q.relevant.len()).sum();
+        extra_labels_unknown = dataset.add_labels(&extra);
+        let after: usize = dataset.questions.iter().map(|q| q.relevant.len()).sum();
+        extra_labels_added = after - before;
+    }
     let mut engine = Engine::open(&root)?;
     let mut attached = 0;
     if let Some(cards) = &args.cards {
@@ -299,12 +317,31 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     }
     let mut runs = Vec::new();
     let search = SearchOptions::for_config(engine.config());
+    let only: Option<std::collections::HashSet<String>> = match &args.only_questions {
+        Some(f) => {
+            let text = std::fs::read_to_string(f).with_context(|| f.display().to_string())?;
+            Some(
+                text.lines()
+                    .map(str::trim)
+                    .filter(|l| !l.is_empty())
+                    .map(|l| {
+                        serde_json::from_str::<serde_json::Value>(l)
+                            .ok()
+                            .and_then(|v| v["question_id"].as_str().map(str::to_owned))
+                            .unwrap_or_else(|| l.to_owned())
+                    })
+                    .collect(),
+            )
+        }
+        None => None,
+    };
     let opts = |name: &str, raw_only: bool| RunOptions {
         name: name.to_owned(),
         raw_only,
         fetch: args.fetch,
         include_holdout: args.open_holdout,
         search: search.clone(),
+        only: only.clone(),
     };
     if let Some(arm) = &args.arm_output {
         let rows = docsqa::read_arm_output(arm).with_context(|| arm.display().to_string())?;
@@ -320,8 +357,7 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             &splits,
             split,
             &rows,
-            &name,
-            args.open_holdout,
+            &docsqa::ArmScoring { name, include_holdout: args.open_holdout, only: only.clone() },
         )?);
     } else {
         let raw = opts("lexical (raw only)", true);
@@ -359,6 +395,8 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         "cards_attached": attached,
         "cards_exported": exported,
         "arm_output": args.arm_output.as_deref().map(portable),
+        "extra_labels": args.extra_labels.as_deref().map(|f| serde_json::json!({"file": portable(f), "added": extra_labels_added, "unknown_question_ids": extra_labels_unknown})),
+        "only_questions": only.as_ref().map(std::collections::HashSet::len),
         "embedding_model": embedder.as_ref().map(|e| e.model().to_owned()),
         "search": {"rrf_k": search.rrf_k, "raw_list_weight": search.raw_list_weight, "questions_weight": search.questions_weight, "and_stopwords": search.and_stopwords, "embedding_text": engine.config().embedding_text},
         "coverage": coverage,
