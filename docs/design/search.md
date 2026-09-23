@@ -39,7 +39,13 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 | recency half-life | `SearchOptions.recency_half_life_days` | 30 |
 | OR fallback | `SearchOptions.or_fallback` | on |
 | fetch depth per list | `k × 4`, min 16 | |
-| bm25 weights | `store/mod.rs` | see above |
+| bm25 weights | `store/mod.rs`; the `questions_answered` weight is `search_questions_weight` in `config.toml` | 3/3/1/1/2/1 |
+| RRF constant | `search_rrf_k` in `config.toml` (`SearchOptions.rrf_k`) | 60 |
+| raw-list weight in the fusion | `search_raw_weight` (`SearchOptions.raw_list_weight`) | 1.0 |
+| stop-words dropped from the AND form | `search_and_stopwords` (`SearchOptions.and_stopwords`); the OR fallback keeps them | off |
+| embedded text of a card | `embedding_text` = `v1` \| `questions-first` \| `with-entities`; changes the vector model id (`bge-small-en-v1.5-q+questions-first`), so vectors are rebuilt, never mixed | `v1` |
+
+The five `config.toml` keys are the benchmark's tuning candidates (execution plan §3, `evals/results/docsqa/TUNING.md`); `SearchOptions::for_config` reads them at every entry point (CLI, MCP, `explain`, the evals), and the winner of the loop becomes the default here.
 
 `mda explain <query>` prints the three lists the search used (cards, raw, vector, with the OR form noted when it applied) and the fused, recency-weighted result. `SearchOptions.vectors = false` or `--raw` skips the vector list.
 
