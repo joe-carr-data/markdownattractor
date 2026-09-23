@@ -35,7 +35,7 @@ run_all() { # name -> writes $T/<name>/<project>/results.json and prints the sum
     dir="$(project_dir "$p")"; out="$T/$name/$p"; rm -rf "$out"; mkdir -p "$out"
     t0=$(date +%s)
     FETCH_ARG=(); [ -z "${FETCH:-}" ] || FETCH_ARG=(--fetch "$FETCH")
-    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$p" --root "$RUN/$dir" --split dev "${FETCH_ARG[@]}" --out "$out" > "$out/report.json" 2>"$out/err.log" || die "eval failed on $p (see $out/err.log)"
+    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$p" --root "$RUN/$dir" --split dev ${FETCH_ARG[@]+"${FETCH_ARG[@]}"} --out "$out" > "$out/report.json" 2>"$out/err.log" || die "eval failed on $p (see $out/err.log)"
     t1=$(date +%s); echo "$((t1 - t0))" > "$out/elapsed_s"
   done
   jq -n --arg name "$name" --argjson tw "$(jq '{s: .runs[-1].metrics.success_at_5, ms: .runs[-1].metrics.mean_ms, run: .runs[-1].run}' "$T/$name/tailwind-css/results.json")" \
