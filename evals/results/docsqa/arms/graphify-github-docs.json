@@ -1,8 +1,8 @@
 {
   "arm": "graphify",
-  "project": "prisma",
+  "project": "github-docs",
   "build": {
-    "wall_s": 2518,
+    "wall_s": 4745,
     "completed": false
   },
   "note": "did not complete: no graphify-out/graph.json (rule 0.3: recorded, not dropped)"
