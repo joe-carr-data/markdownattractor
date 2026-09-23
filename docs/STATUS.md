@@ -1,6 +1,6 @@
-# STATUS (updated 2026-09-23 by Claude)
+# STATUS (updated 2026-09-24 by Claude)
 **Start here after compaction: `docs/handoffs/2026-09-23-session4-final-handoff.md` (then the session-3 handoff for releases and recipes).**
-Phase: benchmarks — **M1 and M2 merged (PRs #22, #23); M3 on `feat/bench-m3` (PR #24 open, CI running): tuning knobs in config, the greedy loop ran (stop rule after the two embedding-text candidates; pre-tuning defaults win), pooled-label diagnostic on the four dev splits**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
+Phase: benchmarks — **M1, M2 and M3 merged (PRs #22, #23, #24): tuning knobs in config, the greedy loop ran (stop rule after the two embedding-text candidates; pre-tuning defaults win), pooled-label diagnostic on the four dev splits**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - **v0.1.0 + v0.1.1 released** (five archives + `SHA256SUMS` each). Marketplace install verified end to end from a clean state: hook downloads the binary, daemon starts, MCP answers. v0.1.1 fixed the manifest (standard component paths must not be listed in `plugin.json`).
 
 ## Next (in order)
-1. **M3 close**: merge the PR on eleven green jobs. Owner decision: run the five unrun search-time candidates (c3–c7) as an explicitly labelled exploratory extension, or not (the greedy protocol has ended with the defaults as winner).
+1. **Owner decision before the final freeze**: run the five unrun search-time candidates (c3–c7) as an explicitly labelled exploratory extension, or not (the greedy protocol has ended with the defaults as winner).
 2. **M4**: the winner becomes the product default; final freeze (`freeze.sh --protocol final --table T1`); T1 on the test split once for every arm; "where we lose"; Codex pass on scorer, drivers and freeze; T1 published with its runbook §7 section.
 3. **M5+**: T2 harness (resumable runner, transcript tokens, grounding, `--analysis`, `panel.sh` with the Astra route, `--export-questions`), pilot, owner decision on the rule-0.9 amendment; the graphify-haiku chunk audit and the T3 one-edit measurement are owner calls.
 
