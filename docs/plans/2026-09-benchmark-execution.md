@@ -117,6 +117,8 @@ Objective: mean success@5 over the four projects' dev splits, equal weights, wit
 
 Selection is the greedy rule above; "simpler" (for a tie within 0.01) means fewer settings different from the pre-tuning default, and the pre-tuning configuration wins a tie against everything. Regressions are logged, not retried with variations. Every trial goes to `evals/results/docsqa/TUNING.md`: hypothesis, config diff, code SHA, cards and embeddings hashes, per-project metrics and denominators, latency, build cost, failures, elapsed time, decision. Stop: the list is exhausted, or the last two candidates both fail to improve the objective by ≥ 0.01. The winner becomes the product default in `config.toml`; test and holdout are never looked at; a test loss is a result, not a new round.
 
+**2026-09-24 amendment — information-only post-stop exploration (decided with Codex, `docs/reviews/codex/2026-09-24-post-stop-c3-c7.md`).** The registered selection loop ended after c2; its winner remains the pre-tuning configuration. Before M4, evaluate c3–c7 once each, in the listed order, each independently against that unchanged configuration on the same eligible dev questions and original labels. This authorizes additional diagnostics, not resumed selection: no combinations, new values, family-based stop reset, or adoption for this release. Archive every trial, including failures. Test and holdout remain unopened during this extension. M4 freezes the original winner and evaluates every arm on test once; exploratory observations cannot reopen selection. Each trial reports paired wins/losses and a descriptive 95% bootstrap interval of the objective difference (5,000 within-project paired resamples, seed 20260922, `mda eval --compare`); these intervals do not authorize adoption or establish significance across five trials.
+
 ## 4. Tables
 
 - **T1 axis A on DocsQA**: arms of §2.1; original and pooled columns (§2.3); latency (§2.7); per project, dev during tuning, test once. Acceptance: complete, with per-project intervals; the product target (match qmd full) is reported as met or not per project.
@@ -167,7 +169,8 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 
 - [ ] M1 export, freeze, preflight, `--arm-output`, runbook v1.
 - [ ] M2 competitor arms installed, built, driven, probed.
-- [ ] M3 T1 development rows, pooled judgments, tuning loop.
+- [x] M3 T1 development rows, pooled judgments, tuning loop (PR #24).
+- [ ] Post-stop exploration c3–c7, information only (2026-09-24 amendment of §3).
 - [ ] M4 T1 published (test split), Codex pass.
 - [ ] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass.
 - [ ] M6 T2 + T3 published.
