@@ -1,6 +1,6 @@
 # FROZEN — DocsQA-Repo, protocol: final, table T1
 
-Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T1 final freeze (M4): the pre-tuning configuration is the winner of plan §3 (both embedding-text candidates discarded; the post-stop c3–c7 diagnostics are excluded from selection). Test split scored once for every arm of §2.1; the arm builds are the M2 builds (same records and artifact hashes). Re-written at 1333553 after the Codex M4 pass (BM25-over-files table fingerprints added; inputs otherwise unchanged); rows produced before this rewrite are listed with their source commit in each arm's manifest.
+Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T1 final freeze (M4): the pre-tuning configuration is the winner of plan §3 (both embedding-text candidates discarded; the post-stop c3–c7 diagnostics are excluded from selection). Test split scored once for every arm of §2.1; the arm builds are the M2 builds (same records and artifact hashes). Re-written at 11c9fc6 after the Codex M4 pass (BM25-over-files table fingerprints added at 1333553; archive naming at 11c9fc6; inputs otherwise unchanged); rows produced before a rewrite are listed with their source commit in each arm's manifest.
 
 ## Inputs
 
@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: 1333553573a6ada1267eee166ae2bff7d4e8a1ec (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
+- source commit: 11c9fc65c4aab7b070674685362efd1fc1cc5174 (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (regular files and the snapshot links the loader opens, each with the sha256 of its content; sha256 of the file 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -66,7 +66,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ## Runtime
 
-- frozen_at: 2026-09-24T13:16:42Z
+- frozen_at: 2026-09-24T13:18:55Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.280 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
