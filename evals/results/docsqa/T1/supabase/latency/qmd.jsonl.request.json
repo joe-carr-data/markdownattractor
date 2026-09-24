@@ -1,0 +1,14 @@
+{
+  "arm": "qmd",
+  "tool": "query",
+  "arguments": {
+    "query": "{query}",
+    "limit": 20
+  },
+  "server": [
+    "qmd",
+    "--index",
+    "supabase",
+    "mcp"
+  ]
+}

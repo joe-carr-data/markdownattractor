@@ -1,0 +1,11 @@
+{
+  "arm": "graphify",
+  "tool": "query_graph",
+  "arguments": {
+    "question": "{query}"
+  },
+  "server": [
+    "graphify-mcp",
+    "/Users/jcarr/.cache/markdownattractor/bench/graphify/supabase/graph.json"
+  ]
+}
