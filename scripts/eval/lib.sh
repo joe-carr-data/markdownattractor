@@ -99,9 +99,14 @@ archived_rows() { # results.json run-index > rows.jsonl
   jq -c --argjson i "$2" '.runs[$i].results[] | {question_id: .id, paths: .pages, truncated}' "$1"
 }
 
-# The first three eligible questions of the dev split of a project, from its committed
-# results (the raw row lists every scored question in dataset order): the probe questions.
-probe_ids() { jq -r '.runs[0].results[:3][].id' "$RESULTS/$1/results.json"; }
+# Where a table's committed observations live: the development rows under
+# evals/results/docsqa/<project>/, a published table's under evals/results/docsqa/<table>/<project>/
+# (its FROZEN.md beside them). One rule for the freeze, the preflight, the drivers and the pool.
+results_dir() { case "${1:-development}" in development) echo "$RESULTS" ;; *) ident "$1"; echo "$RESULTS/$1" ;; esac; }
+
+# The first three eligible questions of a project's committed rows for a table (the raw row
+# lists every scored question in dataset order): the probe questions.
+probe_ids() { jq -r '.runs[0].results[:3][].id' "$(results_dir "${2:-development}")/$1/results.json"; }
 
 # The text of one question of one project; exactly one row must match.
 question_text() { # project question_id

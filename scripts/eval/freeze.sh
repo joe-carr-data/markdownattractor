@@ -121,8 +121,15 @@ inputs() {
   done
   echo
   echo "### Analysis"
+  local rows_path="evals/results/docsqa/<project>/results.json"
+  if [ "$protocol" = final ]; then
+    rows_path="evals/results/docsqa/$table/<project>/results.json"
+    echo "- table: $table · protocol final · split scored: test, once (plan §2.0; reuse of the test split by a later release is stated on the page)"
+    echo "- selection: original §3 winner (the pre-tuning configuration, \`evals/results/docsqa/TUNING.md\`); post-stop diagnostics excluded from selection (plan §3, 2026-09-24 amendment)"
+    echo "- intervals: per row, 95% bootstrap over the row's questions, 5,000 draws, seed $SEED (\`mda eval --interval\`); mda hybrid vs qmd full per project: within-project paired bootstrap (\`mda eval --compare\`), reported as the product target met or not"
+  fi
   echo "- scorer: \`mda eval --dataset docsqa\` at the source commit (the store's own rows and \`--arm-output\` for external arms, one page rule for all: sections deduplicated by path in rank order, a truncated list is scored and counted)"
-  echo "- regeneration (plan §2.0b): \`scripts/eval/preflight.sh\` feeds the archived page lists of \`evals/results/docsqa/<project>/results.json\` back through \`--arm-output\` and requires the same metrics and per-question results; the store replay and the clean reconstruction from the committed cards are separate checks, each compared on every row and question (latency excluded)"
+  echo "- regeneration (plan §2.0b): \`scripts/eval/preflight.sh\` feeds the archived page lists of \`$rows_path\` back through \`--arm-output\` and requires the same metrics and per-question results; the store replay and the clean reconstruction from the committed cards are separate checks, each compared on every row and question (latency excluded)"
   echo
   echo "### Arms"
   echo "- mda: this binary through \`mda mcp\` (\`mda_search\`, default k 5, up to 50; \`mda_open\`); the search-first rules \`skills/search-first/SKILL.md\`; store per checkout under \`.markdownattractor/\` (\`backend = claude-cli\`, \`claude_cli_policy_ack = true\`, \`embeddings = local-small\`); the adapter scores the store directly"
