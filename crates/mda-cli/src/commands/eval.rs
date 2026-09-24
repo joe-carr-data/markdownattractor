@@ -108,6 +108,10 @@ pub struct Args {
     /// The run compared by `--compare` (the name of a row in `results.json`).
     #[arg(long, default_value = "hybrid (cards + raw + vectors)", requires = "compare")]
     pub run_name: String,
+    /// The candidate side's run name for `--compare` when it differs from `--run-name`
+    /// (e.g. mda's hybrid row against qmd full: plan §4, the product target per project).
+    #[arg(long, requires = "compare")]
+    pub candidate_run: Option<String>,
     /// Bootstrap draws for `--compare` and `--interval`.
     #[arg(long, default_value_t = 5000)]
     pub draws: usize,
@@ -320,13 +324,17 @@ fn run_compare(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         inputs.push(PairedInput {
             label: label.clone(),
             baseline: paired::read_hits(Path::new(baseline), &args.run_name)?,
-            candidate: paired::read_hits(Path::new(candidate), &args.run_name)?,
+            candidate: paired::read_hits(
+                Path::new(candidate),
+                args.candidate_run.as_deref().unwrap_or(&args.run_name),
+            )?,
         });
     }
     let report = paired::compare(&inputs, args.draws, args.seed)?;
     if json {
         output::json(&serde_json::json!({
             "run": args.run_name,
+            "candidate_run": args.candidate_run.as_deref().unwrap_or(&args.run_name),
             "inputs": args.compare.chunks(3).map(|t| serde_json::json!({"label": t[0], "baseline": t[1], "candidate": t[2]})).collect::<Vec<_>>(),
             "report": report,
         }));
