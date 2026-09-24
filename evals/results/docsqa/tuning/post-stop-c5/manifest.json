@@ -1,0 +1,44 @@
+{
+  "trial": "post-stop-c5",
+  "at": "2026-09-24T11:38:33Z",
+  "hypothesis_change": [
+    "search_rrf_k=30"
+  ],
+  "base_before": [],
+  "base_fingerprint": "e3b0c44298fc1c14",
+  "code_sha": "4535be585bae0bde43023abb8f97f2c147d6dc78",
+  "binary_sha256": "9fd3ebe2d0476490076d7e8c9d267de1e8c2a23aede3932d28ea87287e9988c5",
+  "frozen_md_sha256": "6f7afe6f62f03ddfb73b83bc2a86cdfd60ddab8078c1a7901d90a6b3b51a7d51",
+  "cards_sha256": [
+    "0788ea973eb4475bdc67357c640d85e259aa95b13724640d09a6cce4ce98dda2",
+    "ba0faa4ebb571a6a7940abdab73b019c920638f60ca795b05b01b6ac75e6b30c",
+    "8562fbb94d87a898e3d961871f3331ebac1b08d752c923ae04a30915836dfac8",
+    "ea8b35f86451da867d05db5c9f497e0ef65da6fffabd7556a7ba115acc15d766"
+  ],
+  "summary": {
+    "name": "post-stop-c5",
+    "tailwind": 0.8,
+    "supabase": 0.5833333333333334,
+    "prisma": 0.2972972972972973,
+    "github": 0.4489795918367347,
+    "n": {
+      "tailwind": 25,
+      "supabase": 12,
+      "prisma": 37,
+      "github": 49
+    },
+    "objective": 0.5324025556168414,
+    "mean_ms": 701.5799663719035,
+    "elapsed_s": 186,
+    "embedding_model": "bge-small-en-v1.5-q",
+    "search": {
+      "and_stopwords": false,
+      "embedding_text": "v1",
+      "questions_weight": 2.0,
+      "raw_list_weight": 1.0,
+      "rrf_k": 30.0
+    }
+  },
+  "decision": "screen-pass-not-adopted",
+  "per_project_results": "<project>.results.json beside this manifest (archived observations; metrics regenerate from their page lists through --arm-output)"
+}

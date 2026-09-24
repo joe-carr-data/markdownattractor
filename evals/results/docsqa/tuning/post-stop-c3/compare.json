@@ -1,0 +1,96 @@
+{
+  "inputs": [
+    {
+      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/github-docs.results.json",
+      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c3/github-docs.results.json",
+      "label": "github-docs"
+    },
+    {
+      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/prisma.results.json",
+      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c3/prisma.results.json",
+      "label": "prisma"
+    },
+    {
+      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/supabase.results.json",
+      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c3/supabase.results.json",
+      "label": "supabase"
+    },
+    {
+      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/tailwind-css.results.json",
+      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c3/tailwind-css.results.json",
+      "label": "tailwind-css"
+    }
+  ],
+  "report": {
+    "draws": 5000,
+    "losses": 0,
+    "objective_baseline": 0.501365140650855,
+    "objective_candidate": 0.5221984739841883,
+    "objective_ci95": [
+      0.0,
+      0.0625
+    ],
+    "objective_delta": 0.020833333333333332,
+    "projects": [
+      {
+        "baseline": 0.40816326530612246,
+        "candidate": 0.40816326530612246,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "delta": 0.0,
+        "label": "github-docs",
+        "losses": 0,
+        "n": 49,
+        "ties": 49,
+        "wins": 0
+      },
+      {
+        "baseline": 0.2972972972972973,
+        "candidate": 0.2972972972972973,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "delta": 0.0,
+        "label": "prisma",
+        "losses": 0,
+        "n": 37,
+        "ties": 37,
+        "wins": 0
+      },
+      {
+        "baseline": 0.5,
+        "candidate": 0.5833333333333334,
+        "ci95": [
+          0.0,
+          0.25
+        ],
+        "delta": 0.08333333333333333,
+        "label": "supabase",
+        "losses": 0,
+        "n": 12,
+        "ties": 11,
+        "wins": 1
+      },
+      {
+        "baseline": 0.8,
+        "candidate": 0.8,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "delta": 0.0,
+        "label": "tailwind-css",
+        "losses": 0,
+        "n": 25,
+        "ties": 25,
+        "wins": 0
+      }
+    ],
+    "seed": 20260922,
+    "wins": 1
+  },
+  "run": "hybrid (cards + raw + vectors)"
+}

@@ -208,6 +208,23 @@ qmd's build makes no remote model call (local EmbeddingGemma-300M inference on M
 
 The greedy loop of the execution plan §3 runs with `scripts/eval/tune.sh` against the four carded stores. Every trial is archived under `evals/results/docsqa/tuning/<trial>/`: `manifest.json` (the change, the base it was applied to, code SHA, binary sha256, `FROZEN.md` and cards hashes, the summary with denominators, the decision) and the four `results.json`; `TUNING.md` is the ledger written from those files. Two checks, never mixed: **regeneration** (exact) recomputes a trial's metrics from its archived page lists without a store, exactly like the preflight's `regenerate` check (`--arm-output` on rows built from `<project>.results.json`); a **rerun** (`scripts/eval/tune.sh baseline`, then `trial <name> <key=value>…` replaying the manifests' changes in order with `keep` after each kept one, `fetch=<n>` for the fetch-depth candidate) searches again and must give the same rows with the same stores and the binary at the logged SHA, while latency and elapsed time differ by machine; an `embedding_text` change re-embeds every card under a new model id (local, ≈ 1 h for the four corpora). The winner's settings become the defaults of the frozen binary at M4 and appear in `FROZEN.md`'s search configuration line.
 
+**Post-stop exploration (plan §3, 2026-09-24 amendment; information only, never adoptable).** After the stop rule fired at c2, candidates 3–7 were run once each against the unchanged pre-tuning configuration, decided with Codex (`docs/reviews/codex/2026-09-24-post-stop-c3-c7.md`). The selection loop is not resumed: no combination, no new value, no adoption for this release whatever the scores; a passing candidate is a hypothesis for a future, separately declared evaluation.
+
+```bash
+cd "$REPO"
+scripts/eval/tune.sh base                                   # must print an empty base: post-stop trials run only against the pre-tuning configuration
+scripts/eval/tune.sh explore post-stop-c3 search_questions_weight=3
+scripts/eval/tune.sh explore post-stop-c4 search_raw_weight=0.7
+scripts/eval/tune.sh explore post-stop-c5 search_rrf_k=30
+scripts/eval/tune.sh explore post-stop-c6 fetch=60
+scripts/eval/tune.sh explore post-stop-c7 search_and_stopwords=true
+# each: rerun (same rows expected with the same stores and binary), then the paired comparison, regeneration (exact) from the archived results:
+target/release/mda --json eval --compare tailwind-css evals/results/docsqa/tuning/baseline/tailwind-css.results.json evals/results/docsqa/tuning/post-stop-c3/tailwind-css.results.json \
+  --compare supabase … --compare prisma … --compare github-docs … --draws 5000 --seed 20260922   # byte-identical to tuning/post-stop-c3/compare.json
+```
+
+`explore` refuses to run on a moved base or under a name that is not `post-stop-*`, screens on the unrounded objective difference (≥ 0.01) and the unrounded per-project guardrail (≥ −0.02, which at denominators 49/37/12/25 permits no net loss of one question anywhere), writes `screen-pass-not-adopted` / `screen-fail-not-adopted` / `invalid-not-adopted` (a failed evaluation or a question set that differs from the baseline's is logged with its reason), and appends the row under the "Post-stop exploratory" table of `TUNING.md` with the paired wins/losses and the 95% interval from `mda eval --compare` (within-project paired bootstrap, 5,000 draws, seed 20260922, SplitMix64 so the draws are the same on every machine; the objective is resampled jointly over the four projects). `keep` refuses these decisions. The intervals are descriptive: they do not establish significance across five trials.
+
 ## 4e. Pooled labels (plan §2.3; diagnostic at M3, the published second column at M4)
 
 ```bash
