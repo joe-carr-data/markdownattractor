@@ -1,0 +1,14 @@
+{
+  "tool": "query",
+  "arguments": {
+    "query": "{query}",
+    "limit": 20,
+    "rerank": true
+  },
+  "server": [
+    "qmd",
+    "--index",
+    "supabase",
+    "mcp"
+  ]
+}

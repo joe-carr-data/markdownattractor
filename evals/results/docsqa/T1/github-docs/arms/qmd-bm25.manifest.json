@@ -1,0 +1,17 @@
+{
+  "arm": "qmd-bm25",
+  "project": "github-docs",
+  "split": "test",
+  "archived_at": "2026-09-24T18:03:26Z",
+  "source_commit": "5800041bcd05fa6c0896bbd988e303ab2bf11714",
+  "driver": "scripts/eval/arms/qmd.sh",
+  "driver_sha256": "02f65faa5b8b97ffe00e2d4d523eb61704c11a791345bfa2a9b713c09a8eb8c2",
+  "t1_sha256": "fb583aef04a19618be7717351d88490cf5870fa45daa100e2c02649e9e6d2de5",
+  "mda_sha256": "a8426f15ad32844eef42cb510632a14941b1e347b4f7d8b11062d4d6da65c560",
+  "frozen_md_sha256": "3287b576193013b96d342e0a11be9682d6d699c0b069e607aba821f24aa7e3d2",
+  "rows_sha256": "c54e5aa2d3a26122e6fa7bcba74d38b6a9a9ad0f3aa5b96a59e871fcee455908",
+  "driver_rows_sha256": "58610a8f783a0fad3724464e686101181864cf9d3cda7038a911248af8109221",
+  "results_sha256": "73b5c9773f4bd968e419c8b39ecb5eea5e498202b967b1faa629330e7cdd4528",
+  "provenance_note": null,
+  "note": "rows = the scorer input (question_id, paths, truncated); driver rows keep the per-question request, ok flag and first-pass timing; request*.json are the templates the driver sent; times*.jsonl are the driver passes, not the published latency (latency/<arm>.jsonl)"
+}

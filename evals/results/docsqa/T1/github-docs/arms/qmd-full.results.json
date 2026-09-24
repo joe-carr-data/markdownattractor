@@ -1,0 +1,2150 @@
+{
+  "arm_output": "~/.cache/markdownattractor/bench/t1-runs/github-docs/qmd-full.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 23066,
+    "sections_carded": 23066
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 222,
+    "anchors_found": 183,
+    "corpus_pages": 3208,
+    "corpus_pages_indexed": 3208,
+    "eligible": 161,
+    "excluded_image_evidence": 36,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "github-docs::110865",
+      "github-docs::122713",
+      "github-docs::124413",
+      "github-docs::134627",
+      "github-docs::143714",
+      "github-docs::147941",
+      "github-docs::150190",
+      "github-docs::152845",
+      "github-docs::156304",
+      "github-docs::15669",
+      "github-docs::156738",
+      "github-docs::158698",
+      "github-docs::166151",
+      "github-docs::169850",
+      "github-docs::195589",
+      "github-docs::21125",
+      "github-docs::23166",
+      "github-docs::23212",
+      "github-docs::24939",
+      "github-docs::25478",
+      "github-docs::25497",
+      "github-docs::27172",
+      "github-docs::27600",
+      "github-docs::49124",
+      "github-docs::50035",
+      "github-docs::53922",
+      "github-docs::64750",
+      "github-docs::69168",
+      "github-docs::77916",
+      "github-docs::88451",
+      "github-docs::88452"
+    ],
+    "multimodal_judgment": 64,
+    "project": "github-docs",
+    "qrel_coverage": 1.0,
+    "qrels": 260,
+    "qrels_indexed": 260,
+    "qrels_unmapped": 0,
+    "questions": 197,
+    "questions_with_missing_anchor": 31
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "extra_labels": null,
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "only_questions": null,
+  "project": "github-docs",
+  "root": "~/.cache/markdownattractor/bench/github-docs",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.26072796934865905,
+        "ndcg_at_10": 0.29897410222632387,
+        "questions": 87,
+        "success_at_5": 0.45977011494252873
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 20,
+          "id": "github-docs::10038",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "content/repositories/releasing-projects-on-github/automatically-generated-release-notes.md",
+            "content/rest/releases/releases.md",
+            "content/rest/actions/index.md",
+            "content/rest/releases/assets.md",
+            "content/rest/releases/index.md",
+            "content/actions/tutorials/build-and-test-code/python.md",
+            "content/repositories/releasing-projects-on-github/about-releases.md",
+            "content/rest/issues/issues.md",
+            "content/rest/issues/milestones.md",
+            "content/rest/actions/self-hosted-runners.md"
+          ],
+          "rank": 5,
+          "relevant": [
+            "content/rest/releases/index.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::10809",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/automatically-merging-a-pull-request.md",
+            "content/pull-requests/concepts/deploying-code.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/index.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-merging-for-pull-requests.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-squashing-for-pull-requests.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/merging-a-pull-request.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-rebasing-for-pull-requests.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md"
+          ],
+          "rank": 12,
+          "relevant": [
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/converting-branch-protections-to-rulesets.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::110865",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/account-and-profile/how-tos/account-management/creating-an-account-on-github.md",
+            "content/account-and-profile/get-started/account.md",
+            "content/site-policy/github-terms/github-corporate-terms-of-service.md",
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch.md",
+            "content/account-and-profile/how-tos/account-management/converting-a-user-into-an-organization.md",
+            "content/nonprofit/troubleshooting/frequently-asked-questions.md",
+            "content/get-started/onboarding/getting-started-with-github-enterprise-cloud.md",
+            "content/repositories/creating-and-managing-repositories/creating-an-issues-only-repository.md",
+            "content/get-started/onboarding/getting-started-with-the-github-enterprise-cloud-trial.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects.md",
+            "content/organizations/collaborating-with-groups-in-organizations/about-organizations.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::112596",
+          "ndcg_at_10": 0.31546487678572877,
+          "pages": [
+            "content/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-version-updates.md",
+            "content/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates.md",
+            "content/code-security/concepts/supply-chain-security/about-the-dependabot-yml-file.md",
+            "content/graphql/reference/dependabot.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/list-configured-dependencies.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-private-registries.md",
+            "content/graphql/reference/dependency-graph.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md",
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-errors.md",
+            "content/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configuring-multi-ecosystem-updates.md"
+          ],
+          "rank": 8,
+          "relevant": [
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::120943",
+          "ndcg_at_10": 0.5912352048230277,
+          "pages": [
+            "content/repositories/creating-and-managing-repositories/repository-limits.md",
+            "content/repositories/working-with-files/managing-large-files/about-large-files-on-github.md",
+            "content/admin/managing-accounts-and-repositories/managing-repositories-in-your-enterprise/configuring-git-large-file-storage-for-your-enterprise.md",
+            "content/repositories/working-with-files/managing-files/adding-a-file-to-a-repository.md",
+            "content/repositories/creating-and-managing-repositories/best-practices-for-repositories.md",
+            "content/get-started/writing-on-github/working-with-advanced-formatting/attaching-files.md",
+            "content/repositories/working-with-files/managing-large-files/about-git-large-file-storage.md",
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-repository-management-policies-in-your-enterprise.md",
+            "content/get-started/using-git/troubleshooting-the-2-gb-push-limit.md",
+            "content/migrations/using-github-enterprise-importer/migrating-from-bitbucket-server-to-github-enterprise-cloud/about-migrations-from-bitbucket-server-to-github-enterprise-cloud.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/repositories/working-with-files/managing-large-files/about-git-large-file-storage.md",
+            "content/repositories/working-with-files/managing-large-files/about-large-files-on-github.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::122713",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/copilot/reference/copilot-billing/request-based-billing-legacy/what-changed-with-billing.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-plan/index.md",
+            "content/copilot/reference/copilot-billing/license-changes.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/index.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-plan/cancel-plan.md",
+            "content/copilot/how-tos/manage-your-account/view-and-change-your-copilot-plan.md",
+            "content/billing/concepts/product-billing/github-copilot-licenses.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/cancel.md",
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/apps/github-marketplace/using-the-github-marketplace-api-in-your-app/handling-plan-cancellations.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/copilot/how-tos/manage-your-account/get-started-with-a-copilot-plan.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::124860",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/admin/monitoring-and-managing-your-instance/monitoring-your-instance/generating-a-health-check-for-your-enterprise.md",
+            "content/admin/managing-iam/using-saml-for-enterprise-iam/troubleshooting-saml-authentication.md",
+            "content/support/contacting-github-support/creating-a-support-ticket.md",
+            "content/contributing/style-guide-and-content-model/style-guide.md",
+            "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/managing-support-entitlements-for-your-enterprise.md",
+            "content/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps.md",
+            "content/support/learning-about-github-support/about-github-support.md",
+            "content/support/learning-about-github-support/github-marketplace-support.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-on-github.md",
+            "content/copilot/concepts/agents/copilot-cli/comparing-cli-features.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/site-policy/acceptable-use-policies/github-appeal-and-reinstatement.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::126642",
+          "ndcg_at_10": 0.43067655807339306,
+          "pages": [
+            "content/code-security/concepts/code-scanning/repository-properties.md",
+            "content/code-security/reference/code-scanning/troubleshoot-analysis-errors/private-repository-enablement.md",
+            "content/code-security/how-tos/secure-at-scale/configure-organization-security/establish-complete-coverage/configure-global-settings.md",
+            "content/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning.md",
+            "content/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/default-setup-enabled.md",
+            "content/code-security/reference/code-scanning/troubleshoot-analysis-errors/results-different-than-expected.md",
+            "content/code-security/getting-started/quickstart-for-securing-your-repository.md",
+            "content/code-security/concepts/code-scanning/codeql/codeql-code-scanning.md",
+            "content/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/edit-default-setup.md",
+            "content/code-security/concepts/code-scanning/integration-with-code-scanning.md"
+          ],
+          "rank": 4,
+          "relevant": [
+            "content/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::132217",
+          "ndcg_at_10": 0.3333333333333333,
+          "pages": [
+            "content/actions/get-started/continuous-integration.md",
+            "content/actions/get-started/index.md",
+            "content/actions/tutorials/create-an-example-workflow.md",
+            "content/actions/tutorials/create-actions/create-a-composite-action.md",
+            "content/admin/managing-github-actions-for-your-enterprise/index.md",
+            "content/actions/tutorials/use-containerized-services/create-a-docker-container-action.md",
+            "content/actions/get-started/quickstart.md",
+            "content/actions/tutorials/manage-your-work/index.md",
+            "content/actions/concepts/workflows-and-actions/index.md",
+            "content/actions/reference/workflows-and-actions/contexts.md"
+          ],
+          "rank": 7,
+          "relevant": [
+            "content/actions/get-started/quickstart.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::132566",
+          "ndcg_at_10": 0.7039180890341347,
+          "pages": [
+            "content/get-started/start-your-journey/creating-a-repository-for-your-project-on-github.md",
+            "content/repositories/creating-and-managing-repositories/creating-a-new-repository.md",
+            "content/get-started/using-git/splitting-a-subfolder-out-into-a-new-repository.md",
+            "content/desktop/overview/creating-your-first-repository-using-github-desktop.md",
+            "content/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github.md",
+            "content/repositories/creating-and-managing-repositories/index.md",
+            "content/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch.md",
+            "content/repositories/creating-and-managing-repositories/quickstart-for-repositories.md",
+            "content/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template.md",
+            "content/pull-requests/how-tos/commit-changes/managing-branches-within-your-repository.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/get-started/using-git/splitting-a-subfolder-out-into-a-new-repository.md",
+            "content/get-started/start-your-journey/creating-a-repository-for-your-project-on-github.md",
+            "content/get-started/archiving-your-github-personal-account-and-public-repositories/opting-into-or-out-of-the-github-archive-program-for-your-public-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::133291",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes.md",
+            "content/admin/managing-your-enterprise-account/creating-a-readme-for-an-enterprise.md",
+            "content/copilot/tutorials/customization-library/prompt-files/create-readme.md",
+            "content/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/quickstart-for-writing-on-github.md",
+            "content/account-and-profile/tutorials/using-your-github-profile-to-enhance-your-resume.md",
+            "content/issues/tracking-your-work-with-issues/learning-about-issues/planning-and-tracking-work-for-your-team-or-project.md",
+            "content/get-started/onboarding/getting-started-with-github-enterprise-server.md",
+            "content/repositories/creating-and-managing-repositories/quickstart-for-repositories.md",
+            "content/copilot/tutorials/customization-library/custom-agents/your-first-custom-agent.md",
+            "content/contributing/writing-for-github-docs/index.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/organizations/collaborating-with-groups-in-organizations/customizing-your-organizations-profile.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::137836",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "content/actions/how-tos/manage-runners/use-actions-runner-controller/deploy-runner-scale-sets.md",
+            "content/actions/reference/workflows-and-actions/variables.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables.md",
+            "content/actions/how-tos/manage-runners/larger-runners/manage-larger-runners.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/actions/concepts/security/secrets.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/actions/how-tos/manage-runners/self-hosted-runners/run-scripts.md",
+            "content/actions/reference/security/secure-use.md",
+            "content/actions/concepts/runners/actions-runner-controller.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::139200",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/education/about-github-education/github-education-for-students/solving-problems-with-your-github-education-access.md",
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
+            "content/education/about-github-education/github-education-for-students/index.md",
+            "content/education/about-github-education/github-education-for-students/github-terms-and-conditions-for-the-student-developer-pack.md",
+            "content/site-policy/privacy-policies/github-candidate-privacy-policy.md",
+            "content/education/guides.md",
+            "content/education/about-github-education/github-education-for-teachers/why-wasnt-my-application-to-github-education-for-teachers-approved.md",
+            "content/education/about-github-education/index.md",
+            "content/site-policy/acceptable-use-policies/github-doxxing-and-invasion-of-privacy.md",
+            "content/education/about-github-education/github-education-for-students/about-github-education-for-students.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/account-and-profile/tutorials/personalize-your-profile.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::139255",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/apps/github-marketplace/creating-apps-for-github-marketplace/requirements-for-listing-an-app.md",
+            "content/apps/github-marketplace/github-marketplace-overview/about-github-marketplace-for-apps.md",
+            "content/organizations/managing-programmatic-access-to-your-organization/limiting-oauth-app-and-github-app-access-requests-and-installations.md",
+            "content/apps/github-marketplace/index.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/adding-organizations-to-your-enterprise.md",
+            "content/support/learning-about-github-support/github-marketplace-support.md",
+            "content/search-github/searching-on-github/searching-github-marketplace.md",
+            "content/apps/github-marketplace/github-marketplace-overview/about-marketplace-badges.md",
+            "content/billing/concepts/third-party-payments/github-marketplace-apps.md",
+            "content/nonprofit/troubleshooting/cannot-find-my-organization-on-github-for-nonprofits.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/billing/how-tos/pay-third-parties/cancel-marketplace-app.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::143855",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/site-policy/github-company-policies/github-statement-against-modern-slavery-and-child-labor.md",
+            "content/copilot/how-tos/chat-with-copilot/chat-in-ide.md",
+            "content/actions/how-tos/create-and-publish-actions/create-a-cli-action.md",
+            "content/contributing/writing-for-github-docs/best-practices-for-github-docs.md",
+            "content/admin/enforcing-policies/enforcing-policy-with-pre-receive-hooks/managing-pre-receive-hooks-on-your-instance.md",
+            "content/support/learning-about-github-support/about-github-special-events-support.md",
+            "content/copilot/how-tos/use-copilot-agents/cloud-agent/start-copilot-sessions.md",
+            "content/contributing/style-guide-and-content-model/about-the-content-model.md",
+            "content/code-security/concepts/supply-chain-security/best-practices-for-maintaining-dependencies.md",
+            "content/pull-requests/how-tos/create-pull-requests/creating-a-pull-request-from-a-fork.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/github-models/index.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::144720",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/configure-custom-protection-rules.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/create-custom-protection-rules.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments.md",
+            "content/rest/deployments/protection-rules.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/index.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/review-deployments.md",
+            "content/actions/reference/workflows-and-actions/deployments-and-environments.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments.md",
+            "content/apps/maintaining-github-apps/modifying-a-github-app-registration.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/troubleshooting-rules.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::144914",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/copilot/concepts/context/repository-indexing.md",
+            "content/copilot/how-tos/manage-your-account/index.md",
+            "content/rest/copilot/copilot-cloud-agent-management.md",
+            "content/copilot/concepts/context/index.md",
+            "content/copilot/how-tos/configure-custom-instructions-in-your-ide/index.md",
+            "content/rest/copilot/index.md",
+            "content/copilot/tutorials/explore-a-codebase.md",
+            "content/copilot/how-tos/index.md",
+            "content/copilot/how-tos/copilot-on-github/chat-with-copilot/get-started-with-chat.md",
+            "content/copilot/concepts/completions/index.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/copilot/concepts/context/repository-indexing.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::14976",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments.md",
+            "content/actions/reference/workflows-and-actions/deployments-and-environments.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/review-deployments.md",
+            "content/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions.md",
+            "content/admin/administering-your-instance/administering-your-instance-from-the-command-line/command-line-utilities.md",
+            "content/rest/deployments/environments.md",
+            "content/copilot/tutorials/customize-code-review.md",
+            "content/actions/concepts/workflows-and-actions/deployment-environments.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/configure-custom-protection-rules.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments.md",
+            "content/actions/reference/workflows-and-actions/deployments-and-environments.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::151284",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/restoring-a-deleted-organization.md",
+            "content/organizations/managing-organization-settings/deleting-an-organization-account.md",
+            "content/organizations/managing-organization-settings/converting-an-organization-into-a-user.md",
+            "content/organizations/managing-organization-settings/renaming-an-organization.md",
+            "content/admin/data-residency/feature-overview-for-github-enterprise-cloud-with-data-residency.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/index.md",
+            "content/organizations/managing-organization-settings/archiving-an-organization.md",
+            "content/packages/learn-github-packages/deleting-and-restoring-a-package.md",
+            "content/account-and-profile/how-tos/account-management/converting-a-user-into-an-organization.md",
+            "content/admin/managing-accounts-and-repositories/managing-repositories-in-your-enterprise/restoring-a-deleted-repository.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/organizations/managing-organization-settings/deleting-an-organization-account.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::155654",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-errors.md",
+            "content/actions/reference/workflows-and-actions/workflow-commands.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/pass-job-outputs.md",
+            "content/actions/how-tos/reuse-automations/reuse-workflows.md",
+            "content/admin/managing-github-actions-for-your-enterprise/advanced-configuration-and-troubleshooting/updating-the-credentials-for-github-actions-storage.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/configuring-autolinks-to-reference-external-resources.md",
+            "content/admin/concepts/enterprise-best-practices/use-innersource.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables.md",
+            "content/code-security/reference/security-at-scale/troubleshoot-security-configurations/configuration-issue-diagnosis.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/pass-job-outputs.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::155856",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/get-started/writing-on-github/working-with-advanced-formatting/attaching-files.md",
+            "content/repositories/working-with-files/managing-large-files/about-git-large-file-storage.md",
+            "content/rest/repos/contents.md",
+            "content/repositories/working-with-files/managing-files/adding-a-file-to-a-repository.md",
+            "content/rest/git/blobs.md",
+            "content/repositories/creating-and-managing-repositories/repository-limits.md",
+            "content/repositories/working-with-files/managing-large-files/about-large-files-on-github.md",
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-repository-management-policies-in-your-enterprise.md",
+            "content/rest/repos/index.md",
+            "content/site-policy/acceptable-use-policies/github-acceptable-use-policies.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/repositories/working-with-files/managing-large-files/about-git-large-file-storage.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::156738",
+          "ndcg_at_10": 0.23719771276929622,
+          "pages": [
+            "content/copilot/how-tos/use-ai-models/change-the-chat-model.md",
+            "content/copilot/how-tos/use-ai-models/change-the-completion-model.md",
+            "content/copilot/tutorials/vibe-coding.md",
+            "content/copilot/how-tos/configure-personal-settings/configure-in-ide.md",
+            "content/copilot/reference/ai-models/supported-models.md",
+            "content/copilot/how-tos/use-copilot-agents/cloud-agent/changing-the-ai-model.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-access/manage-network-access.md",
+            "content/copilot/concepts/agents/openai-codex.md",
+            "content/copilot/how-tos/chat-with-copilot/chat-in-ide.md",
+            "content/actions/how-tos/monitor-workflows/enable-debug-logging.md"
+          ],
+          "rank": 5,
+          "relevant": [
+            "content/copilot/reference/ai-models/supported-models.md",
+            "content/copilot/tutorials/compare-ai-models.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::158698",
+          "ndcg_at_10": 0.33775931993299535,
+          "pages": [
+            "content/education/quickstart.md",
+            "content/education/about-github-education/index.md",
+            "content/education/guides.md",
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
+            "content/education/about-github-education/github-education-for-students/index.md",
+            "content/education/about-github-education/github-education-for-teachers/why-wasnt-my-application-to-github-education-for-teachers-approved.md",
+            "content/education/about-github-education/use-github-at-your-educational-institution/applying-to-be-a-github-campus-expert.md",
+            "content/education/about-github-education/use-github-at-your-educational-institution/about-github-campus-experts.md",
+            "content/education/manage-coursework-with-github-classroom/integrate-github-classroom-with-an-ide/using-github-codespaces-with-github-classroom.md",
+            "content/education/about-github-education/github-education-for-students/github-terms-and-conditions-for-the-student-developer-pack.md"
+          ],
+          "rank": 4,
+          "relevant": [
+            "content/education/about-github-education/github-education-for-teachers/apply-to-github-education-as-a-teacher.md",
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
+            "content/education/about-github-education/github-education-for-students/github-terms-and-conditions-for-the-student-developer-pack.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::160682",
+          "ndcg_at_10": 0.19342640361727081,
+          "pages": [
+            "content/actions/tutorials/use-actions-runner-controller/troubleshoot.md",
+            "content/actions/how-tos/manage-runners/use-actions-runner-controller/use-arc-in-a-workflow.md",
+            "content/actions/how-tos/manage-runners/self-hosted-runners/use-in-a-workflow.md",
+            "content/actions/how-tos/manage-runners/use-actions-runner-controller/index.md",
+            "content/actions/tutorials/use-actions-runner-controller/get-started.md",
+            "content/actions/concepts/runners/runner-scale-sets.md",
+            "content/actions/how-tos/manage-runners/self-hosted-runners/apply-labels.md",
+            "content/actions/concepts/runners/actions-runner-controller.md",
+            "content/contributing/style-guide-and-content-model/style-guide.md",
+            "content/actions/tutorials/use-actions-runner-controller/index.md"
+          ],
+          "rank": 8,
+          "relevant": [
+            "content/actions/concepts/runners/actions-runner-controller.md",
+            "content/actions/how-tos/manage-runners/use-actions-runner-controller/deploy-runner-scale-sets.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::162113",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "content/repositories/creating-and-managing-repositories/deleting-a-repository.md",
+            "content/codespaces/developing-in-a-codespace/deleting-a-codespace.md",
+            "content/admin/managing-accounts-and-repositories/managing-repositories-in-your-enterprise/restoring-a-deleted-repository.md",
+            "content/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/delete-repository-advisories.md",
+            "content/repositories/creating-and-managing-repositories/restoring-a-deleted-repository.md",
+            "content/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/index.md",
+            "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/deleting-users-from-your-instance.md",
+            "content/account-and-profile/how-tos/account-management/deleting-your-personal-account.md",
+            "content/repositories/working-with-files/managing-files/deleting-files-in-a-repository.md",
+            "content/pull-requests/reference/forks.md"
+          ],
+          "rank": 5,
+          "relevant": [
+            "content/repositories/creating-and-managing-repositories/restoring-a-deleted-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::165202",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/education/about-github-education/github-education-for-teachers/about-github-education-for-teachers.md",
+            "content/education/about-github-education/github-education-for-students/solving-problems-with-your-github-education-access.md",
+            "content/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises.md",
+            "content/education/about-github-education/github-education-for-teachers/apply-to-github-education-as-a-teacher.md",
+            "content/education/quickstart.md",
+            "content/education/about-github-education/use-github-at-your-educational-institution/about-github-campus-program.md",
+            "content/education/about-github-education/index.md",
+            "content/billing/concepts/discounted-plans.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/cancel.md",
+            "content/education/about-github-education/github-education-for-teachers/why-wasnt-my-application-to-github-education-for-teachers-approved.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::165515",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/site-policy/privacy-policies/github-general-privacy-statement.md",
+            "content/site-policy/github-terms/github-corporate-terms-of-service.md",
+            "content/github-cli/github-cli/github-cli-telemetry.md",
+            "content/support/learning-about-github-support/about-copilot-in-github-support.md",
+            "content/site-policy/github-terms/github-open-source-applications-terms-and-conditions.md",
+            "content/site-policy/acceptable-use-policies/github-doxxing-and-invasion-of-privacy.md",
+            "content/code-security/concepts/supply-chain-security/open-source-license-compliance.md",
+            "content/site-policy/other-site-policies/guidelines-for-legal-requests-of-user-data.md",
+            "content/site-policy/privacy-policies/github-candidate-privacy-policy.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/cancel.md"
+          ],
+          "rank": 17,
+          "relevant": [
+            "content/site-policy/acceptable-use-policies/github-acceptable-use-policies.md",
+            "content/site-policy/github-terms/github-terms-of-service.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::166151",
+          "ndcg_at_10": 0.17342765698823945,
+          "pages": [
+            "content/codespaces/managing-your-codespaces/reviewing-your-security-logs-for-github-codespaces.md",
+            "content/authentication/keeping-your-account-and-data-secure/security-log-events.md",
+            "content/code-security/reference/security-incident-response/investigation-areas.md",
+            "content/code-security/tutorials/secure-your-organization/prepare-for-a-security-incident.md",
+            "content/code-security/reference/code-scanning/code-scanning-logs.md",
+            "content/codespaces/managing-codespaces-for-your-organization/reviewing-your-organizations-audit-logs-for-github-codespaces.md",
+            "content/support/contacting-github-support/providing-data-to-github-support.md",
+            "content/code-security/how-tos/view-and-interpret-data/view-code-scanning-logs.md",
+            "content/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/accessing-the-audit-log-for-your-enterprise.md",
+            "content/actions/reference/security/secure-use.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise.md",
+            "content/authentication/keeping-your-account-and-data-secure/reviewing-your-security-log.md",
+            "content/authentication/keeping-your-account-and-data-secure/security-log-events.md",
+            "content/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/audit-log-events-for-your-organization.md",
+            "content/webhooks/testing-and-troubleshooting-webhooks/using-the-github-cli-to-forward-webhooks-for-testing.md",
+            "content/webhooks/using-webhooks/automatically-redelivering-failed-deliveries-for-a-github-app-webhook.md",
+            "content/webhooks/using-webhooks/delivering-webhooks-to-private-systems.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::169527",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/codespaces/troubleshooting/troubleshooting-your-connection-to-github-codespaces.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/rest/commits/statuses.md",
+            "content/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/sarif-invalid.md",
+            "content/rest/emojis/emojis.md",
+            "content/pages/getting-started-with-github-pages/troubleshooting-404-errors-for-github-pages-sites.md",
+            "content/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app.md",
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-errors.md",
+            "content/admin/managing-github-actions-for-your-enterprise/advanced-configuration-and-troubleshooting/migrating-github-actions-external-storage.md",
+            "content/admin/managing-iam/using-saml-for-enterprise-iam/troubleshooting-saml-authentication.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/rest/checks/runs.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::174153",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/site-policy/acceptable-use-policies/github-sexually-obscene-content.md",
+            "content/site-policy/acceptable-use-policies/github-non-consensual-intimate-imagery.md",
+            "content/site-policy/acceptable-use-policies/github-child-sexual-exploitation-or-abuse.md",
+            "content/site-policy/acceptable-use-policies/github-synthetic-media-and-ai-tools.md",
+            "content/site-policy/content-removal-policies/dmca-takedown-policy.md",
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/communities/setting-up-your-project-for-healthy-contributions/about-community-profiles-for-public-repositories.md",
+            "content/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/identifying-audit-log-events-performed-by-an-access-token.md",
+            "content/site-policy/other-site-policies/guidelines-for-legal-requests-of-user-data.md",
+            "content/site-policy/other-site-policies/github-logo-policy.md"
+          ],
+          "rank": 11,
+          "relevant": [
+            "content/site-policy/acceptable-use-policies/github-acceptable-use-policies.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::174546",
+          "ndcg_at_10": 0.34337431936037655,
+          "pages": [
+            "content/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-plan/cancel-plan.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/cancel.md",
+            "content/billing/concepts/impact-of-plan-changes.md",
+            "content/copilot/reference/copilot-billing/license-changes.md",
+            "content/copilot/reference/copilot-billing/request-based-billing-legacy/what-changed-with-billing.md",
+            "content/copilot/reference/copilot-billing/seat-assignment.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/index.md",
+            "content/copilot/concepts/billing/usage-based-billing-for-individuals.md",
+            "content/copilot/reference/copilot-billing/billing-cycle.md",
+            "content/billing/concepts/third-party-payments/github-marketplace-apps.md"
+          ],
+          "rank": 4,
+          "relevant": [
+            "content/copilot/concepts/billing/organizations-and-enterprises.md",
+            "content/copilot/reference/copilot-billing/billing-cycle.md",
+            "content/copilot/reference/copilot-billing/license-changes.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::176938",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/site-policy/acceptable-use-policies/github-active-malware-or-exploits.md",
+            "content/site-policy/github-terms/github-marketplace-developer-agreement.md",
+            "content/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/browse-advisory-database.md",
+            "content/site-policy/content-removal-policies/github-private-information-removal-policy.md",
+            "content/code-security/tutorials/secure-your-organization/respond-to-a-security-incident.md",
+            "content/communities/maintaining-your-safety-on-github/reporting-abuse-or-spam.md",
+            "content/code-security/reference/security-incident-response/investigation-areas.md",
+            "content/code-security/concepts/vulnerability-reporting-and-management/github-advisory-database.md",
+            "content/code-security/how-tos/report-and-fix-vulnerabilities/report-privately.md",
+            "content/code-security/getting-started/github-security-features.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/support/learning-about-github-support/about-github-support.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::180308",
+          "ndcg_at_10": 0.31546487678572877,
+          "pages": [
+            "content/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/enable-dependency-graph.md",
+            "content/rest/dependency-graph/sboms.md",
+            "content/rest/dependency-graph/dependency-submission.md",
+            "content/rest/dependency-graph/dependency-review.md",
+            "content/rest/repos/index.md",
+            "content/rest/dependabot/repository-access.md",
+            "content/code-security/concepts/supply-chain-security/dependency-review.md",
+            "content/rest/repos/repos.md",
+            "content/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/submit-dependencies-automatically.md",
+            "content/rest/metrics/traffic.md"
+          ],
+          "rank": 8,
+          "relevant": [
+            "content/rest/repos/repos.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::181400",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/education/about-github-education/github-education-for-students/solving-problems-with-your-github-education-access.md",
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
+            "content/education/about-github-education/github-education-for-teachers/why-wasnt-my-application-to-github-education-for-teachers-approved.md",
+            "content/education/quickstart.md",
+            "content/education/about-github-education/github-education-for-students/about-github-education-for-students.md",
+            "content/account-and-profile/how-tos/email-preferences/troubleshooting-email-verification.md",
+            "content/education/about-github-education/github-education-for-teachers/apply-to-github-education-as-a-teacher.md",
+            "content/education/about-github-education/github-education-for-students/github-terms-and-conditions-for-the-student-developer-pack.md",
+            "content/get-started/index.md",
+            "content/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::186383",
+          "ndcg_at_10": 0.31546487678572877,
+          "pages": [
+            "content/actions/concepts/security/openid-connect.md",
+            "content/actions/how-tos/secure-your-work/security-harden-deployments/index.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/remove-access-to-public-registries.md",
+            "content/contributing/writing-for-github-docs/about-githubs-documentation-philosophy.md",
+            "content/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws.md",
+            "content/admin/installing-your-enterprise-server/setting-up-a-github-enterprise-server-instance/installing-github-enterprise-server-on-openstack-kvm.md",
+            "content/issues/planning-and-tracking-with-projects/learning-about-projects/best-practices-for-projects.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md",
+            "content/copilot/responsible-use/agents.md",
+            "content/code-security/reference/supply-chain-security/dependabot-options-reference.md"
+          ],
+          "rank": 8,
+          "relevant": [
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::186588",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/actions/get-started/continuous-integration.md",
+            "content/actions/tutorials/index.md",
+            "content/actions/how-tos/index.md",
+            "content/actions/concepts/workflows-and-actions/workflows.md",
+            "content/admin/managing-github-actions-for-your-enterprise/getting-started-with-github-actions-for-your-enterprise/index.md",
+            "content/actions/reference/index.md",
+            "content/actions/tutorials/create-an-example-workflow.md",
+            "content/packages/managing-github-packages-using-github-actions-workflows/about-github-packages-and-github-actions.md",
+            "content/contributing/style-guide-and-content-model/quickstart-content-type.md",
+            "content/actions/reference/workflows-and-actions/contexts.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/actions/tutorials/build-and-test-code/python.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::188227",
+          "ndcg_at_10": 0.3065735963827292,
+          "pages": [
+            "content/account-and-profile/how-tos/account-management/moving-your-work-to-an-organization.md",
+            "content/organizations/managing-organization-settings/converting-an-organization-into-a-user.md",
+            "content/repositories/creating-and-managing-repositories/transferring-a-repository.md",
+            "content/rest/migrations/orgs.md",
+            "content/migrations/using-github-enterprise-importer/migrate-from-gitlab/plan-your-migration.md",
+            "content/migrations/using-github-enterprise-importer/migrating-between-github-products/migrating-repositories-from-github-enterprise-server-to-github-enterprise-cloud.md",
+            "content/account-and-profile/concepts/account-management.md",
+            "content/admin/configuring-packages/migrating-your-enterprise-to-the-container-registry-from-the-docker-registry.md",
+            "content/packages/learn-github-packages/about-permissions-for-github-packages.md",
+            "content/migrations/using-github-enterprise-importer/migrating-between-github-products/migrating-organizations-from-githubcom-to-github-enterprise-cloud.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/packages/learn-github-packages/connecting-a-repository-to-a-package.md",
+            "content/repositories/creating-and-managing-repositories/transferring-a-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::18849",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/repositories/creating-and-managing-repositories/deleting-a-repository.md",
+            "content/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/delete-repository-advisories.md",
+            "content/issues/tracking-your-work-with-issues/administering-issues/deleting-an-issue.md",
+            "content/codespaces/developing-in-a-codespace/deleting-a-codespace.md",
+            "content/organizations/managing-organization-settings/allowing-people-to-delete-issues-in-your-organization.md",
+            "content/organizations/managing-organization-settings/setting-permissions-for-deleting-or-transferring-repositories.md",
+            "content/repositories/creating-and-managing-repositories/restoring-a-deleted-repository.md",
+            "content/admin/managing-accounts-and-repositories/managing-repositories-in-your-enterprise/restoring-a-deleted-repository.md",
+            "content/repositories/creating-and-managing-repositories/renaming-a-repository.md",
+            "content/apps/maintaining-github-apps/deleting-a-github-app.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/repositories/creating-and-managing-repositories/deleting-a-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::195589",
+          "ndcg_at_10": 0.6131471927654584,
+          "pages": [
+            "content/copilot/how-tos/copilot-cli/administer-copilot-cli-for-your-enterprise.md",
+            "content/copilot/reference/enterprise-administrators/policy-conflicts.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-policies.md",
+            "content/copilot/how-tos/copilot-cli/index.md",
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-copilot-in-your-enterprise.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-agents/configure-enterprise-managed-settings.md",
+            "content/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli.md",
+            "content/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-enterprise.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/index.md",
+            "content/copilot/concepts/agents/copilot-cli/about-remote-control.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-access/grant-access.md",
+            "content/copilot/how-tos/copilot-cli/administer-copilot-cli-for-your-enterprise.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::196978",
+          "ndcg_at_10": 0.46927872602275644,
+          "pages": [
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md",
+            "content/code-security/reference/code-scanning/workflow-configuration-options.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/copilot/how-tos/copilot-sdk/troubleshooting/compatibility.md",
+            "content/actions/how-tos/troubleshoot-workflows.md",
+            "content/actions/concepts/workflows-and-actions/workflows.md",
+            "content/actions/how-tos/manage-runners/self-hosted-runners/customize-containers.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/find-and-customize-actions.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/actions/concepts/security/github_token.md",
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow.md",
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::198506",
+          "ndcg_at_10": 0.20210734650054757,
+          "pages": [
+            "content/authentication/troubleshooting-ssh/error-permission-denied-publickey.md",
+            "content/authentication/index.md",
+            "content/authentication/connecting-to-github-with-ssh/about-ssh.md",
+            "content/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account.md",
+            "content/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection.md",
+            "content/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases.md",
+            "content/authentication/troubleshooting-ssh/deleted-or-missing-ssh-keys.md",
+            "content/get-started/git-basics/about-remote-repositories.md",
+            "content/admin/administering-your-instance/administering-your-instance-from-the-command-line/accessing-the-administrative-shell-ssh.md",
+            "content/code-security/tutorials/implement-supply-chain-best-practices/securing-accounts.md"
+          ],
+          "rank": 4,
+          "relevant": [
+            "content/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account.md",
+            "content/authentication/connecting-to-github-with-ssh/checking-for-existing-ssh-keys.md",
+            "content/authentication/connecting-to-github-with-ssh/managing-deploy-keys.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::199106",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-teachers-and-os-maintainers.md",
+            "content/copilot/get-started/plans.md",
+            "content/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises.md",
+            "content/billing/concepts/product-billing/github-copilot-billing.md",
+            "content/copilot/how-tos/manage-and-track-spending/manage-company-spending.md",
+            "content/copilot/get-started/what-is-github-copilot.md",
+            "content/copilot/concepts/billing/organizations-and-enterprises.md",
+            "content/education/about-github-education/github-education-for-teachers/about-github-education-for-teachers.md",
+            "content/copilot/concepts/agents/code-review.md",
+            "content/copilot/reference/copilot-billing/billing-cycle.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/copilot/tutorials/budgets/optimizing-your-budget-configuration.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::199901",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "content/admin/managing-accounts-and-repositories/managing-repositories-in-your-enterprise/restoring-a-deleted-repository.md",
+            "content/repositories/creating-and-managing-repositories/index.md",
+            "content/repositories/creating-and-managing-repositories/restoring-a-deleted-repository.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/deleting-and-restoring-branches-in-a-pull-request.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/restoring-a-deleted-organization.md",
+            "content/repositories/creating-and-managing-repositories/deleting-a-repository.md",
+            "content/repositories/archiving-a-github-repository/backing-up-a-repository.md",
+            "content/admin/enforcing-policies/enforcing-policy-with-pre-receive-hooks/creating-a-pre-receive-hook-script.md",
+            "content/repositories/working-with-files/managing-files/deleting-files-in-a-repository.md",
+            "content/issues/planning-and-tracking-with-projects/managing-items-in-your-project/archiving-items-from-your-project.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/repositories/creating-and-managing-repositories/restoring-a-deleted-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::21125",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/pages/configuring-a-custom-domain-for-your-github-pages-site/troubleshooting-custom-domains-and-github-pages.md",
+            "content/pages/configuring-a-custom-domain-for-your-github-pages-site/index.md",
+            "content/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site.md",
+            "content/authentication/troubleshooting-ssh/error-ssl-certificate-problem-verify-that-the-ca-cert-is-ok.md",
+            "content/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages.md",
+            "content/authentication/index.md",
+            "content/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages.md",
+            "content/pages/getting-started-with-github-pages/what-is-github-pages.md",
+            "content/authentication/keeping-your-account-and-data-secure/preventing-unauthorized-access.md",
+            "content/pages/quickstart.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::21611",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/merging-a-pull-request.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/automatically-merging-a-pull-request.md",
+            "content/admin/enforcing-policies/enforcing-policy-with-pre-receive-hooks/creating-a-pre-receive-hook-script.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-merging-for-pull-requests.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/merging-a-pull-request-with-a-merge-queue.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-rebasing-for-pull-requests.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/disabling-pull-requests.md",
+            "content/actions/how-tos/manage-workflow-runs/skip-workflow-runs.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::23053",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/removing-a-member-from-your-enterprise.md",
+            "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/deleting-users-from-your-instance.md",
+            "content/site-policy/other-site-policies/github-username-policy.md",
+            "content/organizations/managing-organization-settings/converting-an-organization-into-a-user.md",
+            "content/organizations/managing-organization-settings/verifying-or-approving-a-domain-for-your-organization.md",
+            "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/managing-dormant-users.md",
+            "content/copilot/reference/copilot-billing/request-based-billing-legacy/what-changed-with-billing.md",
+            "content/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site.md",
+            "content/organizations/managing-organization-settings/deleting-an-organization-account.md",
+            "content/account-and-profile/reference/personal-account-reference.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/site-policy/content-removal-policies/github-trademark-policy.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::23157",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/account-and-profile/how-tos/account-management/converting-a-user-into-an-organization.md",
+            "content/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/configuring-visibility-for-organization-membership.md",
+            "content/account-and-profile/concepts/organization-membership.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/preventing-users-from-creating-organizations.md",
+            "content/codespaces/managing-codespaces-for-your-organization/managing-development-environment-secrets-for-your-repository-or-organization.md",
+            "content/admin/concepts/enterprise-best-practices/use-innersource.md",
+            "content/account-and-profile/how-tos/organization-membership/index.md",
+            "content/organizations/managing-organization-settings/setting-team-creation-permissions-in-your-organization.md",
+            "content/get-started/learning-about-github/githubs-plans.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/account-and-profile/how-tos/organization-membership/publicizing-or-hiding-organization-membership.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::23166",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/pages/getting-started-with-github-pages/troubleshooting-404-errors-for-github-pages-sites.md",
+            "content/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site.md",
+            "content/pages/getting-started-with-github-pages/index.md",
+            "content/pages/index.md",
+            "content/pages/getting-started-with-github-pages/creating-a-github-pages-site.md",
+            "content/contributing/writing-for-github-docs/using-markdown-and-liquid-in-github-docs.md",
+            "content/pages/setting-up-a-github-pages-site-with-jekyll/troubleshooting-jekyll-build-errors-for-github-pages-sites.md",
+            "content/repositories/working-with-files/managing-files/index.md",
+            "content/repositories/working-with-files/using-files/index.md",
+            "content/actions/how-tos/troubleshoot-workflows.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::23212",
+          "ndcg_at_10": 0.5,
+          "pages": [
+            "content/actions/how-tos/create-and-publish-actions/manage-custom-actions.md",
+            "content/organizations/managing-organization-settings/renaming-an-organization.md",
+            "content/pages/getting-started-with-github-pages/what-is-github-pages.md",
+            "content/repositories/creating-and-managing-repositories/renaming-a-repository.md",
+            "content/pages/getting-started-with-github-pages/troubleshooting-404-errors-for-github-pages-sites.md",
+            "content/pages/getting-started-with-github-pages/creating-a-github-pages-site.md",
+            "content/get-started/git-basics/managing-remote-repositories.md",
+            "content/contributing/writing-for-github-docs/using-markdown-and-liquid-in-github-docs.md",
+            "content/migrations/elm/migrated-data-reference.md",
+            "content/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/pages/getting-started-with-github-pages/what-is-github-pages.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::23427",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/rest/using-the-rest-api/issue-event-types.md",
+            "content/rest/issues/events.md",
+            "content/rest/issues/timeline.md",
+            "content/search-github/searching-on-github/searching-issues-and-pull-requests.md",
+            "content/issues/planning-and-tracking-with-projects/managing-items-in-your-project/adding-items-to-your-project.md",
+            "content/actions/get-started/continuous-integration.md",
+            "content/pull-requests/how-tos/create-pull-requests/changing-the-stage-of-a-pull-request.md",
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow.md",
+            "content/code-security/reference/security-at-scale/configuration-statuses.md",
+            "content/actions/reference/security/securely-using-pull_request_target.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/webhooks/webhook-events-and-payloads.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::24740",
+          "ndcg_at_10": 0.11751610475642714,
+          "pages": [
+            "content/rest/projects/projects.md",
+            "content/rest/projects/views.md",
+            "content/rest/about-the-rest-api/about-the-rest-api.md",
+            "content/rest/issues/events.md",
+            "content/rest/issues/sub-issues.md",
+            "content/rest/issues/timeline.md",
+            "content/rest/orgs/issue-types.md",
+            "content/rest/pulls/pulls.md",
+            "content/rest/projects/fields.md",
+            "content/rest/repos/issue-types.md"
+          ],
+          "rank": 9,
+          "relevant": [
+            "content/rest/issues/index.md",
+            "content/rest/projects/drafts.md",
+            "content/rest/projects/fields.md",
+            "content/rest/projects/items.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::24760",
+          "ndcg_at_10": 0.3010299956639812,
+          "pages": [
+            "content/rest/using-the-rest-api/troubleshooting-the-rest-api.md",
+            "content/rest/using-the-rest-api/getting-started-with-the-rest-api.md",
+            "content/code-security/concepts/supply-chain-security/dependency-review.md",
+            "content/apps/creating-github-apps/about-creating-github-apps/best-practices-for-creating-a-github-app.md",
+            "content/rest/using-the-rest-api/rate-limits-for-the-rest-api.md",
+            "content/copilot/tutorials/copilot-cookbook/debug-errors/handle-api-rate-limits.md",
+            "content/code-security/reference/security-at-scale/troubleshoot-security-configurations/configuration-issue-diagnosis.md",
+            "content/code-security/tutorials/adopting-github-advanced-security-at-scale/introduction-to-adopting-github-advanced-security-at-scale.md",
+            "content/rest/using-the-rest-api/best-practices-for-using-the-rest-api.md",
+            "content/rest/using-the-rest-api/using-pagination-in-the-rest-api.md"
+          ],
+          "rank": 9,
+          "relevant": [
+            "content/rest/using-the-rest-api/best-practices-for-using-the-rest-api.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::25478",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/codespaces/reference/allowing-your-codespace-to-access-a-private-registry.md",
+            "content/actions/tutorials/use-containerized-services/use-docker-service-containers.md",
+            "content/actions/tutorials/use-containerized-services/index.md",
+            "content/actions/tutorials/use-containerized-services/create-a-docker-container-action.md",
+            "content/actions/tutorials/migrate-to-github-actions/manual-migrations/migrate-from-circleci.md",
+            "content/packages/working-with-a-github-packages-registry/working-with-the-docker-registry.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-private-registries.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md",
+            "content/code-security/how-tos/secure-at-scale/configure-enterprise-security/configure-specific-tools/configure-limited-internet-access.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/remove-access-to-public-registries.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/packages/learn-github-packages/introduction-to-github-packages.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::25612",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/actions/tutorials/create-an-example-workflow.md",
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md",
+            "content/actions/concepts/security/github_token.md",
+            "content/actions/concepts/workflows-and-actions/workflows.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/actions/get-started/understand-github-actions.md",
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow.md",
+            "content/copilot/how-tos/copilot-sdk/setup/choosing-a-setup-path.md",
+            "content/get-started/git-basics/git-workflows.md",
+            "content/copilot/how-tos/copilot-cli/use-copilot-cli/chronicle.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/actions/tutorials/authenticate-with-github_token.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::25912",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets.md",
+            "content/actions/concepts/security/compromised-runners.md",
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-on-actions.md",
+            "content/actions/tutorials/develop-agentic-workflows-in-github-actions.md",
+            "content/actions/how-tos/reuse-automations/reuse-workflows.md",
+            "content/rest/actions/secrets.md",
+            "content/actions/concepts/workflows-and-actions/custom-actions.md",
+            "content/code-security/reference/secret-security/secret-types.md",
+            "content/actions/concepts/security/secrets.md",
+            "content/rest/authentication/authenticating-to-the-rest-api.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::26094",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/actions/tutorials/use-containerized-services/use-docker-service-containers.md",
+            "content/actions/tutorials/use-containerized-services/create-postgresql-service-containers.md",
+            "content/actions/tutorials/use-containerized-services/index.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/actions/tutorials/migrate-to-github-actions/manual-migrations/migrate-from-gitlab-cicd.md",
+            "content/actions/tutorials/use-containerized-services/create-redis-service-containers.md",
+            "content/actions/how-tos/manage-runners/use-actions-runner-controller/deploy-runner-scale-sets.md",
+            "content/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-dotnet-project-for-codespaces.md",
+            "content/actions/how-tos/create-and-publish-actions/set-exit-codes.md",
+            "content/code-security/how-tos/secure-at-scale/configure-enterprise-security/configure-specific-tools/configure-limited-internet-access.md"
+          ],
+          "rank": 15,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/contexts.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::26303",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/actions/how-tos/manage-workflow-runs/cancel-a-workflow-run.md",
+            "content/actions/reference/workflows-and-actions/expressions.md",
+            "content/actions/how-tos/manage-workflow-runs/index.md",
+            "content/actions/reference/workflows-and-actions/metadata-syntax.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows.md",
+            "content/actions/how-tos/manage-workflow-runs/delete-a-workflow-run.md",
+            "content/organizations/managing-organization-settings/disabling-or-limiting-github-actions-for-your-organization.md",
+            "content/billing/how-tos/pay-third-parties/cancel-marketplace-app.md",
+            "content/get-started/using-github/troubleshooting-connectivity-problems.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/expressions.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::26322",
+          "ndcg_at_10": 0.43067655807339306,
+          "pages": [
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/set-default-values-for-jobs.md",
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md",
+            "content/actions/reference/workflows-and-actions/variables.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/index.md",
+            "content/actions/tutorials/create-an-example-workflow.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow.md",
+            "content/index.md"
+          ],
+          "rank": 4,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::26598",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/actions/concepts/security/compromised-runners.md",
+            "content/code-security/reference/security-incident-response/investigation-areas.md",
+            "content/actions/how-tos/secure-your-work/index.md",
+            "content/actions/concepts/security/index.md",
+            "content/code-security/tutorials/secure-your-organization/respond-to-a-security-incident.md",
+            "content/admin/managing-github-actions-for-your-enterprise/getting-started-with-github-actions-for-your-enterprise/getting-started-with-github-actions-for-github-enterprise-cloud.md",
+            "content/site-policy/github-terms/github-terms-for-additional-products-and-features.md",
+            "content/copilot/tutorials/copilot-cookbook/debug-errors/handle-api-rate-limits.md",
+            "content/repositories/archiving-a-github-repository/referencing-and-citing-content.md",
+            "content/admin/managing-github-actions-for-your-enterprise/managing-access-to-actions-from-githubcom/index.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/communities/moderating-comments-and-conversations/limiting-interactions-in-your-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::26651",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository.md",
+            "content/actions/concepts/security/github_token.md",
+            "content/actions/reference/security/secure-use.md",
+            "content/actions/tutorials/authenticate-with-github_token.md",
+            "content/actions/reference/security/securely-using-pull_request_target.md",
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-on-actions.md",
+            "content/code-security/tutorials/secure-your-dependencies/automate-dependabot-with-actions.md",
+            "content/rest/guides/scripting-with-the-rest-api-and-javascript.md",
+            "content/rest/authentication/keeping-your-api-credentials-secure.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::26667",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/billing/concepts/product-billing/github-actions.md",
+            "content/site-policy/site-policy-deprecated/github-enterprise-service-level-agreement.md",
+            "content/billing/reference/actions-runner-pricing.md",
+            "content/billing/concepts/product-billing/github-packages.md",
+            "content/codespaces/troubleshooting/troubleshooting-included-usage.md",
+            "content/actions/how-tos/manage-runners/larger-runners/use-custom-images.md",
+            "content/billing/concepts/product-billing/index.md",
+            "content/billing/concepts/budgets-and-alerts.md",
+            "content/organizations/collaborating-with-groups-in-organizations/viewing-github-actions-metrics-for-your-organization.md",
+            "content/actions/concepts/metrics.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/billing/how-tos/set-up-budgets.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::27600",
+          "ndcg_at_10": 0.3065735963827292,
+          "pages": [
+            "content/actions/concepts/workflows-and-actions/deployment-environments.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/review-deployments.md",
+            "content/rest/deployments/environments.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/deploy-to-environment.md",
+            "content/actions/reference/workflows-and-actions/deployments-and-environments.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments.md",
+            "content/codespaces/managing-your-codespaces/managing-your-account-specific-secrets-for-github-codespaces.md",
+            "content/code-security/reference/secret-security/secret-types.md",
+            "content/rest/quickstart.md",
+            "content/index.md"
+          ],
+          "rank": 3,
+          "relevant": [
+            "content/rest/actions/workflow-runs.md",
+            "content/rest/deployments/environments.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::2903",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/communities/moderating-comments-and-conversations/managing-reported-content-in-your-organizations-repository.md",
+            "content/get-started/writing-on-github/working-with-saved-replies/using-saved-replies.md",
+            "content/apps/github-marketplace/listing-an-app-on-github-marketplace/drafting-a-listing-for-your-app.md",
+            "content/copilot/tutorials/customization-library/custom-instructions/debugging-tutor.md",
+            "content/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request.md",
+            "content/code-security/responsible-use/security-and-quality-ai-features.md",
+            "content/graphql/guides/using-the-graphql-api-for-discussions.md",
+            "content/pull-requests/how-tos/review-pull-requests/commenting-on-a-pull-request.md",
+            "content/search-github/github-code-search/using-github-code-search.md",
+            "content/get-started/writing-on-github/working-with-saved-replies/about-saved-replies.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/discussions/managing-discussions-for-your-community/managing-categories-for-discussions.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::29070",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/admin/overview/setting-up-a-trial-of-github-enterprise-cloud.md",
+            "content/site-policy/site-policy-deprecated/github-enterprise-cloud-evaluation-agreement.md",
+            "content/billing/how-tos/pay-third-parties/cancel-marketplace-app.md",
+            "content/admin/overview/setting-up-a-trial-of-github-enterprise-server.md",
+            "content/admin/managing-your-enterprise-account/deleting-an-enterprise-account.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-plan/cancel-plan.md",
+            "content/get-started/onboarding/getting-started-with-the-github-enterprise-cloud-trial.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/adding-organizations-to-your-enterprise.md",
+            "content/billing/how-tos/manage-plan-and-licenses/downgrade-plan.md",
+            "content/code-security/tutorials/trialing-github-advanced-security/trial-advanced-security.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/admin/overview/setting-up-a-trial-of-github-enterprise-cloud.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::30227",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/desktop/adding-and-cloning-repositories/adding-an-existing-project-to-github-using-github-desktop.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/disabling-projects-in-a-repository.md",
+            "content/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github.md",
+            "content/education/manage-coursework-with-github-classroom/teach-with-github-classroom/manage-classrooms.md",
+            "content/issues/planning-and-tracking-with-projects/automating-your-project/automating-projects-using-actions.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-plan/cancel.md",
+            "content/issues/planning-and-tracking-with-projects/creating-projects/creating-a-project.md",
+            "content/repositories/creating-and-managing-repositories/troubleshooting-cloning-errors.md",
+            "content/education/manage-coursework-with-github-classroom/integrate-github-classroom-with-an-ide/replit-with-github-classroom.md",
+            "content/graphql/reference/projects-classic.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/issues/planning-and-tracking-with-projects/index.md",
+            "content/issues/planning-and-tracking-with-projects/customizing-views-in-your-project/customizing-the-board-layout.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::38659",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/actions/concepts/workflows-and-actions/reusing-workflow-configurations.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/actions/reference/security/oidc.md",
+            "content/rest/actions/oidc.md",
+            "content/actions/how-tos/secure-your-work/security-harden-deployments/oidc-with-reusable-workflows.md",
+            "content/copilot/how-tos/administer-copilot/manage-for-organization/manage-access/manage-network-access.md",
+            "content/actions/how-tos/reuse-automations/index.md",
+            "content/get-started/exploring-projects-on-github/discovering-projects-on-github.md",
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow.md",
+            "content/actions/concepts/security/openid-connect.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/contexts.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::39134",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/code-security/reference/code-scanning/troubleshoot-analysis-errors/results-different-than-expected.md",
+            "content/code-security/concepts/code-scanning/codeql/codeql-code-scanning.md",
+            "content/code-security/reference/code-scanning/workflow-configuration-options.md",
+            "content/code-security/reference/code-scanning/troubleshoot-analysis-errors/some-languages-not-analyzed.md",
+            "content/code-security/concepts/code-scanning/repository-properties.md",
+            "content/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows.md",
+            "content/code-security/reference/code-scanning/troubleshoot-analysis-errors/two-codeql-workflows.md",
+            "content/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configuring-advanced-setup-for-code-scanning.md",
+            "content/code-security/concepts/code-scanning/code-scanning.md",
+            "content/code-security/how-tos/maintain-quality-code/disable-code-quality.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/rest/code-scanning/index.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::43",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/discussions/collaborating-with-your-community-using-discussions/index.md",
+            "content/graphql/guides/using-the-graphql-api-for-discussions.md",
+            "content/rest/metrics/community.md",
+            "content/discussions/index.md",
+            "content/discussions/guides/finding-your-discussions.md",
+            "content/discussions/managing-discussions-for-your-community/index.md",
+            "content/discussions/guides/best-practices-for-community-conversations-on-github.md",
+            "content/get-started/using-github/communicating-on-github.md",
+            "content/discussions/quickstart.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/enabling-or-disabling-github-discussions-for-a-repository.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/graphql/guides/using-the-graphql-api-for-discussions.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::44732",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/repositories/creating-and-managing-repositories/transferring-a-repository.md",
+            "content/account-and-profile/how-tos/account-management/moving-your-work-to-an-organization.md",
+            "content/migrations/using-github-enterprise-importer/migrating-from-bitbucket-server-to-github-enterprise-cloud/overview-of-a-migration-from-bitbucket-server-to-github-enterprise-cloud.md",
+            "content/issues/tracking-your-work-with-issues/administering-issues/transferring-an-issue-to-another-repository.md",
+            "content/migrations/overview/planning-your-migration-to-github.md",
+            "content/migrations/using-github-enterprise-importer/migrating-between-github-products/overview-of-a-migration-between-github-products.md",
+            "content/account-and-profile/how-tos/account-management/merging-multiple-personal-accounts.md",
+            "content/admin/backing-up-and-restoring-your-instance/understanding-the-backup-service.md",
+            "content/copilot/concepts/agents/copilot-cli/context-management.md",
+            "content/code-security/how-tos/secure-at-scale/configure-organization-security/configure-specific-tools/estimate-price.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/repositories/creating-and-managing-repositories/transferring-a-repository.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::49124",
+          "ndcg_at_10": 0.4525081529734507,
+          "pages": [
+            "content/pull-requests/concepts/resolving-reviews.md",
+            "content/actions/how-tos/manage-workflow-runs/skip-workflow-runs.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/troubleshooting-rules.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue.md",
+            "content/code-security/tutorials/secure-your-dependencies/automate-dependabot-with-actions.md",
+            "content/pull-requests/reference/status-checks.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule.md",
+            "content/code-security/reference/code-scanning/workflow-configuration-options.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/actions/how-tos/manage-workflow-runs/skip-workflow-runs.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::49608",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments.md",
+            "content/actions/concepts/security/secrets.md",
+            "content/actions/reference/workflows-and-actions/contexts.md",
+            "content/actions/concepts/workflows-and-actions/variables.md",
+            "content/actions/reference/workflows-and-actions/variables.md",
+            "content/actions/tutorials/migrate-to-github-actions/manual-migrations/migrate-from-travis-ci.md",
+            "content/code-security/reference/secret-security/secret-types.md",
+            "content/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets.md",
+            "content/actions/concepts/workflows-and-actions/deployment-environments.md",
+            "content/actions/tutorials/publish-packages/publish-java-packages-with-maven.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::50035",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/packages/working-with-a-github-packages-registry/working-with-the-docker-registry.md",
+            "content/packages/working-with-a-github-packages-registry/working-with-the-container-registry.md",
+            "content/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions.md",
+            "content/actions/tutorials/migrate-to-github-actions/manual-migrations/migrate-from-circleci.md",
+            "content/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-jfrog.md",
+            "content/packages/learn-github-packages/connecting-a-repository-to-a-package.md",
+            "content/copilot/how-tos/copilot-cli/set-up-copilot-cli/troubleshoot-copilot-cli-auth.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-access-to-private-registries.md",
+            "content/actions/tutorials/publish-packages/publish-docker-images.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-private-registries.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/packages/working-with-a-github-packages-registry/working-with-the-container-registry.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::52316",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template.md",
+            "content/repositories/creating-and-managing-repositories/index.md",
+            "content/migrations/overview/programmatically-importing-repositories.md",
+            "content/authentication/troubleshooting-ssh/error-permission-to-userrepo-denied-to-other-user.md",
+            "content/rest/interactions/repos.md",
+            "content/admin/managing-iam/understanding-iam-for-enterprises/abilities-and-restrictions-of-managed-user-accounts.md",
+            "content/repositories/creating-and-managing-repositories/creating-a-new-repository.md",
+            "content/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file.md",
+            "content/pull-requests/how-tos/commit-changes/creating-a-commit-with-multiple-authors.md",
+            "content/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/rest/repos/index.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::52564",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/subscriptions-and-notifications/how-tos/managing-subscriptions-for-activity-on-github/viewing-your-subscriptions.md",
+            "content/subscriptions-and-notifications/how-tos/managing-subscriptions-for-activity-on-github/managing-your-subscriptions.md",
+            "content/subscriptions-and-notifications/how-tos/managing-marketing-emails-from-github.md",
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/enabling-or-disabling-github-discussions-for-a-repository.md",
+            "content/subscriptions-and-notifications/index.md",
+            "content/issues/tracking-your-work-with-issues/learning-about-issues/about-issues.md",
+            "content/subscriptions-and-notifications/how-tos/managing-subscriptions-for-activity-on-github/index.md",
+            "content/integrations/how-tos/slack/customize-notifications.md",
+            "content/integrations/reference/teams-command-reference.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/subscriptions-and-notifications/how-tos/managing-subscriptions-for-activity-on-github/managing-your-subscriptions.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::53831",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/repositories/working-with-files/managing-large-files/about-large-files-on-github.md",
+            "content/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/results-exceed-limit.md",
+            "content/repositories/working-with-files/managing-large-files/resolving-git-large-file-storage-upload-failures.md",
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-errors.md",
+            "content/rest/using-the-rest-api/troubleshooting-the-rest-api.md",
+            "content/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/ghas-required.md",
+            "content/get-started/using-git/troubleshooting-the-2-gb-push-limit.md",
+            "content/repositories/creating-and-managing-repositories/repository-limits.md",
+            "content/copilot/tutorials/explore-pull-requests.md",
+            "content/repositories/working-with-files/managing-files/customizing-how-changed-files-appear-on-github.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::53922",
+          "ndcg_at_10": 0.3333333333333333,
+          "pages": [
+            "content/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/index.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/index.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-the-automatic-deletion-of-branches.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches.md",
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue.md",
+            "content/admin/enforcing-policies/enforcing-policy-with-pre-receive-hooks/creating-a-pre-receive-hook-script.md",
+            "content/actions/how-tos/deploy/configure-and-manage-deployments/configure-custom-protection-rules.md",
+            "CHANGELOG.md"
+          ],
+          "rank": 7,
+          "relevant": [
+            "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::55027",
+          "ndcg_at_10": 0.9197207891481876,
+          "pages": [
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/actions/how-tos/manage-workflow-runs/index.md",
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency.md",
+            "content/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows.md",
+            "content/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs.md",
+            "content/codespaces/prebuilding-your-codespaces/managing-prebuilds.md",
+            "content/actions/concepts/workflows-and-actions/workflows.md",
+            "content/actions/reference/workflows-and-actions/workflow-cancellation.md",
+            "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md",
+            "content/actions/concepts/workflows-and-actions/concurrency.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::57244",
+          "ndcg_at_10": 0.31546487678572877,
+          "pages": [
+            "content/codespaces/managing-your-codespaces/managing-repository-access-for-your-codespaces.md",
+            "content/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps.md",
+            "content/organizations/managing-organization-settings/disabling-or-limiting-github-actions-for-your-organization.md",
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-repository-management-policies-in-your-enterprise.md",
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise.md",
+            "content/copilot/how-tos/github-agentic-workflows/creating-github-agentic-workflows.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository.md",
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md",
+            "content/actions/reference/security/secure-use.md",
+            "content/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/setting-base-permissions-for-an-organization.md"
+          ],
+          "rank": 8,
+          "relevant": [
+            "content/actions/reference/workflows-and-actions/workflow-syntax.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::57924",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/account-and-profile/how-tos/account-management/index.md",
+            "content/account-and-profile/get-started/account.md",
+            "content/github-cli/github-cli/using-multiple-accounts.md",
+            "content/site-policy/github-terms/github-terms-for-additional-products-and-features.md",
+            "content/account-and-profile/index.md",
+            "content/get-started/learning-about-github/access-permissions-on-github.md",
+            "content/account-and-profile/concepts/account-management.md",
+            "content/site-policy/acceptable-use-policies/github-impersonation.md",
+            "content/account-and-profile/how-tos/account-management/creating-an-account-on-github.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/site-policy/github-terms/github-terms-of-service.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::58614",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "content/site-policy/other-site-policies/github-and-trade-controls.md",
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/site-policy/site-policy-deprecated/github-enterprise-server-license-agreement.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/customizing-dependabot-security-prs.md",
+            "content/admin/configuring-settings/hardening-security-for-your-enterprise/restricting-access-to-githubcom-using-a-corporate-proxy.md",
+            "content/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/setting-repository-visibility.md",
+            "content/account-and-profile/how-tos/account-settings/managing-security-and-analysis-features.md",
+            "content/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/managing-requests-for-copilot-business.md",
+            "content/copilot/concepts/agents/copilot-cli/understanding-local-sandboxing.md",
+            "content/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-repository-management-policies-in-your-enterprise.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/site-policy/other-site-policies/github-and-trade-controls.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::59018",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/account-and-profile/how-tos/email-preferences/troubleshooting-email-verification.md",
+            "content/education/about-github-education/github-education-for-students/apply-to-github-education-as-a-student.md",
+            "content/education/about-github-education/github-education-for-teachers/why-wasnt-my-application-to-github-education-for-teachers-approved.md",
+            "content/education/about-github-education/github-education-for-students/solving-problems-with-your-github-education-access.md",
+            "content/account-and-profile/how-tos/email-preferences/verifying-your-email-address.md",
+            "content/codespaces/troubleshooting/troubleshooting-your-connection-to-github-codespaces.md",
+            "content/apps/github-marketplace/github-marketplace-overview/applying-for-publisher-verification-for-your-organization.md",
+            "content/authentication/troubleshooting-commit-signature-verification/index.md",
+            "content/apps/oauth-apps/maintaining-oauth-apps/troubleshooting-oauth-app-access-token-request-errors.md",
+            "content/authentication/troubleshooting-ssh/error-ssl-certificate-problem-verify-that-the-ca-cert-is-ok.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/site-policy/privacy-policies/github-general-privacy-statement.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::64750",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/codespaces/quickstart.md",
+            "content/codespaces/developing-in-a-codespace/index.md",
+            "content/codespaces/developing-in-a-codespace/opening-an-existing-codespace.md",
+            "content/codespaces/about-codespaces/understanding-the-codespace-lifecycle.md",
+            "content/contributing/setting-up-your-environment-to-work-on-github-docs/working-on-github-docs-in-a-codespace.md",
+            "content/codespaces/troubleshooting/index.md",
+            "content/codespaces/developing-in-a-codespace/using-github-codespaces-in-visual-studio-code.md",
+            "content/codespaces/about-codespaces/deep-dive.md",
+            "content/codespaces/about-codespaces/codespaces-features.md",
+            "content/codespaces/developing-in-a-codespace/stopping-and-starting-a-codespace.md"
+          ],
+          "rank": 13,
+          "relevant": [
+            "content/rest/codespaces/codespaces.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::67928",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "content/site-policy/github-terms/github-terms-of-service.md",
+            "content/account-and-profile/how-tos/account-management/deleting-your-personal-account.md",
+            "content/account-and-profile/concepts/account-management.md",
+            "content/admin/managing-accounts-and-repositories/managing-users-in-your-enterprise/deleting-users-from-your-instance.md",
+            "content/organizations/managing-organization-settings/deleting-an-organization-account.md",
+            "content/admin/managing-your-enterprise-account/deleting-an-enterprise-account.md",
+            "content/account-and-profile/reference/personal-account-reference.md",
+            "content/site-policy/other-site-policies/github-account-recovery-policy.md",
+            "content/sponsors/receiving-sponsorships-through-github-sponsors/delete-stripe-account.md",
+            "content/education/about-github-education/github-education-for-students/solving-problems-with-your-github-education-access.md"
+          ],
+          "rank": 2,
+          "relevant": [
+            "content/account-and-profile/how-tos/account-management/deleting-your-personal-account.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::69168",
+          "ndcg_at_10": 0.6131471927654584,
+          "pages": [
+            "content/get-started/writing-on-github/working-with-advanced-formatting/about-tasklists.md",
+            "content/issues/tracking-your-work-with-issues/using-issues/creating-an-issue.md",
+            "content/issues/tracking-your-work-with-issues/learning-about-issues/planning-and-tracking-work-for-your-team-or-project.md",
+            "content/admin/monitoring-and-managing-your-instance/configuring-clustering/configuring-high-availability-replication-for-a-cluster.md",
+            "content/get-started/accessibility/keyboard-shortcuts.md",
+            "content/copilot/tutorials/vibe-coding.md",
+            "content/copilot/tutorials/cloud-agent/improve-a-project.md",
+            "content/copilot/how-tos/use-copilot-agents/cloud-agent/use-cloud-agent-via-the-api.md",
+            "content/actions/how-tos/deploy/deploy-to-third-party-platforms/amazon-elastic-container-service.md",
+            "content/actions/tutorials/build-and-test-code/nodejs.md"
+          ],
+          "rank": 1,
+          "relevant": [
+            "content/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues.md",
+            "content/get-started/writing-on-github/working-with-advanced-formatting/about-tasklists.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::70492",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/repositories/creating-and-managing-repositories/repository-limits.md",
+            "content/billing/reference/actions-runner-pricing.md",
+            "content/get-started/learning-about-github/githubs-plans.md",
+            "content/actions/concepts/billing-and-usage.md",
+            "content/site-policy/github-terms/github-terms-for-additional-products-and-features.md",
+            "content/communities/moderating-comments-and-conversations/limiting-interactions-in-your-organization.md",
+            "content/admin/managing-github-actions-for-your-enterprise/getting-started-with-github-actions-for-your-enterprise/getting-started-with-github-actions-for-github-enterprise-cloud.md",
+            "content/billing/concepts/product-billing/github-actions.md",
+            "content/get-started/learning-about-github/faq-about-changes-to-githubs-plans.md",
+            "content/graphql/overview/rate-limits-and-query-limits-for-the-graphql-api.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/actions/concepts/runners/larger-runners.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::75445",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "content/code-security/how-tos/view-and-interpret-data/change-used-by-data.md",
+            "content/code-security/reference/security-at-scale/troubleshoot-security-configurations/configuration-issue-diagnosis.md",
+            "content/billing/how-tos/troubleshooting/enterprise-license-usage.md",
+            "content/code-security/reference/security-at-scale/troubleshoot-security-configurations/feature-disappears.md",
+            "content/billing/how-tos/manage-server-licenses/sync-license-usage.md",
+            "content/contributing/style-guide-and-content-model/troubleshooting-content-type.md",
+            "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/list-configured-dependencies.md",
+            "content/issues/tracking-your-work-with-issues/using-issues/managing-issue-fields-in-your-organization.md",
+            "content/copilot/reference/copilot-usage-metrics/reconciling-usage-metrics.md",
+            "content/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependency-graph-errors.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/explore-dependencies.md"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "github-docs::77916",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "CHANGELOG.md",
+            "content/copilot/get-started/features.md",
+            "content/copilot/how-tos/copilot-on-github/copilot-for-github-tasks/index.md",
+            "content/copilot/how-tos/copilot-cli/automate-copilot-cli/automate-with-actions.md",
+            "content/copilot/how-tos/copilot-sdk/getting-started.md",
+            "content/copilot/tutorials/roll-out-at-scale/enable-developers/index.md",
+            "content/copilot/how-tos/copilot-on-github/copilot-for-github-tasks/use-copilot-to-create-or-update-issues.md",
+            "content/copilot/how-tos/github-agentic-workflows/quickstart.md",
+            "content/copilot/how-tos/get-code-suggestions/index.md",
+            "content/copilot/tutorials/customization-library/custom-instructions/issue-manager.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "content/copilot/how-tos/chat-with-copilot/chat-in-ide.md",
+            "content/copilot/how-tos/chat-with-copilot/chat-in-windows-terminal.md",
+            "content/copilot/how-tos/chat-with-copilot/get-started-with-chat-in-your-ide.md",
+            "content/copilot/how-tos/copilot-on-github/chat-with-copilot/chat-in-github.md"
+          ],
+          "split": "test",
+          "truncated": false
+        }
+      ],
+      "run": "qmd full (MCP query, rerank)",
+      "split": "test",
+      "unknown": []
+    }
+  ],
+  "search": {
+    "and_stopwords": false,
+    "embedding_text": "v1",
+    "questions_weight": 2.0,
+    "raw_list_weight": 1.0,
+    "rrf_k": 60.0
+  },
+  "seed": 20260922,
+  "split": "test",
+  "split_counts": {
+    "dev": 59,
+    "holdout": 30,
+    "test": 108
+  },
+  "store": {
+    "docs": 3742,
+    "failed": 0,
+    "pending": 0,
+    "sections": 23066,
+    "summarized": 20842,
+    "tombstoned": 0,
+    "total_cost_usd": 99.92746,
+    "total_input_tokens": 55979737,
+    "total_output_tokens": 8635389
+  }
+}
