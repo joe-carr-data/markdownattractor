@@ -136,6 +136,9 @@ You are running headless: there is no user to answer questions. Run the pipeline
       jq -nc --arg id "$qid" --arg q "$(question_text "$project" "$qid" | tr '\n\r\t' '   ' | sed 's/  */ /g')" '{id: $id, q: $q}'
     done > "$work/queries.jsonl"
     [ -s "$work/queries.jsonl" ] || die "no questions in split $split for $project"
+    # A node with an empty `src=` (a concept node without a source file; eleven of them on
+    # the Tailwind test questions) is dropped: it names no page and the scorer refuses an
+    # empty path.
     # `query_graph` answers with text: one `NODE <label> [src=<file> loc=… community=…]` line
     # per node in the tool's order, cut to its token budget (2,000 by default) with a
     # `[!] TRUNCATED` marker. The frozen node → file mapping takes every NODE line's src
@@ -145,7 +148,7 @@ You are running headless: there is no user to answer questions. Run the pipeline
     client_run() { # queries.jsonl template dump times
       ( cd "$G/src" && MCP_TIME_DUMP="$3" "$client" query_graph "$2" "$1" -- graphify-mcp "$G/graph.json" ) > "$4" 2>>"$out.err"
     }
-    pages_of() { jq -c --arg pre "$G/src/" '[(.result.content[]? | select(.type=="text") | .text) // "" | scan("NODE [^\n]*?\\[src=(.*?) loc=") | .[0]] | map(sub("^" + $pre; "") | sub("^\\./"; "")) | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)'; }
+    pages_of() { jq -c --arg pre "$G/src/" '[(.result.content[]? | select(.type=="text") | .text) // "" | scan("NODE [^\n]*?\\[src=(.*?) loc=") | .[0]] | map(sub("^" + $pre; "") | sub("^\\./"; "")) | map(select(. != "")) | reduce .[] as $p ([]; if index([$p]) then . else . + [$p] end)'; }
     cut_of() { jq -r '[(.result.content[]? | select(.type=="text") | .text) // ""] | join("") | test("\\[!\\] TRUNCATED")'; }
     t1='{"question":"{query}"}'; t2='{"question":"{query}","token_budget":8000}'
     client_run "$work/queries.jsonl" "$t1" "$work/dump1.jsonl" "$work/times1.jsonl"

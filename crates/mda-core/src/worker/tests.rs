@@ -726,11 +726,14 @@ mod fake_binary {
         let pid_file = dir.path().join("pid");
         // Generous margins: spawning /bin/sh under a sandbox has been seen to take > 1 s.
         let body = format!("echo $$ > {}; exec sleep 30", pid_file.display());
-        let cfg = Config { worker_timeout_secs: 3, ..Config::default() };
+        // Six seconds, not three: under a parallel `cargo build` the fake child took more
+        // than three seconds to start and the pid file did not exist when the timeout
+        // fired (seen four times on 2026-09-24).
+        let cfg = Config { worker_timeout_secs: 6, ..Config::default() };
         let cli = cli(dir.path(), &body, &cfg);
         let started = std::time::Instant::now();
         let out = cli.summarize(&req("cli-slow"), "haiku").await.unwrap();
-        assert!(started.elapsed() < Duration::from_secs(10));
+        assert!(started.elapsed() < Duration::from_secs(20));
         assert!(
             matches!(&out, Outcome::Retryable { reason } if reason.contains("timeout")),
             "{out:?}"

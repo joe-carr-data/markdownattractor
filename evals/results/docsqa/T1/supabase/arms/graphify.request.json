@@ -1,0 +1,16 @@
+{
+  "tool": "query_graph",
+  "arguments": {
+    "question": "{query}"
+  },
+  "second_pass": {
+    "question": "{query}",
+    "token_budget": 8000
+  },
+  "server": [
+    "graphify-mcp",
+    "/Users/jcarr/.cache/markdownattractor/bench/graphify/supabase/graph.json"
+  ],
+  "graph_sha256": "ade877996d6aac620d429733d0567dbff65480985361574a2fb5a18cb9d9635b",
+  "latency_note": "first_pass_ms is the first tool call only (no startup, no second pass); cold latency is startup_ms + ms of the first line of times1.jsonl"
+}

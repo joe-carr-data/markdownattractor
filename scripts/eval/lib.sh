@@ -99,9 +99,14 @@ archived_rows() { # results.json run-index > rows.jsonl
   jq -c --argjson i "$2" '.runs[$i].results[] | {question_id: .id, paths: .pages, truncated}' "$1"
 }
 
-# The first three eligible questions of the dev split of a project, from its committed
-# results (the raw row lists every scored question in dataset order): the probe questions.
-probe_ids() { jq -r '.runs[0].results[:3][].id' "$RESULTS/$1/results.json"; }
+# Where a table's committed observations live: the development rows under
+# evals/results/docsqa/<project>/, a published table's under evals/results/docsqa/<table>/<project>/
+# (its FROZEN.md beside them). One rule for the freeze, the preflight, the drivers and the pool.
+results_dir() { case "${1:-development}" in development) echo "$RESULTS" ;; *) ident "$1"; echo "$RESULTS/$1" ;; esac; }
+
+# The first three eligible questions of a project's committed rows for a table (the raw row
+# lists every scored question in dataset order): the probe questions.
+probe_ids() { jq -r '.runs[0].results[:3][].id' "$(results_dir "${2:-development}")/$1/results.json"; }
 
 # The text of one question of one project; exactly one row must match.
 question_text() { # project question_id
@@ -119,10 +124,22 @@ question_text() { # project question_id
 qmd_fingerprint() { # index-name
   local db="$HOME/.cache/qmd/$1.sqlite" t
   [ -f "$db" ] || die "no qmd index $db"
-  sqlite3 "$db" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
-  for t in $(sqlite3 "$db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'llm_cache' AND name NOT IN ('vectors_vec') ORDER BY name"); do
-    printf '%s\n' "$t"; sqlite3 "$db" "SELECT * FROM \"$t\" ORDER BY 1" 2>/dev/null || printf 'unreadable\n'
+  # Fail closed under contention: a concurrent reader (two freeze checks at once, or a
+  # running qmd query) made a table read fail once and the fingerprint silently changed
+  # ("unreadable"); now every read waits up to 60 s for the lock and an error aborts.
+  sqlite3 -cmd '.timeout 60000' "$db" 'PRAGMA wal_checkpoint(PASSIVE);' >/dev/null 2>&1 || true
+  local tables; tables="$(sqlite3 -cmd '.timeout 60000' "$db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'llm_cache' AND name NOT IN ('vectors_vec') ORDER BY name")" || die "qmd_fingerprint: cannot list the tables of $db"
+  for t in $tables; do
+    printf '%s\n' "$t"; sqlite3 -cmd '.timeout 60000' "$db" "SELECT * FROM \"$t\" ORDER BY 1" || die "qmd_fingerprint: cannot read $t of $db"
   done | shasum -a 256 | cut -c1-64
+}
+
+# Content fingerprint of a BM25-over-files table (sha256 over path and text in path order),
+# so the freeze binds the control's artifact like qmd's index and graphify's graph (Codex M4 F5).
+bm25_fingerprint() { # project
+  local db="$RUN/bm25-files/$1.sqlite"
+  [ -f "$db" ] || die "no BM25-over-files table $db"
+  sqlite3 -cmd '.timeout 60000' "$db" "SELECT path, text FROM pages ORDER BY path" | shasum -a 256 | cut -c1-64 || die "bm25_fingerprint: cannot read $db"
 }
 
 # The split a question belongs to, from the committed split.json.

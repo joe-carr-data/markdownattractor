@@ -1,0 +1,1052 @@
+{
+  "arm_output": "~/markdownattractor/evals/results/docsqa/T1/tailwind-css/arms/graphify-haiku.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 1518,
+    "sections_carded": 1518
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 96,
+    "anchors_found": 96,
+    "corpus_pages": 197,
+    "corpus_pages_indexed": 197,
+    "eligible": 84,
+    "excluded_image_evidence": 9,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [],
+    "multimodal_judgment": 10,
+    "project": "tailwind-css",
+    "qrel_coverage": 1.0,
+    "qrels": 99,
+    "qrels_indexed": 99,
+    "qrels_unmapped": 0,
+    "questions": 93,
+    "questions_with_missing_anchor": 0
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "extra_labels": null,
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "only_questions": 44,
+  "project": "tailwind-css",
+  "root": "~/.cache/markdownattractor/bench/tailwindcss",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.011363636363636364,
+        "ndcg_at_10": 0.008792109255330492,
+        "questions": 44,
+        "success_at_5": 0.022727272727272728
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 14,
+          "id": "tailwind-css::tailwind-10194",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/utils/colors.ts",
+            "src/mdx-components.tsx",
+            "next.config.ts",
+            "src/docs/mask-mode.mdx",
+            "package.json",
+            "src/docs/hyphens.mdx",
+            "src/docs/background-color.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/box-shadow.mdx",
+            "src/docs/caret-color.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 42,
+          "id": "tailwind-css::tailwind-11754",
+          "ndcg_at_10": 0.38685280723454163,
+          "pages": [
+            "src/mdx-components.tsx",
+            "src/docs/border-color.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/docs/utils/colors.ts",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "src/docs/border-color.mdx",
+            "src/docs/colors.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 12,
+          "id": "tailwind-css::tailwind-13550",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/utils/colors.ts",
+            "src/mdx-components.tsx",
+            "package.json",
+            "src/docs/background-color.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/box-shadow.mdx",
+            "src/docs/caret-color.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 16,
+          "id": "tailwind-css::tailwind-13631",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/docs/background-clip.mdx",
+            "tsconfig.json",
+            "next.config.ts",
+            "src/docs/justify-items.mdx",
+            "src/docs/border-style.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 38,
+          "id": "tailwind-css::tailwind-13653",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/justify-content.mdx",
+            "src/mdx-components.tsx",
+            "src/components/api-table.tsx",
+            "src/docs/img/prettier-banner.jpg",
+            "tsconfig.json",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/border-spacing.mdx",
+            "src/docs/box-shadow.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 30,
+          "id": "tailwind-css::tailwind-13762",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/utils/colors.ts",
+            "src/docs/background-size.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/components/stripes.tsx",
+            "src/docs/background-color.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/border-spacing.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/functions-and-directives.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 19,
+          "id": "tailwind-css::tailwind-13816",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/list-style-image.mdx",
+            "src/docs/break-after.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/break-before.mdx",
+            "src/docs/block-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/background-clip.mdx",
+            "package.json",
+            "tsconfig.json",
+            "next.config.ts"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 2,
+          "id": "tailwind-css::tailwind-13967",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "package.json"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 35,
+          "id": "tailwind-css::tailwind-14130",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/mdx-components.tsx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "next.config.ts",
+            "package.json",
+            "src/docs/background-size.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/docs/background-color.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 32,
+          "id": "tailwind-css::tailwind-14286",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/border-color.mdx",
+            "src/docs/border-style.mdx",
+            "src/docs/border-width.mdx",
+            "src/mdx-components.tsx",
+            "package.json",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 3,
+          "id": "tailwind-css::tailwind-15715",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/docs/img/guides/react-router.react.svg",
+            "src/docs/img/guides/react-router-white.react.svg"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/functions-and-directives.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 8,
+          "id": "tailwind-css::tailwind-15809",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/img/intellisense.png",
+            "package.json",
+            "next.config.ts",
+            "src/docs/letter-spacing.mdx",
+            "tsconfig.json",
+            "src/docs/hyphens.mdx",
+            "src/components/api-table.tsx",
+            "src/mdx-components.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/functions-and-directives.mdx",
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 29,
+          "id": "tailwind-css::tailwind-16127",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/components/api-table.tsx",
+            "src/docs/background-clip.mdx",
+            "src/mdx-components.tsx",
+            "next.config.ts",
+            "src/docs/justify-items.mdx",
+            "tsconfig.json",
+            "src/docs/max-block-size.mdx",
+            "src/docs/img/guides/tanstack.react.svg",
+            "src/docs/hover-focus-and-other-states.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 21,
+          "id": "tailwind-css::tailwind-16273",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "tsconfig.json",
+            "package.json",
+            "src/docs/img/prettier-banner.jpg",
+            "src/docs/img/guides/parcel.react.svg",
+            "src/docs/img/guides/phoenix.react.svg",
+            "src/docs/img/guides/qwik.react.svg",
+            "src/docs/img/guides/rails.react.svg",
+            "src/docs/img/guides/rails-white.react.svg",
+            "src/docs/img/guides/react-router.react.svg",
+            "src/docs/img/guides/react-router-white.react.svg"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/styling-with-utility-classes.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 14,
+          "id": "tailwind-css::tailwind-16449",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/mdx-components.tsx",
+            "src/docs/break-inside.mdx",
+            "src/docs/justify-items.mdx",
+            "src/docs/img/guides/solidjs.react.svg",
+            "package.json",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 7,
+          "id": "tailwind-css::tailwind-16506",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/mdx-components.tsx",
+            "src/docs/border-color.mdx",
+            "src/docs/justify-items.mdx",
+            "src/components/api-table.tsx",
+            "package.json",
+            "src/docs/img/guides/solidjs.react.svg"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 11,
+          "id": "tailwind-css::tailwind-16584",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/docs/background-size.mdx",
+            "src/docs/background-clip.mdx",
+            "tsconfig.json",
+            "src/mdx-components.tsx",
+            "src/docs/img/guides/react-router.react.svg",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 2,
+          "id": "tailwind-css::tailwind-16811",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "tsconfig.json",
+            "package.json"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 6,
+          "id": "tailwind-css::tailwind-16827",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/mdx-components.tsx",
+            "src/docs/break-after.mdx",
+            "src/docs/break-before.mdx",
+            "next.config.ts",
+            "package.json",
+            "src/components/api-table.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/animation.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 35,
+          "id": "tailwind-css::tailwind-17155",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/img/guides/react-router-white.react.svg",
+            "src/components/api-table.tsx",
+            "src/docs/break-after.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/justify-items.mdx",
+            "src/docs/mask-mode.mdx",
+            "package.json",
+            "tsconfig.json",
+            "src/components/content.tsx",
+            "src/components/example.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 27,
+          "id": "tailwind-css::tailwind-17172",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/mask-clip.mdx",
+            "src/docs/background-clip.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/border-style.mdx",
+            "package.json",
+            "src/docs/img/intellisense.png",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 32,
+          "id": "tailwind-css::tailwind-17220",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/break-inside.mdx",
+            "src/docs/caption-side.mdx",
+            "src/docs/img/intellisense.png",
+            "package.json",
+            "src/mdx-components.tsx",
+            "tsconfig.json",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 24,
+          "id": "tailwind-css::tailwind-17235",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "eslint.config.mjs",
+            "src/docs/border-color.mdx",
+            "src/docs/box-shadow.mdx",
+            "next.config.ts",
+            "src/docs/margin.mdx",
+            "tsconfig.json",
+            "src/docs/img/intellisense.png",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 7,
+          "id": "tailwind-css::tailwind-17526",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/mdx-components.tsx",
+            "src/docs/background-size.mdx",
+            "package.json",
+            "src/docs/inline-size.mdx",
+            "src/docs/color-scheme.mdx",
+            "src/components/api-table.tsx",
+            "src/docs/hover-focus-and-other-states.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 33,
+          "id": "tailwind-css::tailwind-17568",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/utils/colors.ts",
+            "src/mdx-components.tsx",
+            "src/docs/justify-items.mdx",
+            "src/components/api-table.tsx",
+            "src/docs/border-style.mdx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 33,
+          "id": "tailwind-css::tailwind-17803",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/mask-clip.mdx",
+            "src/docs/background-clip.mdx",
+            "package.json",
+            "tsconfig.json",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/docs/background-color.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 53,
+          "id": "tailwind-css::tailwind-17885",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/docs/background-clip.mdx",
+            "next.config.ts",
+            "src/docs/justify-items.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/mdx-components.tsx",
+            "src/docs/justify-content.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 20,
+          "id": "tailwind-css::tailwind-17999",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "next.config.ts",
+            "src/docs/img/guides/vite.react.svg",
+            "src/mdx-components.tsx",
+            "src/docs/img/prettier-banner.jpg",
+            "src/docs/img/guides/parcel.react.svg",
+            "src/docs/img/guides/phoenix.react.svg",
+            "src/docs/img/guides/qwik.react.svg",
+            "src/docs/img/guides/rails.react.svg",
+            "src/docs/img/guides/rails-white.react.svg"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 29,
+          "id": "tailwind-css::tailwind-18054",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "next.config.ts",
+            "eslint.config.mjs",
+            "tsconfig.json",
+            "src/components/api-table.tsx",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/border-spacing.mdx",
+            "src/docs/box-shadow.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 4,
+          "id": "tailwind-css::tailwind-18098",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/docs/line-height.mdx",
+            "src/docs/img/intellisense.png",
+            "src/docs/max-block-size.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/preflight.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 32,
+          "id": "tailwind-css::tailwind-18182",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/border-style.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/border-spacing.mdx",
+            "src/docs/box-shadow.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/upgrade-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 21,
+          "id": "tailwind-css::tailwind-18299",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "next.config.ts",
+            "tsconfig.json",
+            "src/docs/img/guides/rspack.react.svg",
+            "src/mdx-components.tsx",
+            "src/docs/img/prettier-banner.jpg",
+            "src/docs/img/guides/parcel.react.svg",
+            "src/docs/img/guides/phoenix.react.svg",
+            "src/docs/img/guides/qwik.react.svg",
+            "src/docs/img/guides/rails.react.svg"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/compatibility.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 37,
+          "id": "tailwind-css::tailwind-18313",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/mdx-components.tsx",
+            "src/components/content.tsx",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/border-spacing.mdx",
+            "src/docs/box-shadow.mdx",
+            "src/docs/box-sizing.mdx",
+            "src/docs/caret-color.mdx",
+            "src/docs/background-clip.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 18,
+          "id": "tailwind-css::tailwind-18368",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "tsconfig.json",
+            "src/docs/background-size.mdx",
+            "src/mdx-components.tsx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx",
+            "src/components/stripes.tsx",
+            "src/docs/background-color.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 40,
+          "id": "tailwind-css::tailwind-18596",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/components/api-table.tsx",
+            "tsconfig.json",
+            "src/mdx-components.tsx",
+            "src/docs/justify-items.mdx",
+            "package.json",
+            "src/docs/line-height.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 12,
+          "id": "tailwind-css::tailwind-18909",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/docs/border-color.mdx",
+            "src/docs/background-clip.mdx",
+            "src/docs/utils/colors.ts",
+            "src/mdx-components.tsx",
+            "next.config.ts",
+            "src/docs/break-inside.mdx",
+            "src/docs/justify-items.mdx",
+            "src/docs/border-radius.mdx",
+            "src/docs/background-size.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 54,
+          "id": "tailwind-css::tailwind-18993",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/break-after.mdx",
+            "src/docs/break-before.mdx",
+            "package.json",
+            "src/docs/justify-items.mdx",
+            "tsconfig.json",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/docs/justify-content.mdx",
+            "src/docs/justify-self.mdx",
+            "src/docs/background-color.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/responsive-design.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 12,
+          "id": "tailwind-css::tailwind-19314",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/mdx-components.tsx",
+            "src/docs/break-before.mdx",
+            "package.json",
+            "next.config.ts",
+            "src/docs/justify-items.mdx",
+            "src/docs/img/keyboard-dark.png",
+            "src/docs/mask-mode.mdx",
+            "tsconfig.json",
+            "src/docs/mask-composite.mdx",
+            "src/components/api-table.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "tailwind-css::tailwind-19467",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/justify-items.mdx",
+            "package.json",
+            "tsconfig.json",
+            "src/mdx-components.tsx",
+            "src/docs/inline-size.mdx",
+            "src/docs/letter-spacing.mdx",
+            "src/docs/line-height.mdx",
+            "src/docs/justify-content.mdx",
+            "src/docs/justify-self.mdx",
+            "src/docs/max-block-size.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 11,
+          "id": "tailwind-css::tailwind-19498",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/img/guides/react-router.react.svg",
+            "src/mdx-components.tsx",
+            "src/docs/img/guides/react-router-white.react.svg",
+            "src/docs/background-size.mdx",
+            "next.config.ts",
+            "src/docs/inline-size.mdx",
+            "package.json",
+            "src/docs/mask-mode.mdx",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/components/api-table.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 33,
+          "id": "tailwind-css::tailwind-19697",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/break-inside.mdx",
+            "src/components/api-table.tsx",
+            "src/mdx-components.tsx",
+            "tsconfig.json",
+            "src/docs/border-style.mdx",
+            "package.json",
+            "src/docs/hover-focus-and-other-states.mdx",
+            "src/components/content.tsx",
+            "src/components/example.tsx",
+            "src/components/figure.tsx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/functions-and-directives.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 51,
+          "id": "tailwind-css::tailwind-20135",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/docs/break-after.mdx",
+            "src/docs/img/guides/vite.react.svg",
+            "package.json",
+            "src/docs/img/guides/qwik.react.svg",
+            "src/docs/margin.mdx",
+            "src/components/api-table.tsx",
+            "src/components/content.tsx",
+            "src/mdx-components.tsx",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/detecting-classes-in-source-files.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 26,
+          "id": "tailwind-css::tailwind-20218",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "src/components/api-table.tsx",
+            "package.json",
+            "src/mdx-components.tsx",
+            "src/docs/margin.mdx",
+            "src/docs/background-color.mdx",
+            "src/docs/background-size.mdx",
+            "src/docs/border-color.mdx",
+            "src/docs/border-spacing.mdx",
+            "src/docs/box-shadow.mdx",
+            "src/docs/box-sizing.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/adding-custom-styles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 21,
+          "id": "tailwind-css::tailwind-20353",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "package.json",
+            "src/mdx-components.tsx",
+            "src/docs/max-block-size.mdx",
+            "src/docs/inline-size.mdx",
+            "src/docs/img/prettier-banner.jpg",
+            "src/docs/img/guides/parcel.react.svg",
+            "src/docs/img/guides/phoenix.react.svg",
+            "src/docs/img/guides/qwik.react.svg",
+            "src/docs/img/guides/rails.react.svg",
+            "src/docs/img/guides/rails-white.react.svg"
+          ],
+          "rank": null,
+          "relevant": [
+            "src/docs/theme.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        }
+      ],
+      "run": "graphify-haiku (query_graph)",
+      "split": "test",
+      "unknown": []
+    }
+  ],
+  "search": {
+    "and_stopwords": false,
+    "embedding_text": "v1",
+    "questions_weight": 2.0,
+    "raw_list_weight": 1.0,
+    "rrf_k": 60.0
+  },
+  "seed": 20260922,
+  "split": "test",
+  "split_counts": {
+    "dev": 27,
+    "holdout": 15,
+    "test": 51
+  },
+  "store": {
+    "docs": 198,
+    "failed": 0,
+    "pending": 0,
+    "sections": 1518,
+    "summarized": 1332,
+    "tombstoned": 0,
+    "total_cost_usd": 6.507617,
+    "total_input_tokens": 3591960,
+    "total_output_tokens": 498631
+  }
+}

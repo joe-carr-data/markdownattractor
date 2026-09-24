@@ -6,10 +6,11 @@
     "tokenize": "unicode61 remove_diacritics 2",
     "unit": "whole page",
     "query": "every term double-quoted, AND; OR fallback when AND matches nothing",
-    "rank": "bm25()"
+    "rank": "bm25(), ties by path"
   },
   "build": {
-    "index_s": 2
+    "index_s": 2,
+    "completed": true
   },
   "coverage": {
     "files_indexed": 3742,
@@ -18,5 +19,10 @@
     "coverage": 1
   },
   "db": "\\~/.cache/markdownattractor/bench/bm25-files/github-docs.sqlite",
-  "latency": "none (quality only, plan §2.1)"
+  "latency": "none (quality only, plan §2.1)",
+  "table_fingerprint": "de679c94f3472ae0194fa8dba2451b34de5f648a3f7dcd38eddf94222c28d11b",
+  "record": {
+    "written_at": "2026-09-24T13:14:21Z",
+    "note": "record rewritten 2026-09-24 with the table fingerprint (M4, Codex F5); build fields kept"
+  }
 }

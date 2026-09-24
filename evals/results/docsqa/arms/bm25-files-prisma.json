@@ -6,10 +6,11 @@
     "tokenize": "unicode61 remove_diacritics 2",
     "unit": "whole page",
     "query": "every term double-quoted, AND; OR fallback when AND matches nothing",
-    "rank": "bm25()"
+    "rank": "bm25(), ties by path"
   },
   "build": {
-    "index_s": 1
+    "index_s": 1,
+    "completed": true
   },
   "coverage": {
     "files_indexed": 693,
@@ -18,5 +19,10 @@
     "coverage": 1
   },
   "db": "\\~/.cache/markdownattractor/bench/bm25-files/prisma.sqlite",
-  "latency": "none (quality only, plan §2.1)"
+  "latency": "none (quality only, plan §2.1)",
+  "table_fingerprint": "ea223ca8e928c30138aa601cb0e1a3da0bb69bfed9db65b5034246644fb5697f",
+  "record": {
+    "written_at": "2026-09-24T13:14:22Z",
+    "note": "record rewritten 2026-09-24 with the table fingerprint (M4, Codex F5); build fields kept"
+  }
 }

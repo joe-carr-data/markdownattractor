@@ -1,0 +1,11 @@
+{
+  "arm": "graphify-haiku",
+  "tool": "query_graph",
+  "arguments": {
+    "question": "{query}"
+  },
+  "server": [
+    "graphify-mcp",
+    "/Users/jcarr/.cache/markdownattractor/bench/graphify/prisma-haiku/graph.json"
+  ]
+}

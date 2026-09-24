@@ -1,0 +1,338 @@
+{
+  "arm_output": "~/markdownattractor/evals/results/docsqa/T1/supabase/arms/qmd-bm25.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 6548,
+    "sections_carded": 6548
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 48,
+    "anchors_found": 47,
+    "corpus_pages": 770,
+    "corpus_pages_indexed": 770,
+    "eligible": 40,
+    "excluded_image_evidence": 12,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "supabase::supabase-30447"
+    ],
+    "multimodal_judgment": 7,
+    "project": "supabase",
+    "qrel_coverage": 1.0,
+    "qrels": 63,
+    "qrels_indexed": 63,
+    "qrels_unmapped": 0,
+    "questions": 52,
+    "questions_with_missing_anchor": 1
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "extra_labels": null,
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "only_questions": 21,
+  "project": "supabase",
+  "root": "~/.cache/markdownattractor/bench/supabase",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.0,
+        "ndcg_at_10": 0.0,
+        "questions": 21,
+        "success_at_5": 0.0
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-11349",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/tables.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-13977",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/ai/vector-indexes/hnsw-indexes.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-18986",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/platform/compute-and-disk.mdx",
+            "apps/docs/content/guides/platform/billing-on-supabase.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-20241",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/api/using-custom-schemas.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-28655",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/passwords.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-29409",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/guides/deployment/branching.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-29864",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx",
+            "apps/docs/content/guides/storage/schema/custom-roles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-30186",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-30447",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/auth-smtp.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-30603",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/extensions/pgsodium.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-30750",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-32596",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/deployment/branching/integrations.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-32697",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/passwords.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-33828",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/social-login.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-34793",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/queues/pgmq.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-36761",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-37932",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/vault.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-40656",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/storage/management/copy-move-objects.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-45668",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/self-hosting.mdx",
+            "apps/docs/content/guides/local-development.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-48323",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/signing-keys.mdx",
+            "apps/docs/content/guides/getting-started/api-keys.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 0,
+          "id": "supabase::supabase-6326",
+          "ndcg_at_10": -0.0,
+          "pages": [],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/overview.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        }
+      ],
+      "run": "qmd BM25 (MCP lex-only, rerank off)",
+      "split": "test",
+      "unknown": []
+    }
+  ],
+  "search": {
+    "and_stopwords": false,
+    "embedding_text": "v1",
+    "questions_weight": 2.0,
+    "raw_list_weight": 1.0,
+    "rrf_k": 60.0
+  },
+  "seed": 20260922,
+  "split": "test",
+  "split_counts": {
+    "dev": 15,
+    "holdout": 9,
+    "test": 28
+  },
+  "store": {
+    "docs": 836,
+    "failed": 0,
+    "pending": 0,
+    "sections": 6548,
+    "summarized": 6386,
+    "tombstoned": 0,
+    "total_cost_usd": 30.48358,
+    "total_input_tokens": 16615918,
+    "total_output_tokens": 2675968
+  }
+}

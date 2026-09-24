@@ -1,0 +1,17 @@
+{
+  "arm": "bm25-files",
+  "project": "github-docs",
+  "split": "test",
+  "archived_at": "2026-09-24T13:30:27Z",
+  "source_commit": "ef4d1751eb2865febb7219b54bed8826c904100b",
+  "driver": "scripts/eval/bm25-files.sh",
+  "driver_sha256": "3a765310c19d70a88d5a4df80a5f159b21b97523b48a73c5d06ec17f759fa126",
+  "t1_sha256": "fb583aef04a19618be7717351d88490cf5870fa45daa100e2c02649e9e6d2de5",
+  "mda_sha256": "a8426f15ad32844eef42cb510632a14941b1e347b4f7d8b11062d4d6da65c560",
+  "frozen_md_sha256": "3287b576193013b96d342e0a11be9682d6d699c0b069e607aba821f24aa7e3d2",
+  "rows_sha256": "42a03f70ed73604c78ff34439a7aa052e428ae5b9562c3af67a4f54bdf50d0fc",
+  "driver_rows_sha256": "ab994e0c3468b02aba1ac833448170ac69a4bc1db2636bd0e86a5780e81c9187",
+  "results_sha256": "9fa0825cea3264d6774fec287a61a85ff897612f53e0d9e5fdc31298e7311fca",
+  "provenance_note": null,
+  "note": "rows = the scorer input (question_id, paths, truncated); driver rows keep the per-question request, ok flag and first-pass timing; request*.json are the templates the driver sent; times*.jsonl are the driver passes, not the published latency (latency/<arm>.jsonl)"
+}

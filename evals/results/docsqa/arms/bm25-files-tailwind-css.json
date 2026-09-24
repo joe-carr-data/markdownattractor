@@ -1,0 +1,27 @@
+{
+  "arm": "bm25-files",
+  "project": "tailwind-css",
+  "version": "python3 sqlite3 3.43.2 FTS5",
+  "config": {
+    "tokenize": "unicode61 remove_diacritics 2",
+    "unit": "whole page",
+    "query": "every term double-quoted, AND; OR fallback when AND matches nothing",
+    "rank": "bm25(), ties by path"
+  },
+  "build": {
+    "completed": true
+  },
+  "coverage": {
+    "files_indexed": 198,
+    "corpus_pages": 197,
+    "corpus_pages_indexed": 197,
+    "coverage": 1
+  },
+  "db": "\\~/.cache/markdownattractor/bench/bm25-files/tailwind-css.sqlite",
+  "table_fingerprint": "dff24961dbe4380e5486814f4fd917e0f8ed94a07dfcd83f2eb6f6ce7eea3e3f",
+  "latency": "none (quality only, plan §2.1)",
+  "record": {
+    "written_at": "2026-09-24T13:14:25Z",
+    "note": "record written 2026-09-24 from the table built on 2026-09-23 11:18 UTC+4 (mtime) during M2; the build record was never written; provenance established by rebuilding from the pinned checkout into a temporary table and comparing content fingerprints (see the record)"
+  }
+}

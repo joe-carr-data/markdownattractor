@@ -9,6 +9,8 @@
 #
 # Usage: scripts/eval/bm25-files.sh build <project>                 # writes the table under $RUN/bm25-files/<project>.sqlite and arms/bm25-files-<project>.json
 #        scripts/eval/bm25-files.sh drive <project> <out.jsonl> [split=dev]
+#        scripts/eval/bm25-files.sh record <project> [note]      # rewrite the arm record from the existing table (fingerprint, page count, coverage)
+# Ties in bm25() are broken by path (ascending), so a run is deterministic (Codex M4).
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -49,6 +51,17 @@ PY
       '{arm: "bm25-files", project: $project, version: ("python3 sqlite3 " + $sqlite + " FTS5"), config: {tokenize: "unicode61 remove_diacritics 2", unit: "whole page", query: "every term double-quoted, AND; OR fallback when AND matches nothing", rank: "bm25()"}, build: {index_s: $s}, coverage: {files_indexed: $n, corpus_pages: $total, corpus_pages_indexed: $present, coverage: (if $total == 0 then 0 else $present / $total end)}, db: $db, latency: "none (quality only, plan §2.1)"}' > "$ARMS/bm25-files-$project.json"
     echo "built $db: $n pages in $((t1 - t0)) s · $present of $total corpus pages on disk · $ARMS/bm25-files-$project.json"
     ;;
+  record)
+    note="${1:-record rewritten from the existing table}"
+    [ -f "$db" ] || die "no $db"
+    n="$(sqlite3 "$db" 'SELECT count(*) FROM pages')"
+    total=0; present=0
+    while IFS= read -r p; do total=$((total + 1)); [ -f "$corpus/$p" ] && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
+    prev="{}"; [ ! -f "$ARMS/bm25-files-$project.json" ] || prev="$(cat "$ARMS/bm25-files-$project.json")"
+    jq -n --argjson prev "$prev" --arg project "$project" --argjson n "$n" --arg sqlite "$(python3 -c 'import sqlite3; print(sqlite3.sqlite_version)')" --argjson total "$total" --argjson present "$present" --arg db "${db/#$HOME/\~}" --arg fp "$(bm25_fingerprint "$project")" --arg note "$note" --arg at "$(date -u +%FT%TZ)" \
+      '$prev + {arm: "bm25-files", project: $project, version: ("python3 sqlite3 " + $sqlite + " FTS5"), config: {tokenize: "unicode61 remove_diacritics 2", unit: "whole page", query: "every term double-quoted, AND; OR fallback when AND matches nothing", rank: "bm25(), ties by path"}, build: (($prev.build // {}) + {completed: true}), coverage: {files_indexed: $n, corpus_pages: $total, corpus_pages_indexed: $present, coverage: (if $total == 0 then 0 else $present / $total end)}, db: $db, table_fingerprint: $fp, latency: "none (quality only, plan §2.1)", record: {written_at: $at, note: $note}}' > "$ARMS/bm25-files-$project.json"
+    echo "recorded $ARMS/bm25-files-$project.json (fingerprint $(jq -r .table_fingerprint "$ARMS/bm25-files-$project.json" | cut -c1-16)…, $n pages)"
+    ;;
   drive)
     out="${1:?out.jsonl}"; split="${2:-dev}"
     safe_target "$out"; [ ! -e "$out" ] || die "$out exists"
@@ -77,10 +90,10 @@ with open(out, 'w', encoding='utf-8') as fh:
         rows = []
         form = 'and'
         if terms:
-            rows = con.execute("SELECT path FROM pages WHERE pages MATCH ? ORDER BY bm25(pages) LIMIT 10", (' '.join(terms),)).fetchall()
+            rows = con.execute("SELECT path FROM pages WHERE pages MATCH ? ORDER BY bm25(pages), path LIMIT 10", (' '.join(terms),)).fetchall()
             if not rows:
                 form = 'or'
-                rows = con.execute("SELECT path FROM pages WHERE pages MATCH ? ORDER BY bm25(pages) LIMIT 10", (' OR '.join(terms),)).fetchall()
+                rows = con.execute("SELECT path FROM pages WHERE pages MATCH ? ORDER BY bm25(pages), path LIMIT 10", (' OR '.join(terms),)).fetchall()
         ms = int((time.time() - t0) * 1000)
         fh.write(json.dumps({"question_id": qid, "paths": [r[0] for r in rows], "truncated": False,
                              "request": {"form": form, "terms": len(terms)}, "wall_ms": ms}) + "\n")

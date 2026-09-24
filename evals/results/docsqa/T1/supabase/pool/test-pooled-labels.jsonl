@@ -1,0 +1,10 @@
+{"question_id":"supabase::supabase-36761","page":"apps/docs/content/troubleshooting/resolving-500-status-authentication-errors-7bU5U8.mdx","mean":2,"scores":[{"judge":"fable","rows":1,"score":2},{"judge":"astra","rows":1,"score":2}]}
+{"question_id":"supabase::supabase-20241","page":"apps/docs/content/troubleshooting/database-api-42501-errors.mdx","mean":1.5,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":2}]}
+{"question_id":"supabase::supabase-34793","page":"apps/docs/content/guides/queues/quickstart.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"supabase::supabase-36761","page":"apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"supabase::supabase-18986","page":"apps/docs/content/guides/database/connection-management.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"supabase::supabase-18986","page":"apps/docs/content/guides/database/supavisor.mdx","mean":2,"scores":[{"judge":"fable","rows":1,"score":2},{"judge":"astra","rows":1,"score":2}]}
+{"question_id":"supabase::supabase-30447","page":"apps/docs/content/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"supabase::supabase-28655","page":"apps/docs/content/guides/auth/server-side/advanced-guide.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"supabase::supabase-29864","page":"apps/docs/content/guides/auth/third-party/workos.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"supabase::supabase-13977","page":"apps/docs/content/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}

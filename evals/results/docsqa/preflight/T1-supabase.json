@@ -1,0 +1,136 @@
+{
+  "table": "T1",
+  "project": "supabase",
+  "split": "test",
+  "run_at": "20260924T223733Z",
+  "status": "completed",
+  "passed": false,
+  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/T1/supabase/20260924T223733Z",
+  "frozen": "evals/results/docsqa/T1/FROZEN.md",
+  "mda": "mda 0.1.1",
+  "mda_sha256": "1f22f6c2a1f75cecc93129bf8c12fd2baf099940f2c2cb785bf9452590fc4e82",
+  "source_commit": "74658e8add4bab88ccf8577e6437338beda4aac2",
+  "arms": [
+    "mda",
+    "grep",
+    "bm25-files",
+    "graphify",
+    "graphify-haiku",
+    "qmd"
+  ],
+  "required": [
+    "env",
+    "build",
+    "frozen",
+    "model",
+    "store",
+    "regenerate",
+    "artifacts",
+    "replay",
+    "reconstruction",
+    "coverage-grep",
+    "probes-mda",
+    "probes-grep",
+    "probes-graphify",
+    "probes-graphify-haiku",
+    "probes-qmd"
+  ],
+  "timing": {
+    "build_profile": "release",
+    "hardware": "Apple M3 · 24 GB · macOS 15.2",
+    "boundary": "adapter in-process for the store rows (release build); MCP-server latency for the arm columns is measured by scripts/eval/mcp-time.sh (M2), cold first query reported separately"
+  },
+  "failed": 1,
+  "skipped": 0,
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "ANTHROPIC_API_KEY unset · claude 2.1.281 (Claude Code) · jq jq-1.6-159-apple-gcff5336-dirty"
+    },
+    {
+      "name": "build",
+      "status": "ok",
+      "detail": "mda 0.1.1 at 74658e8 · /Users/jcarr/markdownattractor/target/release/mda · sha256 1f22f6c2a1f75cecc93129bf8c12fd2baf099940f2c2cb785bf9452590fc4e82",
+      "executable": "/Users/jcarr/markdownattractor/target/release/mda",
+      "sha256": "1f22f6c2a1f75cecc93129bf8c12fd2baf099940f2c2cb785bf9452590fc4e82"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T1/FROZEN.md (source commit 626baa620f77f0a44bc5bc0c8e6c22a5a495d819, HEAD 74658e8add4bab88ccf8577e6437338beda4aac2)"
+    },
+    {
+      "name": "model",
+      "status": "ok",
+      "detail": "11 entries match evals/results/docsqa/model.sha"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "pending 0 · failed 0 · 6386 of 6386 carded hashes embedded"
+    },
+    {
+      "name": "regenerate",
+      "status": "ok",
+      "detail": "3 committed run(s) and 6 external arm file(s) regenerate from their archived page lists (results.json sha256 16cc4a0548d13dac1f2c588a5d13d57f95c0e8b423cfb52e56fde3da06f028ce)",
+      "results_sha256": "16cc4a0548d13dac1f2c588a5d13d57f95c0e8b423cfb52e56fde3da06f028ce",
+      "coverage_sha256": "1d465af76ab87504cfdc280a37e623f6c19062e2f31e8aae2991aff07638c817",
+      "split_sha256": "955587e23940d562544d1304efb81a2b92aa30d4c8da7ef7edaf1bb6b629806a",
+      "external_arm_files": 6
+    },
+    {
+      "name": "artifacts",
+      "status": "ok",
+      "detail": "live qmd index and graphify graphs match the frozen records"
+    },
+    {
+      "name": "replay",
+      "status": "ok",
+      "detail": "coverage, split and every row/question identical to evals/results/docsqa/supabase (lexical (raw only): success@5 0.3333333333333333 n 21 · lexical (cards + raw): success@5 0.38095238095238093 n 21 · hybrid (cards + raw + vectors): success@5 0.42857142857142855 n 21) in 28 s"
+    },
+    {
+      "name": "reconstruction",
+      "status": "ok",
+      "detail": "identical on every row and question · same inventory {\"docs\":836,\"sections\":6548,\"carded\":6548} · 6386 cards attached · raw index 1 s · attach+embed+score 483 s",
+      "index_s": 1,
+      "attach_embed_score_s": 483,
+      "cards_attached": 6386,
+      "inventory": {
+        "docs": 836,
+        "sections": 6548,
+        "carded": 6548
+      }
+    },
+    {
+      "name": "coverage-grep",
+      "status": "ok",
+      "detail": "770 of 770 corpus pages on disk"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-supabase/probes/)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-supabase/probes/)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-supabase/probes/)"
+    },
+    {
+      "name": "probes-graphify-haiku",
+      "status": "FAIL",
+      "detail": "2 of 3 probes activated (probe graphify-haiku/supabase/supabase::supabase-13977: no successful call of the arm's tool (^mcp__graphify__(query_graph|get_node|get_neighbors|get_community|god_nodes|shortest_path)$) in the trace; calls: [{\"name\":\"Glob\",\"ok\":true}] )"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-supabase/probes/)"
+    }
+  ]
+}

@@ -171,7 +171,7 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 - [ ] M2 competitor arms installed, built, driven, probed.
 - [x] M3 T1 development rows, pooled judgments, tuning loop (PR #24).
 - [ ] Post-stop exploration c3–c7, information only (2026-09-24 amendment of §3).
-- [ ] M4 T1 published (test split), Codex pass.
+- [x] M4 T1 published (test split), Codex pass (2026-09-24/25; `docs/reviews/codex/2026-09-24-bench-m4.md`).
 - [ ] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass.
 - [ ] M6 T2 + T3 published.
 - [ ] M7 T4 published.

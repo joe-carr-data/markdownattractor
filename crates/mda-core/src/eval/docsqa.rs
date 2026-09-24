@@ -25,6 +25,10 @@ pub struct Question {
     pub query: String,
     /// Relevant pages as repository-relative paths (mapped from `qrel_ids`, deduplicated).
     pub relevant: Vec<String>,
+    /// The dataset's own labels, as loaded: eligibility and coverage are decided on these
+    /// alone, so adding pooled labels (`add_labels`) never changes which questions are
+    /// scored (Codex M4 F4: the original and pooled columns describe one population).
+    pub original_relevant: Vec<String>,
     /// The dataset's resolved evidence anchors: `(page path, canonical heading)`; a heading
     /// of `None` means the whole page. Used by the evidence-presence check (plan §2 F1 v).
     pub anchors: Vec<(String, Option<String>)>,
@@ -175,6 +179,7 @@ impl Dataset {
             questions.push(Question {
                 id: q.question_id,
                 query: q.query,
+                original_relevant: relevant.clone(),
                 relevant,
                 anchors,
                 unmapped_qrels: unmapped,
@@ -301,15 +306,15 @@ pub fn coverage(dataset: &Dataset, store: &Store) -> Result<Coverage> {
     let mut eligible = 0;
     let mut multimodal = 0;
     for q in &dataset.questions {
-        qrels += q.relevant.len() + q.unmapped_qrels.len();
+        qrels += q.original_relevant.len() + q.unmapped_qrels.len();
         qrels_unmapped += q.unmapped_qrels.len();
-        let present = q.relevant.iter().filter(|p| indexed.contains(*p)).count();
+        let present = q.original_relevant.iter().filter(|p| indexed.contains(*p)).count();
         qrels_indexed += present;
         if q.image_evidence {
             excluded_image += 1;
         } else if !q.unmapped_qrels.is_empty()
-            || present < q.relevant.len()
-            || q.relevant.is_empty()
+            || present < q.original_relevant.len()
+            || q.original_relevant.is_empty()
         {
             excluded_missing += 1;
         } else {
@@ -386,8 +391,8 @@ pub fn normalize_heading(text: &str) -> String {
 fn eligible(q: &Question, indexed: &HashSet<String>) -> bool {
     !q.image_evidence
         && q.unmapped_qrels.is_empty()
-        && !q.relevant.is_empty()
-        && q.relevant.iter().all(|p| indexed.contains(p))
+        && !q.original_relevant.is_empty()
+        && q.original_relevant.iter().all(|p| indexed.contains(p))
 }
 
 /// One question's result.

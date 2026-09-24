@@ -1,0 +1,8 @@
+{
+  "arm": "grep",
+  "project": "tailwind-css",
+  "corpus_pages": 197,
+  "pages_on_disk": 197,
+  "coverage": 1,
+  "note": "grep sees every file in the checkout; coverage is the dataset pages present at the pinned commit"
+}

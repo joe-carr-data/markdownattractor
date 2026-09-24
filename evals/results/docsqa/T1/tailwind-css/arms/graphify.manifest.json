@@ -1,0 +1,17 @@
+{
+  "arm": "graphify",
+  "project": "tailwind-css",
+  "split": "test",
+  "archived_at": "2026-09-24T13:18:56Z",
+  "source_commit": "89d747b (tailwind mda, bm25-files) / d4c013c (tailwind and supabase graphify, graphify-haiku; supabase mda, bm25-files) / 01c7c53 (prisma) — see provenance_note",
+  "driver": "scripts/eval/arms/graphify.sh",
+  "driver_sha256": "4bc6225641facf3548f6669b68a577a8c38f04f557bfa6fbee7c897678c493b8",
+  "t1_sha256": "fb583aef04a19618be7717351d88490cf5870fa45daa100e2c02649e9e6d2de5",
+  "mda_sha256": "a8426f15ad32844eef42cb510632a14941b1e347b4f7d8b11062d4d6da65c560",
+  "frozen_md_sha256": "3287b576193013b96d342e0a11be9682d6d699c0b069e607aba821f24aa7e3d2",
+  "rows_sha256": "35bcc0988a456bee534c7bdb252e6fd8e4041e444dadb5d145211590607d46f3",
+  "driver_rows_sha256": "45438515b0cc24b37d91ac1e2060c256b1c5e673acb58b4f413d880969a938c6",
+  "results_sha256": "a84f01d3a044ef2fb1dc0bc2ad4e7d06e17886871da4a0b49f1950654d390dfa",
+  "provenance_note": "Backfilled on 2026-09-24 after the Codex M4 pass: these rows were produced by the same driver content between 12:51 and 13:07 UTC under the T1 freezes written at 5e65248→89d747b, d4c013c and 01c7c53 (identical inputs; the driver for this arm did not change between those commits except graphify.sh at d4c013c, before any graphify row of this table was scored; bm25-files.sh gained a path tie-breaker at 9c6a934 and re-driving the test split gives identical rows).",
+  "note": "rows = the scorer input (question_id, paths, truncated); driver rows keep the per-question request, ok flag and first-pass timing; request*.json are the templates the driver sent; times*.jsonl are the driver passes, not the published latency (latency/<arm>.jsonl)"
+}

@@ -1,0 +1,7 @@
+{"question_id":"tailwind-css::tailwind-18368","page":"src/docs/functions-and-directives.mdx","mean":2,"scores":[{"judge":"fable","rows":1,"score":2},{"judge":"astra","rows":1,"score":2}]}
+{"question_id":"tailwind-css::tailwind-17172","page":"src/docs/functions-and-directives.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"tailwind-css::tailwind-17999","page":"src/docs/functions-and-directives.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"tailwind-css::tailwind-13967","page":"src/docs/hover-focus-and-other-states.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"tailwind-css::tailwind-16811","page":"src/docs/hover-focus-and-other-states.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"tailwind-css::tailwind-18596","page":"src/docs/dark-mode.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}
+{"question_id":"tailwind-css::tailwind-10194","page":"src/docs/functions-and-directives.mdx","mean":1,"scores":[{"judge":"fable","rows":1,"score":1},{"judge":"astra","rows":1,"score":1}]}

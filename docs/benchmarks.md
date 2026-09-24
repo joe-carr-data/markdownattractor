@@ -193,6 +193,8 @@ Reading: two candidates clear the engineering screen (≥ 0.01 with no project l
 
 ### DocsQA-Repo — pooled labels, the diagnostic second column (M3, development, 2026-09-23)
 
+**Correction (2026-09-24, Codex M4 F1).** The sampler that drew these 100 pairs per project did not exclude already-labelled pages (a jq binding error, fixed in `scripts/eval/pool.sh` before the T1 samples were drawn): 5 / 2 / 4 / 4 of the 100 pairs on GitHub Docs / Prisma / Supabase / Tailwind carried an original label. The pooled column is unaffected (an existing label is never added twice), but the "relevant among the sampled pairs" counts below include those pairs, and the judge scored 7 of the 15 labelled pairs 0 — a reading on the dataset's own labels, not on the arms. The T1 pooled column (§ below) uses the fixed sampler.
+
 Axis A's second column (plan §2.3): from every arm's top-5 pages, 100 query-page pairs per project that carry no original label were sampled (seeded, round-robin over the eight arms; `scripts/eval/pool.sh sample`) and judged blind by one panel member so far, Claude Fable 5.1 through `claude -p --model claude-fable-5-1` with the frozen 0/1/2 rubric (`pool.sh judge`; the Astra half of the panel joins at M5); a pair is relevant when the mean judgment is ≥ 1. Judgments 0/1/2 per project: tailwind-css 93/5/2 · supabase 86/11/3 · prisma 82/17/1 · github-docs 84/13/3 — the sparse labels miss about one in seven of the pages the arms return. Every arm was then rescored over the judged questions only, with labels = original ∪ pooled (`pool.sh column`, the same scorer with `--extra-labels` and `--only-questions`); success@5:
 
 | Project | judged questions | labels added | mda hybrid original → pooled | qmd full original → pooled | BM25-over-files | graphify (Sonnet) |
@@ -205,6 +207,147 @@ Axis A's second column (plan §2.3): from every arm's top-5 pages, 100 query-pag
 - The pooled labels favour qmd full more than mda on the two large corpora: on GitHub Docs the two arms tie on the original labels over the judged questions (0.422) and qmd leads by 0.11 with the pooled ones; on Prisma qmd leads by 0.03 either way; Supabase ties at 0.667; Tailwind keeps mda ahead. qmd's reranker surfaces relevant pages the dataset did not label more often than our fusion does; the tuning loop's objective is the original labels, so this is the reading to keep in mind when the test-split column is judged at M4 by both panel members.
 - Development numbers over small judged sets (12 to 45 questions); the published column comes from the final test-split runs.
 
+
+## T1 — axis A on DocsQA-Repo, test split (final, 2026-09-24)
+
+The first published table. Test split, scored once per arm under the final freeze `evals/results/docsqa/T1/FROZEN.md` (protocol final; the selection is the pre-tuning configuration, the winner of the §3 loop; the post-stop diagnostics are excluded from selection). Every row regenerates from its archived page lists without a store (the preflight's `regenerate` check), every interval is a 95% bootstrap over the row's questions (5,000 draws, seed 20260922, `mda eval --interval`), and the runbook's §7.1 reproduces every command. Arms, page rule, denominators and labels are those of §2.1–2.3 of the execution plan; a missing query is a miss counted in every denominator. Reproduction recipe and disclosures: `evals/benchmark_it_with_claude.md` §7.1.
+
+### Quality
+
+| Project | test scored | run | success@5 [95%] | MRR@5 [95%] | nDCG@10 [95%] | truncated |
+|---|---|---|---|---|---|---|
+| github-docs | 87 | lexical (raw only) | 0.345 [0.241, 0.448] | 0.164 [0.106, 0.227] | 0.195 [0.136, 0.257] | 0 |
+| github-docs | 87 | lexical (cards + raw) | 0.356 [0.264, 0.46] | 0.188 [0.125, 0.259] | 0.255 [0.195, 0.322] | 0 |
+| github-docs | 87 | hybrid (cards + raw + vectors) | 0.483 [0.379, 0.586] | 0.255 [0.188, 0.327] | 0.331 [0.266, 0.397] | 0 |
+| github-docs | 87 | BM25-over-files | 0.299 [0.207, 0.402] | 0.189 [0.119, 0.261] | 0.202 [0.141, 0.267] | 0 |
+| github-docs | 87 | graphify-haiku (query_graph) | 0.034 [0, 0.08] | 0.011 [-0, 0.024] | 0.019 [0.005, 0.038] | 0 |
+| github-docs | 87 | qmd BM25 (MCP lex-only, rerank off) | 0.011 [0, 0.034] | 0.011 [-0, 0.034] | 0.011 [-0, 0.034] | 0 |
+| github-docs | 87 | qmd full (MCP query, rerank) | 0.46 [0.356, 0.563] | 0.261 [0.191, 0.337] | 0.299 [0.233, 0.369] | 0 |
+| github-docs | 87 | qmd no-rerank (MCP query, rerank off) | 0.368 [0.264, 0.471] | 0.23 [0.157, 0.307] | 0.249 [0.184, 0.318] | 0 |
+| prisma | 63 | lexical (raw only) | 0.286 [0.175, 0.397] | 0.166 [0.094, 0.244] | 0.207 [0.131, 0.287] | 0 |
+| prisma | 63 | lexical (cards + raw) | 0.365 [0.254, 0.492] | 0.185 [0.113, 0.263] | 0.246 [0.172, 0.322] | 0 |
+| prisma | 63 | hybrid (cards + raw + vectors) | 0.413 [0.302, 0.54] | 0.254 [0.168, 0.348] | 0.289 [0.212, 0.371] | 0 |
+| prisma | 63 | BM25-over-files | 0.302 [0.19, 0.413] | 0.139 [0.078, 0.207] | 0.182 [0.119, 0.249] | 0 |
+| prisma | 63 | graphify-haiku (query_graph) | 0.032 [0, 0.079] | 0.024 [-0, 0.063] | 0.016 [-0, 0.041] | 0 |
+| prisma | 63 | qmd BM25 (MCP lex-only, rerank off) | 0.016 [0, 0.048] | 0.016 [-0, 0.048] | 0.016 [-0, 0.048] | 0 |
+| prisma | 63 | qmd full (MCP query, rerank) | 0.365 [0.254, 0.492] | 0.202 [0.129, 0.285] | 0.241 [0.17, 0.319] | 0 |
+| prisma | 63 | qmd no-rerank (MCP query, rerank off) | 0.27 [0.159, 0.381] | 0.124 [0.068, 0.186] | 0.179 [0.12, 0.242] | 0 |
+| supabase | 21 | lexical (raw only) | 0.333 [0.143, 0.524] | 0.218 [0.075, 0.381] | 0.277 [0.137, 0.434] | 0 |
+| supabase | 21 | lexical (cards + raw) | 0.381 [0.19, 0.619] | 0.302 [0.135, 0.5] | 0.353 [0.187, 0.531] | 0 |
+| supabase | 21 | hybrid (cards + raw + vectors) | 0.429 [0.238, 0.667] | 0.345 [0.167, 0.548] | 0.388 [0.215, 0.566] | 0 |
+| supabase | 21 | BM25-over-files | 0.429 [0.238, 0.619] | 0.287 [0.129, 0.454] | 0.342 [0.191, 0.499] | 0 |
+| supabase | 21 | graphify-haiku (query_graph) | 0 [0, 0] | -0 [-0, -0] | -0 [-0, -0] | 3 |
+| supabase | 21 | graphify (query_graph) | 0.095 [0, 0.238] | 0.063 [-0, 0.175] | 0.071 [-0, 0.19] | 0 |
+| supabase | 21 | qmd BM25 (MCP lex-only, rerank off) | 0 [0, 0] | -0 [-0, -0] | -0 [-0, -0] | 0 |
+| supabase | 21 | qmd full (MCP query, rerank) | 0.381 [0.19, 0.571] | 0.172 [0.069, 0.297] | 0.252 [0.127, 0.385] | 0 |
+| supabase | 21 | qmd no-rerank (MCP query, rerank off) | 0.19 [0.048, 0.381] | 0.103 [0.016, 0.222] | 0.135 [0.03, 0.267] | 0 |
+| tailwind-css | 47 | lexical (raw only) | 0.553 [0.404, 0.702] | 0.344 [0.236, 0.459] | 0.469 [0.376, 0.57] | 0 |
+| tailwind-css | 47 | lexical (cards + raw) | 0.681 [0.553, 0.809] | 0.426 [0.315, 0.539] | 0.535 [0.437, 0.63] | 0 |
+| tailwind-css | 47 | hybrid (cards + raw + vectors) | 0.702 [0.574, 0.83] | 0.452 [0.336, 0.57] | 0.564 [0.466, 0.661] | 0 |
+| tailwind-css | 47 | BM25-over-files | 0.766 [0.638, 0.872] | 0.444 [0.339, 0.548] | 0.572 [0.49, 0.651] | 0 |
+| tailwind-css | 47 | graphify-haiku (query_graph) | 0.021 [0, 0.064] | 0.011 [-0, 0.032] | 0.008 [-0, 0.025] | 0 |
+| tailwind-css | 47 | graphify (query_graph) | 0.383 [0.255, 0.511] | 0.206 [0.117, 0.301] | 0.283 [0.189, 0.377] | 0 |
+| tailwind-css | 47 | qmd BM25 (MCP lex-only, rerank off) | 0 [0, 0] | -0 [-0, -0] | -0 [-0, -0] | 0 |
+| tailwind-css | 47 | qmd full (MCP query, rerank) | 0.681 [0.553, 0.809] | 0.367 [0.27, 0.469] | 0.52 [0.439, 0.601] | 0 |
+| tailwind-css | 47 | qmd no-rerank (MCP query, rerank off) | 0.617 [0.468, 0.745] | 0.33 [0.237, 0.433] | 0.491 [0.413, 0.573] | 0 |
+
+A `-0` is a zero (the nearest-rank percentile of an all-zero row). Generated by `scripts/eval/t1.sh table` from `evals/results/docsqa/T1/<project>/results.json` and `T1/<project>/arms/*.results.json` (split: test, scored once; mda 0.1.1; intervals: 95% bootstrap over the row's questions, 5,000 draws, seed 20260922, `mda eval --interval`).
+
+### The product target: match qmd full
+
+| Project | n | qmd full success@5 | mda hybrid success@5 | Δ (hybrid − qmd full), 95% paired | wins/losses | target (match qmd full) |
+|---|---|---|---|---|---|---|
+| github-docs | 87 | 0.46 | 0.483 | 0.023 [-0.092, 0.1379] | 13/11 | met (point estimate ≥); interval includes 0 |
+| prisma | 63 | 0.365 | 0.413 | 0.0476 [-0.0952, 0.1746] | 11/8 | met (point estimate ≥); interval includes 0 |
+| supabase | 21 | 0.381 | 0.429 | 0.0476 [-0.0952, 0.1905] | 2/1 | met (point estimate ≥); interval includes 0 |
+| tailwind-css | 47 | 0.681 | 0.702 | 0.0213 [-0.1064, 0.1489] | 5/4 | met (point estimate ≥); interval includes 0 |
+
+Generated by `scripts/eval/t1.sh target` (`mda eval --compare`: within-project paired bootstrap, 5,000 draws, seed 20260922; the product target of plan §4 is reported as met or not per project on the point estimate, with the interval beside it).
+
+Reading: on every project the hybrid row's point estimate is at or above qmd full's, by 0.02 to 0.05, with 13/11, 11/8, 2/1 and 5/4 paired wins/losses; every interval includes zero, so the honest statement is "not behind qmd full on any project, not distinguishable from it on these sample sizes". The gap between qmd full and qmd without its reranker (0.09 to 0.19) says where qmd's quality comes from, and the latency table says what it costs.
+
+### Where we lose
+
+| Project | n | hybrid misses | … found by qmd full | … by BM25-over-files | … by graphify | … by none of the three | hybrid rank 6–10 on its misses | rank > 10 / absent | only hybrid gets |
+|---|---|---|---|---|---|---|---|---|---|
+| github-docs | 87 | 45 | 11 | 5 | n/a | 33 | 14 | 31 | 7 |
+| prisma | 63 | 37 | 8 | 5 | n/a | 26 | 7 | 30 | 6 |
+| supabase | 21 | 12 | 1 | 3 | 2 | 7 | 3 | 9 | 1 |
+| tailwind-css | 47 | 14 | 4 | 6 | 0 | 5 | 8 | 6 | 1 |
+
+Generated by `scripts/eval/t1.sh lose` from the archived rows (success@5 misses of the hybrid row; "found by" = that arm's first relevant page within its top five on the same question).
+
+Two patterns. **Against qmd full**: of the hybrid misses qmd recovers, most are pages the hybrid ranked sixth to tenth; qmd's reranker reads the candidate text and reorders, which we do not do. **Against BM25-over-files on Tailwind**: a whole-page index scores 0.766 against our 0.702 on the same 47 questions, six questions to three, interval including zero; five of the six are two long hub guides (`adding-custom-styles.mdx`, `detecting-classes-in-source-files.mdx`) that a long community question matches everywhere at once, which a page-level index sums and our section-level index does not. The control trails us by 0.11 on Prisma and 0.18 on GitHub Docs, the corpora with thousands of pages. Aggregating section scores per page is a hypothesis for a future, separately declared tuning round; it is not tried on this table. The larger number in every project is "found by none of the three": 33 / 26 / 7 / 5 misses where no arm has the labelled page in its top five, the dataset's hard tail.
+
+### Latency through each arm's MCP server
+
+| Project | arm | queries | cold first call (startup + call) | warm median ms | warm p90 ms | failed |
+|---|---|---|---|---|---|---|
+| github-docs | graphify-haiku | 108 | 4961 + 1804 ms | 2006 | 4957 | 0 |
+| github-docs | mda | 108 | 12 + 1322 ms | 741 | 2436 | 0 |
+| github-docs | qmd | 108 | 403 + 25730 ms | 42374 | 63714 | 0 |
+| prisma | graphify-haiku | 68 | 794 + 105 ms | 122 | 288 | 0 |
+| prisma | mda | 68 | 11 + 904 ms | 543 | 2142 | 0 |
+| prisma | qmd | 68 | 295 + 34263 ms | 47413 | 74867 | 0 |
+| supabase | graphify-haiku | 28 | 645 + 56 ms | 85 | 245 | 0 |
+| supabase | graphify | 28 | 706 + 125 ms | 164 | 320 | 0 |
+| supabase | mda | 28 | 11 + 787 ms | 524 | 1143 | 0 |
+| supabase | qmd | 28 | 308 + 27642 ms | 636 | 1868 | 0 |
+| tailwind-css | graphify-haiku | 51 | 568 + 33 ms | 27 | 62 | 0 |
+| tailwind-css | graphify | 51 | 744 + 36 ms | 35 | 77 | 0 |
+| tailwind-css | mda | 51 | 10 + 293 ms | 173 | 461 | 0 |
+| tailwind-css | qmd | 51 | 302 + 46727 ms | 44007 | 71825 | 0 |
+
+Generated by `scripts/eval/t1.sh latency-table` from `T1/<project>/latency/<arm>.jsonl` (`scripts/eval/mcp-time.sh`: one rmcp stdio client, the server started cold, the first query includes process start and model load; plan §2.7).
+
+Reading: through its MCP server, mda answers in 0.2–0.7 s warm median (0.3–1.3 s on a cold process, the model loaded on first use), graphify in 30–160 ms on the graphs it has (2 s on the GitHub Docs Haiku graph), and qmd in 42–47 s median on Tailwind, Prisma and GitHub Docs: its query expansion and reranker run a local LLM on every call. **Supabase's qmd row is a cache artefact, not a speed-up**: qmd keeps an on-disk LLM cache (`llm_cache`, excluded from the index fingerprint), the latency run re-asked questions the scoring run had asked hours earlier, and on Supabase every warm call was served in 0.4–2.8 s (median 636 ms) against 44–135 s for the same questions during the scoring run; on the other three projects the cache did not shorten the calls. The published comparison number for qmd is therefore its cold call and the three uncached medians. "Cold" means a new server process; no arm's model or query cache was cleared between the scoring run and this measurement, for any arm.
+
+### Pooled labels, the second column
+
+| Project | judged questions | pairs relevant by pool | agreement (exact / within one) | run | original success@5 [95%] | pooled success@5 [95%] |
+|---|---|---|---|---|---|---|
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | lexical (raw only) | 0.568 [0.432, 0.727] | 0.636 [0.5, 0.773] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | lexical (cards + raw) | 0.705 [0.568, 0.841] | 0.727 [0.591, 0.841] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | hybrid (cards + raw + vectors) | 0.705 [0.568, 0.841] | 0.75 [0.614, 0.864] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | BM25-over-files | 0.773 [0.636, 0.886] | 0.773 [0.636, 0.886] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | graphify-haiku (query_graph) | 0.023 [0, 0.068] | 0.045 [0, 0.114] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | graphify (query_graph) | 0.386 [0.25, 0.523] | 0.432 [0.295, 0.591] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | qmd BM25 (MCP lex-only, rerank off) | 0 [0, 0] | 0 [0, 0] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | qmd full (MCP query, rerank) | 0.659 [0.523, 0.795] | 0.705 [0.568, 0.841] |
+| tailwind-css | 44 | 7 of 100 | 0.96 / 1 | qmd no-rerank (MCP query, rerank off) | 0.614 [0.455, 0.75] | 0.659 [0.523, 0.795] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | lexical (raw only) | 0.333 [0.143, 0.524] | 0.429 [0.238, 0.667] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | lexical (cards + raw) | 0.381 [0.19, 0.619] | 0.571 [0.381, 0.762] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | hybrid (cards + raw + vectors) | 0.429 [0.238, 0.667] | 0.571 [0.333, 0.81] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | BM25-over-files | 0.429 [0.238, 0.619] | 0.429 [0.238, 0.619] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | graphify-haiku (query_graph) | 0 [0, 0] | 0 [0, 0] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | graphify (query_graph) | 0.095 [0, 0.238] | 0.143 [0, 0.286] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | qmd BM25 (MCP lex-only, rerank off) | 0 [0, 0] | 0 [0, 0] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | qmd full (MCP query, rerank) | 0.381 [0.19, 0.571] | 0.571 [0.333, 0.762] |
+| supabase | 21 | 10 of 100 | 0.89 / 1 | qmd no-rerank (MCP query, rerank off) | 0.19 [0.048, 0.381] | 0.333 [0.143, 0.524] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | lexical (raw only) | 0.264 [0.151, 0.396] | 0.321 [0.208, 0.453] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | lexical (cards + raw) | 0.358 [0.226, 0.491] | 0.434 [0.302, 0.566] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | hybrid (cards + raw + vectors) | 0.434 [0.302, 0.566] | 0.509 [0.377, 0.642] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | BM25-over-files | 0.283 [0.17, 0.415] | 0.358 [0.226, 0.491] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | graphify-haiku (query_graph) | 0.019 [0, 0.057] | 0.075 [0.019, 0.151] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | qmd BM25 (MCP lex-only, rerank off) | 0.019 [0, 0.057] | 0.019 [0, 0.057] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | qmd full (MCP query, rerank) | 0.377 [0.245, 0.509] | 0.453 [0.321, 0.585] |
+| prisma | 53 | 18 of 100 | 0.93 / 1 | qmd no-rerank (MCP query, rerank off) | 0.283 [0.17, 0.415] | 0.34 [0.208, 0.472] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | lexical (raw only) | 0.305 [0.186, 0.424] | 0.39 [0.271, 0.525] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | lexical (cards + raw) | 0.305 [0.186, 0.424] | 0.39 [0.271, 0.508] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | hybrid (cards + raw + vectors) | 0.441 [0.322, 0.576] | 0.559 [0.424, 0.695] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | BM25-over-files | 0.271 [0.153, 0.39] | 0.407 [0.288, 0.525] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | graphify-haiku (query_graph) | 0.051 [0, 0.119] | 0.051 [0, 0.119] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | qmd BM25 (MCP lex-only, rerank off) | 0.017 [0, 0.051] | 0.051 [0, 0.119] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | qmd full (MCP query, rerank) | 0.458 [0.339, 0.593] | 0.593 [0.475, 0.712] |
+| github-docs | 59 | 21 of 100 | 0.93 / 1 | qmd no-rerank (MCP query, rerank off) | 0.356 [0.237, 0.475] | 0.492 [0.356, 0.61] |
+
+Generated from `evals/results/docsqa/T1/<project>/pool/test-column.json` (`TABLE=T1 scripts/eval/pool.sh column <project> test`; the jq rendering command is in runbook §7.1). Labels = original ∪ pooled-relevant; a pair is relevant when both judges scored it and the mean is ≥ 1; judged questions = those with at least one complete pair; intervals: 95% bootstrap over the judged questions, 5,000 draws, seed 20260922.
+
+Reading: 100 unlabelled top-five pairs per project, judged by Fable (`claude -p`) and Astra (`codex exec`) blind to the arm and to each other; exact agreement 0.89–0.96 and every disagreement within one point; 7 / 10 / 18 / 21 pairs relevant by pool. The pooled labels lift every retrieval arm by a similar amount (hybrid +0.05 to +0.14, qmd full +0.05 to +0.19); on the judged questions hybrid stays ahead on Tailwind and Prisma, ties qmd full on Supabase and trails it on GitHub Docs (0.559 vs 0.593, 59 questions). The second column is model-assisted and labelled so; it does not replace the first, and the judges' individual scores and rationales are committed (`test-judgments-<judge>.jsonl`).
+
+### What travels with the table
+
+T1 reuses the M2 artifacts (the committed cards, the qmd indexes, the BM25-over-files tables, the archived graphify graphs); it is not a fresh-build comparison, and every artifact's hash is in `T1/FROZEN.md`. graphify's Sonnet-built graphs exist for Tailwind and Supabase only (its builds did not complete on Prisma and GitHub Docs, recorded); its Haiku-built graphs exist for all four. The freeze was re-written during the run for driver and script fixes with identical inputs; each arm's manifest names the commit its rows were produced under, and the chronology is the git history of `T1/FROZEN.md`. The qmd and graphify drivers collapse whitespace in the question; mda receives it as written. graphify nodes without a source file are dropped (they name no page). The CPU and GPU chains ran concurrently, so the drivers' own timings reflect contention; the published latency was measured afterwards, alone, with the judging chain (network-bound) running beside it; "cold" means a new server process, not cleared model or query caches. The preflights (`evals/results/docsqa/preflight/T1-<project>.json`) passed every check on Tailwind, Prisma and GitHub Docs; on Supabase every check passed except one activation probe for the graphify-haiku arm, in two attempts (question `supabase-13977`: the headless agent read files instead of calling the graph tool; the arm's rows come from the tool directly and are unaffected; both attempts are committed). Codex's M4 pass on the scorer, the drivers and the freeze (`docs/reviews/codex/2026-09-24-bench-m4.md`) preceded every number on this page.
 
 ## Not measured yet
 

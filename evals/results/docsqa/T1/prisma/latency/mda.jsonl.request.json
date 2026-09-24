@@ -1,0 +1,14 @@
+{
+  "arm": "mda",
+  "tool": "mda_search",
+  "arguments": {
+    "query": "{query}",
+    "k": 10
+  },
+  "server": [
+    "/Users/jcarr/markdownattractor/target/release/mda",
+    "mcp",
+    "--root",
+    "/Users/jcarr/.cache/markdownattractor/bench/prisma"
+  ]
+}

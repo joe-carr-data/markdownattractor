@@ -10,9 +10,11 @@
 # is recorded as such; the report is written first as "in progress" and `passed` is true
 # only when the script ran to completion and every required check passed (Codex M1 F1).
 #
-# Usage: scripts/eval/preflight.sh <table> <project> [--frozen FILE] [--split dev]
+# Usage: scripts/eval/preflight.sh <table> <project> [--frozen FILE] [--split dev|test]
 #                                  [--skip-probes] [--skip-reconstruction]
-# The arms come from the frozen file's "### Arms" section. Writes
+# The table names the rows and the freeze: `development` reads evals/results/docsqa/<project>/
+# and FROZEN.md, split dev; a published table (T1, …) reads evals/results/docsqa/<table>/<project>/
+# and <table>/FROZEN.md, split test. The arms come from the frozen file's "### Arms" section. Writes
 # evals/results/docsqa/preflight/<table>-<project>.json (+ probes/ and coverage-*.json under
 # evals/results/docsqa/preflight/<table>-<project>/); the large artifacts (the reconstructed
 # checkout, its store, the regenerated reports, a copy of the report and traces) stay under
@@ -23,11 +25,11 @@ set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 table="${1:?table (T1, …, or development)}"; project="${2:?project}"; shift 2
 ident "$table"; ident "$project"
-frozen="$RESULTS/FROZEN.md"; split=dev; skip_probes=0; skip_recon=0
+frozen="$(results_dir "$table")/FROZEN.md"; split=dev; [ "$table" = development ] || split="test"; skip_probes=0; skip_recon=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --frozen) frozen="$2"; shift 2 ;;
-    --split) split="$2"; shift 2 ;;
+    --frozen) [ "$table" = development ] || die "--frozen is not accepted for a published table: $table certifies against $(results_dir "$table")/FROZEN.md only"; frozen="$2"; shift 2 ;;
+    --split) [ "$table" = development ] || die "--split is not accepted for a published table: $table is the test split"; split="$2"; shift 2 ;;
     --skip-probes) skip_probes=1; shift ;;
     --skip-reconstruction) skip_recon=1; shift ;;
     *) die "unknown argument: $1" ;;
@@ -35,7 +37,8 @@ while [ $# -gt 0 ]; do
 done
 [ -f "$frozen" ] || die "no frozen file $frozen"
 dir="$(project_dir "$project")"; corpus="$RUN/$dir"; data="$RUN/docsqa-data"
-committed="$RESULTS/$project"
+committed="$(results_dir "$table")/$project"
+[ -d "$committed" ] || die "no committed rows for $table/$project at $committed"
 arms="$(sed -n '/^### Arms/,/^$/p' "$frozen" | sed -n 's/^- \([A-Za-z0-9._-]*\):.*/\1/p' | tr '\n' ' ')"
 [ -n "$arms" ] || die "$frozen lists no arms"
 # Activation probes exist for the arms an agent drives through a tool (rule 0.5); a control
@@ -106,7 +109,8 @@ else record build FAIL "cargo build failed: $(tail -3 "$A/build.err" | tr '\n' '
 export MDA
 
 # 3. Frozen inputs unchanged (and the code paths unchanged since the frozen commit).
-if out="$("$REPO/scripts/eval/freeze.sh" --protocol development --out "$frozen" --check 2>&1)"; then record frozen ok "$out"; else record frozen FAIL "$out"; fi
+if [ "$table" = development ]; then fz_args=(--protocol development --out "$frozen"); else fz_args=(--protocol final --table "$table" --out "$frozen"); fi
+if out="$("$REPO/scripts/eval/freeze.sh" "${fz_args[@]}" --check 2>&1)"; then record frozen ok "$out"; else record frozen FAIL "$out"; fi
 
 # 4. Embedding model files (regular files and the snapshot links the loader opens).
 if model_sha > "$A/model.sha" && diff "$A/model.sha" "$RESULTS/model.sha" >"$A/model.diff" 2>&1; then record model ok "$(wc -l <"$RESULTS/model.sha" | tr -d ' ') entries match evals/results/docsqa/model.sha"; else record model FAIL "model files differ: $(head -3 "$A/model.diff" | tr '\n' ' ')"; fi
@@ -134,10 +138,10 @@ done
 # External arms too (Codex M2 F1): every committed <project>/arms/<arm>.jsonl scored again must
 # give its committed <arm>.results.json (metrics and per-question results).
 n_ext=0
-for rows in "$committed"/arms/*.jsonl; do
-  [ -f "$rows" ] || continue
-  a="$(basename "$rows" .jsonl)"; case "$a" in *.times) continue ;; esac   # latency files are not rows
-  [ -f "$committed/arms/$a.results.json" ] || { bad="$bad '$a (no results.json)'"; continue; }
+for res in "$committed"/arms/*.results.json; do   # one scored file per arm; its rows are <arm>.jsonl (latency and driver files are not rows)
+  [ -f "$res" ] || continue
+  a="$(basename "$res" .results.json)"; rows="$committed/arms/$a.jsonl"
+  [ -f "$rows" ] || { bad="$bad '$a (no rows file)'"; continue; }
   n_ext=$((n_ext + 1))
   name="$(jq -r '.runs[0].run' "$committed/arms/$a.results.json")"
   if "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split "$split" --arm-output "$rows" --arm-name "$name" > "$A/regen-$a.json" 2>"$A/regen-$a.err" \
@@ -225,7 +229,7 @@ else
       record "probes-$arm" ok "not applicable: the arm's build did not complete on $project (recorded in arms/$arm-$project.json)"; continue
     fi
     n_ok=0; n=0
-    for qid in $(probe_ids "$project"); do
+    for qid in $(probe_ids "$project" "$table"); do
       n=$((n + 1))
       rc=0; line="$("$REPO/scripts/eval/probe.sh" "$arm" "$project" "$qid" "$OUT/probes/$arm-${qid//[^A-Za-z0-9_.-]/_}.jsonl" 2>>"$A/probes.err")" || rc=$?
       [ -n "$line" ] && echo "$line" >> "$OUT/probes/summary.jsonl"

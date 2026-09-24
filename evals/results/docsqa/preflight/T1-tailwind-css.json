@@ -1,0 +1,136 @@
+{
+  "table": "T1",
+  "project": "tailwind-css",
+  "split": "test",
+  "run_at": "20260924T211609Z",
+  "status": "completed",
+  "passed": true,
+  "attempt_dir": "\\~/.cache/markdownattractor/bench/preflight/T1/tailwind-css/20260924T211609Z",
+  "frozen": "evals/results/docsqa/T1/FROZEN.md",
+  "mda": "mda 0.1.1",
+  "mda_sha256": "1f22f6c2a1f75cecc93129bf8c12fd2baf099940f2c2cb785bf9452590fc4e82",
+  "source_commit": "74658e8add4bab88ccf8577e6437338beda4aac2",
+  "arms": [
+    "mda",
+    "grep",
+    "bm25-files",
+    "graphify",
+    "graphify-haiku",
+    "qmd"
+  ],
+  "required": [
+    "env",
+    "build",
+    "frozen",
+    "model",
+    "store",
+    "regenerate",
+    "artifacts",
+    "replay",
+    "reconstruction",
+    "coverage-grep",
+    "probes-mda",
+    "probes-grep",
+    "probes-graphify",
+    "probes-graphify-haiku",
+    "probes-qmd"
+  ],
+  "timing": {
+    "build_profile": "release",
+    "hardware": "Apple M3 · 24 GB · macOS 15.2",
+    "boundary": "adapter in-process for the store rows (release build); MCP-server latency for the arm columns is measured by scripts/eval/mcp-time.sh (M2), cold first query reported separately"
+  },
+  "failed": 0,
+  "skipped": 0,
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "ANTHROPIC_API_KEY unset · claude 2.1.281 (Claude Code) · jq jq-1.6-159-apple-gcff5336-dirty"
+    },
+    {
+      "name": "build",
+      "status": "ok",
+      "detail": "mda 0.1.1 at 74658e8 · /Users/jcarr/markdownattractor/target/release/mda · sha256 1f22f6c2a1f75cecc93129bf8c12fd2baf099940f2c2cb785bf9452590fc4e82",
+      "executable": "/Users/jcarr/markdownattractor/target/release/mda",
+      "sha256": "1f22f6c2a1f75cecc93129bf8c12fd2baf099940f2c2cb785bf9452590fc4e82"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T1/FROZEN.md (source commit 626baa620f77f0a44bc5bc0c8e6c22a5a495d819, HEAD 74658e8add4bab88ccf8577e6437338beda4aac2)"
+    },
+    {
+      "name": "model",
+      "status": "ok",
+      "detail": "11 entries match evals/results/docsqa/model.sha"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "pending 0 · failed 0 · 1332 of 1332 carded hashes embedded"
+    },
+    {
+      "name": "regenerate",
+      "status": "ok",
+      "detail": "3 committed run(s) and 6 external arm file(s) regenerate from their archived page lists (results.json sha256 c99d1aa16339e8710f96bd08a9f3ea7cd9d928891f72c6633e4f456e50f922ce)",
+      "results_sha256": "c99d1aa16339e8710f96bd08a9f3ea7cd9d928891f72c6633e4f456e50f922ce",
+      "coverage_sha256": "b1cfd3716976ca3995dc7905741df91c35e8440838e1e0fff3711d1e5ea15128",
+      "split_sha256": "554de8e865a4f2c268e8bb9666ae9c35532f5b3ef8f191f9b71edde799029990",
+      "external_arm_files": 6
+    },
+    {
+      "name": "artifacts",
+      "status": "ok",
+      "detail": "live qmd index and graphify graphs match the frozen records"
+    },
+    {
+      "name": "replay",
+      "status": "ok",
+      "detail": "coverage, split and every row/question identical to evals/results/docsqa/tailwind-css (lexical (raw only): success@5 0.5531914893617021 n 47 · lexical (cards + raw): success@5 0.6808510638297872 n 47 · hybrid (cards + raw + vectors): success@5 0.7021276595744681 n 47) in 19 s"
+    },
+    {
+      "name": "reconstruction",
+      "status": "ok",
+      "detail": "identical on every row and question · same inventory {\"docs\":198,\"sections\":1518,\"carded\":1518} · 1332 cards attached · raw index 0 s · attach+embed+score 103 s",
+      "index_s": 0,
+      "attach_embed_score_s": 103,
+      "cards_attached": 1332,
+      "inventory": {
+        "docs": 198,
+        "sections": 1518,
+        "carded": 1518
+      }
+    },
+    {
+      "name": "coverage-grep",
+      "status": "ok",
+      "detail": "197 of 197 corpus pages on disk"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-tailwind-css/probes/)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-tailwind-css/probes/)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-tailwind-css/probes/)"
+    },
+    {
+      "name": "probes-graphify-haiku",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-tailwind-css/probes/)"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (traces under evals/results/docsqa/preflight/T1-tailwind-css/probes/)"
+    }
+  ]
+}
