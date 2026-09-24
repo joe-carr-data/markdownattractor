@@ -1,0 +1,8 @@
+{
+  "arm": "grep",
+  "project": "supabase",
+  "corpus_pages": 770,
+  "pages_on_disk": 770,
+  "coverage": 1,
+  "note": "grep sees every file in the checkout; coverage is the dataset pages present at the pinned commit"
+}

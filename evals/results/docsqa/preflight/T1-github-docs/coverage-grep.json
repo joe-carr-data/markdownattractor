@@ -1,0 +1,8 @@
+{
+  "arm": "grep",
+  "project": "github-docs",
+  "corpus_pages": 3208,
+  "pages_on_disk": 3208,
+  "coverage": 1,
+  "note": "grep sees every file in the checkout; coverage is the dataset pages present at the pinned commit"
+}
