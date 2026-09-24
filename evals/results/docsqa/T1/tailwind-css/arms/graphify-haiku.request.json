@@ -1,0 +1,16 @@
+{
+  "tool": "query_graph",
+  "arguments": {
+    "question": "{query}"
+  },
+  "second_pass": {
+    "question": "{query}",
+    "token_budget": 8000
+  },
+  "server": [
+    "graphify-mcp",
+    "/Users/jcarr/.cache/markdownattractor/bench/graphify/tailwind-css-haiku/graph.json"
+  ],
+  "graph_sha256": "90fd58f8b010227745643f65679a1329b0ffff0d8f83a54186a73abb412d3dd0",
+  "latency_note": "first_pass_ms is the first tool call only (no startup, no second pass); cold latency is startup_ms + ms of the first line of times1.jsonl"
+}

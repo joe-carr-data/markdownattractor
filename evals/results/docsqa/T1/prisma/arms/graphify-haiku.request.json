@@ -1,0 +1,16 @@
+{
+  "tool": "query_graph",
+  "arguments": {
+    "question": "{query}"
+  },
+  "second_pass": {
+    "question": "{query}",
+    "token_budget": 8000
+  },
+  "server": [
+    "graphify-mcp",
+    "/Users/jcarr/.cache/markdownattractor/bench/graphify/prisma-haiku/graph.json"
+  ],
+  "graph_sha256": "7117e221b558ae31b50d0863deaee8abfdbc1617d051622d41d781af4d3a66aa",
+  "latency_note": "first_pass_ms is the first tool call only (no startup, no second pass); cold latency is startup_ms + ms of the first line of times1.jsonl"
+}
