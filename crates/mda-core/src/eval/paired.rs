@@ -139,9 +139,20 @@ pub struct PairedReport {
 
 /// `SplitMix64`: a tiny, fully specified generator so the draws are the same on every
 /// platform and every release (a library generator's stream may change between versions).
+/// The order of the projects does not matter: each has its own stream (`for_label`).
 struct SplitMix64(u64);
 
 impl SplitMix64 {
+    /// A stream for one project: the seed, then every byte of the label folded in.
+    fn for_label(seed: u64, label: &str) -> Self {
+        let mut g = Self(seed);
+        for b in label.bytes() {
+            g.0 ^= u64::from(b);
+            g.next_u64();
+        }
+        g
+    }
+
     fn next_u64(&mut self) -> u64 {
         self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut z = self.0;
@@ -164,11 +175,12 @@ impl SplitMix64 {
     }
 }
 
-/// Nearest-rank percentile of a sorted slice (`q` in `0..=1`).
+/// Nearest-rank percentile of a sorted slice (`q` in `0..=1`): the `⌈N·q⌉`-th smallest value
+/// (so the 2.5th percentile of 5,000 draws is the 125th, the 97.5th the 4,875th).
 fn percentile(sorted: &[f64], q: f64) -> f64 {
     #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let idx = ((sorted.len() as f64 - 1.0) * q).round() as usize;
-    sorted[idx.min(sorted.len() - 1)]
+    let rank = (sorted.len() as f64 * q).ceil() as usize;
+    sorted[rank.saturating_sub(1).min(sorted.len() - 1)]
 }
 
 fn align(input: &PairedInput) -> Result<Vec<(bool, bool)>, PairedError> {
@@ -236,13 +248,18 @@ pub fn compare(
         return Err(PairedError::Invalid("at least two bootstrap draws are needed"));
     }
     let aligned: Vec<Vec<(bool, bool)>> = inputs.iter().map(align).collect::<Result<_, _>>()?;
-    let mut rng = SplitMix64(seed);
+    // One generator per project, keyed by the seed and the label, so the draws do not depend
+    // on the order the projects are given in; draw `d` of the objective combines draw `d` of
+    // every project.
+    let mut rngs: Vec<SplitMix64> =
+        inputs.iter().map(|i| SplitMix64::for_label(seed, &i.label)).collect();
     let mut per_project: Vec<Vec<f64>> = vec![Vec::with_capacity(draws); inputs.len()];
     let mut objective: Vec<f64> = Vec::with_capacity(draws);
     let mut sample: Vec<(bool, bool)> = Vec::new();
     for _ in 0..draws {
         let mut sum = 0.0;
         for (p, pairs) in aligned.iter().enumerate() {
+            let rng = &mut rngs[p];
             sample.clear();
             sample.extend((0..pairs.len()).map(|_| pairs[rng.below(pairs.len())]));
             let d = mean_delta(&sample);
@@ -389,6 +406,17 @@ mod tests {
     }
 
     #[test]
+    fn project_order_does_not_change_the_report() {
+        let a = one("a", &[true, false, false, true, false], &[false, true, true, true, false]);
+        let b = one("b", &[true, true, false], &[true, false, true]);
+        let ab = compare(&[a.clone(), b.clone()], 1000, 5).unwrap();
+        let ba = compare(&[b, a], 1000, 5).unwrap();
+        assert_eq!(ab.objective_ci95, ba.objective_ci95);
+        assert_eq!(ab.projects[0], ba.projects[1]);
+        assert_eq!(ab.projects[1], ba.projects[0]);
+    }
+
+    #[test]
     fn refuses_different_question_sets_duplicates_and_empty_projects() {
         let mut m = one("p", &[true, false], &[true, false]);
         m.candidate.push(("extra".into(), true));
@@ -425,6 +453,14 @@ mod tests {
             vec![("a".into(), true), ("b".into(), false), ("c".into(), false), ("d".into(), false)]
         );
         assert!(matches!(read_hits(&path, "other"), Err(PairedError::RunNotFound { .. })));
+    }
+
+    #[test]
+    fn percentile_is_nearest_rank() {
+        let v: Vec<f64> = (1..=5000).map(f64::from).collect();
+        let at = |q: f64, want: f64| (percentile(&v, q) - want).abs() < 1e-9;
+        assert!(at(0.025, 125.0) && at(0.975, 4875.0) && at(0.0, 1.0) && at(1.0, 5000.0));
+        assert!((percentile(&[7.0], 0.5) - 7.0).abs() < 1e-9);
     }
 
     #[test]
