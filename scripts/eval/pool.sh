@@ -42,9 +42,16 @@ if [ "$cmd" = judge ]; then
   : > "$jout"; i=0
   while IFS= read -r pair; do
     i=$((i + 1)); id="$(jq -r .pair_id <<<"$pair")"
-    # the same excerpt the sample hashed (first 6,000 decoded characters, not bytes; Codex M4 F10), verified
-    page_text="$(python3 -c 'import sys; print(open(sys.argv[1], encoding="utf-8", errors="replace").read()[:6000], end="")' "$corpus/$(jq -r .page <<<"$pair")" 2>/dev/null || true)"
-    [ "$(printf '%s' "$page_text" | shasum -a 256 | cut -c1-64)" = "$(jq -r .page_sha256 <<<"$pair")" ] || die "pair $id: the page excerpt does not match the sample's page_sha256 (checkout changed?)"
+    # the same excerpt the sample hashed (first 6,000 decoded characters, not bytes; Codex M4 F10):
+    # one Python step writes it and its sha256 (shell substitution would strip trailing newlines)
+    python3 - "$corpus/$(jq -r .page <<<"$pair")" "$tmpd/excerpt.txt" > "$tmpd/excerpt.sha" <<'PY' || die "pair $id: cannot read the page"
+import hashlib, sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()[:6000]
+open(sys.argv[2], "w", encoding="utf-8").write(text)
+print(hashlib.sha256(text.encode("utf-8")).hexdigest())
+PY
+    [ "$(cat "$tmpd/excerpt.sha")" = "$(jq -r .page_sha256 <<<"$pair")" ] || die "pair $id: the page excerpt does not match the sample's page_sha256 (checkout changed?)"
+    page_text="$(cat "$tmpd/excerpt.txt")"
     q_text="$(question_text "$project" "$(jq -r .question_id <<<"$pair")")"
     submission="$(jq -r --arg t "$page_text" --arg q "$q_text" '"<submission>\nQuestion: " + $q + "\n\nPage (" + .page + "):\n" + $t + "\n</submission>"' <<<"$pair")"
     if [ "$judge" = fable ]; then
