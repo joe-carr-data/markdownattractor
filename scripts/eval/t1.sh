@@ -58,17 +58,19 @@ archive_arm() { # project arm work-rows out-dir
   local project="$1" arm="$2" rows="$3" out="$4" f driver
   [ -f "$rows" ] || die "archive: no driver rows $rows"
   cp "$rows" "$out/arms/$arm.driver.jsonl"
-  for f in "$rows.request.json" "$rows.work"/request*.json; do [ -f "$f" ] || continue; cp "$f" "$out/arms/$arm.$(basename "$f" | sed 's/^request-limit/request-limit/; s/\.jsonl\.request\.json$/request.json/')"; done
+  for f in "$rows.work"/request*.json; do [ -f "$f" ] || continue; cp "$f" "$out/arms/$arm.$(basename "$f")"; done   # e.g. qmd's request-limit20.json and request-limit40.json
   [ ! -f "$rows.request.json" ] || cp "$rows.request.json" "$out/arms/$arm.request.json"
   [ ! -f "$rows.work/times1.jsonl" ] || cp "$rows.work/times1.jsonl" "$out/arms/$arm.times.jsonl"
   [ ! -f "$rows.work/times2.jsonl" ] || cp "$rows.work/times2.jsonl" "$out/arms/$arm.times2.jsonl"
   case "$arm" in qmd-*) driver="scripts/eval/arms/qmd.sh" ;; graphify*) driver="scripts/eval/arms/graphify.sh" ;; bm25-files) driver="scripts/eval/bm25-files.sh" ;; *) driver="" ;; esac
-  jq -n --arg arm "$arm" --arg project "$project" --arg at "$(date -u +%FT%TZ)" --arg sha "$(git -C "$REPO" rev-parse HEAD)" --arg driver "$driver" \
+  # A backfilled archive (rows produced before the manifest existed) names the commits the
+  # rows could have been produced under (SOURCE_COMMIT) and why (PROVENANCE_NOTE).
+  jq -n --arg arm "$arm" --arg project "$project" --arg at "$(date -u +%FT%TZ)" --arg sha "${SOURCE_COMMIT:-$(git -C "$REPO" rev-parse HEAD)}" --arg pnote "${PROVENANCE_NOTE:-}" --arg driver "$driver" \
      --arg driver_sha "$([ -z "$driver" ] || sha256 "$REPO/$driver")" --arg t1_sha "$(sha256 "$REPO/scripts/eval/t1.sh")" --arg bin "$(sha256 "$MDA")" \
      --arg rows_sha "$(sha256 "$out/arms/$arm.jsonl")" --arg driver_rows_sha "$(sha256 "$out/arms/$arm.driver.jsonl")" --arg res_sha "$(sha256 "$out/arms/$arm.results.json")" \
      --arg frozen "$(sha256 "$T/FROZEN.md")" --arg split "$SPLIT" \
      '{arm: $arm, project: $project, split: $split, archived_at: $at, source_commit: $sha, driver: $driver, driver_sha256: $driver_sha, t1_sha256: $t1_sha, mda_sha256: $bin, frozen_md_sha256: $frozen,
-       rows_sha256: $rows_sha, driver_rows_sha256: $driver_rows_sha, results_sha256: $res_sha,
+       rows_sha256: $rows_sha, driver_rows_sha256: $driver_rows_sha, results_sha256: $res_sha, provenance_note: (if $pnote == "" then null else $pnote end),
        note: "rows = the scorer input (question_id, paths, truncated); driver rows keep the per-question request, ok flag and first-pass timing; request*.json are the templates the driver sent; times*.jsonl are the driver passes, not the published latency (latency/<arm>.jsonl)"}' > "$out/arms/$arm.manifest.json"
 }
 case "$cmd" in
