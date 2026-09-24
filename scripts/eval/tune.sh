@@ -136,6 +136,17 @@ explore_invalid() { # name kvs reason
 }
 case "$cmd" in
   base) cat "$BASE"; echo "fingerprint $(base_fingerprint)" ;;
+  explore-table) # the page table (docs/benchmarks.md) from the archived post-stop trials, never retyped
+    echo "| trial | change | tailwind | supabase | prisma | github-docs | objective | Δ objective, 95% paired | wins/losses | decision |"
+    echo "|---|---|---|---|---|---|---|---|---|---|"
+    for d in "$ARCH"/post-stop-*/; do
+      m="$d/manifest.json"; [ -f "$m" ] || continue
+      if [ -f "$d/compare.json" ]; then
+        jq -r --slurpfile c "$d/compare.json" '[.trial, "`" + (.hypothesis_change | join(" ")) + "`", (.summary.tailwind | . * 1000 | round / 1000), (.summary.supabase | . * 1000 | round / 1000), (.summary.prisma | . * 1000 | round / 1000), (.summary.github | . * 1000 | round / 1000), (.summary.objective | . * 10000 | round / 10000),
+          (($c[0].report.objective_delta | . * 10000 | round / 10000 | tostring) + " [" + ($c[0].report.objective_ci95[0] | . * 10000 | round / 10000 | tostring) + ", " + ($c[0].report.objective_ci95[1] | . * 10000 | round / 10000 | tostring) + "]"),
+          (($c[0].report.wins | tostring) + "/" + ($c[0].report.losses | tostring)), .decision] | "| " + join(" | ") + " |"' "$m"
+      else jq -r '"| " + .trial + " | `" + (.hypothesis_change | join(" ")) + "` | | | | | | | | " + .decision + " (" + (.reason // "") + ") |"' "$m"; fi
+    done ;;
   explore)
     name="${1:?trial name}"; shift; ident "$name"
     case "$name" in post-stop-*) ;; *) die "exploratory trials are named post-stop-<candidate>" ;; esac
