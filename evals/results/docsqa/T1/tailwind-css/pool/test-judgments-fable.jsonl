@@ -1,0 +1,1 @@
+{"pair_id":"tailwind-css-000","judge":"fable","score":2,"rationale":"The @utility section directly answers it: custom utilities registered with @utility work with variants (so `dark:card-background` works), and the @variant section shows the alternative of applying dark styles inside custom CSS.","model":null,"cost_usd_list_price":0.09475}
