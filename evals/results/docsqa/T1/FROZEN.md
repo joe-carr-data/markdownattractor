@@ -1,6 +1,6 @@
 # FROZEN — DocsQA-Repo, protocol: final, table T1
 
-Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T1 final freeze (M4): the pre-tuning configuration is the winner of plan §3 (both embedding-text candidates discarded; the post-stop c3–c7 diagnostics are excluded from selection). Test split scored once for every arm of §2.1; the arm builds are the M2 builds (same records and artifact hashes).
+Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T1 final freeze (M4): the pre-tuning configuration is the winner of plan §3 (both embedding-text candidates discarded; the post-stop c3–c7 diagnostics are excluded from selection). Test split scored once for every arm of §2.1; the arm builds are the M2 builds (same records and artifact hashes). Re-written at 1333553 after the Codex M4 pass (BM25-over-files table fingerprints added; inputs otherwise unchanged); rows produced before this rewrite are listed with their source commit in each arm's manifest.
 
 ## Inputs
 
@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: 01c7c53e7697b3550080e23561ed4d1d76337433 (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
+- source commit: 1333553573a6ada1267eee166ae2bff7d4e8a1ec (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (regular files and the snapshot links the loader opens, each with the sha256 of its content; sha256 of the file 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -38,9 +38,9 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 - scripts/eval/ab.sh sha256: c469c9b14fc85388fc4eec51ece154c31ad59d7680743a5469916ede83eac36c
 - scripts/eval/grade.sh sha256: b9d79fb26807be4fb4f767067138b29cb5c0a24d739865db9a7714efcc323693
 - scripts/eval/probe.sh sha256: 602ce1c1e4fd70951a7390829a1b266bdce960106770af403eb316ab9044e6ea
-- scripts/eval/preflight.sh sha256: 74f6b4d25b6c60b3ae61fbe1f40c6d593e3171b02583247a70393cf9d1cb0c1b
-- scripts/eval/freeze.sh sha256: c25f43d2629ba3b8767f309065dab012553e495229d8301b81113e6a8bab4109
-- scripts/eval/lib.sh sha256: af322405325dbfd0a6caaa95bdca31576182e3bf4ddf855d214826698a7c1cb9
+- scripts/eval/preflight.sh sha256: 6ad5a17b29db8b8131554850d3e2e6db7c6c002b3fb8e1a6b1c33c93f8edb192
+- scripts/eval/freeze.sh sha256: 609040b71cb9e044e3b8a1e25e7b67c97ee786d3c86f85fd0f07ae51074ff048
+- scripts/eval/lib.sh sha256: a0e7ea29457a7c74e78ec9cc162e738a84a91040cd3ba27c3da1685103a06730
 - scripts/eval/table.sh sha256: bab1f61064a4ef2eea36f332e7850ca9ce3e14500fb4122cc4512b1cec0638ab
 
 ### Split and question sample (seed 20260922; `blake3(seed ‖ id)` order; dev 30% / test 55% / holdout 15%, sealed)
@@ -59,14 +59,14 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 ### Arms
 - mda: this binary through `mda mcp` (`mda_search`, default k 5, up to 50; `mda_open`); the search-first rules `skills/search-first/SKILL.md`; store per checkout under `.markdownattractor/` (`backend = claude-cli`, `claude_cli_policy_ack = true`, `embeddings = local-small`); the adapter scores the store directly
 - grep: Claude Code's own Read, Grep and Glob over the checkout, no MCP server, no extra instructions beyond the probe preamble (`scripts/eval/probe.sh`)
-- bm25-files: bm25-files-github-docs (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 e5c8742cb590821e0ac1d42882af3174026f381674f5d8449d4ffd5c19bff0ee); bm25-files-prisma (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 0922e80e2425635380bc33718005205de6af55ec177dca2bbc60ed923fcae78a); bm25-files-supabase (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 584873cb5734591ed256e5df2d4cc10d876e586215d61e49fa997b40dbd0ca0c);
+- bm25-files: bm25-files-github-docs (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 4dc8b2a9a8b81908019a5e98c12a0eda4392a24a1073a1acda88fc915354d291 · table fingerprint de679c94f3472ae0194fa8dba2451b34de5f648a3f7dcd38eddf94222c28d11b); bm25-files-prisma (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 9a29a7070bdfc652a471d253828ed27ae06fba26a98c7770dd3681aa14297f36 · table fingerprint ea223ca8e928c30138aa601cb0e1a3da0bb69bfed9db65b5034246644fb5697f); bm25-files-supabase (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 4cf857c2ea155c27cef49a18b3d3a8e247a91650c13bbe03ec3d3883602f2d1d · table fingerprint d1af44f338a7d0a5d6462462e88adcec14b114ce686e8c8fe5e68391fa754254); bm25-files-tailwind-css (version python3 sqlite3 3.43.2 FTS5 · coverage 1 · record sha256 0ab1630cadabfc11f5c60f9aa00ef19c46cf43e6d550b6291a16e90e0531abf2 · table fingerprint dff24961dbe4380e5486814f4fd917e0f8ed94a07dfcd83f2eb6f6ce7eea3e3f);
 - graphify: graphify-github-docs (version ? · did not complete · record sha256 ce5aad86e75405debca5b96a6ccf4d9933fdb667f32807ebac5ccf6dc0d04374); graphify-prisma (version ? · did not complete · record sha256 2f1f2b5878f60df57694d46add39f487d7fbb752a8cf290a63870ce58c58c431); graphify-supabase (version graphify 0.9.66 · coverage 0.961038961038961 · record sha256 7037cce67cda90a3c077a3f4bb2a3debe4fb36e9a0bbc66fa2b68cb06fc400b4 · graph sha256 ade877996d6aac620d429733d0567dbff65480985361574a2fb5a18cb9d9635b); graphify-tailwind-css (version graphify 0.9.66 · coverage 1 · record sha256 a2c3d4ec69d7ebf6ebbb3ed77ddf56bd06c5584b8e442f9cdf1e886316143c56 · graph sha256 316b55639f58bf7fa351dde8e5fdd102e974b0bf9cb4d5e2024a925ffc02cbcd);
 - graphify-haiku: graphify-haiku-github-docs (version graphify 0.9.66 · coverage 0.9953241895261845 · record sha256 89907410f7ec87489472875a855d25f7eeed2e61aa3f4c9a3da5c050291dd368 · graph sha256 cca9c0ceb967e9031114b0795f47f16510e55adb8bee5b11caa7d16c0b77f80d); graphify-haiku-prisma (version graphify 0.9.66 · coverage 0.8540145985401459 · record sha256 4e5b5e32aa3c26e2a93af546e39418240a10c766dec7fec5a93a6ae59184dd58 · graph sha256 7117e221b558ae31b50d0863deaee8abfdbc1617d051622d41d781af4d3a66aa); graphify-haiku-supabase (version graphify 0.9.66 · coverage 0.05714285714285714 · record sha256 24d14ea49a61e5cf63a779bf9a31b657a77890c7dfb54a4f960585b6755ca7de · graph sha256 565ce68aa2aecbe916e99c23fb8ede831156e498beb56e37d404e1400301903b); graphify-haiku-tailwind-css (version graphify 0.9.66 · coverage 0.2436548223350254 · record sha256 4c55e2d19b62c6e03792652b947541838f446bfa70f72f1f29c80986d3bbccc7 · graph sha256 90fd58f8b010227745643f65679a1329b0ffff0d8f83a54186a73abb412d3dd0);
 - qmd: qmd-github-docs (version qmd 2.8.3 (facd35e) · coverage 1 · record sha256 0a41a2e9ed46e7112af2a512e526047adc68d007ac8fe664f465cef01662ae8f · index fingerprint 3c923be793e89d9b85cad8eb91277b83a6ff00cfbc379c0d49b7ce092ef35c27); qmd-prisma (version qmd 2.8.3 (facd35e) · coverage 1 · record sha256 64ea62673c42cb625f46279701b5a3e711889df661763041698fc939cbf599ef · index fingerprint 01876e586902675a07da98a2b8dca6dcd0baefc61c1ca74860365f7fbd8fbf93); qmd-supabase (version qmd 2.8.3 (facd35e) · coverage 1 · record sha256 edc7f47bf3bcb04a15538250ae8fdeead5dc2960a19fd9f958a6621205d46300 · index fingerprint eb7f663c2f107c2fb5b9f1618417f9b46a419efe6faccde2078da8c21732eb49); qmd-tailwind-css (version qmd 2.8.3 (facd35e) · coverage 1 · record sha256 77a684e54b0d98bbc08b60ddbea17265eb61271995c243e82ef6a22efa72f061 · index fingerprint d67b10f11530fdcb6267faa0a4eb756f97fefc1819278c6cf0f1afd5223e5801);
 
 ## Runtime
 
-- frozen_at: 2026-09-24T12:59:10Z
+- frozen_at: 2026-09-24T13:16:42Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.280 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
