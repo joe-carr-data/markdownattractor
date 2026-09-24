@@ -22,7 +22,15 @@ TABLE=T1; T="$(results_dir $TABLE)"; SPLIT="test"
 HYBRID="hybrid (cards + raw + vectors)"
 ALL_ARMS="mda qmd-full qmd-no-rerank qmd-bm25 graphify graphify-haiku bm25-files"
 data="$RUN/docsqa-data"
-frozen_ok() { "$REPO/scripts/eval/freeze.sh" --protocol final --table $TABLE --check >/dev/null || die "$T/FROZEN.md does not check clean: nothing runs against changed inputs"; }
+# One freeze check at a time on this machine (two at once contended on qmd's sqlite once).
+frozen_ok() {
+  local lock="$RUN/t1-runs/.freeze-check.lock" i=0
+  mkdir -p "$RUN/t1-runs"
+  until mkdir "$lock" 2>/dev/null; do i=$((i + 1)); [ "$i" -lt 600 ] || die "freeze-check lock $lock held for 10 min"; sleep 1; done
+  trap 'rmdir "$lock" 2>/dev/null' EXIT
+  "$REPO/scripts/eval/freeze.sh" --protocol final --table $TABLE --check >/dev/null || die "$T/FROZEN.md does not check clean: nothing runs against changed inputs"
+  rmdir "$lock"; trap - EXIT
+}
 arm_name() { # arm -> the run name used on the development rows (one name per arm across tables)
   case "$1" in
     qmd-full) echo "qmd full (MCP query, rerank)" ;;

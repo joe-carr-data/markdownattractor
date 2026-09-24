@@ -124,9 +124,13 @@ question_text() { # project question_id
 qmd_fingerprint() { # index-name
   local db="$HOME/.cache/qmd/$1.sqlite" t
   [ -f "$db" ] || die "no qmd index $db"
-  sqlite3 "$db" 'PRAGMA wal_checkpoint(TRUNCATE);' >/dev/null 2>&1 || true
-  for t in $(sqlite3 "$db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'llm_cache' AND name NOT IN ('vectors_vec') ORDER BY name"); do
-    printf '%s\n' "$t"; sqlite3 "$db" "SELECT * FROM \"$t\" ORDER BY 1" 2>/dev/null || printf 'unreadable\n'
+  # Fail closed under contention: a concurrent reader (two freeze checks at once, or a
+  # running qmd query) made a table read fail once and the fingerprint silently changed
+  # ("unreadable"); now every read waits up to 60 s for the lock and an error aborts.
+  sqlite3 -cmd '.timeout 60000' "$db" 'PRAGMA wal_checkpoint(PASSIVE);' >/dev/null 2>&1 || true
+  local tables; tables="$(sqlite3 -cmd '.timeout 60000' "$db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'llm_cache' AND name NOT IN ('vectors_vec') ORDER BY name")" || die "qmd_fingerprint: cannot list the tables of $db"
+  for t in $tables; do
+    printf '%s\n' "$t"; sqlite3 -cmd '.timeout 60000' "$db" "SELECT * FROM \"$t\" ORDER BY 1" || die "qmd_fingerprint: cannot read $t of $db"
   done | shasum -a 256 | cut -c1-64
 }
 
