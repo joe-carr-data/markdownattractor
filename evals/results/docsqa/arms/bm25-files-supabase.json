@@ -6,10 +6,11 @@
     "tokenize": "unicode61 remove_diacritics 2",
     "unit": "whole page",
     "query": "every term double-quoted, AND; OR fallback when AND matches nothing",
-    "rank": "bm25()"
+    "rank": "bm25(), ties by path"
   },
   "build": {
-    "index_s": 0
+    "index_s": 0,
+    "completed": true
   },
   "coverage": {
     "files_indexed": 836,
@@ -18,5 +19,10 @@
     "coverage": 1
   },
   "db": "\\~/.cache/markdownattractor/bench/bm25-files/supabase.sqlite",
-  "latency": "none (quality only, plan §2.1)"
+  "latency": "none (quality only, plan §2.1)",
+  "table_fingerprint": "d1af44f338a7d0a5d6462462e88adcec14b114ce686e8c8fe5e68391fa754254",
+  "record": {
+    "written_at": "2026-09-24T13:14:24Z",
+    "note": "record rewritten 2026-09-24 with the table fingerprint (M4, Codex F5); build fields kept"
+  }
 }
