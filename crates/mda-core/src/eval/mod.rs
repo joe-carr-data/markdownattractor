@@ -5,6 +5,7 @@
 //! store, and the seeded split. Nothing in this module writes anywhere.
 
 pub mod docsqa;
+pub mod paired;
 
 use std::collections::HashMap;
 

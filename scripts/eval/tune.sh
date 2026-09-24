@@ -15,6 +15,9 @@
 #   scripts/eval/tune.sh trial <name> [key=value]...      # one candidate on top of the current base
 #   scripts/eval/tune.sh keep <name>                      # adopt the candidate's settings as the new base
 #   scripts/eval/tune.sh base                             # print the current base (settings and fetch)
+#   scripts/eval/tune.sh explore post-stop-<cN> [key=value]...  # information only (plan §3, 2026-09-24
+#                                                         # amendment): one candidate against the unchanged
+#                                                         # pre-tuning configuration, never adoptable
 # Keys: the config.toml keys search_rrf_k, search_raw_weight, search_questions_weight,
 # search_and_stopwords, embedding_text (v1|questions-first|with-entities|
 # questions-first-with-entities) and the adapter parameter fetch=<n> (plan §3 candidate 6),
@@ -23,7 +26,7 @@
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
-cmd="${1:?baseline|trial|keep|base}"; shift
+cmd="${1:?baseline|trial|keep|base|explore}"; shift
 T="$RUN/tuning"; mkdir -p "$T"; LOG="$RESULTS/TUNING.md"; ARCH="$RESULTS/tuning"; mkdir -p "$ARCH"
 BASE="$T/base.kv"; [ -f "$BASE" ] || : > "$BASE"
 HYBRID="hybrid (cards + raw + vectors)"
@@ -99,14 +102,93 @@ Objective: mean success@5 of the hybrid row over the four projects' dev splits, 
 |---|---|---|---|---|---|---|---|---|---|---|
 MD
 }
+EXPLORE_MARK="## Post-stop exploratory — information only (2026-09-24)"
+ensure_explore_section() { # appended once, after the greedy loop's outcome; rows go under its own table
+  grep -qF "$EXPLORE_MARK" "$LOG" && return
+  cat >> "$LOG" <<'MD'
+
+## Post-stop exploratory — information only (2026-09-24)
+
+These trials occur after the registered stopping event and are not part of the greedy selection loop or final T1 results (execution plan §3, 2026-09-24 amendment, decided with Codex: `docs/reviews/codex/2026-09-24-post-stop-c3-c7.md`). Trial ids are `post-stop-c3` through `post-stop-c7`; every trial uses the unchanged pre-tuning baseline (`scripts/eval/tune.sh explore` refuses to run on a moved base), the same eligible dev questions and the original labels. Each row reports the configuration difference, code SHA, per-project scores with denominators, the objective, the unrounded objective difference with a descriptive 95% interval from a within-project paired bootstrap (5,000 draws, seed 20260922, `mda eval --compare`, joint resampling over the four projects), paired wins/losses, latency and elapsed time; the manifest, the four `results.json` and `compare.json` are archived under `evals/results/docsqa/tuning/<trial>/`. Decisions are `screen-pass-not-adopted`, `screen-fail-not-adopted` or `invalid-not-adopted`; `keep` refuses all three.
+
+A within-project bootstrap of the baseline objective (5,000 draws, seed 20260922): objective 0.5014, SE 0.0486, 95% interval [0.406, 0.597], scored denominators 49/37/12/25 for GitHub Docs/Prisma/Supabase/Tailwind. That interval describes baseline sampling uncertainty, not the uncertainty of a candidate's paired improvement; the 0.01 screen is not a significance threshold. The M3 winner and this release's product defaults remain unchanged regardless of these observations.
+
+**Screening and disposition.** A valid trial is `screen-pass-not-adopted` only if its unrounded mean success@5 improvement over the pre-tuning baseline is ≥ 0.01 and every project's unrounded change is ≥ −0.02; otherwise it is `screen-fail-not-adopted`. At the fixed denominators 49/37/12/25 the guardrail permits no net loss of one successful question on any project: even 1/49 exceeds 0.02. Question ids, eligibility, labels and denominators stay fixed; a trial whose evaluation fails or whose question set differs from the baseline's is `invalid-not-adopted`, logged with its error. The paired intervals do not authorize adoption or establish significance across five trials. No exploratory score triggers adoption for this release; passing candidates are hypotheses for a future, separately declared evaluation. If none passes, the defaults stay and M4 proceeds without additional trials or relaxed thresholds. The final `FROZEN.md` records the unchanged effective configuration and "Selection: original §3 winner; post-stop diagnostics excluded from selection".
+
+| trial | change (against the pre-tuning baseline) | code SHA | tailwind (n) | supabase (n) | prisma (n) | github-docs (n) | objective | Δ objective, 95% paired | wins/losses | mean ms | elapsed | decision |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+MD
+}
+explore_line() { # name kvs summary compare-json decision-text
+  local s="$3" c="$4"
+  printf '| %s | `%s` | %s | %.3f (%s) | %.3f (%s) | %.3f (%s) | %.3f (%s) | **%.4f** | %+.4f [%+.4f, %+.4f] | %s/%s | %.0f | %ss | %s |\n' \
+    "$1" "$2" "$(git -C "$REPO" rev-parse --short HEAD)" \
+    "$(jq -r .tailwind <<<"$s")" "$(jq -r .n.tailwind <<<"$s")" "$(jq -r .supabase <<<"$s")" "$(jq -r .n.supabase <<<"$s")" \
+    "$(jq -r .prisma <<<"$s")" "$(jq -r .n.prisma <<<"$s")" "$(jq -r .github <<<"$s")" "$(jq -r .n.github <<<"$s")" \
+    "$(jq -r .objective <<<"$s")" "$(jq -r .report.objective_delta <<<"$c")" "$(jq -r '.report.objective_ci95[0]' <<<"$c")" "$(jq -r '.report.objective_ci95[1]' <<<"$c")" \
+    "$(jq -r .report.wins <<<"$c")" "$(jq -r .report.losses <<<"$c")" "$(jq -r .mean_ms <<<"$s")" "$(jq -r .elapsed_s <<<"$s")" "$5" >> "$LOG"
+}
+explore_invalid() { # name kvs reason
+  local d="$ARCH/$1"; mkdir -p "$d"
+  jq -n --arg name "$1" --arg kvs "$2" --arg reason "$3" --arg sha "$(git -C "$REPO" rev-parse HEAD)" --arg at "$(date -u +%FT%TZ)" \
+     '{trial: $name, at: $at, hypothesis_change: ($kvs | split(" ") | map(select(. != ""))), code_sha: $sha, decision: "invalid-not-adopted", reason: $reason}' > "$d/manifest.json"
+  printf '| %s | `%s` | %s | | | | | | | | | | invalid-not-adopted (%s) |\n' "$1" "$2" "$(git -C "$REPO" rev-parse --short HEAD)" "$3" >> "$LOG"
+}
 case "$cmd" in
   base) cat "$BASE"; echo "fingerprint $(base_fingerprint)" ;;
+  explore-table) # the page table (docs/benchmarks.md) from the archived post-stop trials, never retyped
+    echo "| trial | change | tailwind | supabase | prisma | github-docs | objective | Δ objective, 95% paired | wins/losses | decision |"
+    echo "|---|---|---|---|---|---|---|---|---|---|"
+    for d in "$ARCH"/post-stop-*/; do
+      m="$d/manifest.json"; [ -f "$m" ] || continue
+      if [ -f "$d/compare.json" ]; then
+        jq -r --slurpfile c "$d/compare.json" '[.trial, "`" + (.hypothesis_change | join(" ")) + "`", (.summary.tailwind | . * 1000 | round / 1000), (.summary.supabase | . * 1000 | round / 1000), (.summary.prisma | . * 1000 | round / 1000), (.summary.github | . * 1000 | round / 1000), (.summary.objective | . * 10000 | round / 10000),
+          (($c[0].report.objective_delta | . * 10000 | round / 10000 | tostring) + " [" + ($c[0].report.objective_ci95[0] | . * 10000 | round / 10000 | tostring) + ", " + ($c[0].report.objective_ci95[1] | . * 10000 | round / 10000 | tostring) + "]"),
+          (($c[0].report.wins | tostring) + "/" + ($c[0].report.losses | tostring)), .decision] | "| " + join(" | ") + " |"' "$m"
+      else jq -r '"| " + .trial + " | `" + (.hypothesis_change | join(" ")) + "` | | | | | | | | " + .decision + " (" + (.reason // "") + ") |"' "$m"; fi
+    done ;;
+  explore)
+    name="${1:?trial name}"; shift; ident "$name"
+    case "$name" in post-stop-*) ;; *) die "exploratory trials are named post-stop-<candidate>" ;; esac
+    ensure_log; [ -f "$T/baseline.json" ] && [ -f "$ARCH/baseline/manifest.json" ] || die "run baseline first"
+    [ ! -s "$BASE" ] || die "the base has moved from the pre-tuning configuration ($(sort "$BASE" | tr '\n' ' ')): post-stop trials run only against it"
+    [ ! -d "$ARCH/$name" ] || die "trial $name already archived: trial names are immutable"
+    ensure_explore_section
+    ref="$(cat "$T/baseline.json")"
+    [ "$(jq -r .objective <<<"$ref")" = "$(jq -r .summary.objective "$ARCH/baseline/manifest.json")" ] || die "the local baseline summary and the archived baseline manifest disagree: rerun baseline"
+    snapshot; apply_base; apply_kv "$@"; fetch="$(fetch_of "$@")"
+    if ! s="$(run_all "$name" "$fetch")"; then
+      explore_invalid "$name" "$*" "evaluation failed (see $T/$name/*/err.log)"
+      jq -n --arg fp "$(base_fingerprint)" '{decision: "invalid-not-adopted", base_fingerprint: $fp}' > "$T/$name.decision.json"; exit 1
+    fi
+    echo "$s" > "$T/$name.json"
+    guard_ok="$(jq -n --argjson s "$s" --argjson r "$ref" '[$s.tailwind - $r.tailwind, $s.supabase - $r.supabase, $s.prisma - $r.prisma, $s.github - $r.github] | all(. >= -0.02)')"
+    delta_raw="$(jq -n --argjson s "$s" --argjson r "$ref" '$s.objective - $r.objective')"
+    screen="$(jq -n --argjson d "$delta_raw" '$d >= 0.01')"
+    if [ "$screen" = true ] && [ "$guard_ok" = true ]; then decision="screen-pass-not-adopted"; text="screen-pass — **not adopted** (Δ ≥ 0.01 and guardrail held; a hypothesis for a future, separately declared evaluation)"
+    elif [ "$screen" = true ]; then decision="screen-fail-not-adopted"; text="screen-fail — not adopted (guardrail: a project lost more than 0.02)"
+    else decision="screen-fail-not-adopted"; text="screen-fail — not adopted (Δ < 0.01)"; fi
+    printf '%s\n' "$@" > "$T/$name.kv"; jq -n --arg d "$decision" --arg fp "$(base_fingerprint)" '{decision: $d, base_fingerprint: $fp}' > "$T/$name.decision.json"
+    archive "$name" "$s" "$*" "$decision"
+    cmp_args=(); for p in $PROJECTS; do cmp_args+=(--compare "$p" "$ARCH/baseline/$p.results.json" "$ARCH/$name/$p.results.json"); done
+    if ! c="$("$MDA" --json eval "${cmp_args[@]}" --draws 5000 --seed 20260922 2>"$ARCH/$name/compare.err")"; then
+      # the observations stay archived beside the error; both decision records say invalid
+      reason="paired comparison failed: $(tr '\n' ' ' < "$ARCH/$name/compare.err" | cut -c1-200)"
+      jq --arg r "$reason" '.decision = "invalid-not-adopted" | .reason = $r' "$ARCH/$name/manifest.json" > "$ARCH/$name/manifest.json.new" && mv "$ARCH/$name/manifest.json.new" "$ARCH/$name/manifest.json"
+      jq -n --arg fp "$(base_fingerprint)" '{decision: "invalid-not-adopted", base_fingerprint: $fp}' > "$T/$name.decision.json"
+      printf '| %s | `%s` | %s | | | | | | | | | | invalid-not-adopted (%s) |\n' "$name" "$*" "$(git -C "$REPO" rev-parse --short HEAD)" "$reason" >> "$LOG"; exit 1
+    fi
+    rm -f "$ARCH/$name/compare.err"
+    echo "$c" > "$ARCH/$name/compare.json"
+    explore_line "$name" "$*" "$s" "$c" "$text"
+    echo "$s"; echo "$c" | jq -c '.report | {objective_delta, objective_ci95, wins, losses}'; echo "decision: $decision" ;;
   baseline)
     ensure_log; snapshot; apply_base
     s="$(run_all baseline "$(base_fetch)")"; echo "$s" > "$T/baseline.json"; cp "$T/baseline.json" "$T/best.json"
     archive baseline "$s" "" "reference"; log_line baseline "" "$s" "reference"; echo "$s" ;;
   trial)
     name="${1:?trial name}"; shift; ident "$name"
+    case "$name" in post-stop-*) die "post-stop-* names are the information-only extension: use explore, never trial" ;; esac
     ensure_log; [ -f "$T/best.json" ] || die "run baseline first"
     [ ! -d "$ARCH/$name" ] || die "trial $name already archived: trial names are immutable"
     snapshot; apply_base; apply_kv "$@"; fetch="$(fetch_of "$@")"
@@ -123,6 +205,7 @@ case "$cmd" in
     echo "$s"; echo "decision: $decision" ;;
   keep)
     name="${1:?trial name}"; ident "$name"
+    case "$name" in post-stop-*) die "post-stop-* trials are information only and are never adopted (plan §3, 2026-09-24 amendment)" ;; esac
     [ -f "$T/$name.decision.json" ] || die "no decided trial $name"
     [ "$(jq -r .decision "$T/$name.decision.json")" = keep ] || die "trial $name was not a keep"
     [ "$(jq -r .base_fingerprint "$T/$name.decision.json")" = "$(base_fingerprint)" ] || die "trial $name was evaluated on another base (stale)"

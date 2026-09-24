@@ -98,6 +98,19 @@ pub struct Args {
     /// `question_id`): the pooled column is computed over the judged questions (plan §2.3).
     #[arg(long)]
     pub only_questions: Option<PathBuf>,
+    /// Paired comparison of archived runs instead of an evaluation (execution plan §3,
+    /// 2026-09-24 amendment): `--compare <label> <baseline results.json> <candidate
+    /// results.json>`, repeated once per project. Reports wins, losses, the unrounded
+    /// differences and descriptive 95% intervals from a within-project paired bootstrap
+    /// (`--draws`, `--seed`), with the objective (mean over projects) resampled jointly.
+    #[arg(long, num_args = 3, value_names = ["LABEL", "BASELINE", "CANDIDATE"], action = clap::ArgAction::Append, conflicts_with_all = ["dataset", "golden", "record"])]
+    pub compare: Vec<String>,
+    /// The run compared by `--compare` (the name of a row in `results.json`).
+    #[arg(long, default_value = "hybrid (cards + raw + vectors)", requires = "compare")]
+    pub run_name: String,
+    /// Bootstrap draws for `--compare`.
+    #[arg(long, default_value_t = 5000, requires = "compare")]
+    pub draws: usize,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -147,6 +160,9 @@ pub struct Miss {
 
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    if !args.compare.is_empty() {
+        return run_compare(args, json);
+    }
     if args.dataset.as_deref() == Some("docsqa") {
         return run_docsqa(args, json);
     }
@@ -239,6 +255,62 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         println!(
             "  {} no cards.json in the golden set: only the lexical run was measured",
             st.dim("note:")
+        );
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// `--compare`: the paired comparison of archived runs, nothing searched, nothing written.
+fn run_compare(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    use mda_core::eval::paired::{self, PairedInput};
+    let mut inputs = Vec::new();
+    for triple in args.compare.chunks(3) {
+        let [label, baseline, candidate] = triple else {
+            anyhow::bail!("--compare takes a label and two results.json paths");
+        };
+        inputs.push(PairedInput {
+            label: label.clone(),
+            baseline: paired::read_hits(Path::new(baseline), &args.run_name)?,
+            candidate: paired::read_hits(Path::new(candidate), &args.run_name)?,
+        });
+    }
+    let report = paired::compare(&inputs, args.draws, args.seed)?;
+    if json {
+        output::json(&serde_json::json!({
+            "run": args.run_name,
+            "inputs": args.compare.chunks(3).map(|t| serde_json::json!({"label": t[0], "baseline": t[1], "candidate": t[2]})).collect::<Vec<_>>(),
+            "report": report,
+        }));
+        return Ok(ExitCode::SUCCESS);
+    }
+    let st = Style::auto();
+    println!(
+        "{} {} · objective {:.4} → {:.4} (Δ {:+.4}, 95% [{:+.4}, {:+.4}]) · wins {} · losses {} · {} draws, seed {}",
+        st.bold("compare"),
+        st.dim(&args.run_name),
+        report.objective_baseline,
+        report.objective_candidate,
+        report.objective_delta,
+        report.objective_ci95.0,
+        report.objective_ci95.1,
+        report.wins,
+        report.losses,
+        report.draws,
+        report.seed
+    );
+    for p in &report.projects {
+        println!(
+            "  {:<14} n={:<3} {:.4} → {:.4} (Δ {:+.4}, 95% [{:+.4}, {:+.4}]) · +{} −{} ={}",
+            p.label,
+            p.n,
+            p.baseline,
+            p.candidate,
+            p.delta,
+            p.ci95.0,
+            p.ci95.1,
+            p.wins,
+            p.losses,
+            p.ties
         );
     }
     Ok(ExitCode::SUCCESS)
