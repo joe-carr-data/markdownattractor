@@ -154,10 +154,14 @@ case "$cmd" in
     [ ! -s "$BASE" ] || die "the base has moved from the pre-tuning configuration ($(sort "$BASE" | tr '\n' ' ')): post-stop trials run only against it"
     [ ! -d "$ARCH/$name" ] || die "trial $name already archived: trial names are immutable"
     ensure_explore_section
-    snapshot; apply_base; apply_kv "$@"; fetch="$(fetch_of "$@")"
-    if ! s="$(run_all "$name" "$fetch")"; then explore_invalid "$name" "$*" "evaluation failed (see $T/$name/*/err.log)"; exit 1; fi
-    echo "$s" > "$T/$name.json"
     ref="$(cat "$T/baseline.json")"
+    [ "$(jq -r .objective <<<"$ref")" = "$(jq -r .summary.objective "$ARCH/baseline/manifest.json")" ] || die "the local baseline summary and the archived baseline manifest disagree: rerun baseline"
+    snapshot; apply_base; apply_kv "$@"; fetch="$(fetch_of "$@")"
+    if ! s="$(run_all "$name" "$fetch")"; then
+      explore_invalid "$name" "$*" "evaluation failed (see $T/$name/*/err.log)"
+      jq -n --arg fp "$(base_fingerprint)" '{decision: "invalid-not-adopted", base_fingerprint: $fp}' > "$T/$name.decision.json"; exit 1
+    fi
+    echo "$s" > "$T/$name.json"
     guard_ok="$(jq -n --argjson s "$s" --argjson r "$ref" '[$s.tailwind - $r.tailwind, $s.supabase - $r.supabase, $s.prisma - $r.prisma, $s.github - $r.github] | all(. >= -0.02)')"
     delta_raw="$(jq -n --argjson s "$s" --argjson r "$ref" '$s.objective - $r.objective')"
     screen="$(jq -n --argjson d "$delta_raw" '$d >= 0.01')"
@@ -167,9 +171,14 @@ case "$cmd" in
     printf '%s\n' "$@" > "$T/$name.kv"; jq -n --arg d "$decision" --arg fp "$(base_fingerprint)" '{decision: $d, base_fingerprint: $fp}' > "$T/$name.decision.json"
     archive "$name" "$s" "$*" "$decision"
     cmp_args=(); for p in $PROJECTS; do cmp_args+=(--compare "$p" "$ARCH/baseline/$p.results.json" "$ARCH/$name/$p.results.json"); done
-    if ! c="$("$MDA" --json eval "${cmp_args[@]}" --draws 5000 --seed 20260922)"; then
-      rm -rf "${ARCH:?}/${name:?}"; explore_invalid "$name" "$*" "paired comparison failed: question sets differ from the baseline's"; exit 1
+    if ! c="$("$MDA" --json eval "${cmp_args[@]}" --draws 5000 --seed 20260922 2>"$ARCH/$name/compare.err")"; then
+      # the observations stay archived beside the error; both decision records say invalid
+      reason="paired comparison failed: $(tr '\n' ' ' < "$ARCH/$name/compare.err" | cut -c1-200)"
+      jq --arg r "$reason" '.decision = "invalid-not-adopted" | .reason = $r' "$ARCH/$name/manifest.json" > "$ARCH/$name/manifest.json.new" && mv "$ARCH/$name/manifest.json.new" "$ARCH/$name/manifest.json"
+      jq -n --arg fp "$(base_fingerprint)" '{decision: "invalid-not-adopted", base_fingerprint: $fp}' > "$T/$name.decision.json"
+      printf '| %s | `%s` | %s | | | | | | | | | | invalid-not-adopted (%s) |\n' "$name" "$*" "$(git -C "$REPO" rev-parse --short HEAD)" "$reason" >> "$LOG"; exit 1
     fi
+    rm -f "$ARCH/$name/compare.err"
     echo "$c" > "$ARCH/$name/compare.json"
     explore_line "$name" "$*" "$s" "$c" "$text"
     echo "$s"; echo "$c" | jq -c '.report | {objective_delta, objective_ci95, wins, losses}'; echo "decision: $decision" ;;
@@ -179,6 +188,7 @@ case "$cmd" in
     archive baseline "$s" "" "reference"; log_line baseline "" "$s" "reference"; echo "$s" ;;
   trial)
     name="${1:?trial name}"; shift; ident "$name"
+    case "$name" in post-stop-*) die "post-stop-* names are the information-only extension: use explore, never trial" ;; esac
     ensure_log; [ -f "$T/best.json" ] || die "run baseline first"
     [ ! -d "$ARCH/$name" ] || die "trial $name already archived: trial names are immutable"
     snapshot; apply_base; apply_kv "$@"; fetch="$(fetch_of "$@")"
@@ -195,6 +205,7 @@ case "$cmd" in
     echo "$s"; echo "decision: $decision" ;;
   keep)
     name="${1:?trial name}"; ident "$name"
+    case "$name" in post-stop-*) die "post-stop-* trials are information only and are never adopted (plan §3, 2026-09-24 amendment)" ;; esac
     [ -f "$T/$name.decision.json" ] || die "no decided trial $name"
     [ "$(jq -r .decision "$T/$name.decision.json")" = keep ] || die "trial $name was not a keep"
     [ "$(jq -r .base_fingerprint "$T/$name.decision.json")" = "$(base_fingerprint)" ] || die "trial $name was evaluated on another base (stale)"
