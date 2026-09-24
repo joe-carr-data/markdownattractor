@@ -184,12 +184,12 @@ After the stop rule fired, the five search-time candidates were run once each ag
 | trial | change | tailwind | supabase | prisma | github-docs | objective | Δ objective, 95% paired | wins/losses | decision |
 |---|---|---|---|---|---|---|---|---|---|
 | post-stop-c3 | `search_questions_weight=3` | 0.8 | 0.583 | 0.297 | 0.408 | 0.5222 | 0.0208 [0, 0.0625] | 1/0 | screen-pass-not-adopted |
-| post-stop-c4 | `search_raw_weight=0.7` | 0.76 | 0.583 | 0.297 | 0.449 | 0.5224 | 0.021 [-0.02, 0.0727] | 3/1 | screen-fail-not-adopted |
+| post-stop-c4 | `search_raw_weight=0.7` | 0.76 | 0.583 | 0.297 | 0.449 | 0.5224 | 0.021 [-0.0198, 0.0727] | 3/1 | screen-fail-not-adopted |
 | post-stop-c5 | `search_rrf_k=30` | 0.8 | 0.583 | 0.297 | 0.449 | 0.5324 | 0.031 [0, 0.0778] | 3/0 | screen-pass-not-adopted |
 | post-stop-c6 | `fetch=60` | 0.8 | 0.5 | 0.297 | 0.408 | 0.5014 | 0 [0, 0] | 0/0 | screen-fail-not-adopted |
 | post-stop-c7 | `search_and_stopwords=true` | 0.8 | 0.5 | 0.297 | 0.408 | 0.5014 | 0 [0, 0] | 0/0 | screen-fail-not-adopted |
 
-Reading: two candidates clear the engineering screen (≥ 0.01 with no project losing more than 0.02), RRF k 30 with three wins and no loss (two GitHub Docs questions and one Supabase question move into the top five) and the `questions_answered` weight 3 with one Supabase win. Every interval includes zero, and the whole screen is worth one to three questions on dev splits of 12–49, so these are hypotheses for a separately declared evaluation, not a result. The raw-list weight 0.7 gains the same three questions but loses one on Tailwind (guardrail). Fetch depth 60 and the stop-word AND form change nothing on any dev question: the first fetch already reaches ten distinct pages, and the AND form with stop-words removed returns the same pages (or the query fell through to the OR form either way).
+Reading: two candidates clear the engineering screen (≥ 0.01 with no project losing more than 0.02), RRF k 30 with three wins and no loss (two GitHub Docs questions and one Supabase question move into the top five) and the `questions_answered` weight 3 with one Supabase win. Every interval includes zero, and the whole screen is worth one to three questions on dev splits of 12–49, so these are hypotheses for a separately declared evaluation, not a result. The raw-list weight 0.7 gains the same three questions but loses one on Tailwind (guardrail). Fetch depth 60 and the stop-word AND form leave every dev question's hybrid success@5 unchanged; the ranked lists do move below the cutoff (fetch 60 lifts one GitHub Docs question from rank 14 to 9, the stop-word form brings another from unranked to 20), so this is "no change at the metric", not "no change in retrieval". The Δ column is formatted to four decimals from unrounded values.
 
 ### DocsQA-Repo — pooled labels, the diagnostic second column (M3, development, 2026-09-23)
 

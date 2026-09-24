@@ -1,23 +1,23 @@
 {
   "inputs": [
     {
-      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/github-docs.results.json",
-      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c6/github-docs.results.json",
+      "baseline": "evals/results/docsqa/tuning/baseline/github-docs.results.json",
+      "candidate": "evals/results/docsqa/tuning/post-stop-c6/github-docs.results.json",
       "label": "github-docs"
     },
     {
-      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/prisma.results.json",
-      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c6/prisma.results.json",
+      "baseline": "evals/results/docsqa/tuning/baseline/prisma.results.json",
+      "candidate": "evals/results/docsqa/tuning/post-stop-c6/prisma.results.json",
       "label": "prisma"
     },
     {
-      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/supabase.results.json",
-      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c6/supabase.results.json",
+      "baseline": "evals/results/docsqa/tuning/baseline/supabase.results.json",
+      "candidate": "evals/results/docsqa/tuning/post-stop-c6/supabase.results.json",
       "label": "supabase"
     },
     {
-      "baseline": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/baseline/tailwind-css.results.json",
-      "candidate": "/Users/jcarr/markdownattractor/evals/results/docsqa/tuning/post-stop-c6/tailwind-css.results.json",
+      "baseline": "evals/results/docsqa/tuning/baseline/tailwind-css.results.json",
+      "candidate": "evals/results/docsqa/tuning/post-stop-c6/tailwind-css.results.json",
       "label": "tailwind-css"
     }
   ],
