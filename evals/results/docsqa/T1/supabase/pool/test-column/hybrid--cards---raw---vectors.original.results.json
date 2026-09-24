@@ -1,0 +1,569 @@
+{
+  "arm_output": "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-col.XXXXXX.5Z6t4O0pom/store-2.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 6548,
+    "sections_carded": 6548
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 48,
+    "anchors_found": 47,
+    "corpus_pages": 770,
+    "corpus_pages_indexed": 770,
+    "eligible": 40,
+    "excluded_image_evidence": 12,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "supabase::supabase-30447"
+    ],
+    "multimodal_judgment": 7,
+    "project": "supabase",
+    "qrel_coverage": 1.0,
+    "qrels": 63,
+    "qrels_indexed": 63,
+    "qrels_unmapped": 0,
+    "questions": 52,
+    "questions_with_missing_anchor": 1
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "extra_labels": null,
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "only_questions": 21,
+  "project": "supabase",
+  "root": "~/.cache/markdownattractor/bench/supabase",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.34523809523809523,
+        "ndcg_at_10": 0.3876469317737924,
+        "questions": 21,
+        "success_at_5": 0.42857142857142855
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-11349",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/edge-function-monitoring-resource-usage.mdx",
+            "apps/docs/content/troubleshooting/rls-performance-and-best-practices-Z5Jjwv.mdx",
+            "apps/docs/content/guides/storage/vector/storing-vectors.mdx",
+            "apps/docs/content/guides/monitoring-and-debugging/logs.mdx",
+            "apps/docs/content/troubleshooting/exhaust-swap.mdx",
+            "apps/docs/content/guides/database/postgres/data-deletion.mdx",
+            "apps/docs/content/guides/storage/production/scaling.mdx",
+            "apps/docs/content/guides/database/extensions/postgres_fdw.mdx",
+            "apps/docs/content/troubleshooting/high-latency-with-supabase-client-z0pZzR.mdx",
+            "apps/docs/content/troubleshooting/edge-function-shutdown-reasons-explained.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/tables.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-13977",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/ai/semantic-search.mdx",
+            "apps/docs/content/guides/ai/vector-columns.mdx",
+            "apps/docs/content/troubleshooting/rls-performance-and-best-practices-Z5Jjwv.mdx",
+            "apps/docs/content/guides/database/full-text-search.mdx",
+            "apps/docs/content/guides/functions/examples/semantic-search.mdx",
+            "apps/docs/content/guides/queues/pgmq.mdx",
+            "apps/docs/content/guides/database/functions.mdx",
+            "apps/docs/content/guides/database/extensions/postgis.mdx",
+            "apps/docs/content/troubleshooting/certain-operations-are-too-complex-to-perform-directly-using-the-client-libraries-8JaphH.mdx",
+            "apps/docs/content/guides/ai/hybrid-search.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/ai/vector-indexes/hnsw-indexes.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-18986",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/guides/database/connection-management.mdx",
+            "apps/docs/content/troubleshooting/supavisor-faq-YyP5tI.mdx",
+            "apps/docs/content/guides/self-hosting/accessing-postgres.mdx",
+            "apps/docs/content/troubleshooting/how-to-change-max-database-connections-_BQ8P5.mdx",
+            "apps/docs/content/troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO.mdx",
+            "apps/docs/content/troubleshooting/monitor-supavisor-postgres-connections.mdx",
+            "apps/docs/content/guides/platform/performance.mdx",
+            "apps/docs/content/troubleshooting/prisma-error-management-Cm5P_o.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/platform/compute-and-disk.mdx",
+            "apps/docs/content/guides/platform/billing-on-supabase.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-20241",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/deployment/managing-environments.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx",
+            "apps/docs/content/guides/api/handling-errors-in-supabase-js.mdx",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/troubleshooting/auth-error-500-database-error-querying-schema-eb6b44.mdx",
+            "apps/docs/content/troubleshooting/resolving-500-status-authentication-errors-7bU5U8.mdx",
+            "apps/docs/content/troubleshooting/postgrest-error-pgrst002-could-not-query-the-database-for-the-schema-cache-c396e9.mdx",
+            "apps/docs/content/guides/database/tables.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/api/using-custom-schemas.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-28655",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx",
+            "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx",
+            "apps/docs/content/troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665.mdx",
+            "apps/docs/content/guides/getting-started/tutorials/with-nextjs.mdx",
+            "apps/docs/content/guides/auth/sessions/pkce-flow.mdx",
+            "apps/docs/content/guides/integrations/build-a-supabase-oauth-integration.mdx",
+            "apps/docs/content/_partials/oauth_pkce_flow.mdx",
+            "apps/docs/content/guides/auth/_flow-template.mdx",
+            "apps/docs/content/guides/auth/native-mobile-deep-linking.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/auth/passwords.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-29409",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/platform/clone-project.mdx",
+            "apps/docs/content/troubleshooting/cant-access-supabase-project-lovable-cloud.mdx",
+            "apps/docs/content/guides/platform/backups.mdx",
+            "apps/docs/content/guides/platform/migrating-within-supabase/backup-restore.mdx",
+            "apps/docs/content/guides/platform/migrating-within-supabase/dashboard-restore.mdx",
+            "apps/docs/content/guides/platform/billing-faq.mdx",
+            "apps/docs/content/troubleshooting/restore-project-after-90-days-pause.mdx",
+            "apps/docs/content/troubleshooting/transferring-from-cloud-to-self-host-in-supabase-2oWNvW.mdx",
+            "apps/docs/content/troubleshooting/realtime-egress-faq.mdx",
+            "apps/docs/content/guides/database/vault.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/guides/deployment/branching.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-29864",
+          "ndcg_at_10": 0.21840743681816419,
+          "pages": [
+            "apps/docs/content/guides/platform/migrating-within-supabase/backup-restore.mdx",
+            "apps/docs/content/guides/database/postgres/roles.mdx",
+            "apps/docs/content/guides/deployment/managing-environments.mdx",
+            "apps/docs/content/guides/auth/third-party/firebase-auth.mdx",
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx",
+            "apps/docs/content/guides/self-hosting/restore-from-platform.mdx",
+            "apps/docs/WORD_LIST.md",
+            "apps/docs/content/guides/database/postgres/timeouts.mdx",
+            "apps/docs/content/troubleshooting/how-to-interpret-and-explore-the-postgres-logs-OuCIOj.mdx"
+          ],
+          "rank": 6,
+          "relevant": [
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx",
+            "apps/docs/content/guides/storage/schema/custom-roles.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-30186",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/how-to-migrate-from-supabase-auth-helpers-to-ssr-package-5NRunM.mdx",
+            "apps/docs/content/guides/getting-started/migrating-to-new-api-keys.mdx",
+            "apps/docs/content/_partials/get_session_warning.mdx",
+            "apps/docs/content/guides/getting-started/tutorials/with-nextjs.mdx",
+            "apps/docs/content/guides/auth/third-party/firebase-auth.mdx",
+            "apps/docs/content/guides/auth/sessions.mdx",
+            "apps/docs/content/guides/getting-started/tutorials/with-sveltekit.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-functions.mdx",
+            "apps/docs/content/guides/auth/auth-email-templates.mdx",
+            "apps/docs/content/troubleshooting/should-i-set-a-shorter-max-age-parameter-on-the-cookies-8sbF4V.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-30447",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/auth/auth-web3.mdx",
+            "apps/docs/content/guides/auth/auth-identity-linking.mdx",
+            "apps/docs/content/guides/auth/enterprise-sso/auth-sso-saml.mdx",
+            "apps/docs/content/troubleshooting/email-password-login-disabled-supabase-vercel-marketplace-a7dd36.mdx",
+            "apps/docs/content/guides/auth/users.mdx",
+            "apps/docs/content/guides/auth/custom-oauth-providers.mdx",
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/troubleshooting/change-email-associated-with-supabase-account-T5eHNT.mdx",
+            "apps/docs/content/troubleshooting/converted-github-account-to-organisation---lost-supabase-account-access-5wsE_1.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-facebook.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/auth-smtp.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-30603",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/database/extensions/pgsodium.mdx",
+            "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+            "apps/docs/content/guides/database/vault.mdx",
+            "apps/docs/content/guides/self-hosting/postgres-upgrade-17.mdx",
+            "apps/docs/content/guides/database/postgres/dropping-all-tables-in-schema.mdx",
+            "apps/docs/content/troubleshooting/pg_cron-launcher-crashes-with-duplicate-key-value-violates-unique-constraint-cc6472.mdx",
+            "apps/docs/content/troubleshooting/inserting-into-sequenceserial-table-causes-duplicate-key-violates-unique-constraint-error-pi6DnC.mdx",
+            "apps/docs/content/troubleshooting/why-are-there-gaps-in-my-postgres-id-sequence-Frifus.mdx",
+            "apps/docs/content/guides/platform/permissions.mdx",
+            "apps/docs/content/guides/api/rest/postgrest-error-codes.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/database/extensions/pgsodium.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-30750",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/troubleshooting/resolving-500-status-authentication-errors-7bU5U8.mdx",
+            "apps/docs/content/guides/ai/rag-with-permissions.mdx",
+            "apps/docs/content/_partials/user_management_quickstart_sql_template.mdx",
+            "apps/docs/content/guides/database/joins-and-nesting.mdx",
+            "apps/docs/content/troubleshooting/auth-error-500-database-error-querying-schema-eb6b44.mdx",
+            "apps/docs/content/_partials/product_management_sql_template.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-32596",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/deployment/branching/integrations.mdx",
+            "apps/docs/content/troubleshooting/vercel-integration-environment-variables-not-syncing-for-persistent-git-branches-b9191e.mdx",
+            "apps/docs/content/guides/deployment/branching.mdx",
+            "apps/docs/content/troubleshooting/managing-or-disconnecting-github-oauth-connections-e3dc3b.mdx",
+            "apps/docs/content/guides/deployment.mdx",
+            "apps/docs/content/guides/platform/manage-your-usage/branching.mdx",
+            "apps/docs/content/guides/deployment/branching/dashboard.mdx",
+            "apps/docs/content/guides/deployment/branching/github-integration.mdx",
+            "apps/docs/content/troubleshooting/branch-in-migrations-failed-status.mdx",
+            "apps/docs/content/guides/deployment/branching/working-with-branches.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/deployment/branching/integrations.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-32697",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y.mdx",
+            "apps/docs/content/troubleshooting/i-am-not-receiving-password-reset-emails-for-supabase-dashboard--cO5yf.mdx",
+            "apps/docs/content/guides/local-development/customizing-email-templates.mdx",
+            "apps/docs/content/guides/auth/auth-email-passwordless.mdx",
+            "apps/docs/content/troubleshooting/not-receiving-auth-emails-from-the-supabase-project-OFSNzw.mdx",
+            "apps/docs/content/troubleshooting/migrating-auth-users-between-projects.mdx",
+            "apps/docs/content/troubleshooting/sso-error-you-do-not-have-permissions-to-join-this-organization-or-prompts-to-create-new-organization.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/auth0.mdx",
+            "apps/docs/content/guides/auth/users.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/auth/passwords.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-33828",
+          "ndcg_at_10": 0.6309297535714575,
+          "pages": [
+            "apps/docs/content/guides/auth/social-login/auth-google.mdx",
+            "apps/docs/content/guides/auth/social-login.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-github.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-azure.mdx",
+            "apps/docs/content/guides/resources/glossary.mdx",
+            "apps/docs/content/guides/auth/sessions/pkce-flow.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-bitbucket.mdx",
+            "apps/docs/content/guides/integrations/build-a-supabase-oauth-integration.mdx",
+            "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx",
+            "apps/docs/content/guides/auth/sessions.mdx"
+          ],
+          "rank": 2,
+          "relevant": [
+            "apps/docs/content/guides/auth/social-login.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-34793",
+          "ndcg_at_10": 0.3010299956639812,
+          "pages": [
+            "apps/docs/content/guides/ai/automatic-embeddings.mdx",
+            "apps/docs/content/guides/database/functions.mdx",
+            "apps/docs/content/guides/realtime/subscribing-to-database-changes.mdx",
+            "apps/docs/content/guides/realtime/broadcast.mdx",
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-functions.mdx",
+            "apps/docs/content/guides/queues/quickstart.mdx",
+            "apps/docs/content/troubleshooting/certain-operations-are-too-complex-to-perform-directly-using-the-client-libraries-8JaphH.mdx",
+            "apps/docs/content/guides/queues/pgmq.mdx",
+            "apps/docs/content/guides/api/creating-routes.mdx"
+          ],
+          "rank": 9,
+          "relevant": [
+            "apps/docs/content/guides/queues/pgmq.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-36761",
+          "ndcg_at_10": 0.31546487678572877,
+          "pages": [
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/troubleshooting/relation-objects-does-not-exist-error-during-storage-uploads-8f21f0.mdx",
+            "apps/docs/content/troubleshooting/auth-error-500-database-error-querying-schema-eb6b44.mdx",
+            "apps/docs/content/troubleshooting/error-relation-supabase_migrationsschema_migrations-does-not-exist-a787d6.mdx",
+            "apps/docs/content/troubleshooting/resolving-500-status-authentication-errors-7bU5U8.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx",
+            "apps/docs/content/troubleshooting/an-invalid-response-was-received-from-the-upstream-server-error-when-querying-auth-RI4Vl-.mdx",
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/dashboard-errors-when-managing-users-N1ls4A.mdx",
+            "apps/docs/content/troubleshooting/branch-in-migrations-failed-status.mdx"
+          ],
+          "rank": 8,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-37932",
+          "ndcg_at_10": 0.43067655807339306,
+          "pages": [
+            "apps/docs/content/guides/database/extensions/pgsodium.mdx",
+            "apps/docs/content/guides/getting-started/features.mdx",
+            "apps/docs/content/troubleshooting/relation-objects-does-not-exist-error-during-storage-uploads-8f21f0.mdx",
+            "apps/docs/content/guides/database/vault.mdx",
+            "apps/docs/content/guides/functions/schedule-functions.mdx",
+            "apps/docs/content/troubleshooting/42501--permission-denied-for-table-httprequestqueue-KnozmQ.mdx",
+            "apps/docs/content/guides/storage/schema/helper-functions.mdx",
+            "apps/docs/content/guides/self-hosting/postgres-upgrade-17.mdx",
+            "apps/docs/content/troubleshooting/storage-error-403-forbidden-new-row-violates-row-level-security-policy-on-upload-a94384.mdx",
+            "apps/docs/content/guides/self-hosting/restore-from-platform.mdx"
+          ],
+          "rank": 4,
+          "relevant": [
+            "apps/docs/content/guides/database/vault.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-40656",
+          "ndcg_at_10": 1.0,
+          "pages": [
+            "apps/docs/content/guides/storage/management/copy-move-objects.mdx",
+            "apps/docs/content/guides/platform/migrating-within-supabase/backup-restore.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/firebase-storage.mdx",
+            "apps/docs/content/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d.mdx",
+            "apps/docs/content/guides/storage/uploads/standard-uploads.mdx",
+            "apps/docs/content/guides/storage/serving/downloads.mdx",
+            "apps/docs/content/guides/local-development/database-migrations.mdx",
+            "apps/docs/content/guides/storage/quickstart.mdx",
+            "apps/docs/content/guides/functions/ephemeral-storage.mdx",
+            "apps/docs/content/guides/platform/migrating-within-supabase/dashboard-restore.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/storage/management/copy-move-objects.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-45668",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/ai/rag-with-permissions.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/guides/api/quickstart.mdx",
+            "apps/docs/content/guides/database/connecting-to-postgres.mdx",
+            "apps/docs/content/guides/api/creating-routes.mdx",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            "apps/docs/content/troubleshooting/why-do-i-see-auth--api-requests-in-the-dashboard-my-app-has-no-users-CyadiO.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-select-returning-an-empty-data-array-and-i-have-data-in-the-table-xvOPgx.mdx",
+            "apps/docs/content/_partials/quickstart_db_setup.mdx",
+            "apps/docs/content/troubleshooting/storage-error-403-forbidden-new-row-violates-row-level-security-policy-on-upload-a94384.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/self-hosting.mdx",
+            "apps/docs/content/guides/local-development.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-48323",
+          "ndcg_at_10": 0.6131471927654584,
+          "pages": [
+            "apps/docs/content/guides/auth/signing-keys.mdx",
+            "apps/docs/content/guides/self-hosting/self-hosted-auth-keys.mdx",
+            "apps/docs/content/guides/getting-started/migrating-to-new-api-keys.mdx",
+            "apps/docs/content/troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd.mdx",
+            "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx",
+            "apps/docs/content/troubleshooting/edge-function-401-error-response.mdx",
+            "apps/docs/content/troubleshooting/migrating-auth-users-between-projects.mdx",
+            "apps/docs/content/guides/auth/jwts.mdx",
+            "apps/docs/content/guides/functions/auth-headers.mdx",
+            "apps/docs/content/guides/resources/glossary.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/auth/signing-keys.mdx",
+            "apps/docs/content/guides/getting-started/api-keys.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 10,
+          "id": "supabase::supabase-6326",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/platform/migrating-within-supabase/backup-restore.mdx",
+            "apps/docs/content/guides/deployment/managing-environments.mdx",
+            "apps/docs/content/troubleshooting/resolving-500-status-authentication-errors-7bU5U8.mdx",
+            "apps/docs/content/guides/self-hosting/remove-superuser-access.mdx",
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/guides/local-development/cli-workflows.mdx",
+            "apps/docs/content/guides/deployment/database-migrations.mdx",
+            "apps/docs/content/troubleshooting/error-relation-supabase_migrationsschema_migrations-does-not-exist-a787d6.mdx",
+            "apps/docs/content/guides/local-development/database-migrations.mdx",
+            "apps/docs/content/guides/self-hosting/restore-from-platform.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/overview.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        }
+      ],
+      "run": "hybrid (cards + raw + vectors)",
+      "split": "test",
+      "unknown": []
+    }
+  ],
+  "search": {
+    "and_stopwords": false,
+    "embedding_text": "v1",
+    "questions_weight": 2.0,
+    "raw_list_weight": 1.0,
+    "rrf_k": 60.0
+  },
+  "seed": 20260922,
+  "split": "test",
+  "split_counts": {
+    "dev": 15,
+    "holdout": 9,
+    "test": 28
+  },
+  "store": {
+    "docs": 836,
+    "failed": 0,
+    "pending": 0,
+    "sections": 6548,
+    "summarized": 6386,
+    "tombstoned": 0,
+    "total_cost_usd": 30.48358,
+    "total_input_tokens": 16615918,
+    "total_output_tokens": 2675968
+  }
+}

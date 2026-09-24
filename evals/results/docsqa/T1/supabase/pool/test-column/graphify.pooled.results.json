@@ -1,0 +1,583 @@
+{
+  "arm_output": "~/markdownattractor/evals/results/docsqa/T1/supabase/arms/graphify.jsonl",
+  "card_coverage": {
+    "complete": true,
+    "sections": 6548,
+    "sections_carded": 6548
+  },
+  "cards_attached": 0,
+  "cards_exported": null,
+  "coverage": {
+    "anchors": 48,
+    "anchors_found": 47,
+    "corpus_pages": 770,
+    "corpus_pages_indexed": 770,
+    "eligible": 40,
+    "excluded_image_evidence": 12,
+    "excluded_missing_page": 0,
+    "missing_anchor_ids": [
+      "supabase::supabase-30447"
+    ],
+    "multimodal_judgment": 7,
+    "project": "supabase",
+    "qrel_coverage": 1.0,
+    "qrels": 63,
+    "qrels_indexed": 63,
+    "qrels_unmapped": 0,
+    "questions": 52,
+    "questions_with_missing_anchor": 1
+  },
+  "data": "~/.cache/markdownattractor/bench/docsqa-data",
+  "dataset": "docsqa",
+  "embedding_model": "bge-small-en-v1.5-q",
+  "extra_labels": {
+    "added": 10,
+    "file": "~/markdownattractor/evals/results/docsqa/T1/supabase/pool/test-pooled-labels.jsonl",
+    "unknown_question_ids": []
+  },
+  "fetch": 30,
+  "mda_version": "0.1.1",
+  "only_questions": 21,
+  "project": "supabase",
+  "root": "~/.cache/markdownattractor/bench/supabase",
+  "runs": [
+    {
+      "metrics": {
+        "mean_ms": null,
+        "mrr_at_5": 0.073015873015873,
+        "ndcg_at_10": 0.06793562147128925,
+        "questions": 21,
+        "success_at_5": 0.14285714285714285
+      },
+      "missing": [],
+      "results": [
+        {
+          "fetched": 37,
+          "id": "supabase::supabase-11349",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/integrations/supabase-for-platforms.mdx",
+            "apps/docs/content/guides/storage/vector/storing-vectors.mdx",
+            "apps/docs/content/troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process.mdx",
+            ".claude/skills/graphify/references/update.md",
+            "apps/docs/content/troubleshooting/why-is-my-select-returning-an-empty-data-array-and-i-have-data-in-the-table-xvOPgx.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/laravel.mdx",
+            "apps/docs/content/guides/platform/sso/testing-best-practices.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-facebook.mdx",
+            ".claude/skills/graphify/references/query.md",
+            "apps/docs/content/guides/storage/serving/image-transformations.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/tables.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 75,
+          "id": "supabase::supabase-13977",
+          "ndcg_at_10": 0.3065735963827292,
+          "pages": [
+            "apps/docs/content/guides/ai/semantic-search.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/content/guides/ai/vector-indexes/hnsw-indexes.mdx",
+            "apps/docs/content/guides/auth/third-party/auth0.mdx",
+            "pnpm-workspace.yaml",
+            "apps/docs/content/troubleshooting/pgrst106-the-schema-must-be-one-of-the-following-error-when-querying-an-exposed-schema.mdx",
+            "package.json",
+            "apps/docs/content/troubleshooting/fixing-520-errors-in-the-database-rest-api-Ur5-B2.mdx",
+            "apps/docs/content/guides/storage/s3/authentication.mdx",
+            "apps/docs/content/guides/security.mdx"
+          ],
+          "rank": 3,
+          "relevant": [
+            "apps/docs/content/guides/ai/vector-indexes/hnsw-indexes.mdx",
+            "apps/docs/content/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 43,
+          "id": "supabase::supabase-18986",
+          "ndcg_at_10": 0.11751610475642714,
+          "pages": [
+            "apps/docs/content/troubleshooting/supavisor-faq-YyP5tI.mdx",
+            "apps/docs/content/troubleshooting/database-error-remaining-connection-slots-are-reserved-for-non-replication-superuser-connections-3V3nIb.mdx",
+            "apps/docs/content/troubleshooting/too-many-connections-for-database-postgres.mdx",
+            "apps/docs/content/troubleshooting/memory-and-swap-usage-explained-aPNgm0.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/content/guides/monitoring-and-debugging/client-side-tracing.mdx",
+            "apps/docs/content/guides/storage/vector/introduction.mdx",
+            "apps/docs/content/guides/storage/analytics/connecting-to-analytics-bucket.mdx",
+            "apps/docs/content/guides/database/connection-management.mdx",
+            "apps/docs/content/troubleshooting/how-to-change-max-database-connections-_BQ8P5.mdx"
+          ],
+          "rank": 9,
+          "relevant": [
+            "apps/docs/content/guides/platform/compute-and-disk.mdx",
+            "apps/docs/content/guides/platform/billing-on-supabase.mdx",
+            "apps/docs/content/guides/database/connection-management.mdx",
+            "apps/docs/content/guides/database/supavisor.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 55,
+          "id": "supabase::supabase-20241",
+          "ndcg_at_10": 0.23719771276929622,
+          "pages": [
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/troubleshooting/supabase-project-provisioned-via-bolt-not-visible-in-dashboard-7188fc.mdx",
+            "apps/docs/content/guides/auth/jwts.mdx",
+            ".claude/skills/graphify/SKILL.md",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            ".coderabbit.yaml",
+            "apps/docs/content/guides/storage/security/access-control.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/content/guides/storage/analytics/connecting-to-analytics-bucket.mdx",
+            ".claude/skills/graphify/references/query.md"
+          ],
+          "rank": 5,
+          "relevant": [
+            "apps/docs/content/guides/api/using-custom-schemas.mdx",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 58,
+          "id": "supabase::supabase-28655",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-select-returning-an-empty-data-array-and-i-have-data-in-the-table-xvOPgx.mdx",
+            "apps/docs/content/guides/auth/_flow-template.mdx",
+            "apps/docs/content/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d.mdx",
+            ".coderabbit.yaml",
+            "apps/docs/content/guides/storage/cdn/smart-cdn.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/guides/local-development/cli/getting-started.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/passwords.mdx",
+            "apps/docs/content/guides/auth/server-side/advanced-guide.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 27,
+          "id": "supabase::supabase-29409",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/platform/clone-project.mdx",
+            "apps/docs/content/guides/platform/migrating-within-supabase/backup-restore.mdx",
+            "apps/docs/content/guides/platform/migrating-within-supabase/dashboard-restore.mdx",
+            "apps/docs/content/_partials/create_client_snippet.mdx",
+            "apps/docs/content/troubleshooting/fetch-requests-to-api-endpoints-arent-showing-the-session-UbUwRs.mdx",
+            "apps/docs/middleware.test.ts",
+            "apps/docs/content/troubleshooting/why-are-there-gaps-in-my-postgres-id-sequence-Frifus.mdx",
+            "apps/docs/content/troubleshooting/new-variable-is-null-in-a-trigger-function--l9AOZ.mdx",
+            "apps/docs/content/guides/local-development/declarative-database-schemas.mdx",
+            "apps/docs/content/guides/platform/project-transfer.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/platform/upgrading.mdx",
+            "apps/docs/content/guides/deployment/branching.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 35,
+          "id": "supabase::supabase-29864",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/guides/auth/third-party/auth0.mdx",
+            "apps/docs/content/guides/auth/third-party/aws-cognito.mdx",
+            "apps/docs/content/guides/ai/vector-indexes.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-apple.mdx",
+            "apps/docs/content/troubleshooting/42501--permission-denied-for-table-httprequestqueue-KnozmQ.mdx",
+            "apps/docs/content/guides/functions/error-codes.mdx",
+            "apps/docs/content/_partials/get_session_warning.mdx",
+            "apps/docs/content/guides/database/replication/snowflake.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx"
+          ],
+          "rank": 13,
+          "relevant": [
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx",
+            "apps/docs/content/guides/storage/schema/custom-roles.mdx",
+            "apps/docs/content/guides/auth/third-party/workos.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 32,
+          "id": "supabase::supabase-30186",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx",
+            "apps/docs/content/_partials/get_session_warning.mdx",
+            ".claude/skills/graphify/references/query.md",
+            "apps/docs/content/_partials/create_client_snippet.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/troubleshooting/edge-function-shutdown-reasons-explained.mdx",
+            "apps/docs/content/guides/ai/going-to-prod.mdx",
+            "apps/docs/content/guides/platform/migrating-to-supabase/firebase-auth.mdx",
+            "apps/docs/content/guides/functions/function-configuration.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/api/custom-claims-and-role-based-access-control-rbac.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 34,
+          "id": "supabase::supabase-30447",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/app-store-rejection-tls-error-in-ipv6-only-environments-4e9c62.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-azure.mdx",
+            "apps/docs/content/guides/storage/vector/working-with-indexes.mdx",
+            "apps/docs/content/guides/platform/aws-marketplace/account-setup.mdx",
+            "apps/docs/content/guides/platform/ipv4-address.mdx",
+            "apps/docs/content/troubleshooting/transfer-edge-function-from-one-project-to-another.mdx",
+            "apps/docs/content/guides/functions/status-codes.mdx",
+            "apps/docs/content/troubleshooting/why-supabase-edge-functions-cannot-provide-static-egress-ips-for-whitelisting-3d78b0.mdx",
+            "apps/docs/content/_partials/get_session_warning.mdx",
+            "apps/docs/content/_partials/create_client_snippet.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/auth-smtp.mdx",
+            "apps/docs/content/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 59,
+          "id": "supabase::supabase-30603",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            ".claude/skills/graphify/references/update.md",
+            "apps/docs/content/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d.mdx",
+            "apps/docs/content/troubleshooting/an-invalid-response-was-received-from-the-upstream-server-error-when-querying-auth-RI4Vl-.mdx",
+            "apps/docs/content/troubleshooting/prisma-error-management-Cm5P_o.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx",
+            "apps/docs/content/guides/local-development/testing/overview.mdx",
+            "apps/docs/content/troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/laravel.mdx",
+            "apps/docs/package.json",
+            "apps/docs/content/guides/ai/vector-columns.mdx"
+          ],
+          "rank": 41,
+          "relevant": [
+            "apps/docs/content/guides/database/extensions/pgsodium.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 36,
+          "id": "supabase::supabase-30750",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/_partials/auth_methods.mdx",
+            "apps/docs/content/troubleshooting/auth-error-401-invalid-claim-missing-sub--AFwMR.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process.mdx",
+            "apps/docs/content/guides/auth/third-party/auth0.mdx",
+            "apps/docs/content/guides/ai/vector-indexes.mdx",
+            "apps/docs/content/troubleshooting/pg_cron-launcher-crashes-with-duplicate-key-value-violates-unique-constraint-cc6472.mdx",
+            "apps/docs/content/_partials/create_client_snippet.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 35,
+          "id": "supabase::supabase-32596",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/_partials/quickstart_connection_string.mdx",
+            "apps/docs/content/troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO.mdx",
+            "apps/docs/content/guides/integrations/supabase-for-platforms.mdx",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/laravel.mdx",
+            "apps/docs/content/guides/deployment/branching/configuration.mdx",
+            "README.md",
+            "apps/docs/content/guides/storage/analytics/connecting-to-analytics-bucket.mdx",
+            "apps/docs/content/guides/database/connection-management.mdx",
+            "apps/docs/content/guides/auth/auth-hooks/before-user-created-hook.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/deployment/branching/integrations.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 45,
+          "id": "supabase::supabase-32697",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0.mdx",
+            "apps/docs/content/troubleshooting/unexpected-behavior-with-authupdateuser-phone-phone-linked-to-incorrect-user-id-45368f.mdx",
+            "apps/docs/content/guides/ai/vector-indexes/hnsw-indexes.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/guides/auth/third-party/auth0.mdx",
+            "apps/docs/content/troubleshooting/identify-lovable-cloud-or-supabase-backend.mdx",
+            "apps/docs/content/guides/monitoring-and-debugging/client-side-tracing.mdx",
+            "apps/docs/content/guides/database/replication/clickhouse.mdx",
+            "apps/docs/content/guides/functions/examples/cloudflare-turnstile.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/auth/passwords.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 46,
+          "id": "supabase::supabase-33828",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/unexpected-behavior-with-authupdateuser-phone-phone-linked-to-incorrect-user-id-45368f.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx",
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx",
+            "apps/docs/content/guides/functions/status-codes.mdx",
+            "apps/docs/content/troubleshooting/memory-and-swap-usage-explained-aPNgm0.mdx",
+            ".coderabbit.yaml",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/guides/auth/social-login/auth-apple.mdx",
+            "apps/docs/content/guides/auth/auth-hooks/mfa-verification-hook.mdx",
+            "apps/docs/content/guides/auth/third-party/auth0.mdx"
+          ],
+          "rank": 32,
+          "relevant": [
+            "apps/docs/content/guides/auth/social-login.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 23,
+          "id": "supabase::supabase-34793",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/performing-administration-tasks-on-the-server-side-with-the-servicerole-secret-BYM4Fa.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-camelcase-name-not-working-in-postgres-functions-or-rls-policies-EJMzVd.mdx",
+            "apps/docs/content/guides/queues/consuming-messages-with-edge-functions.mdx",
+            "apps/docs/CONTRIBUTING.md",
+            "apps/docs/package.json",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            "apps/docs/content/_partials/api_rate_limits.mdx",
+            ".claude/skills/graphify/SKILL.md",
+            "apps/docs/content/guides/functions/function-configuration.mdx",
+            "apps/docs/content/guides/api/handling-errors-in-supabase-js.mdx"
+          ],
+          "rank": 20,
+          "relevant": [
+            "apps/docs/content/guides/queues/pgmq.mdx",
+            "apps/docs/content/guides/queues/quickstart.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 54,
+          "id": "supabase::supabase-36761",
+          "ndcg_at_10": 0.7653606369886217,
+          "pages": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx",
+            "apps/docs/content/troubleshooting/database-error-saving-new-user-RU_EwB.mdx",
+            "apps/docs/content/guides/functions/status-codes.mdx",
+            "apps/docs/content/guides/auth/auth-hooks/custom-access-token-hook.mdx",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/guides/local-development/testing/overview.mdx",
+            "apps/docs/content/troubleshooting/auth-hooks-invalid-payload-when-anonymous-users-attempt-phone-changes-022c47.mdx",
+            "apps/docs/content/guides/auth.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx"
+          ],
+          "rank": 1,
+          "relevant": [
+            "apps/docs/content/guides/auth/managing-user-data.mdx",
+            "apps/docs/content/troubleshooting/resolving-500-status-authentication-errors-7bU5U8.mdx",
+            "apps/docs/content/troubleshooting/resolving-42p01-relation-does-not-exist-error-W4_9-V.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 83,
+          "id": "supabase::supabase-37932",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/content/troubleshooting/an-invalid-response-was-received-from-the-upstream-server-error-when-querying-auth-RI4Vl-.mdx",
+            "pnpm-workspace.yaml",
+            "apps/docs/content/guides/auth/jwts.mdx",
+            "apps/docs/content/guides/storage/s3/authentication.mdx",
+            "apps/docs/content/guides/functions/status-codes.mdx",
+            "apps/docs/content/guides/api/securing-your-api.mdx",
+            "apps/docs/content/troubleshooting/auth-hooks-invalid-payload-when-anonymous-users-attempt-phone-changes-022c47.mdx",
+            "apps/docs/content/troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process.mdx"
+          ],
+          "rank": 80,
+          "relevant": [
+            "apps/docs/content/guides/database/vault.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 54,
+          "id": "supabase::supabase-40656",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d.mdx",
+            "apps/docs/content/guides/auth/auth-identity-linking.mdx",
+            "apps/docs/content/guides/local-development/declarative-database-schemas.mdx",
+            "apps/docs/content/troubleshooting/transfer-edge-function-from-one-project-to-another.mdx",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process.mdx",
+            "apps/docs/content/troubleshooting/migrating-auth-users-between-projects.mdx",
+            "apps/docs/content/guides/storage/vector/creating-vector-buckets.mdx",
+            ".coderabbit.yaml",
+            ".claude/skills/graphify/references/query.md"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/storage/management/copy-move-objects.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 154,
+          "id": "supabase::supabase-45668",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/storage/vector/introduction.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-select-returning-an-empty-data-array-and-i-have-data-in-the-table-xvOPgx.mdx",
+            "apps/docs/content/troubleshooting/edge-function-404-error-response.mdx",
+            "apps/docs/content/guides/functions/status-codes.mdx",
+            "pnpm-workspace.yaml",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/troubleshooting/unexpected-behavior-with-authupdateuser-phone-phone-linked-to-incorrect-user-id-45368f.mdx",
+            ".coderabbit.yaml",
+            "apps/docs/content/troubleshooting/will-backups-be-accessible-from-the-dashboard-immediately-after-upgrading-to-a-paid-plan-hXY4rs.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/self-hosting.mdx",
+            "apps/docs/content/guides/local-development.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 72,
+          "id": "supabase::supabase-48323",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/auth/server-side/creating-a-client.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/_partials/api_keys_deprecation.mdx",
+            "apps/docs/content/guides/auth/jwts.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx",
+            "apps/docs/content/guides/functions/error-codes.mdx",
+            "apps/docs/content/troubleshooting/error-prepared-statement-xxx-already-exists-3laqeM.mdx",
+            "apps/docs/content/troubleshooting/webhook-debugging-guide-M8sk47.mdx",
+            "apps/docs/CONTRIBUTING.md",
+            "apps/docs/content/guides/auth/third-party/auth0.mdx"
+          ],
+          "rank": 35,
+          "relevant": [
+            "apps/docs/content/guides/auth/signing-keys.mdx",
+            "apps/docs/content/guides/getting-started/api-keys.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        },
+        {
+          "fetched": 35,
+          "id": "supabase::supabase-6326",
+          "ndcg_at_10": -0.0,
+          "pages": [
+            "apps/docs/content/guides/api/handling-errors-in-supabase-js.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-supabase-api-call-not-returning-PGzXw0.mdx",
+            "apps/docs/content/guides/database/custom-postgres-config.mdx",
+            "apps/docs/content/troubleshooting/database-api-42501-errors.mdx",
+            "apps/docs/content/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z.mdx",
+            "apps/docs/content/troubleshooting/auth-hooks-invalid-payload-when-anonymous-users-attempt-phone-changes-022c47.mdx",
+            "apps/docs/content/troubleshooting/supavisor-error-circuit-breaker-open-after-password-rotation-0fdb72.mdx",
+            "apps/docs/content/guides/getting-started/quickstarts/laravel.mdx",
+            "apps/docs/content/troubleshooting/storage-error-database-schema-is-incompatible-when-uploading-files-988baa.mdx",
+            "apps/docs/content/troubleshooting/change-email-associated-with-supabase-account-T5eHNT.mdx"
+          ],
+          "rank": null,
+          "relevant": [
+            "apps/docs/content/guides/database/overview.mdx"
+          ],
+          "split": "test",
+          "truncated": false
+        }
+      ],
+      "run": "graphify (query_graph)",
+      "split": "test",
+      "unknown": []
+    }
+  ],
+  "search": {
+    "and_stopwords": false,
+    "embedding_text": "v1",
+    "questions_weight": 2.0,
+    "raw_list_weight": 1.0,
+    "rrf_k": 60.0
+  },
+  "seed": 20260922,
+  "split": "test",
+  "split_counts": {
+    "dev": 15,
+    "holdout": 9,
+    "test": 28
+  },
+  "store": {
+    "docs": 836,
+    "failed": 0,
+    "pending": 0,
+    "sections": 6548,
+    "summarized": 6386,
+    "tombstoned": 0,
+    "total_cost_usd": 30.48358,
+    "total_input_tokens": 16615918,
+    "total_output_tokens": 2675968
+  }
+}
