@@ -108,9 +108,14 @@ pub struct Args {
     /// The run compared by `--compare` (the name of a row in `results.json`).
     #[arg(long, default_value = "hybrid (cards + raw + vectors)", requires = "compare")]
     pub run_name: String,
-    /// Bootstrap draws for `--compare`.
-    #[arg(long, default_value_t = 5000, requires = "compare")]
+    /// Bootstrap draws for `--compare` and `--interval`.
+    #[arg(long, default_value_t = 5000)]
     pub draws: usize,
+    /// Per-run bootstrap intervals of an archived `results.json` (plan §4: every published
+    /// row carries its interval): success@5, MRR@5 and nDCG@10 with 95% intervals over the
+    /// run's questions (`--draws`, `--seed`). Repeatable; nothing is searched.
+    #[arg(long, action = clap::ArgAction::Append, conflicts_with_all = ["dataset", "golden", "record", "compare"])]
+    pub interval: Vec<PathBuf>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -162,6 +167,9 @@ pub struct Miss {
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     if !args.compare.is_empty() {
         return run_compare(args, json);
+    }
+    if !args.interval.is_empty() {
+        return run_interval(args, json);
     }
     if args.dataset.as_deref() == Some("docsqa") {
         return run_docsqa(args, json);
@@ -256,6 +264,47 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "  {} no cards.json in the golden set: only the lexical run was measured",
             st.dim("note:")
         );
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// `--interval`: every run of each archived file with its bootstrap intervals.
+fn run_interval(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    use mda_core::eval::paired;
+    let mut files = Vec::new();
+    for path in &args.interval {
+        let runs = paired::read_runs(path)?
+            .iter()
+            .map(|(run, rows)| paired::intervals(run, rows, args.draws, args.seed))
+            .collect::<Result<Vec<_>, _>>()
+            .with_context(|| path.display().to_string())?;
+        files.push((path, runs));
+    }
+    if json {
+        output::json(&serde_json::json!({
+            "files": files.iter().map(|(p, runs)| serde_json::json!({"path": p, "runs": runs})).collect::<Vec<_>>(),
+        }));
+        return Ok(ExitCode::SUCCESS);
+    }
+    let st = Style::auto();
+    for (path, runs) in &files {
+        println!("{} {}", st.bold("intervals"), st.dim(&path.display().to_string()));
+        for r in runs {
+            println!(
+                "  {:<40} n={:<4} success@5 {:.3} [{:.3}, {:.3}] · MRR@5 {:.3} [{:.3}, {:.3}] · nDCG@10 {:.3} [{:.3}, {:.3}]",
+                r.run,
+                r.n,
+                r.success_at_5,
+                r.success_ci95.0,
+                r.success_ci95.1,
+                r.mrr_at_5,
+                r.mrr_ci95.0,
+                r.mrr_ci95.1,
+                r.ndcg_at_10,
+                r.ndcg_ci95.0,
+                r.ndcg_ci95.1
+            );
+        }
     }
     Ok(ExitCode::SUCCESS)
 }

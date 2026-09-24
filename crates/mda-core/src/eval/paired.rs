@@ -9,6 +9,10 @@
 //! The intervals are descriptive. They do not authorize adoption and are not a
 //! significance test across several trials; the plan's 0.01 screen stays an engineering
 //! threshold.
+//!
+//! [`intervals`] gives one run's own per-project intervals (success@5, MRR@5, nDCG@10 over
+//! its questions, the same bootstrap and generator) for the published tables (plan §4, T1:
+//! "complete, with per-project intervals").
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
@@ -306,6 +310,115 @@ pub fn compare(
     })
 }
 
+/// One question's archived observation, as much of it as the intervals need.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RunRow {
+    /// `question_id`.
+    pub id: String,
+    /// Rank (1-based) of the first relevant page, if any.
+    #[serde(default)]
+    pub rank: Option<usize>,
+    /// nDCG@10 as the scorer archived it.
+    #[serde(default)]
+    pub ndcg_at_10: f64,
+}
+
+/// One run's metrics with their bootstrap intervals.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RunInterval {
+    /// The run's name.
+    pub run: String,
+    /// Questions (the denominator).
+    pub n: usize,
+    /// success@5.
+    pub success_at_5: f64,
+    /// Its 2.5th and 97.5th percentiles over the resamples.
+    pub success_ci95: (f64, f64),
+    /// MRR@5.
+    pub mrr_at_5: f64,
+    /// Its interval.
+    pub mrr_ci95: (f64, f64),
+    /// Mean nDCG@10.
+    pub ndcg_at_10: f64,
+    /// Its interval.
+    pub ndcg_ci95: (f64, f64),
+    /// Bootstrap draws.
+    pub draws: usize,
+    /// Bootstrap seed.
+    pub seed: u64,
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn metric_means(rows: &[&RunRow]) -> (f64, f64, f64) {
+    let n = rows.len() as f64;
+    let hit = rows.iter().filter(|r| r.rank.is_some_and(|k| k <= 5)).count();
+    let rr: f64 =
+        rows.iter().filter_map(|r| r.rank.filter(|&k| k <= 5)).map(|k| 1.0 / k as f64).sum();
+    let ndcg: f64 = rows.iter().map(|r| r.ndcg_at_10).sum();
+    (hit as f64 / n, rr / n, ndcg / n)
+}
+
+/// One run's success@5, MRR@5 and nDCG@10 with 95% bootstrap intervals over its questions
+/// (`draws` resamples with replacement; the generator is keyed by `seed` and the run name,
+/// so files can be given in any order).
+///
+/// # Errors
+///
+/// When the run has no rows, repeats a question id, or `draws < 2`.
+pub fn intervals(
+    run: &str,
+    rows: &[RunRow],
+    draws: usize,
+    seed: u64,
+) -> Result<RunInterval, PairedError> {
+    if rows.is_empty() {
+        return Err(PairedError::Empty { label: run.to_owned() });
+    }
+    if draws < 2 {
+        return Err(PairedError::Invalid("at least two bootstrap draws are needed"));
+    }
+    let mut ids = std::collections::HashSet::with_capacity(rows.len());
+    for r in rows {
+        if !ids.insert(r.id.as_str()) {
+            return Err(PairedError::Duplicate {
+                label: run.to_owned(),
+                side: "run",
+                id: r.id.clone(),
+            });
+        }
+    }
+    let all: Vec<&RunRow> = rows.iter().collect();
+    let (success_at_5, mrr_at_5, ndcg_at_10) = metric_means(&all);
+    let mut rng = SplitMix64::for_label(seed, run);
+    let mut successes = Vec::with_capacity(draws);
+    let mut mrrs = Vec::with_capacity(draws);
+    let mut ndcgs = Vec::with_capacity(draws);
+    let mut sample: Vec<&RunRow> = Vec::with_capacity(rows.len());
+    for _ in 0..draws {
+        sample.clear();
+        sample.extend((0..rows.len()).map(|_| &rows[rng.below(rows.len())]));
+        let (success, mrr, ndcg) = metric_means(&sample);
+        successes.push(success);
+        mrrs.push(mrr);
+        ndcgs.push(ndcg);
+    }
+    for v in [&mut successes, &mut mrrs, &mut ndcgs] {
+        v.sort_by(f64::total_cmp);
+    }
+    Ok(RunInterval {
+        run: run.to_owned(),
+        n: rows.len(),
+        success_at_5,
+        success_ci95: (percentile(&successes, 0.025), percentile(&successes, 0.975)),
+        mrr_at_5,
+        mrr_ci95: (percentile(&mrrs, 0.025), percentile(&mrrs, 0.975)),
+        ndcg_at_10,
+        ndcg_ci95: (percentile(&ndcgs, 0.025), percentile(&ndcgs, 0.975)),
+        draws,
+        seed,
+    })
+}
+
 #[derive(Deserialize)]
 struct ResultsFile {
     runs: Vec<ResultsRun>,
@@ -314,14 +427,21 @@ struct ResultsFile {
 #[derive(Deserialize)]
 struct ResultsRun {
     run: String,
-    results: Vec<ResultsRow>,
+    results: Vec<RunRow>,
 }
 
-#[derive(Deserialize)]
-struct ResultsRow {
-    id: String,
-    #[serde(default)]
-    rank: Option<usize>,
+/// Every run of an archived `results.json` with its rows.
+///
+/// # Errors
+///
+/// When the file cannot be read or parsed.
+pub fn read_runs(path: &Path) -> Result<Vec<(String, Vec<RunRow>)>, PairedError> {
+    let display = path.display().to_string();
+    let text = std::fs::read_to_string(path)
+        .map_err(|source| PairedError::Io { path: display.clone(), source })?;
+    let file: ResultsFile = serde_json::from_str(&text)
+        .map_err(|source| PairedError::Json { path: display, source })?;
+    Ok(file.runs.into_iter().map(|r| (r.run, r.results)).collect())
 }
 
 /// The `(question_id, success@5)` rows of one named run in an archived `results.json`
@@ -331,17 +451,11 @@ struct ResultsRow {
 ///
 /// When the file cannot be read or parsed, or has no run of that name.
 pub fn read_hits(path: &Path, run: &str) -> Result<Vec<(String, bool)>, PairedError> {
-    let display = path.display().to_string();
-    let text = std::fs::read_to_string(path)
-        .map_err(|source| PairedError::Io { path: display.clone(), source })?;
-    let file: ResultsFile = serde_json::from_str(&text)
-        .map_err(|source| PairedError::Json { path: display.clone(), source })?;
-    let found = file
-        .runs
-        .into_iter()
-        .find(|r| r.run == run)
-        .ok_or_else(|| PairedError::RunNotFound { path: display, run: run.to_owned() })?;
-    Ok(found.results.into_iter().map(|r| (r.id, r.rank.is_some_and(|k| k <= 5))).collect())
+    let (_, rows) =
+        read_runs(path)?.into_iter().find(|(name, _)| name == run).ok_or_else(|| {
+            PairedError::RunNotFound { path: path.display().to_string(), run: run.to_owned() }
+        })?;
+    Ok(rows.into_iter().map(|r| (r.id, r.rank.is_some_and(|k| k <= 5))).collect())
 }
 
 #[cfg(test)]
@@ -461,6 +575,51 @@ mod tests {
         let at = |q: f64, want: f64| (percentile(&v, q) - want).abs() < 1e-9;
         assert!(at(0.025, 125.0) && at(0.975, 4875.0) && at(0.0, 1.0) && at(1.0, 5000.0));
         assert!((percentile(&[7.0], 0.5) - 7.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn intervals_cover_the_point_estimates_and_refuse_bad_input() {
+        let row = |i: usize, rank: Option<usize>, ndcg: f64| RunRow {
+            id: format!("q{i}"),
+            rank,
+            ndcg_at_10: ndcg,
+        };
+        let rows = vec![
+            row(0, Some(1), 1.0),
+            row(1, Some(3), 0.5),
+            row(2, None, 0.0),
+            row(3, Some(7), 0.2),
+        ];
+        let r = intervals("hybrid", &rows, 1000, 20_260_922).unwrap();
+        assert_eq!(r.n, 4);
+        assert!((r.success_at_5 - 0.5).abs() < 1e-12);
+        assert!((r.mrr_at_5 - (1.0 + 1.0 / 3.0) / 4.0).abs() < 1e-12);
+        assert!((r.ndcg_at_10 - 0.425).abs() < 1e-12);
+        assert!(r.success_ci95.0 <= r.success_at_5 && r.success_at_5 <= r.success_ci95.1);
+        assert!(r.mrr_ci95.0 <= r.mrr_at_5 && r.mrr_at_5 <= r.mrr_ci95.1);
+        assert!(r.ndcg_ci95.0 <= r.ndcg_at_10 && r.ndcg_at_10 <= r.ndcg_ci95.1);
+        assert_eq!(r, intervals("hybrid", &rows, 1000, 20_260_922).unwrap());
+        assert!(matches!(intervals("x", &[], 10, 1), Err(PairedError::Empty { .. })));
+        let dup = vec![row(0, None, 0.0), row(0, None, 0.0)];
+        assert!(matches!(
+            intervals("x", &dup, 10, 1),
+            Err(PairedError::Duplicate { side: "run", .. })
+        ));
+    }
+
+    #[test]
+    fn reads_every_run_of_a_results_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("results.json");
+        std::fs::write(
+            &path,
+            r#"{"runs":[{"run":"a","results":[{"id":"x","rank":2,"ndcg_at_10":0.5}]},{"run":"b","results":[{"id":"x"}]}]}"#,
+        )
+        .unwrap();
+        let runs = read_runs(&path).unwrap();
+        assert_eq!(runs.len(), 2);
+        assert_eq!(runs[0].1[0], RunRow { id: "x".into(), rank: Some(2), ndcg_at_10: 0.5 });
+        assert_eq!(runs[1].1[0], RunRow { id: "x".into(), rank: None, ndcg_at_10: 0.0 });
     }
 
     #[test]
