@@ -168,7 +168,7 @@ case "$cmd" in
     archive "$name" "$s" "$*" "$decision"
     cmp_args=(); for p in $PROJECTS; do cmp_args+=(--compare "$p" "$ARCH/baseline/$p.results.json" "$ARCH/$name/$p.results.json"); done
     if ! c="$("$MDA" --json eval "${cmp_args[@]}" --draws 5000 --seed 20260922)"; then
-      rm -rf "$ARCH/$name"; explore_invalid "$name" "$*" "paired comparison failed: question sets differ from the baseline's"; exit 1
+      rm -rf "${ARCH:?}/${name:?}"; explore_invalid "$name" "$*" "paired comparison failed: question sets differ from the baseline's"; exit 1
     fi
     echo "$c" > "$ARCH/$name/compare.json"
     explore_line "$name" "$*" "$s" "$c" "$text"
