@@ -1,6 +1,6 @@
 # STATUS (updated 2026-09-25 by Claude)
 **Start here after compaction: `docs/handoffs/2026-09-23-session4-final-handoff.md` (then the session-3 handoff for releases and recipes).**
-Phase: benchmarks — **M1–M3 merged (PRs #22–#26); M4 on `feat/bench-m4` (PR open): T1 published on the test split under a final freeze — every arm, intervals, paired target, latency, two-judge pooled column, four preflights; tuning knobs in config, the greedy loop ran (stop rule after the two embedding-text candidates; pre-tuning defaults win), pooled-label diagnostic on the four dev splits**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
+Phase: benchmarks — **M1–M4 merged (PRs #22–#27); T1 published on the test split under a final freeze — every arm, intervals, paired target, latency, two-judge pooled column, four preflights; tuning knobs in config, the greedy loop ran (stop rule after the two embedding-text candidates; pre-tuning defaults win), pooled-label diagnostic on the four dev splits**; Phases 0–4 shipped (v0.1.1)        Active plan: docs/plans/2026-09-benchmarks.md (rules) + docs/plans/2026-09-benchmark-execution.md v3.1 (milestones, competitor profiles, three Codex passes) · runbook evals/benchmark_it_with_claude.md
 North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable, p50 < 15 s save→card · G5 recall@5 ≥ 0.85
 
 ## Done (last 5)
@@ -11,7 +11,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - **B0b lean MCP payload**: `mda_search` returns five hits without ranking diagnostics; golden-corpus median source tokens 1,304.5 → 762.5 at 11/12 parity, but more turns; exploratory (`docs/benchmarks.md`). `ab.sh`/`grade.sh` run through `claude -p`, fail loud, check a run manifest (Codex review 6/6 triaged).
 
 ## Next (in order)
-1. **M4 close**: merge the T1 PR on eleven green jobs; then `git checkout main && git pull`.
+1. **Owner calls on T1**: the Supabase graphify-haiku probe (2 of 3 in two attempts, published with disclosure) — accept, rerun once more, or drop the row; the section-score-per-page hypothesis from "where we lose" goes into a future, separately declared tuning round, never on the test split.
 2. **M5+**: T2 harness (resumable runner, transcript tokens, grounding, `--analysis`, `panel.sh` with the Astra route, `--export-questions`), pilot, owner decision on the rule-0.9 amendment; the graphify-haiku chunk audit and the T3 one-edit measurement are owner calls.
 
 ## Blockers / open questions
