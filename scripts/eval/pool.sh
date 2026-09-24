@@ -144,7 +144,10 @@ tmp="$(mktemp -d -t mda-pool.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
 } > "$tmp/rows.jsonl"
 [ -s "$tmp/rows.jsonl" ] || die "no rows for $project/$split"
 # 2. Unlabelled pairs per arm (a page not among the question's labels), keyed for the seeded order.
-jq -c --arg seed "$seed" '. as $r | .pages[] | . as $pg | select(($r.relevant | index([$pg])) == null) | {arm: $r.arm, question_id: $r.question_id, page: $pg}' "$tmp/rows.jsonl" \
+# Only pages of the dataset corpus can be labelled (a label is a corpus page): an arm that
+# returns a file outside it (graphify returns code files) contributes no candidate there.
+jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl" | sort -u > "$tmp/corpus-pages.txt"
+jq -c --arg seed "$seed" --rawfile cp "$tmp/corpus-pages.txt" '($cp | split("\n") | map(select(. != "")) | map({(.): true}) | add) as $corpus | . as $r | .pages[] | . as $pg | select(($r.relevant | index([$pg])) == null and $corpus[$pg] == true) | {arm: $r.arm, question_id: $r.question_id, page: $pg}' "$tmp/rows.jsonl" \
   | while IFS= read -r line; do key="$(printf '%s\x00%s\x00%s' "$seed" "$(jq -r .question_id <<<"$line")" "$(jq -r .page <<<"$line")" | shasum -a 256 | cut -c1-16)"; jq -c --arg k "$key" '. + {key: $k}' <<<"$line"; done > "$tmp/pairs.jsonl"
 # 3. Round-robin across arms in key order until n distinct (question, page) pairs.
 python3 - "$tmp/pairs.jsonl" "$n" "$RUN/docsqa-data/data/questions.jsonl" "$project" "$corpus" "$out" <<'PY'
@@ -174,10 +177,7 @@ os.makedirs(os.path.dirname(out), exist_ok=True)
 with open(out, "w", encoding="utf-8") as fh:
     for i, r in enumerate(chosen):
         path = os.path.join(corpus, r["page"])
-        try:
-            text = open(path, encoding="utf-8", errors="replace").read()[:6000]
-        except OSError:
-            text = ""
+        text = open(path, encoding="utf-8", errors="replace").read()[:6000]   # a corpus page exists on disk; a missing one is an error
         # The page text is NOT stored (a documentation page can carry example keys that trip
         # secret scanning, and nothing that looks like a key enters the repo): the judge reads
         # the page from the pinned checkout, its sha256 recorded here for the audit.
