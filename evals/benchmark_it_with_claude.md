@@ -259,6 +259,30 @@ Through each tool's MCP server with the common client (`scripts/eval/mcp-time.sh
 
 One subsection per published table lands here with the table (plan §7): its `FROZEN.md` path, the exact regeneration command and expected artifact hashes, the competitor arm commands with the coverage each reached and the three activation probes to rerun, and the independent-rerun protocol. Until a table's subsection exists here, it is not published and must not be quoted.
 
+### 7.1 T1 — axis A on DocsQA, test split (M4, 2026-09-24)
+
+**Freeze.** `evals/results/docsqa/T1/FROZEN.md` (protocol final, table T1; written by `scripts/eval/freeze.sh --protocol final --table T1 --note "…"` and committed *before* any row; source commit recorded inside it). It records the selection ("original §3 winner; post-stop diagnostics excluded from selection"), the split scored (test, once) and the interval method. Nothing below runs unless `scripts/eval/freeze.sh --protocol final --table T1 --check` passes (`t1.sh` checks first, under a lock, on every invocation).
+
+**Arms.** The M2 builds, unchanged: the qmd indexes (`~/.cache/qmd/<project>.sqlite`, fingerprints in `FROZEN.md`), the archived graphify graphs (`arms/graphs/*.graph.json.gz`, served file hash-checked by the drivers), the BM25-over-files tables, the committed cards. Section 4c has the installs and builds; a reproduction on another machine restores the graphs from the archive before driving.
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked && cargo build --release --example mcp_time
+# every run is resumable (an arm with results.json is skipped) and refuses to start on changed inputs
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/t1.sh run "$p" mda bm25-files graphify graphify-haiku; done   # CPU arms, minutes
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/t1.sh run "$p" qmd-full qmd-no-rerank qmd-bm25; done          # GPU: ≈ 60 s per question for qmd full (255 test questions ≈ 4.5 h); nothing else on the GPU
+for p in tailwind-css supabase prisma github-docs; do scripts/eval/t1.sh latency "$p"; done                                       # afterwards, alone on the machine: cold first call + warm calls through each MCP server
+# pooled labels (plan §2.3): 100 unlabelled top-5 pairs per project from the test-split runs, both judges through your logins, then the column
+for p in tailwind-css supabase prisma github-docs; do TABLE=T1 scripts/eval/pool.sh sample "$p" test 100 20260922; TABLE=T1 scripts/eval/pool.sh judge "$p" test fable; TABLE=T1 scripts/eval/pool.sh judge "$p" test astra; TABLE=T1 scripts/eval/pool.sh column "$p" test; done
+# the preflight, per project, against T1/FROZEN.md and the T1 rows (15 checks incl. regeneration, replay, reconstruction, probes)
+for p in tailwind-css supabase prisma github-docs; do env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/preflight.sh T1 "$p"; done
+# the page tables, never retyped
+scripts/eval/t1.sh table; scripts/eval/t1.sh target; scripts/eval/t1.sh latency-table
+```
+
+**Regeneration (the gate, exact).** Every T1 row recomputes from its archived page lists without a store, byte-identical on the metrics and per-question results: the preflight's `regenerate` check does it for the store rows and every external arm file (`T1/<project>/results.json`, `T1/<project>/arms/<arm>.results.json` from `<arm>.jsonl`); the intervals and the target comparison recompute from the same files (`mda eval --interval`, `mda eval --compare`, seed 20260922, SplitMix64, order-independent). Expected hashes are listed at the end of this subsection once the table is published.
+
+**Independent rerun.** T1 is deterministic retrieval; a rerun (`t1.sh run` after moving the T1 rows aside) must reproduce the store rows exactly (the preflight's `replay` check) and the external arms' rows given the same indexes and graphs (qmd's reranker is deterministic on the same model files; graphify's `query_graph` is deterministic on the same graph). Latency differs by machine and is reported with hardware. A rerun is published beside the original, never in its place (plan §2.0b).
+
 ## 8. Report
 
 Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, `mda --version` and SHA, `claude --version`, the model file hashes, the checksums of §2, every attempt (timestamp, step, outcome) including failed ones, the tables of §3–§5 with your numbers next to the expected ones marked *regeneration* (exact match: yes/no) or *rerun* (paired difference), and every deviation. A regeneration that does not match is the most valuable outcome this file can produce: open an issue with the report.
