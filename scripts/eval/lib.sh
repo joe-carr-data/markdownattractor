@@ -134,5 +134,13 @@ qmd_fingerprint() { # index-name
   done | shasum -a 256 | cut -c1-64
 }
 
+# Content fingerprint of a BM25-over-files table (sha256 over path and text in path order),
+# so the freeze binds the control's artifact like qmd's index and graphify's graph (Codex M4 F5).
+bm25_fingerprint() { # project
+  local db="$RUN/bm25-files/$1.sqlite"
+  [ -f "$db" ] || die "no BM25-over-files table $db"
+  sqlite3 -cmd '.timeout 60000' "$db" "SELECT path, text FROM pages ORDER BY path" | shasum -a 256 | cut -c1-64 || die "bm25_fingerprint: cannot read $db"
+}
+
 # The split a question belongs to, from the committed split.json.
 question_split() { jq -r --arg id "$2" '.questions[] | select(.id == $id) | .split' "$RESULTS/$1/split.json"; }

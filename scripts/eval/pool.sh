@@ -42,19 +42,24 @@ if [ "$cmd" = judge ]; then
   : > "$jout"; i=0
   while IFS= read -r pair; do
     i=$((i + 1)); id="$(jq -r .pair_id <<<"$pair")"
-    page_text="$(head -c 6000 "$corpus/$(jq -r .page <<<"$pair")" 2>/dev/null || true)"
+    # the same excerpt the sample hashed (first 6,000 decoded characters, not bytes; Codex M4 F10), verified
+    page_text="$(python3 -c 'import sys; print(open(sys.argv[1], encoding="utf-8", errors="replace").read()[:6000], end="")' "$corpus/$(jq -r .page <<<"$pair")" 2>/dev/null || true)"
+    [ "$(printf '%s' "$page_text" | shasum -a 256 | cut -c1-64)" = "$(jq -r .page_sha256 <<<"$pair")" ] || die "pair $id: the page excerpt does not match the sample's page_sha256 (checkout changed?)"
     q_text="$(question_text "$project" "$(jq -r .question_id <<<"$pair")")"
     submission="$(jq -r --arg t "$page_text" --arg q "$q_text" '"<submission>\nQuestion: " + $q + "\n\nPage (" + .page + "):\n" + $t + "\n</submission>"' <<<"$pair")"
     if [ "$judge" = fable ]; then
       env="$(printf '%s' "$submission" | (cd "$corpus" && MAX_THINKING_TOKENS=0 claude --print --model "$model" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$schema" --system-prompt "$rubric" 2>/dev/null) || true)"
-      j="$(jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {score: .structured_output.score, rationale: .structured_output.rationale, model: (.model // null), cost_usd_list_price: (.total_cost_usd // null)} else {score: null, rationale: null, model: (.model // null), error: (.result // .error // "no structured output")} end' <<<"$env" 2>/dev/null || echo '{"score":null,"rationale":null,"error":"no JSON result"}')"
+      j="$(jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) and ((.structured_output.score | type) == "number") and (.structured_output.score | floor) == .structured_output.score and .structured_output.score >= 0 and .structured_output.score <= 2 then {score: .structured_output.score, rationale: .structured_output.rationale, model: (.model // null), cost_usd_list_price: (.total_cost_usd // null)} else {score: null, rationale: null, model: (.model // null), error: (.result // .error // "no structured output")} end' <<<"$env" 2>/dev/null || echo '{"score":null,"rationale":null,"error":"no JSON result"}')"
     else
       # Astra through the Codex CLI, non-interactive, read-only sandbox, no repo access needed
       # (the submission is the whole input); the final message must match the schema.
       printf '%s' "$schema" > "$tmpd/schema.json"
       env="$(printf '%s\n\n%s\n\nYour ONLY output is the JSON object {"score": n, "rationale": "one line"}.' "$rubric" "$submission" \
-        | (cd "$tmpd" && codex exec --model "$model" -s read-only --skip-git-repo-check --output-schema "$tmpd/schema.json" --json -C "$tmpd" - 2>>"$jout.err") || true)"
-      j="$(jq -sc --arg model "$model" '[.[] | select(.type == "item.completed" and .item.type == "agent_message") | .item.text] | last as $t | if $t == null then {score: null, rationale: null, model: $model, error: "no agent message"} else (try ($t | fromjson | {score, rationale, model: $model}) catch {score: null, rationale: null, model: $model, error: "final message is not the schema"}) end' <<<"$env" 2>/dev/null || echo '{"score":null,"rationale":null,"error":"no JSON stream"}')"
+        | (cd "$tmpd" && codex exec --model "$model" -s read-only --skip-git-repo-check --ephemeral --output-schema "$tmpd/schema.json" --json -C "$tmpd" - 2>>"$jout.err") || true)"
+      # a judgment counts only from a completed turn whose final message is the schema (score an integer 0–2)
+      j="$(jq -sc --arg model "$model" '(map(select(.type == "turn.completed")) | length > 0) as $done | [.[] | select(.type == "item.completed" and .item.type == "agent_message") | .item.text] | last as $t
+        | if ($done | not) then {score: null, rationale: null, model: $model, error: "turn did not complete"} elif $t == null then {score: null, rationale: null, model: $model, error: "no agent message"}
+          else (try ($t | fromjson | if (.score | type) == "number" and (.score | floor) == .score and .score >= 0 and .score <= 2 and (.rationale | type) == "string" then {score, rationale, model: $model} else {score: null, rationale: null, model: $model, error: "final message is not the schema"} end) catch {score: null, rationale: null, model: $model, error: "final message is not JSON"}) end' <<<"$env" 2>/dev/null || echo '{"score":null,"rationale":null,"error":"no JSON stream"}')"
     fi
     jq -c --arg id "$id" --arg judge "$judge" '{pair_id: $id, judge: $judge} + .' <<<"$j" >> "$jout"
     printf '%s %s: %s\n' "$i" "$id" "$(jq -r .score <<<"$j")"
@@ -64,43 +69,59 @@ if [ "$cmd" = judge ]; then
 fi
 if [ "$cmd" = column ]; then
   # The second column of axis A (plan §2.3): every arm rescored over the JUDGED questions with
-  # labels = original ∪ pooled-relevant, where a pair is relevant when the mean of the
-  # judges' scores is ≥ 1 (one judge today: its score ≥ 1). Writes <split>-column.json with,
-  # per arm, the original and the pooled metrics over the same judged questions, the number
-  # of labels added and the judges used. Store rows are rescored from their archived page
-  # lists (results.json) through --arm-output, so the same scorer produces both columns.
-  jfiles=("$BASE/$project/pool/$split"-judgments-*.jsonl)
-  [ -f "${jfiles[0]}" ] || die "no judgments for $project/$split (run judge first)"
-  pooled="$BASE/$project/pool/$split-pooled-labels.jsonl"; judged="$BASE/$project/pool/$split-judged-questions.txt"; col="$BASE/$project/pool/$split-column.json"
-  safe_target "$pooled"; safe_target "$col"
-  # mean score per pair over the judges (null judgments excluded); relevant when ≥ 1
-  cat "${jfiles[@]}" | jq -c 'select(.score != null)' | jq -s -c 'group_by(.pair_id) | map({pair_id: .[0].pair_id, mean: (map(.score) | add / length), judges: (map(.judge) | unique)})' > "$BASE/$project/pool/$split-pair-means.json"
-  jq -c --slurpfile means "$BASE/$project/pool/$split-pair-means.json" '. as $p | ($means[0][] | select(.pair_id == $p.pair_id)) as $m | select($m.mean >= 1) | {question_id: $p.question_id, page: $p.page, mean: $m.mean, judges: $m.judges}' "$out" > "$pooled"
-  jq -r '.question_id' "$out" | sort -u > "$judged"
-  judges="$(cat "${jfiles[@]}" | jq -r .judge | sort -u | tr '\n' ',' | sed 's/,$//')"
+  # labels = original ∪ pooled-relevant. The panel is named (JUDGES; a published table needs
+  # both fable and astra, the development diagnostic may use one, labelled); a pair is
+  # COMPLETE when every named judge gave one valid score, and relevant when the mean of those
+  # scores is ≥ 1; an incomplete pair is never relevant-by-pool and is counted and published
+  # (Codex M4 F8). A judged question is one with at least one complete pair. Agreement between
+  # the judges (exact and within one point, plus the score matrix) is published. Every arm's
+  # per-question results for both columns are kept under pool/<split>-column/ so intervals
+  # come from the same bootstrap as the first column (mda eval --interval).
+  JUDGES="${JUDGES:-$([ "$TABLE" = development ] && echo fable || echo "fable astra")}"
+  for jd in $JUDGES; do [ -f "$BASE/$project/pool/$split-judgments-$jd.jsonl" ] || die "no judgments for judge $jd on $project/$split (run judge first)"; done
+  pooled="$BASE/$project/pool/$split-pooled-labels.jsonl"; judged="$BASE/$project/pool/$split-judged-questions.txt"; col="$BASE/$project/pool/$split-column.json"; cdir="$BASE/$project/pool/$split-column"
+  safe_target "$pooled"; safe_target "$col"; rm -rf "$cdir"; mkdir -p "$cdir"
+  jfiles=(); for jd in $JUDGES; do jfiles+=("$BASE/$project/pool/$split-judgments-$jd.jsonl"); done
+  njudges="$(printf '%s\n' $JUDGES | grep -c .)"
+  # one row per judge per pair, validated; pair status and mean
+  cat "${jfiles[@]}" | jq -sc --argjson n "$njudges" --arg judges "$JUDGES" '
+      ($judges | split(" ")) as $J |
+      group_by(.pair_id) | map(. as $rows | {pair_id: .[0].pair_id,
+        scores: [ $J[] as $j | ($rows | map(select(.judge == $j))) as $r | {judge: $j, rows: ($r | length), score: (if ($r | length) == 1 then $r[0].score else null end)} ],
+      } | .complete = (all(.scores[]; .rows == 1 and .score != null)) | .mean = (if .complete then ([.scores[].score] | add / length) else null end))' > "$BASE/$project/pool/$split-pair-means.json"
+  jq -e 'all(.[]; all(.scores[]; .rows <= 1))' "$BASE/$project/pool/$split-pair-means.json" >/dev/null || die "a judge has more than one row for a pair"
+  jq -c --slurpfile means "$BASE/$project/pool/$split-pair-means.json" '. as $p | ($means[0][] | select(.pair_id == $p.pair_id)) as $m | select($m.complete and $m.mean >= 1) | {question_id: $p.question_id, page: $p.page, mean: $m.mean, scores: $m.scores}' "$out" > "$pooled"
+  jq -r --slurpfile means "$BASE/$project/pool/$split-pair-means.json" '. as $p | ($means[0][] | select(.pair_id == $p.pair_id)) as $m | select($m.complete) | .question_id' "$out" | sort -u > "$judged"
+  [ -s "$judged" ] || die "no complete pair on $project/$split: nothing to score"
+  agreement="$(jq -c --argjson n "$njudges" '[.[] | select(.complete)] as $c | {complete_pairs: ($c | length), incomplete_pairs: (length - ($c | length)),
+      exact: (if $n < 2 or ($c | length) == 0 then null else ([$c[] | select((.scores | map(.score) | unique | length) == 1)] | length / ($c | length)) end),
+      within_one: (if $n < 2 or ($c | length) == 0 then null else ([$c[] | select((.scores | map(.score) | max) - (.scores | map(.score) | min) <= 1)] | length / ($c | length)) end),
+      matrix: (if $n < 2 then null else ($c | group_by(.scores | map(.score)) | map({(.[0].scores | map(.score | tostring) | join("/")): length}) | add) end)}' "$BASE/$project/pool/$split-pair-means.json")"
   tmp="$(mktemp -d -t mda-col.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
-  score() { # rows.jsonl name label(original|pooled) -> metrics json
-    local extra=()
+  score() { # rows.jsonl name label(original|pooled) slug -> metrics json (results kept under $cdir)
+    local extra=() d="$cdir/$4.$3"; mkdir -p "$d"
     [ "$3" = original ] || extra=(--extra-labels "$pooled")
-    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$project" --root "$corpus" --split "$split" --arm-output "$1" --arm-name "$2" --only-questions "$judged" ${extra[@]+"${extra[@]}"} 2>"$tmp/err" \
-      | jq -c '{questions: .runs[0].metrics.questions, success_at_5: .runs[0].metrics.success_at_5, mrr_at_5: .runs[0].metrics.mrr_at_5, ndcg_at_10: .runs[0].metrics.ndcg_at_10, labels_added: (.extra_labels.added // 0)}' || die "scoring $2 failed: $(tail -c 200 "$tmp/err")"
+    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$project" --root "$corpus" --split "$split" --arm-output "$1" --arm-name "$2" --only-questions "$judged" ${extra[@]+"${extra[@]}"} --out "$d" 2>"$tmp/err" > "$tmp/report.json" || die "scoring $2 ($3) failed: $(tail -c 300 "$tmp/err")"
+    mv "$d/results.json" "$cdir/$4.$3.results.json"; rm -rf "$d"
+    "$MDA" --json eval --interval "$cdir/$4.$3.results.json" --draws 5000 --seed "$seed" | jq -c --slurpfile r "$tmp/report.json" '.files[0].runs[0] | {questions: .n, success_at_5, success_ci95, mrr_at_5, mrr_ci95, ndcg_at_10, ndcg_ci95, labels_added: ($r[0].extra_labels.added // 0)}'
   }
+  slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9' '-' | sed 's/-*$//; s/^-*//'; }
   : > "$tmp/rows.jsonl"
-  # the store's own rows from their archived page lists
   n="$(jq '.runs | length' "$BASE/$project/results.json")"
   for ((i = 0; i < n; i++)); do
     name="$(jq -r --argjson i "$i" '.runs[$i].run' "$BASE/$project/results.json")"
     jq -c --argjson i "$i" '.runs[$i].results[] | {question_id: .id, paths: .pages, truncated}' "$BASE/$project/results.json" > "$tmp/store-$i.jsonl"
-    jq -nc --arg arm "$name" --argjson o "$(score "$tmp/store-$i.jsonl" "$name" original)" --argjson p "$(score "$tmp/store-$i.jsonl" "$name" pooled)" '{arm: $arm, original: $o, pooled: $p}' >> "$tmp/rows.jsonl"
+    jq -nc --arg arm "$name" --argjson o "$(score "$tmp/store-$i.jsonl" "$name" original "$(slug "$name")")" --argjson p "$(score "$tmp/store-$i.jsonl" "$name" pooled "$(slug "$name")")" '{arm: $arm, original: $o, pooled: $p}' >> "$tmp/rows.jsonl"
   done
-  for rows in "$BASE/$project"/arms/*.jsonl; do
-    [ -f "$rows" ] || continue; a="$(basename "$rows" .jsonl)"; case "$a" in *.times) continue ;; esac
-    name="$(jq -r '.runs[0].run' "$BASE/$project/arms/$a.results.json")"
-    jq -nc --arg arm "$name" --argjson o "$(score "$rows" "$name" original)" --argjson p "$(score "$rows" "$name" pooled)" '{arm: $arm, original: $o, pooled: $p}' >> "$tmp/rows.jsonl"
+  for res in "$BASE/$project"/arms/*.results.json; do
+    [ -f "$res" ] || continue; a="$(basename "$res" .results.json)"; rows="$BASE/$project/arms/$a.jsonl"; [ -f "$rows" ] || die "no rows file for $a"
+    name="$(jq -r '.runs[0].run' "$res")"
+    jq -nc --arg arm "$name" --argjson o "$(score "$rows" "$name" original "$a")" --argjson p "$(score "$rows" "$name" pooled "$a")" '{arm: $arm, original: $o, pooled: $p}' >> "$tmp/rows.jsonl"
   done
-  jq -s --arg project "$project" --arg split "$split" --arg judges "$judges" --argjson sample "$(grep -c . "$out")" --argjson relevant "$(grep -c . "$pooled" || true)" --argjson judged "$(grep -c . "$judged")" \
-     '{project: $project, split: $split, label: ("pooled, model-assisted, " + ($sample | tostring) + " pairs/project, judges " + $judges), sample_pairs: $sample, pooled_relevant_pairs: $relevant, judged_questions: $judged, rule: "a pair is relevant when the mean of the judges scores is >= 1; metrics over the judged questions only; original labels never removed", arms: .}' "$tmp/rows.jsonl" > "$col"
+  jq -s --arg project "$project" --arg split "$split" --arg judges "$(printf '%s' "$JUDGES" | tr ' ' ',')" --argjson sample "$(grep -c . "$out")" --argjson relevant "$(grep -c . "$pooled" || true)" --argjson judged "$(grep -c . "$judged")" --argjson agreement "$agreement" --arg seed "$seed" \
+     '{project: $project, split: $split, label: ("pooled, model-assisted, " + ($sample | tostring) + " pairs/project, judges " + $judges + " (a pair is relevant when every judge scored it and the mean is ≥ 1; incomplete pairs are never relevant)"), sample_pairs: $sample, judges: ($judges | split(",")), agreement: $agreement, pooled_relevant_pairs: $relevant, judged_questions: $judged, intervals: ("95% bootstrap over the judged questions, 5,000 draws, seed " + $seed), arms: .}' "$tmp/rows.jsonl" > "$col"
   jq -r '.arms[] | "\(.arm): original \(.original.success_at_5 | . * 1000 | round / 1000) → pooled \(.pooled.success_at_5 | . * 1000 | round / 1000) (n \(.original.questions), +\(.pooled.labels_added) labels)"' "$col"
+  jq -r '"agreement: \(.agreement)"' "$col"
   echo "→ $col"
   exit 0
 fi
@@ -116,7 +137,7 @@ tmp="$(mktemp -d -t mda-pool.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
 } > "$tmp/rows.jsonl"
 [ -s "$tmp/rows.jsonl" ] || die "no rows for $project/$split"
 # 2. Unlabelled pairs per arm (a page not among the question's labels), keyed for the seeded order.
-jq -c --arg seed "$seed" '. as $r | .pages[] | select(($r.relevant | index([.])) == null) | {arm: $r.arm, question_id: $r.question_id, page: .}' "$tmp/rows.jsonl" \
+jq -c --arg seed "$seed" '. as $r | .pages[] | . as $pg | select(($r.relevant | index([$pg])) == null) | {arm: $r.arm, question_id: $r.question_id, page: $pg}' "$tmp/rows.jsonl" \
   | while IFS= read -r line; do key="$(printf '%s\x00%s\x00%s' "$seed" "$(jq -r .question_id <<<"$line")" "$(jq -r .page <<<"$line")" | shasum -a 256 | cut -c1-16)"; jq -c --arg k "$key" '. + {key: $k}' <<<"$line"; done > "$tmp/pairs.jsonl"
 # 3. Round-robin across arms in key order until n distinct (question, page) pairs.
 python3 - "$tmp/pairs.jsonl" "$n" "$RUN/docsqa-data/data/questions.jsonl" "$project" "$corpus" "$out" <<'PY'

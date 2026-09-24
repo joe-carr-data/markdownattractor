@@ -10,7 +10,8 @@
 #
 # Usage:
 #   scripts/eval/t1.sh run <project> [arm ...]     # arms: mda qmd-full qmd-no-rerank qmd-bm25 graphify graphify-haiku bm25-files (default: all)
-#   scripts/eval/t1.sh latency <project> [arm ...] # arms with an MCP server: mda qmd graphify graphify-haiku (default: all built) → T1/<project>/arms/<arm>.times.jsonl
+#   scripts/eval/t1.sh latency <project> [arm ...] # arms with an MCP server: mda qmd graphify graphify-haiku (default: all built) → T1/<project>/latency/<arm>.jsonl
+#   scripts/eval/t1.sh archive <project> <arm>     # (re)copy the driver's full rows and every request file from the work directory, write the arm's manifest
 #   scripts/eval/t1.sh table                       # metrics with 95% intervals (mda eval --interval), one row per project and run
 #   scripts/eval/t1.sh latency-table               # cold first call and warm median per arm and project, from the times files
 #   scripts/eval/t1.sh target                      # mda hybrid vs qmd full per project, paired (mda eval --compare)
@@ -18,7 +19,8 @@
 # Env: REPO, RUN, MDA (scripts/eval/lib.sh). Every driver unsets provider keys itself.
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
-cmd="${1:?run|latency|table|latency-table|target}"; shift
+set -euo pipefail
+cmd="${1:?run|latency|table|latency-table|target|lose|archive}"; shift
 TABLE=T1; T="$(results_dir $TABLE)"; SPLIT="test"
 HYBRID="hybrid (cards + raw + vectors)"
 ALL_ARMS="mda qmd-full qmd-no-rerank qmd-bm25 graphify graphify-haiku bm25-files"
@@ -48,6 +50,27 @@ built() { # arm project -> 0 when the arm's build completed on the project
   [ -f "$rec" ] || return 1
   [ "$(jq -r 'if .build.completed == false then "false" else "true" end' "$rec")" = true ]
 }
+# What a reader needs beyond the scorer's rows (Codex M4 F6/F7): the driver's complete rows
+# (request per question, ok flag, first-pass timing), every request template the driver
+# wrote (limit 20 and 40 for qmd; both graphify budgets), and a manifest with provenance
+# (source commit, driver and binary hashes, row and result hashes) written last.
+archive_arm() { # project arm work-rows out-dir
+  local project="$1" arm="$2" rows="$3" out="$4" f driver
+  [ -f "$rows" ] || die "archive: no driver rows $rows"
+  cp "$rows" "$out/arms/$arm.driver.jsonl"
+  for f in "$rows.request.json" "$rows.work"/request*.json; do [ -f "$f" ] || continue; cp "$f" "$out/arms/$arm.$(basename "$f" | sed 's/^request-limit/request-limit/; s/\.jsonl\.request\.json$/request.json/')"; done
+  [ ! -f "$rows.request.json" ] || cp "$rows.request.json" "$out/arms/$arm.request.json"
+  [ ! -f "$rows.work/times1.jsonl" ] || cp "$rows.work/times1.jsonl" "$out/arms/$arm.times.jsonl"
+  [ ! -f "$rows.work/times2.jsonl" ] || cp "$rows.work/times2.jsonl" "$out/arms/$arm.times2.jsonl"
+  case "$arm" in qmd-*) driver="scripts/eval/arms/qmd.sh" ;; graphify*) driver="scripts/eval/arms/graphify.sh" ;; bm25-files) driver="scripts/eval/bm25-files.sh" ;; *) driver="" ;; esac
+  jq -n --arg arm "$arm" --arg project "$project" --arg at "$(date -u +%FT%TZ)" --arg sha "$(git -C "$REPO" rev-parse HEAD)" --arg driver "$driver" \
+     --arg driver_sha "$([ -z "$driver" ] || sha256 "$REPO/$driver")" --arg t1_sha "$(sha256 "$REPO/scripts/eval/t1.sh")" --arg bin "$(sha256 "$MDA")" \
+     --arg rows_sha "$(sha256 "$out/arms/$arm.jsonl")" --arg driver_rows_sha "$(sha256 "$out/arms/$arm.driver.jsonl")" --arg res_sha "$(sha256 "$out/arms/$arm.results.json")" \
+     --arg frozen "$(sha256 "$T/FROZEN.md")" --arg split "$SPLIT" \
+     '{arm: $arm, project: $project, split: $split, archived_at: $at, source_commit: $sha, driver: $driver, driver_sha256: $driver_sha, t1_sha256: $t1_sha, mda_sha256: $bin, frozen_md_sha256: $frozen,
+       rows_sha256: $rows_sha, driver_rows_sha256: $driver_rows_sha, results_sha256: $res_sha,
+       note: "rows = the scorer input (question_id, paths, truncated); driver rows keep the per-question request, ok flag and first-pass timing; request*.json are the templates the driver sent; times*.jsonl are the driver passes, not the published latency (latency/<arm>.jsonl)"}' > "$out/arms/$arm.manifest.json"
+}
 case "$cmd" in
   run)
     project="${1:?project}"; shift; ident "$project"; arms="${*:-$ALL_ARMS}"
@@ -58,10 +81,14 @@ case "$cmd" in
       case " $ALL_ARMS " in *" $arm "*) ;; *) die "unknown arm $arm" ;; esac
       if [ "$arm" = mda ]; then
         if [ -f "$out/results.json" ]; then echo "mda: $out/results.json exists, skipped"; continue; fi
-        t0=$(date +%s)
-        "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split $SPLIT --out "$out" > "$work/mda.report.json" 2>"$work/mda.err" || die "mda eval failed on $project (see $work/mda.err)"
-        [ "$(jq -r '.card_coverage.complete' "$out/results.json")" = true ] || die "$project: card coverage incomplete"
-        jq -e --arg h "$HYBRID" '.runs[] | select(.run == $h) | select(.metrics.questions > 0)' "$out/results.json" >/dev/null || die "no hybrid row on $project"
+        t0=$(date +%s); tmpo="$work/mda.out.$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$tmpo"
+        "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split $SPLIT --out "$tmpo" > "$work/mda.report.json" 2>"$work/mda.err" || die "mda eval failed on $project (see $work/mda.err; attempt kept in $tmpo)"
+        [ "$(jq -r '.card_coverage.complete' "$tmpo/results.json")" = true ] || die "$project: card coverage incomplete (attempt kept in $tmpo)"
+        jq -e --arg h "$HYBRID" '.runs[] | select(.run == $h) | select(.metrics.questions > 0)' "$tmpo/results.json" >/dev/null || die "no hybrid row on $project (attempt kept in $tmpo)"
+        # validated, then moved into place as one step; the manifest last
+        cp "$tmpo/coverage.json" "$out/coverage.json"; cp "$tmpo/split.json" "$out/split.json"; cp "$tmpo/results.json" "$out/results.json.tmp" && mv "$out/results.json.tmp" "$out/results.json"
+        jq -n --arg project "$project" --arg at "$(date -u +%FT%TZ)" --arg sha "$(git -C "$REPO" rev-parse HEAD)" --arg bin "$(sha256 "$MDA")" --arg res "$(sha256 "$out/results.json")" --arg frozen "$(sha256 "$T/FROZEN.md")" --arg split "$SPLIT" \
+           '{arm: "mda", project: $project, split: $split, archived_at: $at, source_commit: $sha, mda_sha256: $bin, results_sha256: $res, frozen_md_sha256: $frozen}' > "$out/mda.manifest.json"
         echo "mda: $(jq -r --arg h "$HYBRID" '.runs[] | select(.run == $h) | "\(.metrics.questions) questions · success@5 \(.metrics.success_at_5)"' "$out/results.json") in $(( $(date +%s) - t0 )) s"
         continue
       fi
@@ -70,7 +97,10 @@ case "$cmd" in
       case "$arm" in
         graphify|graphify-haiku) if ! built "$arm" "$project"; then echo "$arm: build did not complete on $project (arms/$arm-$project.json), no rows (rule 0.3)"; continue; fi ;;
       esac
-      rows="$work/$arm.jsonl"; rm -rf "$rows" "$rows.work" "$rows.err" "$rows.request.json" "$rows.ids"
+      rows="$work/$arm.jsonl"
+      if [ -e "$rows" ] || [ -e "$rows.work" ]; then # an earlier attempt without a result: kept, never overwritten
+        att="$work/attempts/$arm.$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$att"; mv "$rows"* "$att"/ 2>/dev/null || true; echo "$arm: previous incomplete attempt moved to $att"
+      fi
       t0=$(date +%s)
       case "$arm" in
         qmd-full) "$REPO/scripts/eval/arms/qmd.sh" drive "$project" full "$rows" $SPLIT ;;
@@ -83,19 +113,18 @@ case "$cmd" in
       t1=$(date +%s)
       name="$(arm_name "$arm")"; sdir="$work/$arm.score"; rm -rf "$sdir"; mkdir -p "$sdir"
       "$MDA" --json eval --dataset docsqa --data "$data" --project "$project" --root "$corpus" --split $SPLIT --arm-output "$rows" --arm-name "$name" --out "$sdir" > "$sdir/report.json" 2>"$sdir/err" || die "scoring $arm failed on $project (see $sdir/err)"
-      # the committed observations: rows, the request template, first-pass latency, the scorer's output
+      # the committed observations: the scorer's rows, then the scorer's output (moved into place last), then the driver's files and the manifest
       jq -c '{question_id, paths, truncated}' "$rows" > "$out/arms/$arm.jsonl"
-      [ ! -f "$rows.request.json" ] || cp "$rows.request.json" "$out/arms/$arm.request.json"
-      [ ! -f "$rows.work/times1.jsonl" ] || cp "$rows.work/times1.jsonl" "$out/arms/$arm.times.jsonl"
-      cp "$sdir/results.json" "$res"
+      cp "$sdir/results.json" "$res.tmp" && mv "$res.tmp" "$res"
+      archive_arm "$project" "$arm" "$rows" "$out"
       echo "$arm: $(jq -r '.runs[0] | "\(.metrics.questions) questions · success@5 \(.metrics.success_at_5) · missing \(.missing | length)"' "$res") · drive $((t1 - t0)) s"
     done ;;
   latency)
     project="${1:?project}"; shift; ident "$project"; arms="${*:-mda qmd graphify graphify-haiku}"
     frozen_ok
-    out="$T/$project/arms"; mkdir -p "$out"
+    out="$T/$project/latency"; mkdir -p "$out"   # never under arms/: the preflight and the pool enumerate rows there
     for arm in $arms; do
-      f="$out/$arm.mcp-times.jsonl"
+      f="$out/$arm.jsonl"
       if [ -f "$f" ]; then echo "$arm: $f exists, skipped"; continue; fi
       case "$arm" in graphify|graphify-haiku) built "$arm" "$project" || { echo "$arm: not built on $project, skipped"; continue; } ;; esac
       "$REPO/scripts/eval/mcp-time.sh" "$arm" "$project" "$f" $SPLIT
@@ -119,14 +148,14 @@ case "$cmd" in
   latency-table)
     echo "| Project | arm | queries | cold first call (startup + call) | warm median ms | warm p90 ms | failed |"
     echo "|---|---|---|---|---|---|---|"
-    for p in $PROJECTS; do for f in "$T/$p"/arms/*.mcp-times.jsonl; do
-      [ -f "$f" ] || continue; a="$(basename "$f" .mcp-times.jsonl)"
+    for p in $PROJECTS; do for f in "$T/$p"/latency/*.jsonl; do
+      [ -f "$f" ] || continue; case "$f" in *.queries.jsonl) continue ;; esac; a="$(basename "$f" .jsonl)"
       jq -s -r --arg p "$p" --arg a "$a" 'def pct(q): sort | if length == 0 then null else .[((length - 1) * q | floor)] end;
         (map(select(.ok and (.cold | not)) | .ms)) as $w |
         "| \($p) | \($a) | \(length) | \((map(select(.cold)) | first) as $c | if $c == null then "n/a" else "\($c.startup_ms // "?") + \($c.ms) ms" end) | \($w | pct(0.5)) | \($w | pct(0.9)) | \(map(select(.ok | not)) | length) |"' "$f"
     done; done
     echo
-    echo "Generated by \`scripts/eval/t1.sh latency-table\` from \`T1/<project>/arms/<arm>.mcp-times.jsonl\` (\`scripts/eval/mcp-time.sh\`: one rmcp stdio client, the server started cold, the first query includes process start and model load; plan §2.7)." ;;
+    echo "Generated by \`scripts/eval/t1.sh latency-table\` from \`T1/<project>/latency/<arm>.jsonl\` (\`scripts/eval/mcp-time.sh\`: one rmcp stdio client, the server started cold, the first query includes process start and model load; plan §2.7)." ;;
   target)
     echo "| Project | n | qmd full success@5 | mda hybrid success@5 | Δ (hybrid − qmd full), 95% paired | wins/losses | target (match qmd full) |"
     echo "|---|---|---|---|---|---|---|"
@@ -139,6 +168,11 @@ case "$cmd" in
     done
     echo
     echo "Generated by \`scripts/eval/t1.sh target\` (\`mda eval --compare\`: within-project paired bootstrap, 5,000 draws, seed $SEED; the product target of plan §4 is reported as met or not per project on the point estimate, with the interval beside it)." ;;
+  archive)
+    project="${1:?project}"; arm="${2:?arm}"; ident "$project"; ident "$arm"
+    out="$T/$project"; [ -f "$out/arms/$arm.results.json" ] || die "no $out/arms/$arm.results.json"
+    archive_arm "$project" "$arm" "$RUN/t1-runs/$project/$arm.jsonl" "$out"
+    n=0; for f in "$out/arms/$arm".*; do [ -e "$f" ] && n=$((n + 1)); done; echo "archived $arm on $project: $n files, manifest $out/arms/$arm.manifest.json" ;;
   lose)
     # For every project: hybrid's success@5 misses, split by whether qmd full / BM25-over-files /
     # graphify found the page in their top five (the same archived rows), and hybrid's own rank of
