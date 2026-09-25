@@ -108,7 +108,12 @@ PY
     # the sample: cards with at least one date or entity, seeded order by sha256(seed ‖ hash),
     # the source section re-read from the store (the section's current text, by hash)
     db="$corpus/.markdownattractor/index.sqlite"; [ -f "$db" ] || die "no store at $db"
-    jq -c 'to_entries[] | select(((.value.mentioned_dates // []) | length) + ((.value.entities // []) | length) > 0) | {hash: .key, dates: (.value.mentioned_dates // []), entities: (.value.entities // []), tldr: .value.tldr}' "$cards" \
+    # a card's dates are objects {raw, iso, precision, evidence}; its entities an object of lists
+    # (people, orgs, products, technologies, files_paths, commands): both flattened to strings
+    jq -c 'to_entries[] | {hash: .key, tldr: .value.tldr,
+             dates: ((.value.mentioned_dates // []) | map(if type == "object" then (.raw // .iso // tostring) else tostring end)),
+             entities: ((.value.entities // {}) | if type == "object" then [.[] | .[]?] else . end | map(tostring))}
+           | select((.dates | length) + (.entities | length) > 0)' "$cards" \
       | while IFS= read -r l; do k="$(printf '%s\x00%s' "$seed" "$(jq -r .hash <<<"$l")" | shasum -a 256 | cut -c1-16)"; jq -c --arg k "$k" '. + {key: $k}' <<<"$l"; done | sort -t'"' -k4 | jq -c 'del(.key)' | head -n "$n" > "$tmpd/cards.jsonl"
     : > "$sample"; i=0
     while IFS= read -r c; do
@@ -124,7 +129,7 @@ PY
       jf="$pdir/cards-$member.jsonl"; : > "$jf"; i=0
       while IFS= read -r c; do
         i=$((i + 1))
-        v="$(jq -n --argjson c "$c" --rawfile body "$tmpd/body-$i.txt" -r '"<submission>\nSection (" + $c.page + " › " + $c.heading + "):\n" + $body + "\n\nDates: " + ($c.dates | map(if type == "object" then (.value // .date // tostring) else tostring end) | join(" | ")) + "\nEntities: " + ($c.entities | map(if type == "object" then (.name // .value // tostring) else tostring end) | join(" | ")) + "\n</submission>"' | judge "$member" "$schema" "$rubric")"
+        v="$(jq -n --argjson c "$c" --rawfile body "$tmpd/body-$i.txt" -r '"<submission>\nSection (" + $c.page + " › " + $c.heading + "):\n" + $body + "\n\nDates: " + ($c.dates | join(" | ")) + "\nEntities: " + ($c.entities | join(" | ")) + "\n</submission>"' | judge "$member" "$schema" "$rubric")"
         jq -c --arg sid "$(jq -r .sample_id <<<"$c")" --arg member "$member" '{sample_id: $sid, member: $member} + .' <<<"$v" >> "$jf"
         printf '%s %s: %s\n' "$member" "$(jq -r .sample_id <<<"$c")" "$(jq -c '(.out.dates // []) + (.out.entities // []) | map(.supported) | {supported: (map(select(.)) | length), unsupported: (map(select(. | not)) | length)}' <<<"$v")"
       done < "$sample"
