@@ -1,0 +1,35 @@
+{
+  "measured_at": "2026-09-25T17:23:08Z",
+  "host": "arm64 15.2",
+  "note": "live artifact sizes on the machine that ran the benchmark (mda store = .markdownattractor/index.sqlite incl. FTS content and f32 vectors; qmd index incl. its llm_cache; BM25-over-files FTS5 table; graphify graph.json)",
+  "sizes": {
+    "github-docs": {
+      "mda_store_bytes": 190132224,
+      "qmd_index_bytes": 97345536,
+      "bm25_table_bytes": 30072832,
+      "graphify_graph_bytes": null,
+      "graphify_haiku_graph_bytes": 47910447
+    },
+    "prisma": {
+      "mda_store_bytes": 111611904,
+      "qmd_index_bytes": 32657408,
+      "bm25_table_bytes": 9969664,
+      "graphify_graph_bytes": null,
+      "graphify_haiku_graph_bytes": 1497761
+    },
+    "supabase": {
+      "mda_store_bytes": 84226048,
+      "qmd_index_bytes": 26165248,
+      "bm25_table_bytes": 8069120,
+      "graphify_graph_bytes": 2263060,
+      "graphify_haiku_graph_bytes": 1229195
+    },
+    "tailwind-css": {
+      "mda_store_bytes": 12029952,
+      "qmd_index_bytes": 8359936,
+      "bm25_table_bytes": 2224128,
+      "graphify_graph_bytes": 441720,
+      "graphify_haiku_graph_bytes": 369560
+    }
+  }
+}
