@@ -54,7 +54,7 @@ jq -e '.savings == null' <<<"$p" >/dev/null || fail "no saving may be claimed wh
 ok '[.analysis.arms[] | select(.arm == "mda") | .mean_score_completed] == [6]' || fail "completed-only mean over q-ok is 6"
 # 6. a duplicate observation is refused (the runner double-counted)
 cp "$tmp/out/grades.jsonl" "$tmp/dup.jsonl"; row q-ok mda 1 '"error":false,"score":1' >> "$tmp/dup.jsonl"
-if "$MDA" --json eval --analysis "$tmp/dup.jsonl" --comparators grep --draws 10 >/dev/null 2>&1; then fail "a duplicate (question, arm, run) must be refused"; fi
+if "$MDA" --json eval --analysis "$tmp/dup.jsonl" --no-manifest --comparators grep --draws 10 >/dev/null 2>&1; then fail "a duplicate (question, arm, run) must be refused"; fi
 # 7. t2.sh status reports missing and error rows against the manifest
 jq -c . "$tmp/out/grades.jsonl" | while IFS= read -r l; do printf '%s' "$l" > "$tmp/out/rows/$(jq -r '"\(.id)-\(.arm)-\(.run)"' <<<"$l").json"; done
 st="$(bash "$repo/scripts/eval/t2.sh" status "$tmp/out")"

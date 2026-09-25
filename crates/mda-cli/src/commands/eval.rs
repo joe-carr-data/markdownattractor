@@ -116,9 +116,15 @@ pub struct Args {
     /// expected run that has no row a failure.
     #[arg(long, conflicts_with_all = ["dataset", "golden", "record", "compare", "interval"])]
     pub analysis: Option<PathBuf>,
-    /// The runner's `manifest.json` for `--analysis`.
-    #[arg(long, requires = "analysis")]
+    /// The runner's `manifest.json` for `--analysis`: required, so that every expected run
+    /// that has no row is a failure and every row is validated against the run set; an
+    /// analysis without one is diagnostic only (`--no-manifest`).
+    #[arg(long, requires = "analysis", conflicts_with = "no_manifest")]
     pub manifest: Option<PathBuf>,
+    /// Analyse a grades file without a manifest (diagnostic: absent questions and runs
+    /// missing from every question are invisible).
+    #[arg(long, requires = "analysis")]
+    pub no_manifest: bool,
     /// The mda arm's name in the grade rows.
     #[arg(long, default_value = "mda", requires = "analysis")]
     pub mda_arm: String,
@@ -307,6 +313,10 @@ fn run_analysis(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     use mda_core::eval::analysis::{self, AnalysisOptions};
     let Some(grades) = &args.analysis else { unreachable!("checked by the caller") };
     let rows = analysis::read_grades(grades)?;
+    anyhow::ensure!(
+        args.manifest.is_some() || args.no_manifest,
+        "--analysis needs --manifest <manifest.json> (or --no-manifest for a diagnostic run)"
+    );
     let manifest = args.manifest.as_deref().map(analysis::read_manifest).transpose()?;
     let opts = AnalysisOptions {
         mda_arm: args.mda_arm.clone(),
@@ -353,12 +363,21 @@ fn run_analysis(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         let g = &p.gates;
         let yn = |b: bool| if b { "pass" } else { "FAIL" };
         let sv = p.savings.as_ref().map_or("none claimed".to_owned(), |s| {
+            let m = |r: &mda_core::eval::analysis::MetricRatio| {
+                format!(
+                    "×{} (n={}, −{} missing, −{} zero)",
+                    f(r.median_ratio),
+                    r.questions,
+                    r.excluded_missing,
+                    r.excluded_zero_denominator
+                )
+            };
             format!(
-                "n={} · source tokens ×{} · calls ×{} · cost ×{}",
+                "base n={} · source tokens {} · calls {} · cost {}",
                 s.questions,
-                f(s.source_tokens_ratio),
-                f(s.tool_calls_ratio),
-                f(s.cost_ratio)
+                m(&s.source_tokens),
+                m(&s.tool_calls),
+                m(&s.cost_usd)
             )
         });
         println!(

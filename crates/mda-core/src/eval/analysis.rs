@@ -50,6 +50,20 @@ pub enum AnalysisError {
     /// The mda arm has no rows.
     #[error("no rows for the mda arm {0:?}")]
     NoMdaRows(String),
+    /// A row the manifest does not expect: an unknown question or arm, or a run number
+    /// outside `1..=runs` (Codex M5 F4: rows are validated against the manifest's universe,
+    /// never counted).
+    #[error("row for question {id:?}, arm {arm:?}, run {run} is not in the manifest ({why})")]
+    Unexpected {
+        /// The question.
+        id: String,
+        /// The arm.
+        arm: String,
+        /// The run number.
+        run: usize,
+        /// Which part is unknown.
+        why: &'static str,
+    },
     /// Nothing to analyse or a bad parameter.
     #[error("{0}")]
     Invalid(String),
@@ -236,17 +250,33 @@ pub struct PairReport {
     pub savings: Option<Savings>,
 }
 
+/// One metric's saving: the median over questions of `comparator / mda`, with its own
+/// denominator and the questions it had to leave out (Codex M5 F7).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MetricRatio {
+    /// Median of the per-question ratios (`None` when no question qualifies).
+    pub median_ratio: Option<f64>,
+    /// Questions the ratio is computed over.
+    pub questions: usize,
+    /// Questions left out because one side lacks the metric.
+    pub excluded_missing: usize,
+    /// Questions left out because mda's value is 0 (a ratio is undefined; a zero is
+    /// legitimate for an answer given without retrieval and is reported, not divided by).
+    pub excluded_zero_denominator: usize,
+}
+
 /// The savings of a passing pair.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Savings {
-    /// Questions with at least one completed run on both arms (the denominator).
+    /// Questions with at least one completed run on both arms (the base every metric
+    /// starts from; each metric states its own denominator).
     pub questions: usize,
-    /// Median over those questions of the comparator's source tokens / mda's.
-    pub source_tokens_ratio: Option<f64>,
-    /// Median ratio of tool calls.
-    pub tool_calls_ratio: Option<f64>,
-    /// Median ratio of cost.
-    pub cost_ratio: Option<f64>,
+    /// Source tokens.
+    pub source_tokens: MetricRatio,
+    /// Tool calls.
+    pub tool_calls: MetricRatio,
+    /// Cost.
+    pub cost_usd: MetricRatio,
 }
 
 /// The whole analysis.
@@ -327,7 +357,10 @@ fn completed(row: &GradeRow) -> Option<(f64, bool)> {
 
 #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
 fn question_arm(id: &str, arm: &str, expected_runs: usize, rows: &[&GradeRow]) -> QuestionArm {
-    let runs = expected_runs.max(rows.len());
+    // Without a manifest the run count is inferred from the rows (diagnostic use only: a run
+    // missing from every question is invisible); with one, every run number was validated
+    // upstream and the count is the manifest's. A skipped run number is a missing run.
+    let runs = expected_runs.max(rows.iter().map(|r| r.run).max().unwrap_or(0)).max(rows.len());
     let mut scores: Vec<f64> = Vec::with_capacity(runs);
     let mut completed_scores: Vec<f64> = Vec::new();
     let mut grounded = 0;
@@ -399,6 +432,25 @@ pub fn analyse(
                 arm: r.arm.clone(),
                 run: r.run,
             });
+        }
+        if let Some(m) = manifest {
+            let why = if !m.question_ids.contains(&r.id) {
+                Some("unknown question")
+            } else if !m.arms.contains(&r.arm) {
+                Some("unknown arm")
+            } else if r.run == 0 || r.run > m.runs {
+                Some("run number outside 1..=runs")
+            } else {
+                None
+            };
+            if let Some(why) = why {
+                return Err(AnalysisError::Unexpected {
+                    id: r.id.clone(),
+                    arm: r.arm.clone(),
+                    run: r.run,
+                    why,
+                });
+            }
         }
         by_qa.entry((r.id.clone(), r.arm.clone())).or_default().push(r);
     }
@@ -490,21 +542,28 @@ pub fn analyse(
         let savings = if gates.pass {
             let both: Vec<(&QuestionArm, &QuestionArm)> =
                 mq.iter().zip(cq).filter(|(m, c)| m.completed > 0 && c.completed > 0).collect();
-            let ratio = |f: fn(&QuestionArm) -> Option<f64>| -> Option<f64> {
-                let mut v: Vec<f64> = both
-                    .iter()
-                    .filter_map(|(m, c)| match (f(m), f(c)) {
-                        (Some(a), Some(b)) if a > 0.0 => Some(b / a),
-                        _ => None,
-                    })
-                    .collect();
-                median(&mut v)
+            let ratio = |f: fn(&QuestionArm) -> Option<f64>| -> MetricRatio {
+                let mut v: Vec<f64> = Vec::new();
+                let (mut missing, mut zero) = (0, 0);
+                for (m, c) in &both {
+                    match (f(m), f(c)) {
+                        (Some(a), Some(b)) if a > 0.0 => v.push(b / a),
+                        (Some(_), Some(_)) => zero += 1,
+                        _ => missing += 1,
+                    }
+                }
+                MetricRatio {
+                    questions: v.len(),
+                    median_ratio: median(&mut v),
+                    excluded_missing: missing,
+                    excluded_zero_denominator: zero,
+                }
             };
             Some(Savings {
                 questions: both.len(),
-                source_tokens_ratio: ratio(|q| q.source_tokens),
-                tool_calls_ratio: ratio(|q| q.tool_calls),
-                cost_ratio: ratio(|q| q.cost_usd),
+                source_tokens: ratio(|q| q.source_tokens),
+                tool_calls: ratio(|q| q.tool_calls),
+                cost_usd: ratio(|q| q.cost_usd),
             })
         } else {
             None
@@ -625,9 +684,10 @@ mod tests {
         assert!(p.ci95.0 > 0.0 && p.mean_delta > 1.0);
         let s = p.savings.as_ref().unwrap();
         assert_eq!(s.questions, 19);
-        assert!((s.source_tokens_ratio.unwrap() - 5.0).abs() < 1e-12);
-        assert!((s.tool_calls_ratio.unwrap() - 3.0).abs() < 1e-12);
-        assert!((s.cost_ratio.unwrap() - 5.0).abs() < 1e-12);
+        assert!((s.source_tokens.median_ratio.unwrap() - 5.0).abs() < 1e-12);
+        assert_eq!((s.source_tokens.questions, s.source_tokens.excluded_missing), (19, 0));
+        assert!((s.tool_calls.median_ratio.unwrap() - 3.0).abs() < 1e-12);
+        assert!((s.cost_usd.median_ratio.unwrap() - 5.0).abs() < 1e-12);
         assert_eq!(a.other_arms, Vec::<String>::new());
     }
 
@@ -658,6 +718,71 @@ mod tests {
             row("q1", "mda", 1, Some(2.0), Some(true), false),
         ];
         assert!(matches!(analyse(&rows, None, &opts()), Err(AnalysisError::Duplicate { .. })));
+    }
+
+    #[test]
+    fn a_zero_mda_denominator_is_excluded_and_counted_not_divided() {
+        let mut rows = Vec::new();
+        for i in 0..20 {
+            let id = format!("q{i}");
+            let mut m = row(&id, "mda", 1, Some(5.0), Some(true), false);
+            if i == 0 {
+                m.source_tokens = Some(0);
+            }
+            if i == 1 {
+                m.cost_usd = None;
+            }
+            rows.push(m);
+            rows.push(row(&id, "grep", 1, Some(4.0), Some(true), false));
+        }
+        let a = analyse(&rows, None, &opts()).unwrap();
+        let s = a.pairs[0].savings.as_ref().unwrap();
+        assert_eq!((s.source_tokens.questions, s.source_tokens.excluded_zero_denominator), (19, 1));
+        assert_eq!((s.cost_usd.questions, s.cost_usd.excluded_missing), (19, 1));
+    }
+
+    #[test]
+    fn rows_outside_the_manifest_are_refused_and_a_skipped_run_number_is_a_missing_run() {
+        let m = Manifest {
+            question_ids: vec!["q1".into()],
+            arms: vec!["mda".into(), "grep".into()],
+            runs: 3,
+        };
+        let base = vec![
+            row("q1", "mda", 1, Some(6.0), Some(true), false),
+            row("q1", "grep", 1, Some(6.0), Some(true), false),
+        ];
+        let mut extra = base.clone();
+        extra.push(row("q1", "mda", 4, Some(6.0), Some(true), false));
+        assert!(matches!(
+            analyse(&extra, Some(&m), &opts()),
+            Err(AnalysisError::Unexpected { why: "run number outside 1..=runs", .. })
+        ));
+        let mut unknown = base.clone();
+        unknown.push(row("q9", "mda", 1, Some(6.0), Some(true), false));
+        assert!(matches!(
+            analyse(&unknown, Some(&m), &opts()),
+            Err(AnalysisError::Unexpected { why: "unknown question", .. })
+        ));
+        let mut arm = base.clone();
+        arm.push(row("q1", "qmd", 1, Some(6.0), Some(true), false));
+        assert!(matches!(
+            analyse(&arm, Some(&m), &opts()),
+            Err(AnalysisError::Unexpected { why: "unknown arm", .. })
+        ));
+        let mut skipped = base;
+        skipped.push(row("q1", "mda", 2, Some(6.0), Some(true), false));
+        let a = analyse(&skipped, Some(&m), &opts()).unwrap();
+        let q = a.questions.iter().find(|q| q.arm == "mda").unwrap();
+        assert_eq!((q.runs, q.completed, q.failed), (3, 2, 1));
+        let no_manifest = vec![
+            row("q1", "mda", 1, Some(6.0), Some(true), false),
+            row("q1", "mda", 3, Some(6.0), Some(true), false),
+            row("q1", "grep", 1, Some(6.0), Some(true), false),
+        ];
+        let a = analyse(&no_manifest, None, &opts()).unwrap();
+        let q = a.questions.iter().find(|q| q.arm == "mda").unwrap();
+        assert_eq!((q.runs, q.failed), (3, 1));
     }
 
     #[test]
