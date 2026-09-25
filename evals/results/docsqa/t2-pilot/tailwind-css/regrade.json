@@ -1,0 +1,131 @@
+{
+  "seed": "20260922",
+  "stamp": "20260925T094557Z",
+  "trigger": "either panel member differs from the Sonnet grade by more than one point on 0–6 → the panel mean",
+  "sample": 8,
+  "incomplete": 0,
+  "agreement": {
+    "fable_astra": {
+      "exact": 0.5,
+      "within_one": 1
+    },
+    "fable_sonnet": {
+      "exact": 0.875,
+      "within_one": 1
+    },
+    "astra_sonnet": {
+      "exact": 0.625,
+      "within_one": 1
+    }
+  },
+  "resolved_by_panel": 0,
+  "mean_sonnet": 5.875,
+  "mean_fable": 5.75,
+  "mean_astra": 5.5,
+  "rows": [
+    {
+      "sample_id": "r000",
+      "id": "tailwind-css::tailwind-18753",
+      "arm": "graphify",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 6,
+      "panel_mean": 6,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r001",
+      "id": "tailwind-css::tailwind-18753",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 5,
+      "fable": 5,
+      "astra": 5,
+      "panel_mean": 5,
+      "triggered": false,
+      "resolved": 5,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r002",
+      "id": "tailwind-css::tailwind-17487",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 5,
+      "panel_mean": 5.5,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r003",
+      "id": "tailwind-css::tailwind-11515",
+      "arm": "qmd",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 5,
+      "panel_mean": 5.5,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r004",
+      "id": "tailwind-css::tailwind-17086",
+      "arm": "graphify",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 5,
+      "panel_mean": 5.5,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r005",
+      "id": "tailwind-css::tailwind-17487",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 6,
+      "panel_mean": 6,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r006",
+      "id": "tailwind-css::tailwind-11515",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 6,
+      "panel_mean": 6,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r007",
+      "id": "tailwind-css::tailwind-18753",
+      "arm": "qmd",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 5,
+      "astra": 6,
+      "panel_mean": 5.5,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    }
+  ]
+}

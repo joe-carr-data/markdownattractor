@@ -1,0 +1,404 @@
+{
+  "analysis": {
+    "arms": [
+      {
+        "arm": "graphify",
+        "completed": 5,
+        "cost_usd": 0.0576132,
+        "failed": 0,
+        "grounding_rate": 0.4,
+        "mean_score": 3.8,
+        "mean_score_completed": 3.8,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 6571.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "grep",
+        "completed": 5,
+        "cost_usd": 0.0524126,
+        "failed": 0,
+        "grounding_rate": 0.4,
+        "mean_score": 4.8,
+        "mean_score_completed": 4.8,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 5198.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 5,
+        "cost_usd": 0.0326134,
+        "failed": 0,
+        "grounding_rate": 1.0,
+        "mean_score": 3.2,
+        "mean_score_completed": 3.2,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 2305.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 5,
+        "cost_usd": 0.0490526,
+        "failed": 0,
+        "grounding_rate": 0.4,
+        "mean_score": 3.6,
+        "mean_score_completed": 3.6,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 3707.0,
+        "tool_calls": 2.0
+      }
+    ],
+    "draws": 10000,
+    "missing_comparators": [],
+    "other_arms": [],
+    "pairs": [
+      {
+        "ci95": [
+          -4.0,
+          0.0
+        ],
+        "comparator": "grep",
+        "gates": {
+          "grounding_ok": true,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 2,
+        "mean_delta": -1.6,
+        "n": 5,
+        "savings": null,
+        "ties": 3,
+        "wins": 0
+      },
+      {
+        "ci95": [
+          -1.6,
+          0.8
+        ],
+        "comparator": "qmd",
+        "gates": {
+          "grounding_ok": true,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 2,
+        "mean_delta": -0.4,
+        "n": 5,
+        "savings": null,
+        "ties": 2,
+        "wins": 1
+      },
+      {
+        "ci95": [
+          -1.4,
+          0.0
+        ],
+        "comparator": "graphify",
+        "gates": {
+          "grounding_ok": true,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 2,
+        "mean_delta": -0.6,
+        "n": 5,
+        "savings": null,
+        "ties": 3,
+        "wins": 0
+      }
+    ],
+    "questions": [
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0610266,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-33340",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 5028.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.036352800000000005,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-32027",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 5198.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.038862999999999995,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-1514",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 5224.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.059856200000000005,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-8508",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 10388.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0524126,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-33029",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 2942.0,
+        "tool_calls": 8.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.056308,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-33340",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2305.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.025921400000000004,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-32027",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 1979.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0462746,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-1514",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3351.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0287136,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-8508",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 2092.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0326134,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-33029",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 2598.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0945168,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-33340",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 3707.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0383188,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-32027",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 2691.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0490526,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-1514",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 5624.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0262846,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-8508",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 1845.0,
+        "tool_calls": 1.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0649806,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-33029",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 6765.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.07582140000000001,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-33340",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 7767.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.0609046,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-32027",
+        "runs": 1,
+        "score": 1.0,
+        "score_completed": 1.0,
+        "source_tokens": 7086.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.0470622,
+        "failed": 0,
+        "grounded": 1,
+        "id": "supabase::supabase-1514",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 6571.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.0281462,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-8508",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 1094.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.0576132,
+        "failed": 0,
+        "grounded": 0,
+        "id": "supabase::supabase-33029",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 4646.0,
+        "tool_calls": 5.0
+      }
+    ],
+    "seed": 20260922
+  },
+  "grades": "~/.cache/markdownattractor/bench/t2-pilot/supabase/grades.jsonl",
+  "manifest": "~/.cache/markdownattractor/bench/t2-pilot/supabase/manifest.json",
+  "options": {
+    "comparators": [
+      "grep",
+      "qmd",
+      "graphify"
+    ],
+    "draws": 10000,
+    "gates": {
+      "min_grounding": 0.95,
+      "min_lower_bound": -0.25,
+      "min_mean": 4.0
+    },
+    "mda_arm": "mda",
+    "seed": 20260922
+  }
+}

@@ -1,0 +1,305 @@
+{
+  "analysis": {
+    "arms": [
+      {
+        "arm": "grep",
+        "completed": 5,
+        "cost_usd": 0.08728520000000001,
+        "failed": 0,
+        "grounding_rate": 0.2,
+        "mean_score": 4.6,
+        "mean_score_completed": 4.6,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 9889.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "mda",
+        "completed": 5,
+        "cost_usd": 0.0448158,
+        "failed": 0,
+        "grounding_rate": 0.2,
+        "mean_score": 3.6,
+        "mean_score_completed": 3.6,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 2990.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 5,
+        "cost_usd": 0.0396138,
+        "failed": 0,
+        "grounding_rate": 0.2,
+        "mean_score": 4.0,
+        "mean_score_completed": 4.0,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 2976.0,
+        "tool_calls": 2.0
+      }
+    ],
+    "draws": 10000,
+    "missing_comparators": [],
+    "other_arms": [],
+    "pairs": [
+      {
+        "ci95": [
+          -4.2,
+          2.2
+        ],
+        "comparator": "grep",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 3,
+        "mean_delta": -1.0,
+        "n": 5,
+        "savings": null,
+        "ties": 0,
+        "wins": 2
+      },
+      {
+        "ci95": [
+          -3.6,
+          2.8
+        ],
+        "comparator": "qmd",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 2,
+        "mean_delta": -0.4,
+        "n": 5,
+        "savings": null,
+        "ties": 1,
+        "wins": 2
+      }
+    ],
+    "questions": [
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0878766,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-11775",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 4097.0,
+        "tool_calls": 9.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0622688,
+        "failed": 0,
+        "grounded": 1,
+        "id": "prisma::prisma-12314",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 11130.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.045072,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-14665",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 1502.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.08728520000000001,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-27080",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 11353.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.089393,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-13432",
+        "runs": 1,
+        "score": 5.0,
+        "score_completed": 5.0,
+        "source_tokens": 9889.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0664932,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-11775",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2958.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0409204,
+        "failed": 0,
+        "grounded": 1,
+        "id": "prisma::prisma-12314",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3808.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0448158,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-14665",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 2855.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0495046,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-27080",
+        "runs": 1,
+        "score": 5.0,
+        "score_completed": 5.0,
+        "source_tokens": 4669.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0376596,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-13432",
+        "runs": 1,
+        "score": 1.0,
+        "score_completed": 1.0,
+        "source_tokens": 2990.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0347846,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-11775",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 3066.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0373772,
+        "failed": 0,
+        "grounded": 1,
+        "id": "prisma::prisma-12314",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2795.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0396138,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-14665",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2316.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0408728,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-27080",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 2976.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.068652,
+        "failed": 0,
+        "grounded": 0,
+        "id": "prisma::prisma-13432",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 4336.0,
+        "tool_calls": 4.0
+      }
+    ],
+    "seed": 20260922
+  },
+  "grades": "~/.cache/markdownattractor/bench/t2-pilot/prisma/grades.jsonl",
+  "manifest": "~/.cache/markdownattractor/bench/t2-pilot/prisma/manifest.json",
+  "options": {
+    "comparators": [
+      "grep",
+      "qmd"
+    ],
+    "draws": 10000,
+    "gates": {
+      "min_grounding": 0.95,
+      "min_lower_bound": -0.25,
+      "min_mean": 4.0
+    },
+    "mda_arm": "mda",
+    "seed": 20260922
+  }
+}

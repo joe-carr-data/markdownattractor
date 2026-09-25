@@ -137,12 +137,12 @@ Selection is the greedy rule above; "simpler" (for a tie within 0.01) means fewe
 | M3 | T1 development rows for all arms; pooled judgments sampled and judged; tuning loop (§3) run and logged | `TUNING.md` complete; winner frozen |
 | M4 | T1 final freeze; test split once; page section with "where we lose"; Codex pass on the scorer, drivers and freeze | **T1 published** |
 | M5 | T2 harness: resumable runner, transcript tokens, grounding check, analysis command with tests, panel scripts, failure-matrix test, question export; development pilot (throughput measured); Codex pass on the harness (v3.2 §7 follow-up) | harness verified against rules 0.3, 0.4, 0.5, 0.7, 0.8 |
-| M6 | T2 final freeze; runs (4 projects × 4 arms × 25 × 3 = 1,200 answers, detached, resumable); grading; panel calibration and card audit; T3 | **T2, T3 published** |
+| M6 | T2 final freeze; runs (4 projects × 25 × 3 runs × the arms available — graphify's graphs exist on two projects — = 1,050 answers, detached, resumable); grading; panel calibration and card audit; T3 | **T2, T3 published** |
 | M7 | T4 harness and runs | **T4 published** |
 | M8 | `MDA_NOW`, replay harness, validation, T5 | **T5 published** |
 | M9 | T6; README numbers row limited to gates passed; page restructured by axis; holdout still sealed | strategy v3.2 exit criteria ticked |
 
-Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 throughput) and are written into the milestone when known; until then no dates. T1 and T2 are independent of T4/T5; a slip there never delays or changes a published T1/T2.
+Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 throughput) and are written into the milestone when known; until then no dates. **M5 pilot (2026-09-25, 70 runs, 0 errors, one job):** 132 answer runs per hour through `claude -p` (median wall 12 s mda, 17 s grep, 17 s graphify, 45 s qmd), ≈ $0.05 list-price per run; T2's 1,050 answers ≈ 8 h of runs plus two grader calls per answer ≈ 9 h of grading at one job, plus the panel (30 answers × 2 members per project) and the card audit (100 cards × 2 members per corpus). T1 and T2 are independent of T4/T5; a slip there never delays or changes a published T1/T2.
 
 ## 6. Risks, and what we do
 

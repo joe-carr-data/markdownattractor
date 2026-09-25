@@ -1,0 +1,385 @@
+{
+  "seed": "20260922",
+  "stamp": "20260925T092118Z",
+  "cards_file": "cards-0.1.1-prisma.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 20,
+  "values": 90,
+  "unsupported_rate": {
+    "fable": 0.023529411764705882,
+    "astra": 0.023529411764705882
+  },
+  "incomplete": 1,
+  "agreement": 0.9764705882352941,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Filter conditions and operators\",\"lte\",\"Examples\",\"Get all Post records where likes is less or equal to 9\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c002",
+      "page": "apps/docs/content/docs/guides/database/multiple-databases.mdx",
+      "heading": "[\"4. Integrate multiple Prisma Clients in your Next.js app\",\"4.1. Populate your databases with data\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "apps/docs/content/docs/guides/v7/frameworks/sveltekit.mdx",
+      "heading": "[\"2. Install and Configure Prisma\",\"2.4. Configure the Prisma Client generator\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "apps/docs/content/docs/orm/v6/prisma-migrate/workflows/generating-down-migrations.mdx",
+      "heading": "[\"How to generate and run down migrations\",\"Generating the migrations\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c005",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/observability-and-logging/sql-comments.mdx",
+      "heading": "[\"First-party plugins\",\"Query tags\",\"Nested scopes with tag replacement\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/queries/crud.mdx",
+      "heading": "[\"Read\",\"Include related records\",\"Include a filtered list of relations\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c007",
+      "page": "apps/docs/content/docs/cli/skills.mdx",
+      "heading": "[\"Where skills come from\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "apps/docs/content/docs/guides/deployment/turborepo.mdx",
+      "heading": "[\"2. Add a new database package to the monorepo\",\"2.2. Initialize Prisma and define models\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Atomic number operations\",\"Examples\",\"Set all views fields of all Post records to 0\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c010",
+      "page": "apps/docs/content/docs/(index)/v7/prisma-orm/add-to-existing-project/mongodb.mdx",
+      "heading": "[\"8. Evolve your schema\",\"8.2. Push the changes to your database\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "apps/docs/content/docs/guides/integrations/permit-io.mdx",
+      "heading": "[\"6. Define your access control policy in Permit.io\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/type-safety/prisma-validator.mdx",
+      "heading": "[\"Using the Prisma.validator\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c013",
+      "page": "apps/docs/content/docs/guides/deployment/docker.mdx",
+      "heading": "[\"3. Run the app and database together with Docker Compose\",\"3.2. Create and configure a Docker Compose file\"]",
+      "values": 8,
+      "fable": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "apps/docs/content/docs/orm/v7/prisma-migrate/workflows/customizing-migrations.mdx",
+      "heading": "[\"How to edit a migration file\",\"Example: Change the direction of a 1-1 relation\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "apps/docs/content/docs/rest-api/sdk.mdx",
+      "heading": "[\"API reference\",\"createManagementApiClient(options)\"]",
+      "values": 3,
+      "fable": [
+        false,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "apps/docs/content/docs/orm/v6/tools/prisma-studio.mdx",
+      "heading": "[\"Prerequisites\",\"Option 2: Use with a Prisma ORM project\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+      "heading": "[\"Attribute functions\",\"cuid()\",\"Remarks\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "apps/docs/content/docs/orm/contract-authoring/typescript-schema-builder.mdx",
+      "heading": "[\"Extension types\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+      "heading": "[\"Read, modify, write\",\"Optimistic concurrency control\",\"Scenario: Reserving a seat at the cinema\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "apps/docs/content/docs/cli/deploy.mdx",
+      "heading": "[\"The control API\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    }
+  ]
+}

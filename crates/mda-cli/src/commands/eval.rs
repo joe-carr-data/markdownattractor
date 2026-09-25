@@ -98,6 +98,39 @@ pub struct Args {
     /// `question_id`): the pooled column is computed over the judged questions (plan §2.3).
     #[arg(long)]
     pub only_questions: Option<PathBuf>,
+    /// Write the T2 question sample of the split (plan §4): eligible questions with the
+    /// dataset's reference answer, stratified over the community category in seeded order,
+    /// as JSONL rows `{id, split, category, q, reference, relevant}`; `--sample` questions
+    /// (0 = all), seeded by `--sample-seed` (default: the split seed). Written before scoring.
+    #[arg(long, requires = "dataset")]
+    pub export_questions: Option<PathBuf>,
+    /// Sample size for `--export-questions` (0 = every eligible question of the split).
+    #[arg(long, default_value_t = 0, requires = "export_questions")]
+    pub sample: usize,
+    /// Seed for `--export-questions` (default: `--seed`).
+    #[arg(long, requires = "export_questions")]
+    pub sample_seed: Option<u64>,
+    /// The T2 analysis (plan §2.5, rule 0.4) of a `grades.jsonl`: question-level medians
+    /// with failed runs as 0, mda against each comparator with a 10,000-draw paired
+    /// bootstrap, the three gates, savings only where they pass; `--manifest` makes every
+    /// expected run that has no row a failure.
+    #[arg(long, conflicts_with_all = ["dataset", "golden", "record", "compare", "interval"])]
+    pub analysis: Option<PathBuf>,
+    /// The runner's `manifest.json` for `--analysis`: required, so that every expected run
+    /// that has no row is a failure and every row is validated against the run set; an
+    /// analysis without one is diagnostic only (`--no-manifest`).
+    #[arg(long, requires = "analysis", conflicts_with = "no_manifest")]
+    pub manifest: Option<PathBuf>,
+    /// Analyse a grades file without a manifest (diagnostic: absent questions and runs
+    /// missing from every question are invisible).
+    #[arg(long, requires = "analysis")]
+    pub no_manifest: bool,
+    /// The mda arm's name in the grade rows.
+    #[arg(long, default_value = "mda", requires = "analysis")]
+    pub mda_arm: String,
+    /// The comparator arms, in order.
+    #[arg(long, default_value = "grep,qmd,graphify", value_delimiter = ',', requires = "analysis")]
+    pub comparators: Vec<String>,
     /// Paired comparison of archived runs instead of an evaluation (execution plan §3,
     /// 2026-09-24 amendment): `--compare <label> <baseline results.json> <candidate
     /// results.json>`, repeated once per project. Reports wins, losses, the unrounded
@@ -174,6 +207,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     }
     if !args.interval.is_empty() {
         return run_interval(args, json);
+    }
+    if args.analysis.is_some() {
+        return run_analysis(args, json);
     }
     if args.dataset.as_deref() == Some("docsqa") {
         return run_docsqa(args, json);
@@ -268,6 +304,104 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "  {} no cards.json in the golden set: only the lexical run was measured",
             st.dim("note:")
         );
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// `--analysis`: the T2 analysis of a grades file, nothing searched, nothing written.
+fn run_analysis(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    use mda_core::eval::analysis::{self, AnalysisOptions};
+    let Some(grades) = &args.analysis else { unreachable!("checked by the caller") };
+    let rows = analysis::read_grades(grades)?;
+    anyhow::ensure!(
+        args.manifest.is_some() || args.no_manifest,
+        "--analysis needs --manifest <manifest.json> (or --no-manifest for a diagnostic run)"
+    );
+    let manifest = args.manifest.as_deref().map(analysis::read_manifest).transpose()?;
+    let opts = AnalysisOptions {
+        mda_arm: args.mda_arm.clone(),
+        comparators: args.comparators.clone(),
+        draws: if args.draws == 5000 { 10_000 } else { args.draws },
+        seed: args.seed,
+        ..AnalysisOptions::default()
+    };
+    let a = analysis::analyse(&rows, manifest.as_ref(), &opts)?;
+    if json {
+        output::json(
+            &serde_json::json!({"grades": portable(grades), "manifest": args.manifest.as_deref().map(portable), "options": {"mda_arm": opts.mda_arm, "comparators": opts.comparators, "draws": opts.draws, "seed": opts.seed, "gates": {"min_lower_bound": opts.min_lower_bound, "min_mean": opts.min_mean, "min_grounding": opts.min_grounding}}, "analysis": a}),
+        );
+        return Ok(ExitCode::SUCCESS);
+    }
+    let f = |v: Option<f64>| v.map_or("n/a".to_owned(), |x| format!("{x:.1}"));
+    println!(
+        "| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |"
+    );
+    println!("|---|---|---|---|---|---|---|---|---|---|---|");
+    for s in &a.arms {
+        println!(
+            "| {} | {} | {:.2} | {} ({}) | {} | {} | {} | {:.1}% | {} | {} | {} |",
+            s.arm,
+            s.questions,
+            s.mean_score,
+            f(s.mean_score_completed),
+            s.questions_with_completed,
+            s.runs,
+            s.completed,
+            s.failed,
+            s.grounding_rate * 100.0,
+            f(s.source_tokens),
+            f(s.tool_calls),
+            s.cost_usd.map_or("n/a".into(), |c| format!("${c:.3}"))
+        );
+    }
+    println!();
+    println!(
+        "| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |"
+    );
+    println!("|---|---|---|---|---|---|---|---|---|");
+    for p in &a.pairs {
+        let g = &p.gates;
+        let yn = |b: bool| if b { "pass" } else { "FAIL" };
+        let sv = p.savings.as_ref().map_or("none claimed".to_owned(), |s| {
+            let m = |r: &mda_core::eval::analysis::MetricRatio| {
+                format!(
+                    "×{} (n={}, −{} missing, −{} zero)",
+                    f(r.median_ratio),
+                    r.questions,
+                    r.excluded_missing,
+                    r.excluded_zero_denominator
+                )
+            };
+            format!(
+                "base n={} · source tokens {} · calls {} · cost {}",
+                s.questions,
+                m(&s.source_tokens),
+                m(&s.tool_calls),
+                m(&s.cost_usd)
+            )
+        });
+        println!(
+            "| {} vs {} | {} | {:+.2} | [{:+.2}, {:+.2}] | {}/{}/{} | {} | {} | {} | {} |",
+            opts.mda_arm,
+            p.comparator,
+            p.n,
+            p.mean_delta,
+            p.ci95.0,
+            p.ci95.1,
+            p.wins,
+            p.losses,
+            p.ties,
+            yn(g.lower_bound_ok),
+            yn(g.mean_ok),
+            yn(g.grounding_ok),
+            sv
+        );
+    }
+    if !a.missing_comparators.is_empty() {
+        println!("\ncomparators without rows: {}", a.missing_comparators.join(", "));
+    }
+    if !a.other_arms.is_empty() {
+        println!("\narms present but not analysed: {}", a.other_arms.join(", "));
     }
     Ok(ExitCode::SUCCESS)
 }
@@ -430,6 +564,34 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let sections_carded = engine.store().sections_carded()?;
     let coverage = docsqa::coverage(&dataset, engine.store())?;
     let splits = dataset.split(args.seed);
+    let mut sample_report = None;
+    if let Some(file) = &args.export_questions {
+        anyhow::ensure!(
+            !root.join(mda_core::config::STATE_DIR).starts_with(file) && !file.starts_with(&root),
+            "--export-questions must not point inside the checkout"
+        );
+        let indexed: std::collections::HashSet<String> =
+            engine.store().documents()?.into_iter().map(|d| d.rel_path).collect();
+        let sample = dataset.sample(
+            &splits,
+            split,
+            &indexed,
+            args.sample,
+            args.sample_seed.unwrap_or(args.seed),
+        );
+        let mut text = String::new();
+        for q in &sample.questions {
+            text.push_str(&serde_json::to_string(q)?);
+            text.push('\n');
+        }
+        std::fs::write(file, text).with_context(|| file.display().to_string())?;
+        tracing::info!(questions = sample.questions.len(), eligible = sample.eligible, file = %file.display(), "question sample written");
+        sample_report = Some(serde_json::json!({
+            "file": portable(file), "questions": sample.questions.len(), "eligible": sample.eligible,
+            "without_reference": sample.without_reference, "seed": sample.seed,
+            "categories": sample.questions.iter().fold(std::collections::BTreeMap::<String, usize>::new(), |mut m, q| { *m.entry(q.category.clone().unwrap_or_else(|| "uncategorised".into())).or_default() += 1; m }),
+        }));
+    }
     let split_counts: HashMap<String, usize> =
         splits.values().fold(HashMap::new(), |mut acc, s| {
             *acc.entry(format!("{s:?}").to_lowercase()).or_default() += 1;
@@ -524,6 +686,7 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         "cards_attached": attached,
         "cards_exported": exported,
         "arm_output": args.arm_output.as_deref().map(portable),
+        "export_questions": sample_report,
         "extra_labels": args.extra_labels.as_deref().map(|f| serde_json::json!({"file": portable(f), "added": extra_labels_added, "unknown_question_ids": extra_labels_unknown})),
         "only_questions": only.as_ref().map(std::collections::HashSet::len),
         "embedding_model": embedder.as_ref().map(|e| e.model().to_owned()),

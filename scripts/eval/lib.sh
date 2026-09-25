@@ -142,5 +142,55 @@ bm25_fingerprint() { # project
   sqlite3 -cmd '.timeout 60000' "$db" "SELECT path, text FROM pages ORDER BY path" | shasum -a 256 | cut -c1-64 || die "bm25_fingerprint: cannot read $db"
 }
 
+# The launch configuration of one arm for a headless `claude -p` session (strategy rule 0.5:
+# the probe's configuration is the run's configuration). Sets ARM_ARGS (claude flags), ARM_CORPUS
+# (the cwd), ARM_SETTING_SOURCES, ARM_WANT (the regex a call of the arm's tool matches), ARM_LAUNCH
+# (the JSON record of it) and ARM_TMP (files to remove afterwards). Provider keys are unset by the
+# caller; the model is the caller's.
+# shellcheck disable=SC2034  # ARM_* are the function's outputs, read by probe.sh and t2.sh
+arm_launch() { # arm project model
+  local arm="$1" project="$2" model="$3" dir mcp_cfg="" skill="" skill_sha=""
+  dir="$(project_dir "$project")"; ARM_CORPUS="$RUN/$dir"; ARM_SETTING_SOURCES=""; ARM_TMP=()
+  case "$arm" in
+    mda)
+      mcp_cfg="$(mktemp -t mda-arm-mcp.XXXXXX)"; ARM_TMP+=("$mcp_cfg")
+      jq -n --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg models "$MDA_MODEL_DIR" \
+        '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: $models}}}}' > "$mcp_cfg"
+      ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__markdownattractor__*"
+                --append-system-prompt-file "$REPO/skills/search-first/SKILL.md")
+      ARM_WANT='^mcp__markdownattractor__mda_search$' ;;
+    grep)
+      ARM_ARGS=(--tools Read Grep Glob --allowedTools Read Grep Glob)
+      ARM_WANT='^(Grep|Read|Glob)$' ;;
+    qmd)
+      # qmd's own MCP server on the project's index, with qmd's own agent skill as the
+      # instructions (`qmd skills get qmd --full`), the counterpart of mda's search-first rules.
+      [ -f "$HOME/.config/qmd/$project.yml" ] || die "no qmd index for $project (scripts/eval/arms/qmd.sh build)"
+      mcp_cfg="$(mktemp -t mda-arm-mcp.XXXXXX)"; ARM_TMP+=("$mcp_cfg")
+      jq -n --arg project "$project" '{mcpServers: {qmd: {command: "qmd", args: ["--index", $project, "mcp"]}}}' > "$mcp_cfg"
+      skill="$(mktemp -t qmd-skill.XXXXXX)"; ARM_TMP+=("$skill"); qmd skills get qmd --full > "$skill" 2>/dev/null || die "qmd skills get failed"
+      skill_sha="$(shasum -a 256 "$skill" | cut -c1-64)"
+      ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__qmd__*" --append-system-prompt-file "$skill")
+      ARM_WANT='^mcp__qmd__query$' ;;
+    graphify|graphify-haiku)
+      # graphify's MCP server on the archived graph, run from the checkout COPY the graph was
+      # built on (its project-level .claude/ holds graphify's skill, hooks and CLAUDE.md nudge).
+      local G="$RUN/graphify/$project"; [ "$arm" = graphify ] || G="$RUN/graphify/$project-${arm#graphify-}"
+      [ -f "$G/graph.json" ] && [ -f "$G/src/.claude/settings.json" ] || die "no graphify build for $project ($arm)"
+      ARM_CORPUS="$G/src"; ARM_SETTING_SOURCES=project
+      mcp_cfg="$(mktemp -t mda-arm-mcp.XXXXXX)"; ARM_TMP+=("$mcp_cfg")
+      jq -n --arg graph "$G/graph.json" '{mcpServers: {graphify: {command: "graphify-mcp", args: [$graph]}}}' > "$mcp_cfg"
+      ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__graphify__*")
+      ARM_WANT='^mcp__graphify__(query_graph|get_node|get_neighbors|get_community|god_nodes|shortest_path)$' ;;
+    *) die "unknown arm $arm (mda|grep|qmd|graphify|graphify-haiku)" ;;
+  esac
+  ARM_LAUNCH="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" --arg sources "$ARM_SETTING_SOURCES" --arg skill_sha "$skill_sha" \
+    --args '{claude_flags: ($ARGS.positional + ["--setting-sources", $sources]), model: $model, cwd: $root,
+             mcp: (if $arm == "mda" then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
+                   elif $arm == "qmd" then {server: "qmd", command: "qmd", args: ["--index", $project, "mcp"]}
+                   elif ($arm | startswith("graphify")) then {server: "graphify", command: "graphify-mcp", args: [($root + "/../graph.json")], project_settings: ($root + "/.claude")} else null end),
+             system_prompt: (if $arm == "mda" then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} elif ($arm | startswith("graphify")) then {source: "project .claude/ written by graphify install --project"} else null end)}' -- "${ARM_ARGS[@]}")"
+}
+
 # The split a question belongs to, from the committed split.json.
 question_split() { jq -r --arg id "$2" '.questions[] | select(.id == $id) | .split' "$RESULTS/$1/split.json"; }

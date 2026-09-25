@@ -1,0 +1,85 @@
+{
+  "project": "tailwind-css",
+  "model": "sonnet",
+  "runs": 1,
+  "arms": [
+    "grep",
+    "mda",
+    "qmd",
+    "graphify"
+  ],
+  "question_ids": [
+    "tailwind-css::tailwind-17086",
+    "tailwind-css::tailwind-17487",
+    "tailwind-css::tailwind-18123",
+    "tailwind-css::tailwind-11515",
+    "tailwind-css::tailwind-18753"
+  ],
+  "questions_sha256": "4e128ba282a6951a242c1b9e6781789688eb6fbc492414a26e80bf918ffbb3c3",
+  "mda": "mda 0.1.1",
+  "mda_sha256": null,
+  "search_first_sha256": null,
+  "source_commit": "f2dd27c7f7824461038312a95fb4b80ad5a4b2ec",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-09-25T08:22:54Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"
+  },
+  "launches": {
+    "grep": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/tailwindcss",
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/tailwindcss",
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "~/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/tailwindcss",
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "tailwind-css",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    },
+    "graphify": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/graphify/tailwind-css/src",
+      "mcp": {
+        "server": "graphify",
+        "command": "graphify-mcp",
+        "args": [
+          "~/.cache/markdownattractor/bench/graphify/tailwind-css/src/../graph.json"
+        ]
+      },
+      "system_prompt": {
+        "source": "project .claude/ written by graphify install --project"
+      }
+    }
+  }
+}

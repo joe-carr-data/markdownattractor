@@ -4,6 +4,7 @@
 //! because they carry logic worth testing on its own: page-level metrics, coverage against a
 //! store, and the seeded split. Nothing in this module writes anywhere.
 
+pub mod analysis;
 pub mod docsqa;
 pub mod paired;
 
@@ -41,15 +42,7 @@ impl Split {
 /// `Test`, the rest `Holdout`. Deterministic for a given seed whatever the input order.
 #[must_use]
 pub fn split_ids(seed: u64, ids: &[String]) -> HashMap<String, Split> {
-    let mut keyed: Vec<(String, &String)> = ids
-        .iter()
-        .map(|id| {
-            let mut h = blake3::Hasher::new();
-            h.update(&seed.to_le_bytes());
-            h.update(id.as_bytes());
-            (h.finalize().to_hex().to_string(), id)
-        })
-        .collect();
+    let mut keyed: Vec<(String, &String)> = ids.iter().map(|id| (seed_key(seed, id), id)).collect();
     keyed.sort();
     let n = keyed.len();
     let dev_end = n * 30 / 100;
@@ -68,6 +61,23 @@ pub fn split_ids(seed: u64, ids: &[String]) -> HashMap<String, Split> {
             (id.clone(), split)
         })
         .collect()
+}
+
+/// `blake3(seed ‖ id)` as hex: the order the split and every seeded sample use.
+fn seed_key(seed: u64, id: &str) -> String {
+    let mut h = blake3::Hasher::new();
+    h.update(&seed.to_le_bytes());
+    h.update(id.as_bytes());
+    h.finalize().to_hex().to_string()
+}
+
+/// The position of every id in `blake3(seed ‖ id)` order (0 first): the seeded order the
+/// T2 sample uses, deterministic whatever the input order.
+#[must_use]
+pub fn seeded_order(seed: u64, ids: &[String]) -> HashMap<String, usize> {
+    let mut keyed: Vec<(String, &String)> = ids.iter().map(|id| (seed_key(seed, id), id)).collect();
+    keyed.sort();
+    keyed.into_iter().enumerate().map(|(i, (_, id))| (id.clone(), i)).collect()
 }
 
 /// Retrieval metrics at page granularity over one set of questions.

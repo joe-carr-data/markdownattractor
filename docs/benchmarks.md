@@ -349,6 +349,106 @@ Reading: 100 unlabelled top-five pairs per project, judged by Fable (`claude -p`
 
 T1 reuses the M2 artifacts (the committed cards, the qmd indexes, the BM25-over-files tables, the archived graphify graphs); it is not a fresh-build comparison, and every artifact's hash is in `T1/FROZEN.md`. graphify's Sonnet-built graphs exist for Tailwind and Supabase only (its builds did not complete on Prisma and GitHub Docs, recorded); its Haiku-built graphs exist for all four. The freeze was re-written during the run for driver and script fixes with identical inputs; each arm's manifest names the commit its rows were produced under, and the chronology is the git history of `T1/FROZEN.md`. The qmd and graphify drivers collapse whitespace in the question; mda receives it as written. graphify nodes without a source file are dropped (they name no page). The CPU and GPU chains ran concurrently, so the drivers' own timings reflect contention; the published latency was measured afterwards, alone, with the judging chain (network-bound) running beside it; "cold" means a new server process, not cleared model or query caches. The preflights (`evals/results/docsqa/preflight/T1-<project>.json`) passed every check on Tailwind, Prisma and GitHub Docs; on Supabase every check passed except one activation probe for the graphify-haiku arm, in two attempts (question `supabase-13977`: the headless agent read files instead of calling the graph tool; the arm's rows come from the tool directly and are unaffected; both attempts are committed). Codex's M4 pass on the scorer, the drivers and the freeze (`docs/reviews/codex/2026-09-24-bench-m4.md`) preceded every number on this page.
 
+## T2 harness pilot — answer quality on DocsQA-Repo (M5, development, 2026-09-25; not a result)
+
+The harness of execution plan §2.4–2.7 (runner, grader with grounding, analysis, two-model panel, card audit) exercised end to end on the dev split: 5 questions per project, one run per arm, the arms with a build (graphify's graphs exist on Tailwind and Supabase). Nothing here is a result: five questions per project cannot separate the arms, and the pilot's purpose is throughput, failure rate and the harness's own behaviour before M6 freezes T2 (25 test questions × 3 runs per arm and project). Every model call went through the owner's logins; the Codex M5 pass on the harness (`docs/reviews/codex/2026-09-25-bench-m5.md`, 11 findings fixed) preceded these numbers. Reproduction: runbook §5c.
+
+### Throughput and consumption (rule 0.7 tokens)
+
+| arm | runs | errors | median wall s | median source tokens (clipped) | runs with a clamped turn | median input tokens | median tool calls | median cost $ | median turns |
+|---|---|---|---|---|---|---|---|---|---|
+| graphify | 10 | 0 | 16.5 | 6828.5 | 0 | 106950.5 | 5 | 0.073 | 6 |
+| grep | 20 | 0 | 17.5 | 4443.5 | 0 | 78739 | 6 | 0.057 | 7 |
+| mda | 20 | 0 | 12 | 2212 | 0 | 59500 | 3 | 0.035 | 4 |
+| qmd | 20 | 0 | 44.5 | 3711 | 0 | 70029.5 | 2 | 0.046 | 3 |
+
+Pilot, development: 5 dev questions × 4 projects × the arms with a build (graphify on Tailwind and Supabase) × 1 run = 70 runs, 0 errors, $3.93 list-price total, 1892 s of wall-clock at one job (132 runs per hour); Sonnet answers; every arm launched as the probes launch it; every MCP server started cold per run.
+
+Reading: one job sustains 132 answer runs per hour; no run failed or timed out (600 s limit, one retry allowed, none needed). mda's median run reads the fewest source tokens (2,212 against 4,444 grep, 3,711 qmd, 6,829 graphify), makes the fewest tool calls and costs the least; qmd's run is the slowest (its MCP query runs a local reranker per call). No turn had a negative source-token delta, so the clipped and signed sums coincide on this pilot.
+
+### Grades, grounding and the gates (5 questions per project: descriptive only)
+
+**tailwind-css** (5 dev questions, 1 run)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| graphify | 5 | 4.80 | 4.8 (5) | 5 | 5 | 0 | 40.0% | 8043.0 | 7.0 | \$0.086 |
+| grep | 5 | 5.00 | 5.0 (5) | 5 | 5 | 0 | 20.0% | 3450.0 | 6.0 | \$0.053 |
+| mda | 5 | 5.20 | 5.2 (5) | 5 | 5 | 0 | 40.0% | 2119.0 | 3.0 | \$0.030 |
+| qmd | 5 | 5.20 | 5.2 (5) | 5 | 5 | 0 | 40.0% | 3998.0 | 2.0 | \$0.047 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 5 | +0.20 | [-0.60, +1.20] | 1/1/3 | FAIL | pass | FAIL | none claimed |
+| mda vs qmd | 5 | +0.00 | [-1.20, +1.20] | 1/1/3 | FAIL | pass | FAIL | none claimed |
+| mda vs graphify | 5 | +0.40 | [-0.80, +1.60] | 2/1/2 | FAIL | pass | FAIL | none claimed |
+
+**supabase** (5 dev questions, 1 run)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| graphify | 5 | 3.80 | 3.8 (5) | 5 | 5 | 0 | 40.0% | 6571.0 | 4.0 | \$0.058 |
+| grep | 5 | 4.80 | 4.8 (5) | 5 | 5 | 0 | 40.0% | 5198.0 | 3.0 | \$0.052 |
+| mda | 5 | 3.20 | 3.2 (5) | 5 | 5 | 0 | 100.0% | 2305.0 | 3.0 | \$0.033 |
+| qmd | 5 | 3.60 | 3.6 (5) | 5 | 5 | 0 | 40.0% | 3707.0 | 2.0 | \$0.049 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 5 | -1.60 | [-4.00, +0.00] | 0/2/3 | FAIL | FAIL | pass | none claimed |
+| mda vs qmd | 5 | -0.40 | [-1.60, +0.80] | 1/2/2 | FAIL | FAIL | pass | none claimed |
+| mda vs graphify | 5 | -0.60 | [-1.40, +0.00] | 0/2/3 | FAIL | FAIL | pass | none claimed |
+
+**prisma** (5 dev questions, 1 run)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| grep | 5 | 4.60 | 4.6 (5) | 5 | 5 | 0 | 20.0% | 9889.0 | 6.0 | \$0.087 |
+| mda | 5 | 3.60 | 3.6 (5) | 5 | 5 | 0 | 20.0% | 2990.0 | 5.0 | \$0.045 |
+| qmd | 5 | 4.00 | 4.0 (5) | 5 | 5 | 0 | 20.0% | 2976.0 | 2.0 | \$0.040 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 5 | -1.00 | [-4.20, +2.20] | 2/3/0 | FAIL | FAIL | FAIL | none claimed |
+| mda vs qmd | 5 | -0.40 | [-3.60, +2.80] | 2/2/1 | FAIL | FAIL | FAIL | none claimed |
+
+**github-docs** (5 dev questions, 1 run)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| grep | 5 | 3.60 | 3.6 (5) | 5 | 5 | 0 | 0.0% | 3558.0 | 7.0 | \$0.058 |
+| mda | 5 | 3.80 | 3.8 (5) | 5 | 5 | 0 | 60.0% | 1918.0 | 3.0 | \$0.031 |
+| qmd | 5 | 4.00 | 4.0 (5) | 5 | 5 | 0 | 20.0% | 4882.0 | 3.0 | \$0.083 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 5 | +0.20 | [-0.60, +1.20] | 1/1/3 | FAIL | FAIL | FAIL | none claimed |
+| mda vs qmd | 5 | -0.20 | [-1.20, +0.60] | 1/1/3 | FAIL | FAIL | FAIL | none claimed |
+
+Reading: with five questions the paired intervals are as wide as the scale, and no pair passes the three gates — gate (c), grounding ≥ 95%, fails for every arm on every project. That is the harness's finding to act on before M6, not a comparison: the grounding grader (every claim supported by a cited page, whole pages checked) treats an answer's own causal explanation or a paraphrased warning as unsupported, and the first grading pass showed that qmd's answers cite paths with a collection prefix or a bare file name, which the resolver now handles by one declared rule (exact path, or the unique suffix after `<project>/`). The regraded numbers above use that rule. Whether the rubric's strictness is the intended reading of rule 0.8 ("every claim supported") or should be narrowed to factual claims about the product is a pre-freeze decision recorded in STATUS.
+
+### Panel calibration (8 answers per project, Fable and Astra, blind)
+
+| project | answers | incomplete | Fable/Astra exact | within one | Fable/Sonnet exact | Astra/Sonnet exact | trigger fired | mean Sonnet / Fable / Astra |
+|---|---|---|---|---|---|---|---|---|
+| tailwind-css | 8 | 0 | 0.5 | 1 | 0.88 | 0.63 | 0 | 5.88 / 5.75 / 5.5 |
+| supabase | 8 | 0 | 0.38 | 0.63 | 0.38 | 0.5 | 4 | 3.75 / 3.5 / 2.38 |
+| prisma | 8 | 0 | 0.5 | 0.63 | 0.5 | 0.5 | 3 | 4.13 / 4.38 / 3.5 |
+| github-docs | 8 | 0 | 0.38 | 0.75 | 0.13 | 0.13 | 3 | 4.38 / 4.13 / 2.75 |
+
+Generated from `<out>/panel/regrade.json` (`scripts/eval/panel.sh regrade <out> 8`; archived under `evals/results/docsqa/t2-pilot/<project>/`). Trigger: either panel member differs from the Sonnet grade by more than one point → the panel mean.
+
+Reading: the declared trigger (either member differs from the Sonnet grade by more than one point → the panel mean) fired on 10 of 32 sampled answers; Astra grades lower than Sonnet and Fable throughout; exact agreement between the two panel members is 0.38–0.50 and within one point 0.63–1.0. Individual scores and rationales are in `panel/regrade-<member>.jsonl`; the adjudicated grades (`panel/grades.adjudicated.jsonl`) were analysed beside the originals (`t2.sh analysis --adjudicated`); they move the paired means by up to 0.7 points and change no gate verdict on this pilot.
+
+### Card audit (Prisma, 20 cards, 90 values, both members)
+
+| project | cards | values | unsupported (Fable) | unsupported (Astra) | per-value agreement | incomplete verdicts | sections missing from the store |
+|---|---|---|---|---|---|---|---|
+| prisma | 20 | 90 | 0.024 | 0.024 | 0.976 | 1 | 0 |
+
+Generated from `evals/results/docsqa/prisma/panel/cards.json` (`scripts/eval/panel.sh cards prisma 20`; each date judged as "raw → iso (precision)", each entity against the section text; a verdict that does not cover every value once is invalid).
+
+Reading: 2.4% of the sampled dates and entities were judged unsupported by each member, with 98% per-value agreement; the M6 audit is 100 cards per corpus.
+
 ## Not measured yet
 
 - The A/B protocol on corpora beyond the golden set (design-partner repos; this repository's own `docs/` is a candidate at 28 files / 5K lines).

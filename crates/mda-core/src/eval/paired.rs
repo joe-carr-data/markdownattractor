@@ -144,11 +144,11 @@ pub struct PairedReport {
 /// `SplitMix64`: a tiny, fully specified generator so the draws are the same on every
 /// platform and every release (a library generator's stream may change between versions).
 /// The order of the projects does not matter: each has its own stream (`for_label`).
-struct SplitMix64(u64);
+pub(crate) struct SplitMix64(pub(crate) u64);
 
 impl SplitMix64 {
     /// A stream for one project: the seed, then every byte of the label folded in.
-    fn for_label(seed: u64, label: &str) -> Self {
+    pub(crate) fn for_label(seed: u64, label: &str) -> Self {
         let mut g = Self(seed);
         for b in label.bytes() {
             g.0 ^= u64::from(b);
@@ -166,7 +166,7 @@ impl SplitMix64 {
     }
 
     /// Uniform index in `0..n` (`n > 0`), by rejection so every index is equally likely.
-    fn below(&mut self, n: usize) -> usize {
+    pub(crate) fn below(&mut self, n: usize) -> usize {
         let n64 = n as u64;
         let zone = u64::MAX - u64::MAX % n64;
         loop {
@@ -181,7 +181,7 @@ impl SplitMix64 {
 
 /// Nearest-rank percentile of a sorted slice (`q` in `0..=1`): the `⌈N·q⌉`-th smallest value
 /// (so the 2.5th percentile of 5,000 draws is the 125th, the 97.5th the 4,875th).
-fn percentile(sorted: &[f64], q: f64) -> f64 {
+pub(crate) fn percentile(sorted: &[f64], q: f64) -> f64 {
     #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let rank = (sorted.len() as f64 * q).ceil() as usize;
     sorted[rank.saturating_sub(1).min(sorted.len() - 1)]
