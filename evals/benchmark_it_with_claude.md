@@ -251,6 +251,27 @@ scripts/eval/grade.sh evals/ab/questions.jsonl "$A/ab-out"                      
 
 Read the resolved model ids from `$A/ab-out/*.jsonl` (`model` in the result event) and record them; the attempt directory is part of the report. Reference (2026-09-22, exploratory, lean payload, one run): parity 11 of 12; index mean 5.50, baseline 5.42; median source tokens index 762.5, baseline 245.5 over all 12 questions (`evals/ab/results/2026-09-22-golden-lean.md`). Publish yours beside it with the paired difference; a different sample of Sonnet answers is expected to differ.
 
+## 5c. T2 — answer quality on DocsQA (M5 harness; the pilot is development, M6 publishes)
+
+The harness of execution plan §2.4–2.7 and strategy rules 0.3, 0.4, 0.5, 0.7, 0.8, 0.9 (as amended: every `claude -p` run starts its arm's MCP server cold, for every arm alike). Every model call goes through your own logins (Sonnet answers and grades through `claude -p`; the panel is Fable through `claude -p` and Astra through `codex exec`); provider keys are unset by the scripts. The failure matrix (`scripts/eval/tests/failure-matrix.sh`, run by `make check`) proves rule 0.3 on synthetic rows before any pilot number is read.
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
+# the question sample (plan §4): eligible questions of the split with the dataset's normalized_answer as the reference, seeded order, stratified over the community category (GitHub Docs is the only project with categories; the rest fall back to seeded order); the sample file is frozen at M6
+"$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project prisma --root "$RUN/prisma" --split test --export-questions "$RUN/t2/prisma-test-25.jsonl" --sample 25 --sample-seed 20260922
+# the runs: manifest first, one row file per (question, arm, run), resumable; arms launched exactly as the probes launch them (lib.sh arm_launch); T2_JOBS bounds concurrency, T2_TIMEOUT (600 s) and T2_RETRIES (1) are recorded per attempt
+T2_MODEL=sonnet scripts/eval/t2.sh run prisma "$RUN/t2/prisma-test-25.jsonl" "$RUN/t2/prisma" 3 grep,mda,qmd            # graphify only where its graph exists (tailwind-css, supabase)
+scripts/eval/t2.sh status "$RUN/t2/prisma"                                                                            # rows vs the manifest: ok / error / missing / duplicate
+scripts/eval/t2.sh grade prisma "$RUN/t2/prisma"                                                                      # Sonnet: correctness 0–3 + completeness 0–3 against the reference; grounding against the whole cited pages; a failed run is never graded (score null → the analysis scores 0)
+scripts/eval/t2.sh analysis "$RUN/t2/prisma"                                                                          # mda eval --analysis grades.jsonl --manifest manifest.json: medians with failures as 0, paired bootstrap (10,000 draws, seed 20260922), the three gates, savings only where they pass
+scripts/eval/panel.sh regrade "$RUN/t2/prisma" 30                                                                     # Fable + Astra re-grade 30 answers blind; agreement; a >1-point disagreement resolved by the panel mean (rule 0.8)
+scripts/eval/panel.sh cards prisma 100                                                                                # both members check 100 cards' dates and entities against the source section → evals/results/docsqa/prisma/panel/
+```
+
+**What the rows carry (rule 0.7).** `runs.jsonl`: per (question, arm, run) the answer, every attempt's exit code (124 = timed out), `turn_usage` (one entry per turn from the stream's `message_delta` event: input total = input + cache read + cache creation, and the turn's final output tokens), `source_tokens` = Σ over turns of (input total of the turn − input total of the previous turn − output of the previous turn), clamped at 0 per turn with the number of clamped turns recorded, `input_tokens`/`output_tokens`/`thinking_tokens` from the result event, tool calls with their outcomes, list-price cost, wall-clock, the resolved model ids. No `chars/4` anywhere. `grades.jsonl` adds the grade, the grounding verdict with the cited pages it saw, `score` (0–6) and `grounded`.
+
+**Regeneration (exact).** The analysis regenerates byte-identically from `grades.jsonl` + `manifest.json` (`mda eval --analysis`, seeded); the grades regenerate from `runs.jsonl` only up to the grader's own variance (a rerun of `grade` is an independent rerun, published beside the original, never in its place). The pilot's numbers are development and labelled so; nothing from it is a result.
+
 ## 6. Latency
 
 Through each tool's MCP server with the common client (`scripts/eval/mcp-time.sh`, M2): one server per arm per project, the first query reported as cold (process start and model load included), the rest warm; hardware, OS and the release build in the report. Ratios between arms on the same machine are the comparable quantity.
