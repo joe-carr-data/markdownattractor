@@ -87,8 +87,8 @@ PY
       def agree(x; y): if x == null or y == null then null else {exact: (x == y), within_one: ((x - y) | fabs) <= 1} end;
       def rate(k): (map(select(. != null)) | if length == 0 then null else (map(select(.[k])) | length) / length end);
       [ .[] as $r | ($f[] | select(.sample_id == $r.sample_id)) as $fb | ($a[] | select(.sample_id == $r.sample_id)) as $as
-        | {sample_id: $r.sample_id, id: $r.id, arm: $r.arm, run: $r.run, sonnet: $r.sonnet_score, fable: $fb.score, astra: $as.score,
-           panel_mean: (if $fb.score != null and $as.score != null then ($fb.score + $as.score) / 2 else null end)}
+        | {sample_id: $r.sample_id, id: $r.id, arm: $r.arm, run: $r.run, sonnet: $r.sonnet_score, fable: $fb.score, astra: $ast.score,
+           panel_mean: (if $fb.score != null and $ast.score != null then ($fb.score + $ast.score) / 2 else null end)}
         | .resolved = (if .panel_mean == null then null elif ((.fable - .sonnet) | fabs) > 1 or ((.astra - .sonnet) | fabs) > 1 then .panel_mean else .sonnet end)
         | .resolution = (if .panel_mean == null then "incomplete" elif .resolved == .sonnet then "sonnet stands" else "panel mean (a member differed by more than one point)" end) ] as $rows
       | {seed: $seed, sample: ($rows | length), incomplete: ($rows | map(select(.panel_mean == null)) | length),
@@ -138,7 +138,7 @@ PY
       def verdicts(v): if v.out == null then null else ((v.out.dates // []) + (v.out.entities // []) | map(.supported)) end;
       [ .[] as $c | ($f[] | select(.sample_id == $c.sample_id)) as $fb | ($a[] | select(.sample_id == $c.sample_id)) as $as
         | {sample_id: $c.sample_id, page: $c.page, heading: $c.heading, values: (($c.dates | length) + ($c.entities | length)),
-           fable: verdicts($fb), astra: verdicts($as)} ] as $rows
+           fable: verdicts($fb), astra: verdicts($ast)} ] as $rows
       | def rate(m): ($rows | map(.[m] // empty | .[]) | if length == 0 then null else (map(select(. | not)) | length) / length end);
         {seed: $seed, cards_file: $cards, sample: ($rows | length), values: ($rows | map(.values) | add),
          unsupported_rate: {fable: rate("fable"), astra: rate("astra")},
