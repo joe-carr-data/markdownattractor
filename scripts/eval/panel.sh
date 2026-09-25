@@ -84,7 +84,7 @@ PY
       done < "$sample"
     done
     jq -s --slurpfile f "$out/panel/regrade-fable.jsonl" --slurpfile a "$out/panel/regrade-astra.jsonl" --arg seed "$seed" '
-      def agree(x; y): if x == null or y == null then null else {exact: (x == y), within_one: ((x - y) | fabs) <= 1} end;
+      def agree(x; y): if x == null or y == null then null else {exact: (x == y), within_one: (((x - y) | fabs) <= 1)} end;
       def rate(k): (map(select(. != null)) | if length == 0 then null else (map(select(.[k])) | length) / length end);
       [ .[] as $r | ($f[] | select(.sample_id == $r.sample_id)) as $fb | ($a[] | select(.sample_id == $r.sample_id)) as $ast
         | {sample_id: $r.sample_id, id: $r.id, arm: $r.arm, run: $r.run, sonnet: $r.sonnet_score, fable: $fb.score, astra: $ast.score,
