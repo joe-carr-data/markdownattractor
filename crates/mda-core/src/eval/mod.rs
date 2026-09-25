@@ -4,6 +4,7 @@
 //! because they carry logic worth testing on its own: page-level metrics, coverage against a
 //! store, and the seeded split. Nothing in this module writes anywhere.
 
+pub mod analysis;
 pub mod docsqa;
 pub mod paired;
 

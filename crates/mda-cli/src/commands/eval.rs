@@ -110,6 +110,21 @@ pub struct Args {
     /// Seed for `--export-questions` (default: `--seed`).
     #[arg(long, requires = "export_questions")]
     pub sample_seed: Option<u64>,
+    /// The T2 analysis (plan §2.5, rule 0.4) of a `grades.jsonl`: question-level medians
+    /// with failed runs as 0, mda against each comparator with a 10,000-draw paired
+    /// bootstrap, the three gates, savings only where they pass; `--manifest` makes every
+    /// expected run that has no row a failure.
+    #[arg(long, conflicts_with_all = ["dataset", "golden", "record", "compare", "interval"])]
+    pub analysis: Option<PathBuf>,
+    /// The runner's `manifest.json` for `--analysis`.
+    #[arg(long, requires = "analysis")]
+    pub manifest: Option<PathBuf>,
+    /// The mda arm's name in the grade rows.
+    #[arg(long, default_value = "mda", requires = "analysis")]
+    pub mda_arm: String,
+    /// The comparator arms, in order.
+    #[arg(long, default_value = "grep,qmd,graphify", value_delimiter = ',', requires = "analysis")]
+    pub comparators: Vec<String>,
     /// Paired comparison of archived runs instead of an evaluation (execution plan §3,
     /// 2026-09-24 amendment): `--compare <label> <baseline results.json> <candidate
     /// results.json>`, repeated once per project. Reports wins, losses, the unrounded
@@ -186,6 +201,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     }
     if !args.interval.is_empty() {
         return run_interval(args, json);
+    }
+    if args.analysis.is_some() {
+        return run_analysis(args, json);
     }
     if args.dataset.as_deref() == Some("docsqa") {
         return run_docsqa(args, json);
@@ -280,6 +298,91 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "  {} no cards.json in the golden set: only the lexical run was measured",
             st.dim("note:")
         );
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// `--analysis`: the T2 analysis of a grades file, nothing searched, nothing written.
+fn run_analysis(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    use mda_core::eval::analysis::{self, AnalysisOptions};
+    let Some(grades) = &args.analysis else { unreachable!("checked by the caller") };
+    let rows = analysis::read_grades(grades)?;
+    let manifest = args.manifest.as_deref().map(analysis::read_manifest).transpose()?;
+    let opts = AnalysisOptions {
+        mda_arm: args.mda_arm.clone(),
+        comparators: args.comparators.clone(),
+        draws: if args.draws == 5000 { 10_000 } else { args.draws },
+        seed: args.seed,
+        ..AnalysisOptions::default()
+    };
+    let a = analysis::analyse(&rows, manifest.as_ref(), &opts)?;
+    if json {
+        output::json(
+            &serde_json::json!({"grades": portable(grades), "manifest": args.manifest.as_deref().map(portable), "options": {"mda_arm": opts.mda_arm, "comparators": opts.comparators, "draws": opts.draws, "seed": opts.seed, "gates": {"min_lower_bound": opts.min_lower_bound, "min_mean": opts.min_mean, "min_grounding": opts.min_grounding}}, "analysis": a}),
+        );
+        return Ok(ExitCode::SUCCESS);
+    }
+    let f = |v: Option<f64>| v.map_or("n/a".to_owned(), |x| format!("{x:.1}"));
+    println!(
+        "| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |"
+    );
+    println!("|---|---|---|---|---|---|---|---|---|---|---|");
+    for s in &a.arms {
+        println!(
+            "| {} | {} | {:.2} | {} ({}) | {} | {} | {} | {:.1}% | {} | {} | {} |",
+            s.arm,
+            s.questions,
+            s.mean_score,
+            f(s.mean_score_completed),
+            s.questions_with_completed,
+            s.runs,
+            s.completed,
+            s.failed,
+            s.grounding_rate * 100.0,
+            f(s.source_tokens),
+            f(s.tool_calls),
+            s.cost_usd.map_or("n/a".into(), |c| format!("${c:.3}"))
+        );
+    }
+    println!();
+    println!(
+        "| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |"
+    );
+    println!("|---|---|---|---|---|---|---|---|---|");
+    for p in &a.pairs {
+        let g = &p.gates;
+        let yn = |b: bool| if b { "pass" } else { "FAIL" };
+        let sv = p.savings.as_ref().map_or("none claimed".to_owned(), |s| {
+            format!(
+                "n={} · source tokens ×{} · calls ×{} · cost ×{}",
+                s.questions,
+                f(s.source_tokens_ratio),
+                f(s.tool_calls_ratio),
+                f(s.cost_ratio)
+            )
+        });
+        println!(
+            "| {} vs {} | {} | {:+.2} | [{:+.2}, {:+.2}] | {}/{}/{} | {} | {} | {} | {} |",
+            opts.mda_arm,
+            p.comparator,
+            p.n,
+            p.mean_delta,
+            p.ci95.0,
+            p.ci95.1,
+            p.wins,
+            p.losses,
+            p.ties,
+            yn(g.lower_bound_ok),
+            yn(g.mean_ok),
+            yn(g.grounding_ok),
+            sv
+        );
+    }
+    if !a.missing_comparators.is_empty() {
+        println!("\ncomparators without rows: {}", a.missing_comparators.join(", "));
+    }
+    if !a.other_arms.is_empty() {
+        println!("\narms present but not analysed: {}", a.other_arms.join(", "));
     }
     Ok(ExitCode::SUCCESS)
 }
