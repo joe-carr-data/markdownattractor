@@ -1,10 +1,15 @@
-.PHONY: check fmt lint test cov deny audit docs build release clean
+.PHONY: check fmt lint test cov deny audit docs build release clean t2-tests
 
 ## check: everything CI runs, in order. Run before every commit.
-check: fmt lint test deny docs
+check: fmt lint test deny docs t2-tests
 
 fmt:
 	cargo fmt --all -- --check
+
+## t2-tests: the T2 harness failure matrix (strategy rule 0.3) against the debug binary
+t2-tests:
+	cargo build -q -p mda-cli
+	scripts/eval/tests/failure-matrix.sh target/debug/mda
 
 lint:
 	cargo lint
