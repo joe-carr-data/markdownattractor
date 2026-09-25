@@ -86,7 +86,7 @@ PY
     jq -s --slurpfile f "$out/panel/regrade-fable.jsonl" --slurpfile a "$out/panel/regrade-astra.jsonl" --arg seed "$seed" '
       def agree(x; y): if x == null or y == null then null else {exact: (x == y), within_one: ((x - y) | fabs) <= 1} end;
       def rate(k): (map(select(. != null)) | if length == 0 then null else (map(select(.[k])) | length) / length end);
-      [ .[] as $r | ($f[] | select(.sample_id == $r.sample_id)) as $fb | ($a[] | select(.sample_id == $r.sample_id)) as $as
+      [ .[] as $r | ($f[] | select(.sample_id == $r.sample_id)) as $fb | ($a[] | select(.sample_id == $r.sample_id)) as $ast
         | {sample_id: $r.sample_id, id: $r.id, arm: $r.arm, run: $r.run, sonnet: $r.sonnet_score, fable: $fb.score, astra: $ast.score,
            panel_mean: (if $fb.score != null and $ast.score != null then ($fb.score + $ast.score) / 2 else null end)}
         | .resolved = (if .panel_mean == null then null elif ((.fable - .sonnet) | fabs) > 1 or ((.astra - .sonnet) | fabs) > 1 then .panel_mean else .sonnet end)
@@ -136,7 +136,7 @@ PY
     done
     jq -s --slurpfile f "$pdir/cards-fable.jsonl" --slurpfile a "$pdir/cards-astra.jsonl" --arg seed "$seed" --arg cards "$(basename "$cards")" '
       def verdicts(v): if v.out == null then null else ((v.out.dates // []) + (v.out.entities // []) | map(.supported)) end;
-      [ .[] as $c | ($f[] | select(.sample_id == $c.sample_id)) as $fb | ($a[] | select(.sample_id == $c.sample_id)) as $as
+      [ .[] as $c | ($f[] | select(.sample_id == $c.sample_id)) as $fb | ($a[] | select(.sample_id == $c.sample_id)) as $ast
         | {sample_id: $c.sample_id, page: $c.page, heading: $c.heading, values: (($c.dates | length) + ($c.entities | length)),
            fable: verdicts($fb), astra: verdicts($ast)} ] as $rows
       | def rate(m): ($rows | map(.[m] // empty | .[]) | if length == 0 then null else (map(select(. | not)) | length) / length end);
