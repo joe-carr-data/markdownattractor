@@ -1,0 +1,46 @@
+{
+  "table": "T2",
+  "project": "tailwind-css",
+  "run_at": "2026-09-25T17:45:39Z",
+  "status": "completed",
+  "passed": true,
+  "sample": "evals/results/docsqa/T2/tailwind-css/questions.jsonl",
+  "sample_sha256": "68ca0a3ab04f8060090170cebfd3e71325e0b99f2de5cbead361a9d1b602c731",
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.282 (Claude Code) · codex codex-cli 0.155.1"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T2/FROZEN.md (source commit 261d0c15b0e9f5048f724d4f449ddd28657aef7a, HEAD a98229aa925a427d7fb5f8e2ad39c91405613049)"
+    },
+    {
+      "name": "sample",
+      "status": "ok",
+      "detail": "25 questions, every hash matches the dataset (sha256 68ca0a3ab04f8060090170cebfd3e71325e0b99f2de5cbead361a9d1b602c731)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    }
+  ]
+}
