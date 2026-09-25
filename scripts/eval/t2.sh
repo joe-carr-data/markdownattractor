@@ -9,7 +9,7 @@
 #   scripts/eval/t2.sh run <project> <questions.jsonl> <out> [runs=3] [arms=grep,mda,qmd,graphify]
 #   scripts/eval/t2.sh status <out>                 # rows present vs the manifest
 #   scripts/eval/t2.sh grade <project> <out> [grader-model=sonnet]
-#   scripts/eval/t2.sh analysis <out> [--json]      # mda eval --analysis grades.jsonl --manifest manifest.json
+#   scripts/eval/t2.sh analysis <out> [--adjudicated] [--json]   # mda eval --analysis grades.jsonl --manifest manifest.json (--adjudicated: the panel-resolved grades)
 # Env: T2_MODEL (sonnet), T2_JOBS (1: bounded concurrency), T2_MAX_TURNS (12), T2_TIMEOUT (600 s
 # per run), T2_RETRIES (1: a run that exits non-zero or leaves no result is tried once more; every
 # attempt's exit code is recorded), REPO/RUN/MDA (lib.sh).
@@ -68,9 +68,12 @@ row_of() { # id arm run q trace attempts-json wall -> json
      input_tokens: (if $res == null then null else (($res.usage.input_tokens // 0) + ($res.usage.cache_read_input_tokens // 0) + ($res.usage.cache_creation_input_tokens // 0)) end),
      output_tokens: ($res.usage.output_tokens // null), thinking_tokens: ($res.usage.output_tokens_details.thinking_tokens // null),
      source_tokens: (if ($turns | length) < 2 then 0 else ($deltas | map(if . < 0 then 0 else . end) | add) end),
+     source_tokens_signed: (if ($turns | length) < 2 then 0 else ($deltas | add) end),
+     source_tokens_negative_total: (if ($turns | length) < 2 then 0 else ($deltas | map(select(. < 0)) | add // 0 | -.) end),
      source_tokens_negative_turns: ($deltas | map(select(. < 0)) | length),
+     source_tokens_note: "clipped: per-turn deltas below 0 (a context reduction) count as 0; the signed sum and the magnitude of the reductions are beside it (rule 0.7)",
      turn_usage: $turns, tool_calls: ($calls | length), tools: ($calls | map(.name)), failed_calls: ($calls | map(select(.ok | not)) | length),
-     cost_usd: ($res.total_cost_usd // null), models: $models,
+     cost_usd: ($res.total_cost_usd // null), cost_usd_all_attempts: ($attempts | map(.cost_usd // 0) | add), attempts_made: ($attempts | length), models: $models,
      error: (($res == null) or ($res.is_error // false) or ($last.exit_code != 0) or (($res.result // "") | length == 0)),
      stderr: (if (($res == null) or ($last.exit_code != 0)) then $last.stderr else null end)}' "$5"
 }
@@ -89,13 +92,19 @@ case "$cmd" in
     manifest="$(jq -n --arg project "$project" --arg model "$MODEL" --argjson runs "$runs" --arg arms "$arms" --arg qf "$questions" --arg qsha "$(sha256 "$questions")" \
       --argjson ids "$(jq -c '[.id]' "$questions" | jq -s 'add')" --argjson launches "$launches" --arg mda "$("$MDA" --version)" --arg sha "$(git -C "$REPO" rev-parse HEAD)" \
       --argjson max_turns "$MAX_TURNS" --argjson timeout "$TIMEOUT" --argjson retries "$RETRIES" --arg at "$(date -u +%FT%TZ)" \
+      --arg mda_sha "$(sha256 "$MDA")" --arg rules_sha "$(sha256 "$REPO/skills/search-first/SKILL.md")" --arg preamble "$PREAMBLE" \
       '{project: $project, model: $model, runs: $runs, arms: ($arms | split(" ")), question_ids: $ids, questions_file: $qf, questions_sha256: $qsha,
-        launches: $launches, mda: $mda, source_commit: $sha, max_turns: $max_turns, timeout_s: $timeout, retries: $retries, recorded_at: $at,
+        launches: $launches, mda: $mda, mda_sha256: $mda_sha, search_first_sha256: $rules_sha, preamble: $preamble, source_commit: $sha, max_turns: $max_turns, timeout_s: $timeout, retries: $retries, recorded_at: $at,
         rules: {failures: "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)", tokens: "transcript usage per turn from message_delta (rule 0.7)", servers: "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"}}')"
+    # Resume only under the same configuration (Codex M5 F3): everything but the timestamp,
+    # the source commit and the temporary file names inside the launch records must match —
+    # the binary's hash, the rules' hash, the preamble, the model, every arm's server and
+    # system prompt.
+    fingerprint() { jq -S 'del(.recorded_at, .source_commit) | .launches |= map_values(.claude_flags |= map(if test("mda-arm-mcp|qmd-skill") then "<tmp>" else . end))' "$@"; }
     if [ -f "$out/manifest.json" ]; then
-      jq -S 'del(.recorded_at, .source_commit, .mda, .launches)' "$out/manifest.json" > "$out/.m.a"; jq -S 'del(.recorded_at, .source_commit, .mda, .launches)' <<<"$manifest" > "$out/.m.b"
-      diff -q "$out/.m.a" "$out/.m.b" >/dev/null || die "$out/manifest.json describes another run set (project, model, runs, arms or questions differ): use a fresh directory"
-      rm -f "$out/.m.a" "$out/.m.b"; echo "resuming $out"
+      fingerprint "$out/manifest.json" > "$out/.m.a"; fingerprint <<<"$manifest" > "$out/.m.b"
+      diff "$out/.m.a" "$out/.m.b" > "$out/.m.diff" || die "$out/manifest.json describes another configuration (see $out/.m.diff): a resume must run the same binary, rules, model, arms and questions; use a fresh directory otherwise"
+      rm -f "$out/.m.a" "$out/.m.b" "$out/.m.diff"; echo "resuming $out"
     else echo "$manifest" > "$out/manifest.json"; fi
     n_total=0; n_done=0; n_err=0
     one() { # id q arm run
@@ -105,7 +114,10 @@ case "$cmd" in
       t0=$(date +%s)
       for ((a = 1; a <= RETRIES + 1; a++)); do
         rc=0; run_once "$ARM_CORPUS" "$trace" "$q" "${common[@]}" --setting-sources "$ARM_SETTING_SOURCES" "${ARM_ARGS[@]}" || rc=$?
-        attempts="$(jq -c --argjson rc "$rc" --arg err "$( (tail -c 300 "$trace.err" 2>/dev/null || true) | tr '\n' ' ')" --arg at "$(date -u +%FT%TZ)" '. + [{attempt: (length + 1), exit_code: $rc, timed_out: ($rc == 124), stderr: $err, at: $at}]' <<<"$attempts")"
+        # every attempt's own consumption (its result event, when it has one), so a retried
+        # answer's cost is the sum of its attempts, not the last one's (Codex M5 F11)
+        use="$(jq -c -s '(map(select(.type == "result")) | last) as $r | if $r == null then {input_tokens: null, output_tokens: null, cost_usd: null, turns: null} else {input_tokens: (($r.usage.input_tokens // 0) + ($r.usage.cache_read_input_tokens // 0) + ($r.usage.cache_creation_input_tokens // 0)), output_tokens: ($r.usage.output_tokens // null), cost_usd: ($r.total_cost_usd // null), turns: ($r.num_turns // null)} end' "$trace" 2>/dev/null || echo '{}')"
+        attempts="$(jq -c --argjson rc "$rc" --argjson use "$use" --arg err "$( (tail -c 300 "$trace.err" 2>/dev/null || true) | tr '\n' ' ')" --arg at "$(date -u +%FT%TZ)" '. + [{attempt: (length + 1), exit_code: $rc, timed_out: ($rc == 124), stderr: $err, at: $at} + $use]' <<<"$attempts")"
         if [ "$rc" = 0 ] && jq -e 'select(.type == "result")' "$trace" >/dev/null 2>&1; then break; fi
         [ "$a" -le "$RETRIES" ] && cp "$trace" "$trace.attempt$a" 2>/dev/null || true
       done
@@ -143,11 +155,14 @@ case "$cmd" in
     # Sonnet grades every completed answer against the reference (correctness 0–3 +
     # completeness 0–3, structured output, the submission as tagged data); then the grounding
     # check: the same grader sees the answer and the text of every page the answer cites
-    # (repository-relative paths that exist in the checkout, up to 4 pages, whole, capped at
-    # 120,000 characters each: a truncated page hides the cited section and fails the answer) and
-    # says whether every claim is supported; an answer that cites nothing resolvable is
-    # ungrounded. A failed run is never graded: score null, grounded null, error true, and the
-    # analysis scores it 0 (rule 0.3). Every grader call goes through the owner's login.
+    # (every repository-relative `.md/.mdx/.markdown` path in the answer, whole pages, checked
+    # in batches of four; the declared citation syntax is a repository-relative path) and says
+    # whether every claim is supported. The evidence policy (Codex M5 F2): a cited path that
+    # does not exist in the checkout, or a cited page longer than 120,000 characters (which
+    # would have to be truncated), makes the answer ungrounded with the reason recorded; an
+    # answer that cites nothing resolvable is ungrounded. A failed run is never graded: score
+    # null, grounded null, error true, and the analysis scores it 0 (rule 0.3). Every grader
+    # call goes through the owner's login.
     project="${1:?project}"; out="${2:?out-dir}"; grader="${3:-sonnet}"; ident "$project"
     [ -f "$out/manifest.json" ] || die "no manifest in $out"; assemble "$out"
     questions="$(jq -r .questions_file "$out/manifest.json")"; [ -f "$questions" ] || die "questions file of the manifest not found: $questions"
@@ -162,16 +177,20 @@ case "$cmd" in
       local env; env="$( (cd "$scratch" && MAX_THINKING_TOKENS=0 claude --print --model "$grader" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$1" --system-prompt "$2" 2>"$scratch/err") || true)"
       jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // null), cost_usd: (.total_cost_usd // null)} else empty end' <<<"$env" 2>/dev/null | head -1
     }
-    cited_pages() { # answer -> json array of {page, chars, truncated, text} for repository paths that exist (max 4 pages, whole, 120,000 chars cap)
-      local ans="$1" p n=0 pages='[]'
+    cited_pages() { # answer -> json {pages: [{page, chars, text}], unresolved: [paths], oversized: [paths]}
+      local ans="$1" p pages='[]' unresolved='[]' oversized='[]'
       while IFS= read -r p; do
-        [ -n "$p" ] || continue; p="${p#./}"; [ -f "$corpus/$p" ] || continue
-        [ "$n" -lt 4 ] || break; n=$((n + 1))
-        pages="$(jq -c --arg p "$p" --argjson t "$(python3 -c 'import sys, json; t = open(sys.argv[1], encoding="utf-8", errors="replace").read(); print(json.dumps({"text": t[:120000], "chars": len(t), "truncated": len(t) > 120000}))' "$corpus/$p")" '. + [{page: $p, chars: $t.chars, truncated: $t.truncated, text: $t.text}]' <<<"$pages")"
+        [ -n "$p" ] || continue; p="${p#./}"
+        if [ ! -f "$corpus/$p" ]; then unresolved="$(jq -c --arg p "$p" '. + [$p]' <<<"$unresolved")"; continue; fi
+        t="$(python3 -c 'import sys, json; t = open(sys.argv[1], encoding="utf-8", errors="replace").read(); print(json.dumps({"text": t if len(t) <= 120000 else "", "chars": len(t), "oversized": len(t) > 120000}))' "$corpus/$p")"
+        if [ "$(jq -r .oversized <<<"$t")" = true ]; then oversized="$(jq -c --arg p "$p" '. + [$p]' <<<"$oversized")"; continue; fi
+        pages="$(jq -c --arg p "$p" --argjson t "$t" '. + [{page: $p, chars: $t.chars, text: $t.text}]' <<<"$pages")"
       done < <(grep -oE '[A-Za-z0-9_./-]+\.(md|mdx|markdown)' <<<"$ans" | sort -u)
-      printf '%s' "$pages"
+      jq -n --argjson p "$pages" --argjson u "$unresolved" --argjson o "$oversized" '{pages: $p, unresolved: $u, oversized: $o}'
     }
-    : > "$out/grades.jsonl"; i=0
+    # versioned (Codex M5 F10): written to grades.<stamp>.jsonl, then copied over grades.jsonl
+    # atomically at the end; an earlier complete file stays under its own stamp
+    stamp="$(date -u +%Y%m%dT%H%M%SZ)"; gfile="$out/grades.$stamp.jsonl"; : > "$gfile"; i=0
     while IFS= read -r run; do
       i=$((i + 1)); id="$(jq -r .id <<<"$run")"
       ref="$(jq -r --arg id "$id" 'select(.id == $id) | .reference' "$questions" | head -1)"
@@ -180,24 +199,43 @@ case "$cmd" in
       else
         q="$(jq -r .q <<<"$run")"; ans="$(jq -r .answer <<<"$run")"
         gr="$(jq -n --arg q "$q" --arg ref "$ref" --arg ans "$ans" -r '"<submission>\nQuestion: " + $q + "\n\nReference: " + $ref + "\n\nAnswer: " + $ans + "\n</submission>"' | ask "$gschema" "$grubric" || true)"
-        pages="$(cited_pages "$ans")"
+        cp="$(cited_pages "$ans")"; pages="$(jq -c .pages <<<"$cp")"; unresolved="$(jq -c .unresolved <<<"$cp")"; oversized="$(jq -c .oversized <<<"$cp")"
         if [ "$(jq 'length' <<<"$pages")" = 0 ]; then
-          hr='{"out": {"grounded": false, "unsupported_claims": [], "note": "no resolvable citation in the answer"}, "model": null, "cost_usd": null, "cited_pages": []}'
+          hr="$(jq -nc --argjson u "$unresolved" --argjson o "$oversized" '{out: {grounded: false, unsupported_claims: [], note: (if ($u | length) + ($o | length) == 0 then "no resolvable citation in the answer" else "no usable cited page" end)}, model: null, cost_usd: null, cited_pages: [], unresolved_citations: $u, oversized_pages: $o, evidence_policy: "unresolved or oversized citation → ungrounded"}')"
         else
-          hr="$(jq -n --arg q "$q" --arg ans "$ans" --argjson pages "$pages" -r '"<submission>\nQuestion: " + $q + "\n\nAnswer: " + $ans + "\n\nCited pages:\n" + ($pages | map("--- " + .page + " ---\n" + .text) | join("\n\n")) + "\n</submission>"' | ask "$hschema" "$hrubric" || true)"
-          [ -n "$hr" ] && hr="$(jq -c --argjson p "$(jq -c 'map({page, chars, truncated})' <<<"$pages")" '. + {cited_pages: $p}' <<<"$hr")"
+          # every cited page is checked, in batches of four; the answer is grounded only when every batch says so
+          nb="$(jq '(length + 3) / 4 | floor' <<<"$pages")"; verdicts='[]'
+          for ((b = 0; b < nb; b++)); do
+            batch="$(jq -c --argjson b "$b" '.[$b * 4 : $b * 4 + 4]' <<<"$pages")"
+            v="$(jq -n --arg q "$q" --arg ans "$ans" --argjson pages "$batch" -r '"<submission>\nQuestion: " + $q + "\n\nAnswer: " + $ans + "\n\nCited pages (batch; claims supported by pages of another batch are judged there):\n" + ($pages | map("--- " + .page + " ---\n" + .text) | join("\n\n")) + "\n</submission>"' | ask "$hschema" "$hrubric" || true)"
+            verdicts="$(jq -c --argjson v "${v:-null}" --argjson pages "$(jq -c 'map(.page)' <<<"$batch")" '. + [{pages: $pages, verdict: $v}]' <<<"$verdicts")"
+          done
+          hr="$(jq -nc --argjson vs "$verdicts" --argjson u "$unresolved" --argjson o "$oversized" --argjson p "$(jq -c 'map({page, chars})' <<<"$pages")" '
+            ($vs | map(.verdict) | if any(. == null) then null else . end) as $all |
+            if $all == null then null else
+              {out: {grounded: (($u | length) == 0 and ($o | length) == 0 and (($all | length) > 0) and (($all | map(.out.grounded)) | all)),
+                     unsupported_claims: ($all | map(.out.unsupported_claims) | add), note: ($all | map(.out.note) | join(" / "))},
+               batches: $vs, model: ($all[0].model), cost_usd: ($all | map(.cost_usd // 0) | add), cited_pages: $p, unresolved_citations: $u, oversized_pages: $o,
+               evidence_policy: (if ($u | length) > 0 then "ungrounded: a cited path does not exist in the checkout" elif ($o | length) > 0 then "ungrounded: a cited page exceeds 120,000 characters" else "every cited page checked whole, in batches of four" end)} end')"
+          [ "$hr" != null ] || hr=""
         fi
         g="$(jq -n --argjson gr "${gr:-null}" --argjson hr "${hr:-null}" '{grade: $gr, grounding: $hr,
               score: (if $gr != null then ($gr.out.correctness + $gr.out.completeness) else null end),
               grounded: (if $hr != null then $hr.out.grounded else null end),
               graded: ($gr != null), why: (if $gr == null then "grader returned no structured output" elif $hr == null then "grounding check returned no structured output" else null end)}')"
       fi
-      jq -c --argjson g "$g" '. + $g' <<<"$run" >> "$out/grades.jsonl"
+      jq -c --argjson g "$g" --arg grader "$grader" --arg stamp "$stamp" '. + $g + {grader: $grader, graded_at: $stamp}' <<<"$run" >> "$gfile"
       printf '%s %s run %s: score %s grounded %s\n' "$id" "$(jq -r .arm <<<"$run")" "$(jq -r .run <<<"$run")" "$(jq -r '.score' <<<"$g")" "$(jq -r '.grounded' <<<"$g")"
     done < "$out/runs.jsonl"
-    echo "$out/grades.jsonl: $i rows ($(jq -s 'map(select(.score == null)) | length' "$out/grades.jsonl") without a score, $(jq -s 'map(select(.grounded == null)) | length' "$out/grades.jsonl") without a grounding verdict; grader $grader)" ;;
+    cp "$gfile" "$out/grades.jsonl.tmp" && mv "$out/grades.jsonl.tmp" "$out/grades.jsonl"
+    echo "$out/grades.jsonl (= $(basename "$gfile")): $i rows ($(jq -s 'map(select(.score == null)) | length' "$out/grades.jsonl") without a score, $(jq -s 'map(select(.grounded == null)) | length' "$out/grades.jsonl") without a grounding verdict; grader $grader)" ;;
   analysis)
-    out="${1:?out-dir}"; shift; [ -f "$out/grades.jsonl" ] || die "no grades.jsonl in $out (run grade first)"
-    "$MDA" "$@" eval --analysis "$out/grades.jsonl" --manifest "$out/manifest.json" --comparators "$(jq -r '[.arms[] | select(. != "mda")] | join(",")' "$out/manifest.json")" ;;
+    # `analysis <out> [--adjudicated] [--json]`: the grades of record are grades.jsonl; after
+    # `panel.sh regrade`, panel/grades.adjudicated.jsonl carries the panel's resolved scores for
+    # the calibration sample (rule 0.8) and --adjudicated analyses that file instead.
+    out="${1:?out-dir}"; shift; g="$out/grades.jsonl"
+    if [ "${1:-}" = --adjudicated ]; then shift; g="$out/panel/grades.adjudicated.jsonl"; fi
+    [ -f "$g" ] || die "no $g (run grade, and panel.sh regrade for --adjudicated)"
+    "$MDA" "$@" eval --analysis "$g" --manifest "$out/manifest.json" --comparators "$(jq -r '[.arms[] | select(. != "mda")] | join(",")' "$out/manifest.json")" ;;
   *) die "unknown command $cmd" ;;
 esac

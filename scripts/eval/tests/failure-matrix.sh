@@ -55,8 +55,15 @@ ok '[.analysis.arms[] | select(.arm == "mda") | .mean_score_completed] == [6]' |
 # 6. a duplicate observation is refused (the runner double-counted)
 cp "$tmp/out/grades.jsonl" "$tmp/dup.jsonl"; row q-ok mda 1 '"error":false,"score":1' >> "$tmp/dup.jsonl"
 if "$MDA" --json eval --analysis "$tmp/dup.jsonl" --no-manifest --comparators grep --draws 10 >/dev/null 2>&1; then fail "a duplicate (question, arm, run) must be refused"; fi
+# 6b. rows the manifest does not expect are refused: a run number beyond the run count, an unknown arm
+cp "$tmp/out/grades.jsonl" "$tmp/extra.jsonl"; row q-ok mda 3 '"error":false,"score":6' >> "$tmp/extra.jsonl"
+if "$MDA" --json eval --analysis "$tmp/extra.jsonl" --manifest "$tmp/out/manifest.json" --comparators grep --draws 10 >/dev/null 2>&1; then fail "run 3 of 2 must be refused"; fi
+cp "$tmp/out/grades.jsonl" "$tmp/arm.jsonl"; row q-ok qmd 1 '"error":false,"score":6' >> "$tmp/arm.jsonl"
+if "$MDA" --json eval --analysis "$tmp/arm.jsonl" --manifest "$tmp/out/manifest.json" --comparators grep --draws 10 >/dev/null 2>&1; then fail "an arm outside the manifest must be refused"; fi
+# 6c. the analysis refuses to run without a manifest unless told it is diagnostic
+if "$MDA" --json eval --analysis "$tmp/out/grades.jsonl" --comparators grep --draws 10 >/dev/null 2>&1; then fail "--analysis without --manifest must be refused"; fi
 # 7. t2.sh status reports missing and error rows against the manifest
 jq -c . "$tmp/out/grades.jsonl" | while IFS= read -r l; do printf '%s' "$l" > "$tmp/out/rows/$(jq -r '"\(.id)-\(.arm)-\(.run)"' <<<"$l").json"; done
 st="$(bash "$repo/scripts/eval/t2.sh" status "$tmp/out")"
 jq -e '.missing == 1 and .error == 2 and .ok == 5' <<<"$st" >/dev/null || fail "status must report 5 ok, 2 error, 1 missing: $st"
-echo "failure matrix: ok (7 checks)"
+echo "failure matrix: ok (10 checks)"

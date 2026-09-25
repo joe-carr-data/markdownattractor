@@ -26,6 +26,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-09-25 | [reviews/codex/2026-09-25-bench-m5.md](reviews/codex/2026-09-25-bench-m5.md) | \ |
 | 2026-09-24 | [reviews/codex/2026-09-24-post-stop-compare.md](reviews/codex/2026-09-24-post-stop-compare.md) | \ |
 | 2026-09-24 | [reviews/codex/2026-09-24-post-stop-c3-c7.md](reviews/codex/2026-09-24-post-stop-c3-c7.md) | \ |
 | 2026-09-24 | [reviews/codex/2026-09-24-bench-m4.md](reviews/codex/2026-09-24-bench-m4.md) | \ |

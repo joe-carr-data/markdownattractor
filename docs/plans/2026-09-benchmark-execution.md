@@ -137,7 +137,7 @@ Selection is the greedy rule above; "simpler" (for a tie within 0.01) means fewe
 | M3 | T1 development rows for all arms; pooled judgments sampled and judged; tuning loop (§3) run and logged | `TUNING.md` complete; winner frozen |
 | M4 | T1 final freeze; test split once; page section with "where we lose"; Codex pass on the scorer, drivers and freeze | **T1 published** |
 | M5 | T2 harness: resumable runner, transcript tokens, grounding check, analysis command with tests, panel scripts, failure-matrix test, question export; development pilot (throughput measured); Codex pass on the harness (v3.2 §7 follow-up) | harness verified against rules 0.3, 0.4, 0.5, 0.7, 0.8 |
-| M6 | T2 final freeze; runs (4 projects × 4 arms × 25 × 3 = 1,200 answers, detached, resumable); grading; panel calibration and card audit; T3 | **T2, T3 published** |
+| M6 | T2 final freeze; runs (4 projects × 25 × 3 runs × the arms available — graphify's graphs exist on two projects — = 1,050 answers, detached, resumable); grading; panel calibration and card audit; T3 | **T2, T3 published** |
 | M7 | T4 harness and runs | **T4 published** |
 | M8 | `MDA_NOW`, replay harness, validation, T5 | **T5 published** |
 | M9 | T6; README numbers row limited to gates passed; page restructured by axis; holdout still sealed | strategy v3.2 exit criteria ticked |
