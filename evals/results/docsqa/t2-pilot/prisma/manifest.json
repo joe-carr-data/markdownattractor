@@ -1,0 +1,70 @@
+{
+  "project": "prisma",
+  "model": "sonnet",
+  "runs": 1,
+  "arms": [
+    "grep",
+    "mda",
+    "qmd"
+  ],
+  "question_ids": [
+    "prisma::prisma-11775",
+    "prisma::prisma-12314",
+    "prisma::prisma-14665",
+    "prisma::prisma-27080",
+    "prisma::prisma-13432"
+  ],
+  "questions_sha256": "e52bf3bf5b9b744c63f7a546d208846f64c9e38b4ad63be088b000d2ff4fca2e",
+  "mda": "mda 0.1.1",
+  "mda_sha256": "a0d1f09777075b1d3aa651c46857ef53035a6e74e30c0b1772c81b46bb16474d",
+  "search_first_sha256": "d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732",
+  "source_commit": "ae24e1d5e8329ca5efaae9aa51fdac80f6bffbdf",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-09-25T08:38:40Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"
+  },
+  "launches": {
+    "grep": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/prisma",
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/prisma",
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "~/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/prisma",
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "prisma",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    }
+  }
+}

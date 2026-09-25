@@ -1,0 +1,131 @@
+{
+  "seed": "20260922",
+  "stamp": "20260925T095106Z",
+  "trigger": "either panel member differs from the Sonnet grade by more than one point on 0–6 → the panel mean",
+  "sample": 8,
+  "incomplete": 0,
+  "agreement": {
+    "fable_astra": {
+      "exact": 0.5,
+      "within_one": 0.625
+    },
+    "fable_sonnet": {
+      "exact": 0.5,
+      "within_one": 0.75
+    },
+    "astra_sonnet": {
+      "exact": 0.5,
+      "within_one": 0.75
+    }
+  },
+  "resolved_by_panel": 3,
+  "mean_sonnet": 4.125,
+  "mean_fable": 4.375,
+  "mean_astra": 3.5,
+  "rows": [
+    {
+      "sample_id": "r000",
+      "id": "prisma::prisma-13432",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 5,
+      "fable": 5,
+      "astra": 5,
+      "panel_mean": 5,
+      "triggered": false,
+      "resolved": 5,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r001",
+      "id": "prisma::prisma-13432",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 1,
+      "fable": 2,
+      "astra": 0,
+      "panel_mean": 1,
+      "triggered": false,
+      "resolved": 1,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r002",
+      "id": "prisma::prisma-13432",
+      "arm": "qmd",
+      "run": 1,
+      "sonnet": 4,
+      "fable": 4,
+      "astra": 4,
+      "panel_mean": 4,
+      "triggered": false,
+      "resolved": 4,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r003",
+      "id": "prisma::prisma-14665",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 4,
+      "astra": 3,
+      "panel_mean": 3.5,
+      "triggered": true,
+      "resolved": 3.5,
+      "resolution": "panel mean (a member differed from Sonnet by more than one point)"
+    },
+    {
+      "sample_id": "r004",
+      "id": "prisma::prisma-12314",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 6,
+      "astra": 6,
+      "panel_mean": 6,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r005",
+      "id": "prisma::prisma-11775",
+      "arm": "qmd",
+      "run": 1,
+      "sonnet": 2,
+      "fable": 4,
+      "astra": 2,
+      "panel_mean": 3,
+      "triggered": true,
+      "resolved": 3,
+      "resolution": "panel mean (a member differed from Sonnet by more than one point)"
+    },
+    {
+      "sample_id": "r006",
+      "id": "prisma::prisma-12314",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 4,
+      "fable": 4,
+      "astra": 2,
+      "panel_mean": 3,
+      "triggered": true,
+      "resolved": 3,
+      "resolution": "panel mean (a member differed from Sonnet by more than one point)"
+    },
+    {
+      "sample_id": "r007",
+      "id": "prisma::prisma-27080",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 5,
+      "fable": 6,
+      "astra": 6,
+      "panel_mean": 6,
+      "triggered": false,
+      "resolved": 5,
+      "resolution": "sonnet stands"
+    }
+  ]
+}

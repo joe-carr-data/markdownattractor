@@ -1,0 +1,305 @@
+{
+  "analysis": {
+    "arms": [
+      {
+        "arm": "grep",
+        "completed": 5,
+        "cost_usd": 0.0579934,
+        "failed": 0,
+        "grounding_rate": 0.0,
+        "mean_score": 3.6,
+        "mean_score_completed": 3.6,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 3558.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "mda",
+        "completed": 5,
+        "cost_usd": 0.031340599999999996,
+        "failed": 0,
+        "grounding_rate": 0.6,
+        "mean_score": 3.8,
+        "mean_score_completed": 3.8,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 1918.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 5,
+        "cost_usd": 0.08278039999999999,
+        "failed": 0,
+        "grounding_rate": 0.2,
+        "mean_score": 4.0,
+        "mean_score_completed": 4.0,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 4882.0,
+        "tool_calls": 3.0
+      }
+    ],
+    "draws": 10000,
+    "missing_comparators": [],
+    "other_arms": [],
+    "pairs": [
+      {
+        "ci95": [
+          -0.6,
+          1.2
+        ],
+        "comparator": "grep",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 1,
+        "mean_delta": 0.2,
+        "n": 5,
+        "savings": null,
+        "ties": 3,
+        "wins": 1
+      },
+      {
+        "ci95": [
+          -1.2,
+          0.6
+        ],
+        "comparator": "qmd",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": false,
+          "pass": false
+        },
+        "losses": 1,
+        "mean_delta": -0.2,
+        "n": 5,
+        "savings": null,
+        "ties": 3,
+        "wins": 1
+      }
+    ],
+    "questions": [
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0355688,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::77614",
+        "runs": 1,
+        "score": 0.0,
+        "score_completed": 0.0,
+        "source_tokens": 95.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0695218,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::118629",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 3558.0,
+        "tool_calls": 11.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.1357416,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::16243",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 17440.0,
+        "tool_calls": 8.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0579934,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::159649",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3459.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0471106,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::19200",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 5039.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0498216,
+        "failed": 0,
+        "grounded": 1,
+        "id": "github-docs::77614",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 1072.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.027699,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::118629",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 1684.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.031340599999999996,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::16243",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2035.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0330028,
+        "failed": 0,
+        "grounded": 1,
+        "id": "github-docs::159649",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 1918.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0305362,
+        "failed": 0,
+        "grounded": 1,
+        "id": "github-docs::19200",
+        "runs": 1,
+        "score": 3.0,
+        "score_completed": 3.0,
+        "source_tokens": 1978.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.084944,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::77614",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 2300.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.100856,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::118629",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 11881.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.08278039999999999,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::16243",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 7246.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0430268,
+        "failed": 0,
+        "grounded": 0,
+        "id": "github-docs::159649",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3715.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0459084,
+        "failed": 0,
+        "grounded": 1,
+        "id": "github-docs::19200",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 4882.0,
+        "tool_calls": 2.0
+      }
+    ],
+    "seed": 20260922
+  },
+  "grades": "~/.cache/markdownattractor/bench/t2-pilot/github-docs/grades.jsonl",
+  "manifest": "~/.cache/markdownattractor/bench/t2-pilot/github-docs/manifest.json",
+  "options": {
+    "comparators": [
+      "grep",
+      "qmd"
+    ],
+    "draws": 10000,
+    "gates": {
+      "min_grounding": 0.95,
+      "min_lower_bound": -0.25,
+      "min_mean": 4.0
+    },
+    "mda_arm": "mda",
+    "seed": 20260922
+  }
+}

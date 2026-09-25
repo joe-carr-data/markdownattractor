@@ -1,0 +1,85 @@
+{
+  "project": "supabase",
+  "model": "sonnet",
+  "runs": 1,
+  "arms": [
+    "grep",
+    "mda",
+    "qmd",
+    "graphify"
+  ],
+  "question_ids": [
+    "supabase::supabase-33340",
+    "supabase::supabase-32027",
+    "supabase::supabase-1514",
+    "supabase::supabase-8508",
+    "supabase::supabase-33029"
+  ],
+  "questions_sha256": "fe901bcbc09b2a0f1a27973f7bcacf08ee2bbe92eef8f4b82b746fa1c6396236",
+  "mda": "mda 0.1.1",
+  "mda_sha256": null,
+  "search_first_sha256": null,
+  "source_commit": "b1c64b0524260031384c9e7e1ce70aea210346c1",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-09-25T08:31:21Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"
+  },
+  "launches": {
+    "grep": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/supabase",
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/supabase",
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "~/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/supabase",
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "supabase",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    },
+    "graphify": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/graphify/supabase/src",
+      "mcp": {
+        "server": "graphify",
+        "command": "graphify-mcp",
+        "args": [
+          "~/.cache/markdownattractor/bench/graphify/supabase/src/../graph.json"
+        ]
+      },
+      "system_prompt": {
+        "source": "project .claude/ written by graphify install --project"
+      }
+    }
+  }
+}

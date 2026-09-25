@@ -1,0 +1,404 @@
+{
+  "analysis": {
+    "arms": [
+      {
+        "arm": "graphify",
+        "completed": 5,
+        "cost_usd": 0.0859034,
+        "failed": 0,
+        "grounding_rate": 0.4,
+        "mean_score": 4.8,
+        "mean_score_completed": 4.8,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 8043.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "grep",
+        "completed": 5,
+        "cost_usd": 0.0528734,
+        "failed": 0,
+        "grounding_rate": 0.2,
+        "mean_score": 5.0,
+        "mean_score_completed": 5.0,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 3450.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "mda",
+        "completed": 5,
+        "cost_usd": 0.0302506,
+        "failed": 0,
+        "grounding_rate": 0.4,
+        "mean_score": 5.2,
+        "mean_score_completed": 5.2,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 2119.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 5,
+        "cost_usd": 0.0470648,
+        "failed": 0,
+        "grounding_rate": 0.4,
+        "mean_score": 5.2,
+        "mean_score_completed": 5.2,
+        "questions": 5,
+        "questions_with_completed": 5,
+        "runs": 5,
+        "source_tokens": 3998.0,
+        "tool_calls": 2.0
+      }
+    ],
+    "draws": 10000,
+    "missing_comparators": [],
+    "other_arms": [],
+    "pairs": [
+      {
+        "ci95": [
+          -0.6,
+          1.2
+        ],
+        "comparator": "grep",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": true,
+          "pass": false
+        },
+        "losses": 1,
+        "mean_delta": 0.2,
+        "n": 5,
+        "savings": null,
+        "ties": 3,
+        "wins": 1
+      },
+      {
+        "ci95": [
+          -1.2,
+          1.2
+        ],
+        "comparator": "qmd",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": true,
+          "pass": false
+        },
+        "losses": 1,
+        "mean_delta": 0.0,
+        "n": 5,
+        "savings": null,
+        "ties": 3,
+        "wins": 1
+      },
+      {
+        "ci95": [
+          -0.8,
+          1.6
+        ],
+        "comparator": "graphify",
+        "gates": {
+          "grounding_ok": false,
+          "lower_bound_ok": false,
+          "mean_ok": true,
+          "pass": false
+        },
+        "losses": 1,
+        "mean_delta": 0.4,
+        "n": 5,
+        "savings": null,
+        "ties": 2,
+        "wins": 2
+      }
+    ],
+    "questions": [
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.039224600000000005,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17086",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3450.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0553018,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17487",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 4027.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.07537740000000001,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-18123",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 2842.0,
+        "tool_calls": 13.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0528734,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-11515",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 4790.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "grep",
+        "completed": 1,
+        "cost_usd": 0.0263432,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-18753",
+        "runs": 1,
+        "score": 5.0,
+        "score_completed": 5.0,
+        "source_tokens": 460.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0247582,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17086",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2107.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0537704,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17487",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 4825.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0368958,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-18123",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 2119.0,
+        "tool_calls": 4.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0302506,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-11515",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2791.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "mda",
+        "completed": 1,
+        "cost_usd": 0.0261452,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-18753",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 1226.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.1148448,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17086",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3179.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0470648,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-17487",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 4418.0,
+        "tool_calls": 3.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.08767219999999999,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-18123",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 4878.0,
+        "tool_calls": 7.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.0421284,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-11515",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 3998.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "qmd",
+        "completed": 1,
+        "cost_usd": 0.040903400000000006,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-18753",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 2924.0,
+        "tool_calls": 2.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.168956,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17086",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 17514.0,
+        "tool_calls": 6.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.076202,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-17487",
+        "runs": 1,
+        "score": 4.0,
+        "score_completed": 4.0,
+        "source_tokens": 6136.0,
+        "tool_calls": 8.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.0859034,
+        "failed": 0,
+        "grounded": 0,
+        "id": "tailwind-css::tailwind-18123",
+        "runs": 1,
+        "score": 2.0,
+        "score_completed": 2.0,
+        "source_tokens": 5515.0,
+        "tool_calls": 10.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.0696288,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-11515",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 8043.0,
+        "tool_calls": 5.0
+      },
+      {
+        "arm": "graphify",
+        "completed": 1,
+        "cost_usd": 0.08686920000000001,
+        "failed": 0,
+        "grounded": 1,
+        "id": "tailwind-css::tailwind-18753",
+        "runs": 1,
+        "score": 6.0,
+        "score_completed": 6.0,
+        "source_tokens": 8524.0,
+        "tool_calls": 7.0
+      }
+    ],
+    "seed": 20260922
+  },
+  "grades": "~/.cache/markdownattractor/bench/t2-pilot/tailwind-css/grades.jsonl",
+  "manifest": "~/.cache/markdownattractor/bench/t2-pilot/tailwind-css/manifest.json",
+  "options": {
+    "comparators": [
+      "grep",
+      "qmd",
+      "graphify"
+    ],
+    "draws": 10000,
+    "gates": {
+      "min_grounding": 0.95,
+      "min_lower_bound": -0.25,
+      "min_mean": 4.0
+    },
+    "mda_arm": "mda",
+    "seed": 20260922
+  }
+}

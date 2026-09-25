@@ -1,0 +1,70 @@
+{
+  "project": "github-docs",
+  "model": "sonnet",
+  "runs": 1,
+  "arms": [
+    "grep",
+    "mda",
+    "qmd"
+  ],
+  "question_ids": [
+    "github-docs::77614",
+    "github-docs::118629",
+    "github-docs::16243",
+    "github-docs::159649",
+    "github-docs::19200"
+  ],
+  "questions_sha256": "1bcbc74a4f91f709dc619c0f5a90eb9208a552f2fc84037a4a22aed96eb84b39",
+  "mda": "mda 0.1.1",
+  "mda_sha256": "a0d1f09777075b1d3aa651c46857ef53035a6e74e30c0b1772c81b46bb16474d",
+  "search_first_sha256": "d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732",
+  "source_commit": "1130eb089b9dd6805f3a84853377c80ba7309a2e",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-09-25T08:47:52Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"
+  },
+  "launches": {
+    "grep": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/github-docs",
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/github-docs",
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "~/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/github-docs",
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "github-docs",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    }
+  }
+}

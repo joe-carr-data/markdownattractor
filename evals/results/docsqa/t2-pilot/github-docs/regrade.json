@@ -1,0 +1,131 @@
+{
+  "seed": "20260922",
+  "stamp": "20260925T095350Z",
+  "trigger": "either panel member differs from the Sonnet grade by more than one point on 0–6 → the panel mean",
+  "sample": 8,
+  "incomplete": 0,
+  "agreement": {
+    "fable_astra": {
+      "exact": 0.375,
+      "within_one": 0.75
+    },
+    "fable_sonnet": {
+      "exact": 0.125,
+      "within_one": 0.875
+    },
+    "astra_sonnet": {
+      "exact": 0.125,
+      "within_one": 0.75
+    }
+  },
+  "resolved_by_panel": 3,
+  "mean_sonnet": 4.375,
+  "mean_fable": 4.125,
+  "mean_astra": 2.75,
+  "rows": [
+    {
+      "sample_id": "r000",
+      "id": "github-docs::118629",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 2,
+      "fable": 3,
+      "astra": 2,
+      "panel_mean": 2.5,
+      "triggered": false,
+      "resolved": 2,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r001",
+      "id": "github-docs::16243",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 5,
+      "astra": 5,
+      "panel_mean": 5,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r002",
+      "id": "github-docs::77614",
+      "arm": "qmd",
+      "run": 1,
+      "sonnet": 2,
+      "fable": 1,
+      "astra": 1,
+      "panel_mean": 1,
+      "triggered": false,
+      "resolved": 2,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r003",
+      "id": "github-docs::16243",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 5,
+      "astra": 5,
+      "panel_mean": 5,
+      "triggered": false,
+      "resolved": 6,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r004",
+      "id": "github-docs::159649",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 5,
+      "astra": 1,
+      "panel_mean": 3,
+      "triggered": true,
+      "resolved": 3,
+      "resolution": "panel mean (a member differed from Sonnet by more than one point)"
+    },
+    {
+      "sample_id": "r005",
+      "id": "github-docs::118629",
+      "arm": "qmd",
+      "run": 1,
+      "sonnet": 4,
+      "fable": 4,
+      "astra": 3,
+      "panel_mean": 3.5,
+      "triggered": false,
+      "resolved": 4,
+      "resolution": "sonnet stands"
+    },
+    {
+      "sample_id": "r006",
+      "id": "github-docs::159649",
+      "arm": "grep",
+      "run": 1,
+      "sonnet": 6,
+      "fable": 5,
+      "astra": 1,
+      "panel_mean": 3,
+      "triggered": true,
+      "resolved": 3,
+      "resolution": "panel mean (a member differed from Sonnet by more than one point)"
+    },
+    {
+      "sample_id": "r007",
+      "id": "github-docs::19200",
+      "arm": "mda",
+      "run": 1,
+      "sonnet": 3,
+      "fable": 5,
+      "astra": 4,
+      "panel_mean": 4.5,
+      "triggered": true,
+      "resolved": 4.5,
+      "resolution": "panel mean (a member differed from Sonnet by more than one point)"
+    }
+  ]
+}
