@@ -155,8 +155,10 @@ case "$cmd" in
     # Sonnet grades every completed answer against the reference (correctness 0–3 +
     # completeness 0–3, structured output, the submission as tagged data); then the grounding
     # check: the same grader sees the answer and the text of every page the answer cites
-    # (every repository-relative `.md/.mdx/.markdown` path in the answer, whole pages, checked
-    # in batches of four; the declared citation syntax is a repository-relative path) and says
+    # (every `.md/.mdx/.markdown` path in the answer, resolved by the declared rule: an exact
+    # repository-relative path; or, after stripping a leading `<project>/` (qmd's collection
+    # prefix), the unique suffix of one corpus page — an ambiguous or unknown path does not
+    # resolve; whole pages, checked in batches of four) and says
     # whether every claim is supported. The evidence policy (Codex M5 F2): a cited path that
     # does not exist in the checkout, or a cited page longer than 120,000 characters (which
     # would have to be truncated), makes the answer ungrounded with the reason recorded; an
@@ -177,14 +179,27 @@ case "$cmd" in
       local env; env="$( (cd "$scratch" && MAX_THINKING_TOKENS=0 claude --print --model "$grader" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$1" --system-prompt "$2" 2>"$scratch/err") || true)"
       jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // null), cost_usd: (.total_cost_usd // null)} else empty end' <<<"$env" 2>/dev/null | head -1
     }
-    cited_pages() { # answer -> json {pages: [{page, chars, text}], unresolved: [paths], oversized: [paths]}
-      local ans="$1" p pages='[]' unresolved='[]' oversized='[]'
+    # the corpus pages of the project (repository-relative), for the suffix rule
+    jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl" | sort -u > "$scratch/pages.txt"
+    resolve() { # cited path -> the repository-relative page, or nothing
+      local c="${1#./}" cand n
+      [ -f "$corpus/$c" ] && { echo "$c"; return; }
+      c="${c#"$project"/}"; [ -f "$corpus/$c" ] && { echo "$c"; return; }
+      cand="$(grep -F -e "/$c" "$scratch/pages.txt" | grep -E "(^|/)$(printf '%s' "$c" | sed 's/[][\.*^$]/\\&/g')$" || true)"
+      n="$(printf '%s' "$cand" | grep -c . || true)"
+      [ "$n" = 1 ] && [ -f "$corpus/$cand" ] && echo "$cand"
+    }
+    cited_pages() { # answer -> json {pages: [{page, cited_as, chars, text}], unresolved: [paths], oversized: [paths]}
+      local ans="$1" p r pages='[]' unresolved='[]' oversized='[]'
       while IFS= read -r p; do
-        [ -n "$p" ] || continue; p="${p#./}"
-        if [ ! -f "$corpus/$p" ]; then unresolved="$(jq -c --arg p "$p" '. + [$p]' <<<"$unresolved")"; continue; fi
+        [ -n "$p" ] || continue
+        r="$(resolve "$p")"
+        if [ -z "$r" ]; then unresolved="$(jq -c --arg p "$p" '. + [$p]' <<<"$unresolved")"; continue; fi
+        if jq -e --arg r "$r" 'map(.page) | index($r) != null' <<<"$pages" >/dev/null; then continue; fi
+        cited="$p"; p="$r"
         t="$(python3 -c 'import sys, json; t = open(sys.argv[1], encoding="utf-8", errors="replace").read(); print(json.dumps({"text": t if len(t) <= 120000 else "", "chars": len(t), "oversized": len(t) > 120000}))' "$corpus/$p")"
         if [ "$(jq -r .oversized <<<"$t")" = true ]; then oversized="$(jq -c --arg p "$p" '. + [$p]' <<<"$oversized")"; continue; fi
-        pages="$(jq -c --arg p "$p" --argjson t "$t" '. + [{page: $p, chars: $t.chars, text: $t.text}]' <<<"$pages")"
+        pages="$(jq -c --arg p "$p" --arg c "$cited" --argjson t "$t" '. + [{page: $p, cited_as: $c, chars: $t.chars, text: $t.text}]' <<<"$pages")"
       done < <(grep -oE '[A-Za-z0-9_./-]+\.(md|mdx|markdown)' <<<"$ans" | sort -u)
       jq -n --argjson p "$pages" --argjson u "$unresolved" --argjson o "$oversized" '{pages: $p, unresolved: $u, oversized: $o}'
     }
@@ -210,7 +225,7 @@ case "$cmd" in
             v="$(jq -n --arg q "$q" --arg ans "$ans" --argjson pages "$batch" -r '"<submission>\nQuestion: " + $q + "\n\nAnswer: " + $ans + "\n\nCited pages (batch; claims supported by pages of another batch are judged there):\n" + ($pages | map("--- " + .page + " ---\n" + .text) | join("\n\n")) + "\n</submission>"' | ask "$hschema" "$hrubric" || true)"
             verdicts="$(jq -c --argjson v "${v:-null}" --argjson pages "$(jq -c 'map(.page)' <<<"$batch")" '. + [{pages: $pages, verdict: $v}]' <<<"$verdicts")"
           done
-          hr="$(jq -nc --argjson vs "$verdicts" --argjson u "$unresolved" --argjson o "$oversized" --argjson p "$(jq -c 'map({page, chars})' <<<"$pages")" '
+          hr="$(jq -nc --argjson vs "$verdicts" --argjson u "$unresolved" --argjson o "$oversized" --argjson p "$(jq -c 'map({page, cited_as, chars})' <<<"$pages")" '
             ($vs | map(.verdict) | if any(. == null) then null else . end) as $all |
             if $all == null then null else
               {out: {grounded: (($u | length) == 0 and ($o | length) == 0 and (($all | length) > 0) and (($all | map(.out.grounded)) | all)),

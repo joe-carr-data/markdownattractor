@@ -142,7 +142,7 @@ Selection is the greedy rule above; "simpler" (for a tie within 0.01) means fewe
 | M8 | `MDA_NOW`, replay harness, validation, T5 | **T5 published** |
 | M9 | T6; README numbers row limited to gates passed; page restructured by axis; holdout still sealed | strategy v3.2 exit criteria ticked |
 
-Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 throughput) and are written into the milestone when known; until then no dates. T1 and T2 are independent of T4/T5; a slip there never delays or changes a published T1/T2.
+Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 throughput) and are written into the milestone when known; until then no dates. **M5 pilot (2026-09-25, 70 runs, 0 errors, one job):** 132 answer runs per hour through `claude -p` (median wall 12 s mda, 17 s grep, 17 s graphify, 45 s qmd), ≈ $0.05 list-price per run; T2's 1,050 answers ≈ 8 h of runs plus two grader calls per answer ≈ 9 h of grading at one job, plus the panel (30 answers × 2 members per project) and the card audit (100 cards × 2 members per corpus). T1 and T2 are independent of T4/T5; a slip there never delays or changes a published T1/T2.
 
 ## 6. Risks, and what we do
 
