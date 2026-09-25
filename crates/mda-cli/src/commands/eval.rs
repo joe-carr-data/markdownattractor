@@ -98,6 +98,18 @@ pub struct Args {
     /// `question_id`): the pooled column is computed over the judged questions (plan §2.3).
     #[arg(long)]
     pub only_questions: Option<PathBuf>,
+    /// Write the T2 question sample of the split (plan §4): eligible questions with the
+    /// dataset's reference answer, stratified over the community category in seeded order,
+    /// as JSONL rows `{id, split, category, q, reference, relevant}`; `--sample` questions
+    /// (0 = all), seeded by `--sample-seed` (default: the split seed). Written before scoring.
+    #[arg(long, requires = "dataset")]
+    pub export_questions: Option<PathBuf>,
+    /// Sample size for `--export-questions` (0 = every eligible question of the split).
+    #[arg(long, default_value_t = 0, requires = "export_questions")]
+    pub sample: usize,
+    /// Seed for `--export-questions` (default: `--seed`).
+    #[arg(long, requires = "export_questions")]
+    pub sample_seed: Option<u64>,
     /// Paired comparison of archived runs instead of an evaluation (execution plan §3,
     /// 2026-09-24 amendment): `--compare <label> <baseline results.json> <candidate
     /// results.json>`, repeated once per project. Reports wins, losses, the unrounded
@@ -430,6 +442,34 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let sections_carded = engine.store().sections_carded()?;
     let coverage = docsqa::coverage(&dataset, engine.store())?;
     let splits = dataset.split(args.seed);
+    let mut sample_report = None;
+    if let Some(file) = &args.export_questions {
+        anyhow::ensure!(
+            !root.join(mda_core::config::STATE_DIR).starts_with(file) && !file.starts_with(&root),
+            "--export-questions must not point inside the checkout"
+        );
+        let indexed: std::collections::HashSet<String> =
+            engine.store().documents()?.into_iter().map(|d| d.rel_path).collect();
+        let sample = dataset.sample(
+            &splits,
+            split,
+            &indexed,
+            args.sample,
+            args.sample_seed.unwrap_or(args.seed),
+        );
+        let mut text = String::new();
+        for q in &sample.questions {
+            text.push_str(&serde_json::to_string(q)?);
+            text.push('\n');
+        }
+        std::fs::write(file, text).with_context(|| file.display().to_string())?;
+        tracing::info!(questions = sample.questions.len(), eligible = sample.eligible, file = %file.display(), "question sample written");
+        sample_report = Some(serde_json::json!({
+            "file": portable(file), "questions": sample.questions.len(), "eligible": sample.eligible,
+            "without_reference": sample.without_reference, "seed": sample.seed,
+            "categories": sample.questions.iter().fold(std::collections::BTreeMap::<String, usize>::new(), |mut m, q| { *m.entry(q.category.clone().unwrap_or_else(|| "uncategorised".into())).or_default() += 1; m }),
+        }));
+    }
     let split_counts: HashMap<String, usize> =
         splits.values().fold(HashMap::new(), |mut acc, s| {
             *acc.entry(format!("{s:?}").to_lowercase()).or_default() += 1;
@@ -524,6 +564,7 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         "cards_attached": attached,
         "cards_exported": exported,
         "arm_output": args.arm_output.as_deref().map(portable),
+        "export_questions": sample_report,
         "extra_labels": args.extra_labels.as_deref().map(|f| serde_json::json!({"file": portable(f), "added": extra_labels_added, "unknown_question_ids": extra_labels_unknown})),
         "only_questions": only.as_ref().map(std::collections::HashSet::len),
         "embedding_model": embedder.as_ref().map(|e| e.model().to_owned()),

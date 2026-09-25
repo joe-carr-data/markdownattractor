@@ -29,6 +29,10 @@ pub struct Question {
     /// alone, so adding pooled labels (`add_labels`) never changes which questions are
     /// scored (Codex M4 F4: the original and pooled columns describe one population).
     pub original_relevant: Vec<String>,
+    /// The dataset's normalised reference answer, when it has one (T2).
+    pub reference: Option<String>,
+    /// The dataset's community category (T2 samples are stratified over it).
+    pub category: Option<String>,
     /// The dataset's resolved evidence anchors: `(page path, canonical heading)`; a heading
     /// of `None` means the whole page. Used by the evidence-presence check (plan §2 F1 v).
     pub anchors: Vec<(String, Option<String>)>,
@@ -57,6 +61,8 @@ struct QuestionRow {
     question_id: String,
     project: String,
     query: String,
+    #[serde(default)]
+    community_category: Option<String>,
 }
 
 /// A flag the dataset writes either as a boolean or as the list of evidence items behind it
@@ -97,6 +103,9 @@ struct AnswerRow {
     question_id: String,
     #[serde(default)]
     qrel_ids: Vec<String>,
+    /// The dataset's normalised reference answer (T2's reference, plan §4).
+    #[serde(default)]
+    normalized_answer: Option<String>,
     #[serde(default)]
     anchor_resolution: Vec<AnchorRow>,
     #[serde(default)]
@@ -180,6 +189,8 @@ impl Dataset {
                 id: q.question_id,
                 query: q.query,
                 original_relevant: relevant.clone(),
+                reference: a.normalized_answer.clone().filter(|r| !r.trim().is_empty()),
+                category: q.community_category.clone().filter(|c| !c.trim().is_empty()),
                 relevant,
                 anchors,
                 unmapped_qrels: unmapped,
@@ -220,6 +231,75 @@ impl Dataset {
         unknown.sort();
         unknown.dedup();
         unknown
+    }
+
+    /// The T2 question sample (plan §4): the eligible questions of `split` (every label
+    /// mapped and indexed, no image evidence — the same rule the scorer applies), in seeded
+    /// order (`blake3(seed ‖ id)`), stratified over the community category by round-robin
+    /// over the categories in that order, the first `n` (all when `n` is 0). Questions
+    /// without a reference answer are skipped and listed, so T2 never grades against nothing.
+    #[must_use]
+    pub fn sample(
+        &self,
+        splits: &HashMap<String, Split>,
+        split: Option<Split>,
+        indexed: &HashSet<String>,
+        n: usize,
+        seed: u64,
+    ) -> Sample {
+        let mut without_reference = Vec::new();
+        let mut pool: Vec<&Question> = Vec::new();
+        for q in &self.questions {
+            if !eligible(q, indexed) || (split.is_some() && splits.get(&q.id).copied() != split) {
+                continue;
+            }
+            if q.reference.is_none() {
+                without_reference.push(q.id.clone());
+                continue;
+            }
+            pool.push(q);
+        }
+        let ids: Vec<String> = pool.iter().map(|q| q.id.clone()).collect();
+        let order = super::seeded_order(seed, &ids);
+        pool.sort_by_key(|q| order[&q.id]);
+        // round-robin over the categories (in order of first appearance in the seeded
+        // order), each category's questions in seeded order
+        let mut by_cat: Vec<(String, std::collections::VecDeque<&Question>)> = Vec::new();
+        for q in &pool {
+            let cat = q.category.clone().unwrap_or_else(|| "uncategorised".to_owned());
+            match by_cat.iter_mut().find(|(c, _)| *c == cat) {
+                Some((_, v)) => v.push_back(q),
+                None => by_cat.push((cat, std::iter::once(*q).collect())),
+            }
+        }
+        let want = if n == 0 { pool.len() } else { n.min(pool.len()) };
+        let mut chosen: Vec<&Question> = Vec::with_capacity(want);
+        while chosen.len() < want {
+            for (_, v) in &mut by_cat {
+                if chosen.len() >= want {
+                    break;
+                }
+                if let Some(q) = v.pop_front() {
+                    chosen.push(q);
+                }
+            }
+        }
+        Sample {
+            questions: chosen
+                .into_iter()
+                .map(|q| SampledQuestion {
+                    id: q.id.clone(),
+                    split: splits.get(&q.id).copied(),
+                    category: q.category.clone(),
+                    q: q.query.clone(),
+                    reference: q.reference.clone().unwrap_or_default(),
+                    relevant: q.relevant.clone(),
+                })
+                .collect(),
+            eligible: pool.len() + without_reference.len(),
+            without_reference,
+            seed,
+        }
     }
 
     /// The split of every question (seeded, stratified within the project).
@@ -551,6 +631,36 @@ pub fn evaluate(
     })
 }
 
+/// One question of a T2 sample (`--export-questions`): what the runner and the grader need.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SampledQuestion {
+    /// `question_id`.
+    pub id: String,
+    /// Its split.
+    pub split: Option<Split>,
+    /// The community category it was stratified by.
+    pub category: Option<String>,
+    /// The question text.
+    pub q: String,
+    /// The dataset's normalised reference answer.
+    pub reference: String,
+    /// The relevant pages (repository-relative).
+    pub relevant: Vec<String>,
+}
+
+/// A T2 sample with its provenance.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Sample {
+    /// The chosen questions, in sample order.
+    pub questions: Vec<SampledQuestion>,
+    /// Eligible questions of the split before sampling (with or without a reference).
+    pub eligible: usize,
+    /// Eligible questions skipped for lack of a reference answer.
+    pub without_reference: Vec<String>,
+    /// The sampling seed.
+    pub seed: u64,
+}
+
 /// One extra label (`--extra-labels`, plan §2.3): a page judged relevant for a question.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ExtraLabel {
@@ -702,7 +812,59 @@ pub fn score_arm(
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_arm_path, normalize_heading, read_arm_output};
+    use super::{Dataset, Question, Split, normalize_arm_path, normalize_heading, read_arm_output};
+    use std::collections::{BTreeMap, HashMap, HashSet};
+
+    fn q(id: &str, cat: Option<&str>, reference: Option<&str>, page: &str) -> Question {
+        Question {
+            id: id.into(),
+            query: format!("question {id}"),
+            relevant: vec![page.into()],
+            original_relevant: vec![page.into()],
+            reference: reference.map(str::to_owned),
+            category: cat.map(str::to_owned),
+            anchors: vec![],
+            unmapped_qrels: vec![],
+            image_evidence: false,
+            multimodal_judgment: false,
+        }
+    }
+
+    #[test]
+    fn sample_is_seeded_stratified_and_skips_questions_without_a_reference() {
+        let mut questions = Vec::new();
+        for i in 0..12 {
+            let cat = if i % 3 == 0 { "a" } else { "b" };
+            questions.push(q(&format!("q{i}"), Some(cat), Some("ref"), "p.md"));
+        }
+        questions.push(q("noref", Some("a"), None, "p.md"));
+        questions.push(q("unindexed", Some("a"), Some("ref"), "missing.md"));
+        let ds = Dataset { project: "t".into(), questions, pages: BTreeMap::new() };
+        let indexed: HashSet<String> = ["p.md".to_owned()].into_iter().collect();
+        let splits: HashMap<String, Split> =
+            ds.questions.iter().map(|q| (q.id.clone(), Split::Test)).collect();
+        let s = ds.sample(&splits, Some(Split::Test), &indexed, 6, 7);
+        assert_eq!(s.questions.len(), 6);
+        assert_eq!(s.without_reference, vec!["noref".to_owned()]);
+        assert_eq!(
+            s.eligible, 13,
+            "12 with a reference + 1 without; the unindexed one is not eligible"
+        );
+        // round-robin over two categories: three of each
+        let a = s.questions.iter().filter(|x| x.category.as_deref() == Some("a")).count();
+        assert_eq!(a, 3);
+        assert!(s.questions.iter().all(|x| x.reference == "ref" && x.relevant == ["p.md"]));
+        // deterministic, and a different seed gives a different order
+        assert_eq!(s, ds.sample(&splits, Some(Split::Test), &indexed, 6, 7));
+        let other = ds.sample(&splits, Some(Split::Test), &indexed, 6, 8);
+        assert_ne!(
+            s.questions.iter().map(|x| &x.id).collect::<Vec<_>>(),
+            other.questions.iter().map(|x| &x.id).collect::<Vec<_>>()
+        );
+        // n = 0 takes every eligible question with a reference; a wrong split takes none
+        assert_eq!(ds.sample(&splits, Some(Split::Test), &indexed, 0, 7).questions.len(), 12);
+        assert_eq!(ds.sample(&splits, Some(Split::Dev), &indexed, 0, 7).questions.len(), 0);
+    }
 
     #[test]
     fn arm_paths_fold_to_the_store_form() {
