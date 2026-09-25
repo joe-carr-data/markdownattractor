@@ -1,6 +1,6 @@
 # FROZEN — DocsQA-Repo, protocol: final, table T2
 
-Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T2 final freeze (M6): 25 test questions per project (21 on Supabase: every eligible test question with a reference), 3 runs per question and arm, arms grep · mda · qmd · graphify (graphify where its build completed: Tailwind, Supabase) = 1,002 answers; Sonnet answers and grades through the owner's login; the grounding rubric as amended on 2026-09-25 (plan §2.4); the panel (Fable, Astra) on 30 answers per project and 100 cards per corpus; the arm builds are the M2 builds; every run starts its MCP server cold (rule 0.9 as amended).
+Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T2 final freeze (M6): 25 test questions per project (21 on Supabase: every eligible test question with a reference), 3 runs per question and arm, arms grep · mda · qmd · graphify (graphify where its build completed: Tailwind, Supabase) = 1,002 answers; Sonnet answers and grades through the owner's login; the grounding rubric as amended on 2026-09-25 (plan §2.4); the panel (Fable, Astra) on 30 answers per project and 100 cards per corpus; the arm builds are the M2 builds; every run starts its MCP server cold (rule 0.9 as amended). Re-written at 261d0c1 after scripts/eval/t3.sh (the T3 table renderer, no T2 input) was added under the first freeze; the T2 inputs are unchanged.
 
 ## Inputs
 
@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: 0b77f9f72dd40ee79ba842be87ddcb8e1eb34fe5 (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
+- source commit: 261d0c15b0e9f5048f724d4f449ddd28657aef7a (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (regular files and the snapshot links the loader opens, each with the sha256 of its content; sha256 of the file 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -72,7 +72,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ## Runtime
 
-- frozen_at: 2026-09-25T17:21:26Z
+- frozen_at: 2026-09-25T17:31:10Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.282 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
