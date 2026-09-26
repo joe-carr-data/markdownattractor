@@ -1,0 +1,92 @@
+{
+  "project": "prisma",
+  "model": "sonnet",
+  "runs": 3,
+  "arms": [
+    "grep",
+    "mda",
+    "qmd"
+  ],
+  "question_ids": [
+    "prisma::prisma-16779",
+    "prisma::prisma-16158",
+    "prisma::prisma-12254",
+    "prisma::prisma-17350",
+    "prisma::prisma-16070",
+    "prisma::prisma-3163",
+    "prisma::prisma-13858",
+    "prisma::prisma-28901",
+    "prisma::prisma-22711",
+    "prisma::prisma-14086",
+    "prisma::prisma-15154",
+    "prisma::prisma-26922",
+    "prisma::prisma-28866",
+    "prisma::prisma-12185",
+    "prisma::prisma-13456",
+    "prisma::prisma-21216",
+    "prisma::prisma-28606",
+    "prisma::prisma-25183",
+    "prisma::prisma-28115",
+    "prisma::prisma-12320",
+    "prisma::prisma-24697",
+    "prisma::prisma-12174",
+    "prisma::prisma-26669",
+    "prisma::prisma-12450",
+    "prisma::prisma-11973"
+  ],
+  "questions_file": "~/markdownattractor/evals/results/docsqa/T2/prisma/questions.jsonl",
+  "questions_sha256": "f3a16f3475d2562b7208a37be636ce910c61650c012add3fb283dd6b5601d29e",
+  "mda": "mda 0.1.1",
+  "mda_sha256": "a0d1f09777075b1d3aa651c46857ef53035a6e74e30c0b1772c81b46bb16474d",
+  "search_first_sha256": "d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732",
+  "preamble": "Answer from the documents in the current directory. Be concise (at most 6 lines). Cite the file and section you used.",
+  "source_commit": "1b2d9d3af7e39a96e9fab32c9b1ad2e736aa1279",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-09-25T21:48:20Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"
+  },
+  "launches": {
+    "grep": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/prisma",
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/prisma",
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "~/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/prisma",
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "prisma",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    }
+  }
+}

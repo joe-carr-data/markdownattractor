@@ -1,0 +1,107 @@
+{
+  "project": "tailwind-css",
+  "model": "sonnet",
+  "runs": 3,
+  "arms": [
+    "grep",
+    "mda",
+    "qmd",
+    "graphify"
+  ],
+  "question_ids": [
+    "tailwind-css::tailwind-15715",
+    "tailwind-css::tailwind-16811",
+    "tailwind-css::tailwind-16273",
+    "tailwind-css::tailwind-13550",
+    "tailwind-css::tailwind-20218",
+    "tailwind-css::tailwind-16127",
+    "tailwind-css::tailwind-18368",
+    "tailwind-css::tailwind-18313",
+    "tailwind-css::tailwind-16827",
+    "tailwind-css::tailwind-19314",
+    "tailwind-css::tailwind-17172",
+    "tailwind-css::tailwind-18993",
+    "tailwind-css::tailwind-10194",
+    "tailwind-css::tailwind-13816",
+    "tailwind-css::tailwind-17568",
+    "tailwind-css::tailwind-14130",
+    "tailwind-css::tailwind-18098",
+    "tailwind-css::tailwind-13762",
+    "tailwind-css::tailwind-17235",
+    "tailwind-css::tailwind-20135",
+    "tailwind-css::tailwind-11754",
+    "tailwind-css::tailwind-17803",
+    "tailwind-css::tailwind-17526",
+    "tailwind-css::tailwind-16449",
+    "tailwind-css::tailwind-20353"
+  ],
+  "questions_file": "~/markdownattractor/evals/results/docsqa/T2/tailwind-css/questions.jsonl",
+  "questions_sha256": "68ca0a3ab04f8060090170cebfd3e71325e0b99f2de5cbead361a9d1b602c731",
+  "mda": "mda 0.1.1",
+  "mda_sha256": "a0d1f09777075b1d3aa651c46857ef53035a6e74e30c0b1772c81b46bb16474d",
+  "search_first_sha256": "d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732",
+  "preamble": "Answer from the documents in the current directory. Be concise (at most 6 lines). Cite the file and section you used.",
+  "source_commit": "a98229aa925a427d7fb5f8e2ad39c91405613049",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-09-25T17:38:26Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out or empty run scores 0 and fails grounding (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9 as amended, plan §2.7)"
+  },
+  "launches": {
+    "grep": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/tailwindcss",
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/tailwindcss",
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "~/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/tailwindcss",
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "tailwind-css",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    },
+    "graphify": {
+      "model": "sonnet",
+      "cwd": "~/.cache/markdownattractor/bench/graphify/tailwind-css/src",
+      "mcp": {
+        "server": "graphify",
+        "command": "graphify-mcp",
+        "args": [
+          "~/.cache/markdownattractor/bench/graphify/tailwind-css/src/../graph.json"
+        ]
+      },
+      "system_prompt": {
+        "source": "project .claude/ written by graphify install --project"
+      }
+    }
+  }
+}

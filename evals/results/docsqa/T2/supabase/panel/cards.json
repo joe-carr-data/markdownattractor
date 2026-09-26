@@ -1,0 +1,1750 @@
+{
+  "seed": "20260922",
+  "stamp": "20260926T062045Z",
+  "cards_file": "cards-0.1.1-supabase.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 100,
+  "values": 474,
+  "unsupported_rate": {
+    "fable": 0.015915119363395226,
+    "astra": 0.017948717948717947
+  },
+  "incomplete": 18,
+  "agreement": 0.9946949602122016,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "apps/docs/content/_partials/billing/pricing/pricing_mfa_phone.mdx",
+      "heading": "[\"Pricing\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c002",
+      "page": "apps/docs/content/guides/functions/quickstart.mdx",
+      "heading": "[\"Step 3: Test your function locally\",\"Function not starting locally?\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "apps/docs/content/guides/auth/oauth-server/oauth-flows.mdx",
+      "heading": "[\"Token validation\",\"Validating tokens\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "apps/docs/content/guides/integrations/build-a-supabase-oauth-integration.mdx",
+      "heading": "[]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c005",
+      "page": "apps/docs/content/guides/self-hosting/self-hosted-saml-sso.mdx",
+      "heading": "[\"Step 6: Register an identity provider\",\"Option A: Register with a metadata URL (recommended)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "apps/docs/content/guides/database/extensions/uuid-ossp.mdx",
+      "heading": "[\"Examples\",\"Within a query\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c007",
+      "page": "apps/docs/content/guides/getting-started/api-keys.mdx",
+      "heading": "[]",
+      "values": 12,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "apps/docs/content/troubleshooting/realtime-too-many-channels-error.mdx",
+      "heading": "[\"What is the TooManyChannels error?\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "apps/docs/content/guides/database/import-data.mdx",
+      "heading": "[\"Preparing to import data\",\"2. Increase statement timeouts\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c010",
+      "page": "apps/docs/content/guides/auth/passwords.mdx",
+      "heading": "[\"With email\",\"Signing up with an email and password\",\"Step 2: Create token exchange endpoint\"]",
+      "values": 13,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "apps/docs/content/guides/monitoring-and-debugging/reports.mdx",
+      "heading": "[\"API gateway\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "apps/docs/content/guides/auth/oauth-server/getting-started.mdx",
+      "heading": "[\"Enable OAuth 2.1 server\",\"Expose local instance to the world\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c013",
+      "page": "apps/docs/content/guides/functions/examples/resumable-websockets.mdx",
+      "heading": "[\"Edge Function (WebSocket proxy)\"]",
+      "values": 8,
+      "fable": null,
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "apps/docs/content/guides/database/prisma/prisma-troubleshooting.mdx",
+      "heading": "[\"Errors\",\"Server has closed the connection\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "apps/docs/content/guides/platform/manage-your-usage/ipv4.mdx",
+      "heading": "[\"What you are charged for\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "apps/docs/content/guides/self-hosting/restore-from-platform.mdx",
+      "heading": "[\"Before you begin\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "apps/docs/content/troubleshooting/app-store-rejection-tls-error-in-ipv6-only-environments-4e9c62.mdx",
+      "heading": "[\"How to resolve this issue\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "apps/docs/content/guides/realtime/reports.mdx",
+      "heading": "[\"Connected Clients\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "apps/docs/content/guides/platform/migrating-within-supabase.mdx",
+      "heading": "[\"Database migration guides\",\"SQL backup files (*.sql)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "apps/docs/content/troubleshooting/rls-simplified-BJTcS8.mdx",
+      "heading": "[\"Basic summary\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c021",
+      "page": "apps/docs/content/troubleshooting/oauth-sign-in-isnt-redirecting-on-the-server-side-ShGMtr.mdx",
+      "heading": "[]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c022",
+      "page": "apps/docs/content/guides/getting-started/quickstarts/hono.mdx",
+      "heading": "[\"8. Query data from the app\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c023",
+      "page": "apps/docs/content/guides/local-development/cli/testing-and-linting.mdx",
+      "heading": "[\"Testing Auth emails\",\"Going into production\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c024",
+      "page": "apps/docs/content/guides/database/replication/manual-replication-faq.mdx",
+      "heading": "[\"What is XMIN and should it be used?\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c025",
+      "page": "apps/docs/content/guides/platform/manage-your-usage/logs-query.mdx",
+      "heading": "[\"What you are charged for\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c026",
+      "page": "apps/docs/content/guides/auth/social-login/auth-azure.mdx",
+      "heading": "[\"Overview\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c027",
+      "page": "apps/docs/content/guides/platform/sso/login-flows.mdx",
+      "heading": "[\"Multiple SAML apps per domain\",\"The solution with IdP-initiated flow\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c028",
+      "page": "apps/docs/content/guides/auth/server-side/creating-a-client.mdx",
+      "heading": "[\"Create a client\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c029",
+      "page": "apps/docs/content/guides/database/replication/pipelines.mdx",
+      "heading": "[\"Setup overview\",\"Step 1: Create a Postgres publication\",\"Viewing publications in the Dashboard\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c030",
+      "page": "apps/docs/content/_partials/quickstart_db_setup.mdx",
+      "heading": "[]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c031",
+      "page": "apps/docs/content/guides/self-hosting/self-hosted-proxy-https.mdx",
+      "heading": "[\"Self-signed certificates (development only)\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c032",
+      "page": "apps/docs/content/guides/database/testing.mdx",
+      "heading": "[\"Testing using the Supabase CLI\",\"Writing tests\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c033",
+      "page": "apps/docs/content/guides/deployment/branching/dashboard.mdx",
+      "heading": "[\"Limitations\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c034",
+      "page": "apps/docs/content/guides/database/postgres/indexes.mdx",
+      "heading": "[\"Partial indexes\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c035",
+      "page": "apps/docs/content/guides/platform/sso/multiple-providers.mdx",
+      "heading": "[\"Best practices\",\"Naming conventions\",\"Supabase organization names\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c036",
+      "page": "apps/docs/content/guides/database/replication/snowflake.mdx",
+      "heading": "[\"Additional resources\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c037",
+      "page": "apps/docs/content/troubleshooting/edge-function-404-error-response.mdx",
+      "heading": "[\"Solving the error\",\"Step 3: Try calling the function from the dashboard\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c038",
+      "page": "apps/docs/content/guides/database/debugging-performance.mdx",
+      "heading": "[]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c039",
+      "page": "apps/docs/content/guides/platform/migrating-within-supabase/backup-restore.mdx",
+      "heading": "[\"Migrating the database\",\"Troubleshooting notes\",\"Disabling triggers during restore:\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c040",
+      "page": "apps/docs/content/guides/database/replication/pipelines-monitoring.mdx",
+      "heading": "[\"Troubleshooting\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c041",
+      "page": "apps/docs/content/guides/local-development/cli/getting-started.mdx",
+      "heading": "[]",
+      "values": 14,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c042",
+      "page": "apps/docs/content/troubleshooting/email-password-login-disabled-supabase-vercel-marketplace-a7dd36.mdx",
+      "heading": "[]",
+      "values": 9,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c043",
+      "page": "apps/docs/content/guides/database/postgres/data-deletion.mdx",
+      "heading": "[\"Data deletion strategies\",\"Soft deletes\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c044",
+      "page": "apps/docs/content/guides/functions/error-codes.mdx",
+      "heading": "[\"Server Errors\",\"NOT_FOUND\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c045",
+      "page": "apps/docs/content/troubleshooting/interpreting-supabase-grafana-io-charts-MUynDR.mdx",
+      "heading": "[]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c046",
+      "page": "apps/docs/content/guides/getting-started/features.mdx",
+      "heading": "[\"Platform\",\"Database backups\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c047",
+      "page": "apps/docs/content/guides/getting-started/quickstarts/vue.mdx",
+      "heading": "[\"6. Declare Supabase environment variables\"]",
+      "values": 5,
+      "fable": null,
+      "astra": [
+        true,
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c048",
+      "page": "apps/docs/content/guides/storage/cdn/smart-cdn.mdx",
+      "heading": "[]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c049",
+      "page": "apps/docs/content/troubleshooting/unable-to-call-edge-function.mdx",
+      "heading": "[\"Common issues\",\"Authentication errors\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c050",
+      "page": "apps/docs/content/guides/platform/manage-your-usage/egress.mdx",
+      "heading": "[\"What you are charged for\",\"Log Drain Egress\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c051",
+      "page": "apps/docs/content/guides/getting-started/quickstarts/hono.mdx",
+      "heading": "[\"3. Create a Hono app\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c052",
+      "page": "apps/docs/content/troubleshooting/discovering-and-interpreting-api-errors-in-the-logs-7xREI9.mdx",
+      "heading": "[\"Navigating the API logs:\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c053",
+      "page": "apps/docs/content/guides/platform/sso/azure.mdx",
+      "heading": "[\"Step 5: Select SAML single sign-on method [#saml-sso]\"]",
+      "values": 8,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c054",
+      "page": "apps/docs/content/guides/functions/examples/sentry-monitoring.mdx",
+      "heading": "[\"4. Try it yourself\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        false,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "sample_id": "c055",
+      "page": "apps/docs/content/guides/realtime/concepts.mdx",
+      "heading": "[\"Database resources\",\"Schema and tables\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c056",
+      "page": "apps/docs/content/guides/database/orioledb.mdx",
+      "heading": "[\"Resources\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c057",
+      "page": "apps/docs/content/guides/database/replication/clickhouse.mdx",
+      "heading": "[\"Prepare ClickHouse resources\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c058",
+      "page": "apps/docs/content/guides/getting-started/quickstarts/tanstack.mdx",
+      "heading": "[\"6. Declare Supabase environment variables\"]",
+      "values": 7,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c059",
+      "page": "apps/docs/content/guides/functions/storage-caching.mdx",
+      "heading": "[]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c060",
+      "page": "apps/docs/content/guides/platform/project-transfer.mdx",
+      "heading": "[\"Things to watch out for\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c061",
+      "page": "apps/docs/content/guides/database/extensions/plv8.mdx",
+      "heading": "[\"Examples\",\"Executing SQL\"]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c062",
+      "page": "apps/docs/content/guides/platform/manage-your-usage/monthly-active-users-sso.mdx",
+      "heading": "[\"What you are charged for\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c063",
+      "page": "apps/docs/content/guides/database/inspect.mdx",
+      "heading": "[\"Using SQL\",\"Most frequently called queries\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c064",
+      "page": "apps/docs/content/guides/functions/examples/upstash-redis.mdx",
+      "heading": "[]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c065",
+      "page": "apps/docs/content/troubleshooting/resolving-cannot-execute-update-in-a-read-only-transaction-on-transaction-pooler-connections-ef582c.mdx",
+      "heading": "[\"Step-by-step resolution\",\"1. Audit application and scripts\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c066",
+      "page": "apps/docs/content/guides/auth/auth-hooks/before-user-created-hook.mdx",
+      "heading": "[\"Outputs\",\"Allow the signup\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c067",
+      "page": "apps/docs/content/guides/ai/automatic-embeddings.mdx",
+      "heading": "[\"Implementation\",\"Step 3: Create queue and triggers\",\"Why not one request per row?\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c068",
+      "page": "apps/docs/content/guides/auth/users.mdx",
+      "heading": "[\"Inviting users\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c069",
+      "page": "apps/docs/content/guides/integrations/build-a-supabase-oauth-integration.mdx",
+      "heading": "[\"Show a \\\"Connect Supabase\\\" button\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c070",
+      "page": "apps/docs/content/guides/integrations/build-a-supabase-oauth-integration.mdx",
+      "heading": "[\"Calling the Management API\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c071",
+      "page": "apps/docs/content/guides/ai/automatic-embeddings.mdx",
+      "heading": "[\"Conclusion\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c072",
+      "page": "apps/docs/content/guides/getting-started/quickstarts/vue.mdx",
+      "heading": "[\"5. Install the Supabase client library\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c073",
+      "page": "apps/docs/content/guides/monitoring-and-debugging/reports.mdx",
+      "heading": "[\"Database\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c074",
+      "page": "apps/docs/content/guides/database/postgres/event-triggers.mdx",
+      "heading": "[\"Resources\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c075",
+      "page": "apps/docs/content/troubleshooting/edge-function-dependency-analysis.mdx",
+      "heading": "[\"Optimizing NPM dependencies\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c076",
+      "page": "apps/docs/content/guides/auth/passwords.mdx",
+      "heading": "[\"With email\",\"Resetting a password\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c077",
+      "page": "apps/docs/content/troubleshooting/pausing-pro-projects-vNL-2a.mdx",
+      "heading": "[]",
+      "values": 13,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c078",
+      "page": "apps/docs/content/guides/functions/development-environment.mdx",
+      "heading": "[\"Step 2: Set up your editor\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c079",
+      "page": "apps/docs/content/guides/platform/manage-your-usage/monthly-active-users.mdx",
+      "heading": "[\"What you are charged for\",\"Example\"]",
+      "values": 10,
+      "fable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c080",
+      "page": "apps/docs/content/guides/functions/examples/elevenlabs-transcribe-speech.mdx",
+      "heading": "[\"Setup\",\"Dependencies\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c081",
+      "page": "apps/docs/content/guides/platform/sso/okta.mdx",
+      "heading": "[\"Step 11: Join organization on signup (optional) [#dashboard-configure-autojoin]\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c082",
+      "page": "apps/docs/content/troubleshooting/unable-to-call-edge-function.mdx",
+      "heading": "[\"Proper CORS handling\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c083",
+      "page": "apps/docs/content/guides/auth/auth-anonymous.mdx",
+      "heading": "[\"Resolving identity conflicts\",\"Linking an anonymous user to an existing account\"]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c084",
+      "page": "apps/docs/content/guides/self-hosting/self-hosted-saml-sso.mdx",
+      "heading": "[\"Client-side integration\",\"Domain-based vs provider-based lookup\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c085",
+      "page": "apps/docs/content/guides/getting-started/tutorials/with-ionic-angular.mdx",
+      "heading": "[\"Building the app\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c086",
+      "page": "apps/docs/content/guides/functions/auth.mdx",
+      "heading": "[]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c087",
+      "page": "apps/docs/content/guides/functions/examples/slack-bot-mention.mdx",
+      "heading": "[\"Creating the Edge Function\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c088",
+      "page": "apps/docs/content/guides/realtime/broadcast.mdx",
+      "heading": "[\"Trigger broadcast messages from your database\",\"Broadcast record changes\",\"Listen on client side\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c089",
+      "page": "apps/docs/content/guides/database/extensions/pg_net.mdx",
+      "heading": "[\"Limitations\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c090",
+      "page": "apps/docs/content/guides/database/testing.mdx",
+      "heading": "[]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c091",
+      "page": "apps/docs/content/guides/monitoring-and-debugging/sentry-monitoring.mdx",
+      "heading": "[]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c092",
+      "page": "apps/docs/content/troubleshooting/edge-function-504-error-response.mdx",
+      "heading": "[\"Step 3: Optimize\",\"Splitting up logic\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c093",
+      "page": "apps/docs/content/troubleshooting/too-many-connections-for-database-postgres.mdx",
+      "heading": "[\"To check and resolve\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c094",
+      "page": "apps/docs/content/guides/auth/oauth-server/mcp-authentication.mdx",
+      "heading": "[\"Troubleshooting\",\"MCP client can't discover OAuth configuration\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c095",
+      "page": "apps/docs/content/guides/getting-started/quickstarts/flutter.mdx",
+      "heading": "[\"3. Create a Flutter app\"]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c096",
+      "page": "apps/docs/content/guides/ai/going-to-prod.mdx",
+      "heading": "[\"Do you need indexes?\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c097",
+      "page": "apps/docs/content/troubleshooting/failed-to-restore-from-backup-all-subscriptions-and-replication-slots-must-be-dropped-before-a-backup-can-be-restored-L-rCvt.mdx",
+      "heading": "[]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c098",
+      "page": "apps/docs/content/guides/functions/development-environment.mdx",
+      "heading": "[\"Step 1: Install Deno CLI\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c099",
+      "page": "apps/docs/content/guides/platform/manage-your-usage/point-in-time-recovery.mdx",
+      "heading": "[\"Billing examples\",\"Add-on disabled after a day\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c100",
+      "page": "apps/docs/content/guides/storage/vector/local-development.mdx",
+      "heading": "[]",
+      "values": 8,
+      "fable": null,
+      "astra": null
+    }
+  ]
+}

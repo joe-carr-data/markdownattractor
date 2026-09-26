@@ -1,0 +1,1619 @@
+{
+  "seed": "20260922",
+  "stamp": "20260926T073716Z",
+  "cards_file": "cards-0.1.1-github-docs.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 100,
+  "values": 352,
+  "unsupported_rate": {
+    "fable": 0.038461538461538464,
+    "astra": 0.032362459546925564
+  },
+  "incomplete": 10,
+  "agreement": 0.9870550161812298,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "content/migrations/using-github-enterprise-importer/migrate-from-gitlab/use-graphql.md",
+      "heading": "[\"Step 2: Identify where you're migrating from\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c002",
+      "page": "content/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning.md",
+      "heading": "[\"Assigning runners for default setup\",\"Assigning labels to self-hosted runners\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "content/search-github/searching-on-github/searching-for-packages.md",
+      "heading": "[\"Filtering by package visibility\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "content/actions/how-tos/get-support.md",
+      "heading": "[\"Providing diagnostic and troubleshooting information\",\"{% data variables.product.prodname_actions_runner_controller %}\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c005",
+      "page": "content/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app.md",
+      "heading": "[\"Troubleshooting\",\"Redirect URI mismatch\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "content/site-policy/privacy-policies/github-general-privacy-statement.md",
+      "heading": "[\"Our use of cookies and tracking technologies\",\"Cookies and tracking technologies\",\"What are cookies and similar technologies?\"]",
+      "values": 9,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c007",
+      "page": "content/apps/creating-github-apps/writing-code-for-a-github-app/about-writing-code-for-a-github-app.md",
+      "heading": "[\"Next steps\",\"Update your {% data variables.product.prodname_github_app %} registration\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "content/code-security/concepts/supply-chain-security/dependabot-alert-metrics.md",
+      "heading": "[\"Who can view metrics\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "content/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning.md",
+      "heading": "[\"Running default setup on self-hosted or {% data variables.actions.hosted_runners %}\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c010",
+      "page": "content/admin/managing-github-actions-for-your-enterprise/getting-started-with-github-actions-for-your-enterprise/getting-started-with-self-hosted-runners-for-your-enterprise.md",
+      "heading": "[\"1. Configure policies for {% data variables.product.prodname_actions %}\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "content/site-policy/privacy-policies/github-general-privacy-statement.md",
+      "heading": "[\"Data Privacy Framework (DPF)\",\"Government Enforcement\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "content/billing/how-tos/set-up-payment/redeem-coupon.md",
+      "heading": "[\"Prerequisites\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c013",
+      "page": "content/billing/how-tos/manage-for-client/create-as-csp-partner.md",
+      "heading": "[\"Contacting support\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "content/code-security/concepts/supply-chain-security/dependabot-version-updates.md",
+      "heading": "[\"Updates for packages\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "content/search-github/searching-on-github/searching-discussions.md",
+      "heading": "[\"Search based on whether a discussion is locked\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "content/billing/reference/supported-payment-methods.md",
+      "heading": "[\"Metered or usage-based billing options\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "content/admin/installing-your-enterprise-server/setting-up-a-github-enterprise-server-instance/installing-github-enterprise-server-on-vmware.md",
+      "heading": "[\"Creating the {% data variables.product.prodname_ghe_server %} instance\"]",
+      "values": 8,
+      "fable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "content/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/configure-on-github-hosted-runners.md",
+      "heading": "[\"Enabling or disabling {% data variables.product.prodname_dependabot %} on standard {% data variables.product.github %}-hosted runners\",\"For your repository\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        false
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "content/copilot/how-tos/github-copilot-app/working-with-canvas-extensions.md",
+      "heading": "[\"How canvas extensions are structured\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "content/code-security/reference/code-scanning/codeql/codeql-cli/codeql-query-packs.md",
+      "heading": "[\"Example {% data variables.product.prodname_codeql %} packs in the {% data variables.product.prodname_codeql %} repository\",\"Core query pack\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c021",
+      "page": "content/copilot/how-tos/troubleshoot-copilot/troubleshoot-copilot-slowness.md",
+      "heading": "[\"Contact GitHub Support with diagnostic details\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c022",
+      "page": "content/code-security/reference/security-incident-response/investigation-tools.md",
+      "heading": "[\"Audit logs\",\"Key resources\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c023",
+      "page": "content/copilot/reference/copilot-usage-metrics/copilot-usage-metrics.md",
+      "heading": "[\"API and export fields\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c024",
+      "page": "content/copilot/tutorials/modernize-legacy-code.md",
+      "heading": "[\"Step 9: Run tests and refine the code\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c025",
+      "page": "content/billing/how-tos/products/view-productlicense-use.md",
+      "heading": "[\"Downloading usage reports\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c026",
+      "page": "content/contributing/style-guide-and-content-model/style-guide.md",
+      "heading": "[\"Release notes\",\"Retired\",\"Examples of release notes for retired features\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c027",
+      "page": "content/get-started/start-your-journey/deploying-your-website-automatically.md",
+      "heading": "[\"Understanding the workflow\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c028",
+      "page": "content/code-security/how-tos/secure-your-secrets/prevent-future-leaks/enable-push-protection.md",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c029",
+      "page": "content/actions/how-tos/manage-runners/use-proxy-servers.md",
+      "heading": "[\"Setting proxy configuration for Docker containers\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c030",
+      "page": "content/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue.md",
+      "heading": "[\"How merge queues work\",\"Successful CI\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c031",
+      "page": "content/copilot/how-tos/copilot-sdk/features/custom-agents.md",
+      "heading": "[\"Listening to sub-agent events\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c032",
+      "page": "content/code-security/reference/code-scanning/workflow-configuration-options.md",
+      "heading": "[\"{% data variables.product.prodname_codeql %} model packs\",\"Using {% data variables.product.prodname_codeql %} model packs\"]",
+      "values": 5,
+      "fable": [
+        false,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c033",
+      "page": "content/migrations/using-github-enterprise-importer/migrating-from-bitbucket-server-to-github-enterprise-cloud/overview-of-a-migration-from-bitbucket-server-to-github-enterprise-cloud.md",
+      "heading": "[\"Running your migrations\"]",
+      "values": 3,
+      "fable": [
+        false,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c034",
+      "page": "content/copilot/reference/copilot-cli-reference/cli-programmatic-reference.md",
+      "heading": "[\"Using custom agents\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c035",
+      "page": "content/code-security/reference/code-scanning/codeql/codeql-cli-manual/bqrs-interpret.md",
+      "heading": "[\"Options\",\"Primary Options\",\"--no-group-results\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c036",
+      "page": "content/code-security/concepts/code-scanning/codeql/codeql-cli.md",
+      "heading": "[\"About generating code scanning results with the {% data variables.product.prodname_codeql_cli %}\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c037",
+      "page": "content/subscriptions-and-notifications/how-tos/managing-subscriptions-for-activity-on-github/managing-your-subscriptions.md",
+      "heading": "[\"Choosing how to unsubscribe\",\"Benefits of unsubscribing from your inbox\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c038",
+      "page": "content/apps/using-github-apps/installing-a-github-app-on-your-enterprise.md",
+      "heading": "[\"Next steps\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c039",
+      "page": "content/copilot/reference/copilot-cli-reference/acp-server.md",
+      "heading": "[\"Starting the ACP server\",\"stdio mode\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c040",
+      "page": "content/actions/tutorials/migrate-to-github-actions/manual-migrations/migrate-from-jenkins.md",
+      "heading": "[\"Examples of common tasks\",\"Building with multiple operating systems\",\"{% data variables.product.prodname_actions %} workflow that builds with multiple operating systems\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c041",
+      "page": "content/site-policy/github-terms/github-marketplace-developer-agreement.md",
+      "heading": "[\"18. USAGE DATA\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c042",
+      "page": "content/copilot/tutorials/customization-library/prompt-files/create-readme.md",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c043",
+      "page": "content/billing/how-tos/pay-third-parties/cancel-marketplace-app.md",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c044",
+      "page": "content/issues/planning-and-tracking-with-projects/automating-your-project/automating-projects-using-actions.md",
+      "heading": "[\"Example workflow authenticating with a {% data variables.product.pat_generic %}\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c045",
+      "page": "content/organizations/managing-programmatic-access-to-your-organization/limiting-oauth-app-and-github-app-access-requests-and-installations.md",
+      "heading": "[\"Restricting {% data variables.product.prodname_github_app %} installation to organization owners\"]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c046",
+      "page": "content/actions/tutorials/migrate-to-github-actions/automated-migrations/bamboo-migration.md",
+      "heading": "[\"About migrating from Bamboo with GitHub Actions Importer\",\"Limitations\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c047",
+      "page": "content/admin/managing-iam/provisioning-user-accounts-with-scim/deprovisioning-and-reinstating-users.md",
+      "heading": "[\"Effects of deprovisioning a user\",\"Effects of hard-deprovisioning\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        false,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c048",
+      "page": "content/sponsors/sponsoring-open-source-contributors/unlinking-your-patreon-account-from-github.md",
+      "heading": "[\"Unlinking your Patreon account from your organization\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c049",
+      "page": "content/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository.md",
+      "heading": "[\"Managing {% data variables.product.prodname_actions %} permissions for your repository\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c050",
+      "page": "content/admin/monitoring-and-managing-your-instance/configuring-clustering/deferring-database-seeding.md",
+      "heading": "[\"Configuring deferral of MySQL seeding when adding a new MySQL node\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c051",
+      "page": "content/code-security/concepts/code-scanning/code-scanning-alerts.md",
+      "heading": "[\"About alert severity and security severity levels\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c052",
+      "page": "content/get-started/writing-on-github/editing-and-sharing-content-with-gists/saving-gists-with-stars.md",
+      "heading": "[\"Further reading\"]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c053",
+      "page": "content/actions/reference/workflows-and-actions/workflow-commands.md",
+      "heading": "[\"Using workflow commands to access toolkit functions\",\"Example: Creating an annotation for an error\"]",
+      "values": 12,
+      "fable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c054",
+      "page": "content/code-security/concepts/vulnerability-reporting-and-management/coordinated-disclosure.md",
+      "heading": "[\"About disclosing vulnerabilities in the industry\",\"Best practices for vulnerability reporters\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c055",
+      "page": "content/copilot/tutorials/roll-out-at-scale/enable-developers/integrate-ai-agents.md",
+      "heading": "[\"About AI agents on {% data variables.product.github %}\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c056",
+      "page": "content/copilot/concepts/copilot-usage-metrics/copilot-metrics.md",
+      "heading": "[\"Supported IDEs\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c057",
+      "page": "content/organizations/managing-saml-single-sign-on-for-your-organization/managing-team-synchronization-for-your-organization.md",
+      "heading": "[\"Offboarding users with team synchronization\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c058",
+      "page": "content/admin/data-residency/getting-started-with-data-residency-for-github-enterprise-cloud.md",
+      "heading": "[\"Further reading\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c059",
+      "page": "content/copilot/tutorials/copilot-cli-hooks.md",
+      "heading": "[\"6. Test end-to-end in the repository\",\"Verify script permissions (Unix-based systems)\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c060",
+      "page": "content/code-security/reference/secret-security/supported-secret-scanning-patterns.md",
+      "heading": "[\"About {% data variables.product.prodname_secret_scanning %} patterns\",\"Pattern categories\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c061",
+      "page": "content/education/contribute-with-github-community-exchange/getting-started-with-github-community-exchange.md",
+      "heading": "[\"Accessing {% data variables.product.prodname_community_exchange %}\"]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c062",
+      "page": "content/copilot/reference/enterprise-administrators/agentic-audit-log-events.md",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c063",
+      "page": "content/admin/monitoring-and-managing-your-instance/configuring-clustering/monitoring-the-health-of-your-cluster.md",
+      "heading": "[\"Monitoring cluster status with Nagios\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c064",
+      "page": "content/code-security/how-tos/find-and-fix-code-vulnerabilities/scan-from-vs-code/set-up-codeql-workspace.md",
+      "heading": "[\"Setting up a {% data variables.product.prodname_codeql %} workspace\",\"Option 2: Updating an existing workspace for {% data variables.product.prodname_codeql %} (advanced)\"]",
+      "values": 6,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c065",
+      "page": "content/search-github/searching-on-github/searching-code.md",
+      "heading": "[\"Search by file extension\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": null
+    },
+    {
+      "sample_id": "c066",
+      "page": "content/admin/monitoring-and-managing-your-instance/configuring-clustering/configuring-high-availability-replication-for-a-cluster.md",
+      "heading": "[\"Disabling high availability replication for a cluster\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c067",
+      "page": "content/repositories/working-with-files/using-files/navigating-code-on-github.md",
+      "heading": "[]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c068",
+      "page": "content/copilot/how-tos/copilot-on-github/set-up-copilot/configure-access-to-ai-models.md",
+      "heading": "[\"Setup for organization and enterprise plans\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c069",
+      "page": "content/authentication/connecting-to-github-with-ssh/managing-deploy-keys.md",
+      "heading": "[\"Deploy keys\",\"Using multiple repositories on one server\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c070",
+      "page": "content/copilot/tutorials/speed-up-development-work.md",
+      "heading": "[\"Defining the logic for a small, frequent task\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c071",
+      "page": "content/rest/activity/notifications.md",
+      "heading": "[\"About {% data variables.product.github %} notifications\",\"About notification reasons\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c072",
+      "page": "content/code-security/tutorials/manage-security-alerts/best-practices-for-participating-in-a-security-campaign.md",
+      "heading": "[\"2. Build context before applying fixes\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c073",
+      "page": "content/code-security/tutorials/adopting-github-advanced-security-at-scale/phase-6-rollout-and-scale-secret-scanning.md",
+      "heading": "[\"3. Remediate previously committed secrets, starting with the most critical\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c074",
+      "page": "content/actions/reference/workflows-and-actions/workflow-commands.md",
+      "heading": "[\"Reading workflow artifacts\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c075",
+      "page": "content/copilot/tutorials/cloud-agent/get-the-best-results.md",
+      "heading": "[\"Adding custom instructions to your repository\",\"Repository-wide instructions\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c076",
+      "page": "content/organizations/granting-access-to-your-organization-with-saml-single-sign-on/about-two-factor-authentication-and-saml-single-sign-on.md",
+      "heading": "[\"Further reading\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c077",
+      "page": "content/code-security/how-tos/secure-at-scale/configure-organization-security/configure-specific-tools/assess-your-vulnerability-risk.md",
+      "heading": "[\"Next steps\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c078",
+      "page": "content/copilot/tutorials/copilot-cli-hooks.md",
+      "heading": "[\"3. Add a policy banner at session start\",\"Create the session banner script (PowerShell)\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c079",
+      "page": "content/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/reviewing-the-audit-log-for-your-organization.md",
+      "heading": "[\"Using the audit log API\",\"Using the REST API\"]",
+      "values": 8,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c080",
+      "page": "content/copilot/how-tos/cloud-and-local-sandboxes/configuring-local-sandbox-settings.md",
+      "heading": "[\"Configuring network settings\",\"Routing traffic through an HTTP proxy\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c081",
+      "page": "content/actions/concepts/workflows-and-actions/workflow-artifacts.md",
+      "heading": "[\"About workflow artifacts\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c082",
+      "page": "content/organizations/managing-organization-settings/allowing-repository-admins-to-rename-branches-with-organization-rulesets.md",
+      "heading": "[]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c083",
+      "page": "content/repositories/working-with-files/managing-files/adding-a-file-to-a-repository.md",
+      "heading": "[\"Adding a file to a repository using the command line\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c084",
+      "page": "content/admin/managing-github-actions-for-your-enterprise/enabling-github-actions-for-github-enterprise-server/enabling-github-actions-with-amazon-s3-storage.md",
+      "heading": "[]",
+      "values": 3,
+      "fable": [
+        true,
+        false,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "sample_id": "c085",
+      "page": "content/repositories/creating-and-managing-repositories/restoring-a-deleted-repository.md",
+      "heading": "[\"Further reading\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c086",
+      "page": "content/billing/how-tos/set-up-payment/set-up-vs-subscription.md",
+      "heading": "[\"Prerequisites\"]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c087",
+      "page": "content/education/manage-coursework-with-github-classroom/teach-with-github-classroom/manage-classrooms.md",
+      "heading": "[\"Further reading\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c088",
+      "page": "content/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app.md",
+      "heading": "[\"Authentication as an app installation\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c089",
+      "page": "content/get-started/exploring-projects-on-github/following-organizations.md",
+      "heading": "[\"Further reading\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true
+      ]
+    },
+    {
+      "sample_id": "c090",
+      "page": "content/webhooks/testing-and-troubleshooting-webhooks/redelivering-webhooks.md",
+      "heading": "[\"Redelivering {% data variables.product.prodname_marketplace %} webhooks\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c091",
+      "page": "content/README.md",
+      "heading": "[\"Content\",\"Links\",\"Index pages\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c092",
+      "page": "content/site-policy/github-terms/github-educational-use-agreement.md",
+      "heading": "[\"2. Program Benefits and Conditions.\",\"2.1 Your Benefits.\",\"2.1.3 Other Software Benefits.\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c093",
+      "page": "content/copilot/reference/copilot-cli-reference/cli-command-reference.md",
+      "heading": "[\"MCP server configuration\",\"Enterprise MCP allowlist\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c094",
+      "page": "content/codespaces/troubleshooting/troubleshooting-your-connection-to-github-codespaces.md",
+      "heading": "[\"{% data variables.product.prodname_github_codespaces %} extension for {% data variables.product.prodname_vscode %} cannot connect\",\"The codespace has latency issues\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c095",
+      "page": "content/copilot/concepts/models/auto-model-selection.md",
+      "heading": "[\"Overview\",\"Disabling evaluation models in {% data variables.copilot.copilot_auto_model_selection_short %}\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c096",
+      "page": "content/copilot/get-started/features.md",
+      "heading": "[\"Features for customization\",\"MCP servers\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c097",
+      "page": "content/code-security/tutorials/adopting-github-advanced-security-at-scale/phase-6-rollout-and-scale-secret-scanning.md",
+      "heading": "[\"2. Enable push protection\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c098",
+      "page": "content/admin/configuring-settings/hardening-security-for-your-enterprise/configuring-tls-and-ssh-ciphers.md",
+      "heading": "[\"Configuring TLS cipher suites\",\"Listing available TLS cipher suites\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        false,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c099",
+      "page": "content/communities/moderating-comments-and-conversations/managing-disruptive-comments.md",
+      "heading": "[\"Deleting a comment\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c100",
+      "page": "content/actions/reference/workflows-and-actions/events-that-trigger-workflows.md",
+      "heading": "[\"repository_dispatch\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ]
+}

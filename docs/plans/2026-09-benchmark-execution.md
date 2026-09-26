@@ -175,7 +175,7 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 - [ ] Post-stop exploration c3–c7, information only (2026-09-24 amendment of §3).
 - [x] M4 T1 published (test split), Codex pass (2026-09-24/25; `docs/reviews/codex/2026-09-24-bench-m4.md`).
 - [ ] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass.
-- [ ] M6 T2 + T3 published.
+- [x] M6 T2 + T3 published (2026-09-26; no savings claim passed the gates).
 - [ ] M7 T4 published.
 - [ ] M8 T5 published.
 - [ ] M9 T6, README row, page restructure.

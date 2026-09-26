@@ -108,6 +108,14 @@ Branch `feat/bench-m2` (worktree `~/mda-worktrees/m2`, rebased on `main` = merge
 - **Decisions carried in**: T1 stands (Supabase graphify-haiku probe disclosed); page-level aggregation is a declared hypothesis for a future dev-split round; rule 0.9 amendment accepted (cold servers per run).
 - **Open before M6**: the grounding rubric (STATUS Next 2); the M6 budget (≈ 8 h runs + ≈ 9 h grading at one job; `T2_JOBS` untested above 1).
 
+## 5g. M6 — T2 and T3 published (branch `feat/bench-m6`, 2026-09-25/26)
+
+- **Decision** on "go M6": the grounding rubric narrowed to factual claims about the product, declared in plan §2.4 before the freeze (rationale: rule 0.8's intent is fabrication, not explanation).
+- **Freeze** `T2/FROZEN.md` (samples as ids + hashes, models, harness and rubric hashes, parameters), committed before any run; re-written once (t3.sh added under it; inputs identical) — the aha about script commits during a frozen run bit again; the four preflights were rerun under the second freeze and pass.
+- **Runs**: 1,002 answers, 0 failures, 6 retries after the 12-turn cap (declared), 7.4 h at one job (135 runs/h), $49.74. Grading ≈ 4.5 h; panel 4 × 30 × 2; cards 4 × 100 × 2 (≈ 2.5 h).
+- **Result**: quality at parity (mda within 0.1 of grep everywhere; vs qmd +0.20 Tailwind, −0.14 Supabase, −0.52 Prisma, −0.08 GitHub; all intervals include 0); gate (c) fails everywhere → no savings claim; mda cheapest run on every project; mda fewest source tokens on 3 of 4 projects (grep 5% fewer on Tailwind). Panel: Astra 2–3 points below Sonnet/Fable, trigger on 18–28 of 30 — a calibration finding for any reuse. Cards: 0.4–3.8% unsupported, agreement ≥ 0.987. T3: `t3.sh table`; mda $4.29–4.66 per 1K sections; graphify Sonnet did not complete on the two large corpora ($73.54 and $82.77 spent).
+- **Archived** under `evals/results/docsqa/T2/<project>/` (answers replaced by sha256; grades regenerate the analysis byte for byte), `T3/sizes.json`; run directories stay under `~/.cache/markdownattractor/bench/t2/`.
+
 ## 6. Next steps, in order
 
 1. If the preflight reports are not all committed and green: read `~/.cache/markdownattractor/bench/preflight/development/<project>/<ts>/` and the log at the session scratchpad (`preflight-all.log`), fix, re-freeze (`scripts/eval/freeze.sh --protocol development --note …`, commit, `--check`), rerun. Then commit `evals/results/docsqa/preflight/`, open the PR, merge on eleven green jobs, `git checkout main && git pull`.
