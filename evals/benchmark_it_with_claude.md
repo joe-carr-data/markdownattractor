@@ -369,7 +369,7 @@ e99bd2bc2fbe5bc337bd65f25466f2852bca5d42111590f4e294b012f5a5274d  evals/results/
 
 ### 7.2 T2 — axis B on DocsQA, answer quality (M6, 2026-09-25)
 
-**Freeze.** `evals/results/docsqa/T2/FROZEN.md` (protocol final, table T2; written by `scripts/eval/freeze.sh --protocol final --table T2` and committed before any run) records the four frozen samples (`T2/<project>/questions.jsonl`: 25 test questions each as ids and sha256 of the question and reference texts, which stay in the dataset), the harness and rubric hashes (the grounding rubric as amended), the models (requested `sonnet`, resolved `claude-sonnet-5` per the transcripts; the panel's `claude-fable-5-1` and `gpt-6-astra`), the run parameters and the analysis parameters. `t2.sh preflight` is T2's gate: the freeze checks, no provider key, `claude` and `codex` on PATH, the sample's hashes match the dataset, and three activation probes per arm on the sample's first questions (`evals/results/docsqa/preflight/T2-<project>.json` with the traces).
+**Freeze.** `evals/results/docsqa/T2/FROZEN.md` (protocol final, table T2; written by `scripts/eval/freeze.sh --protocol final --table T2` and committed before any run) records the four frozen samples (`T2/<project>/questions.jsonl`: 25 test questions each for Tailwind, Prisma and GitHub Docs and 21 for Supabase — every eligible test question with a reference — as ids and sha256 of the question and reference texts, which stay in the dataset), the harness and rubric hashes (the grounding rubric as amended), the models (requested `sonnet`, resolved `claude-sonnet-5` per the transcripts; the panel's `claude-fable-5-1` and `gpt-6-astra`), the run parameters and the analysis parameters. `t2.sh preflight` is T2's gate: the freeze checks, no provider key, `claude` and `codex` on PATH, the sample's hashes match the dataset, and three activation probes per arm on the sample's first questions (`evals/results/docsqa/preflight/T2-<project>.json` with the traces).
 
 ```bash
 cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
@@ -424,11 +424,24 @@ b6ad57306f861f1e5142090e6c048b08d6ba5fcfd0b73cd554d6579dad876259  evals/results/
 c2eaaa389d8a8fb64669a3cea805e44706db74f4136544501c28877e8044d660  evals/results/docsqa/T3/sizes.json
 ```
 
-**Regeneration (exact).** `mda eval --analysis grades.jsonl --manifest manifest.json` regenerates `analysis.json` byte for byte (and `--adjudicated` its counterpart). **Independent rerun.** The runs and the grades are model outputs: a rerun of `t2.sh run` (a fresh directory) and of `grade` is an independent rerun, published beside the original with the paired difference, never in its place (plan §2.0b).
+**Regeneration (exact).** The analyses regenerate from the committed grades and manifests with `mda --json eval` (the `--adjudicated` switch belongs to `t2.sh`, not to `mda eval`); the JSON embeds the input paths, so normalise those two provenance fields before the byte comparison:
+
+```bash
+for p in tailwind-css supabase prisma github-docs; do d="evals/results/docsqa/T2/$p"; comps="$(jq -r '[.arms[] | select(. != "mda")] | join(",")' "$d/manifest.json")"
+  for g in grades grades.adjudicated; do a="$d/analysis$( [ $g = grades ] || echo .adjudicated).json"
+    "$MDA" --json eval --analysis "$d/$g.jsonl" --manifest "$d/manifest.json" --comparators "$comps" --draws 10000 --seed 20260922 \
+      | jq -S 'del(.grades, .manifest)' | diff - <(jq -S 'del(.grades, .manifest)' "$a") && echo "regenerates: $p $g"; done; done
+# the page tables: runs/consumption from the run metrics in grades.jsonl; the panel and card tables from panel/regrade.json and panel/cards.json
+for p in tailwind-css supabase prisma github-docs; do jq -s -r --arg p "$p" 'def med: sort | if length == 0 then null elif length % 2 == 1 then .[length/2|floor] else (.[length/2-1] + .[length/2]) / 2 end; group_by(.arm)[] | "| \($p) | \(.[0].arm) | \(length) | \(map(select(.error)) | length) | \(map(.wall_s) | med) | \(map(.source_tokens) | med) | \(map(select(.source_tokens_negative_turns > 0)) | length) | \(map(.source_tokens_signed) | med) | \(map(.input_tokens) | med) | \(map(.tool_calls) | med) | \(map(.cost_usd) | med | . * 1000 | round / 1000) | \(map(.turns) | med) |"' "evals/results/docsqa/T2/$p/grades.jsonl"; done
+for p in tailwind-css supabase prisma github-docs; do jq -r --arg p "$p" 'def r2: . * 100 | round / 100; "| \($p) | \(.sample) | \(.incomplete) | \(.agreement.fable_astra.exact | r2) | \(.agreement.fable_astra.within_one | r2) | \(.agreement.fable_sonnet.exact | r2) | \(.agreement.astra_sonnet.exact | r2) | \(.resolved_by_panel) | \(.mean_sonnet | r2) / \(.mean_fable | r2) / \(.mean_astra | r2) |"' "evals/results/docsqa/T2/$p/panel/regrade.json"; done
+for p in tailwind-css supabase prisma github-docs; do jq -r --arg p "$p" 'def r3: . * 1000 | round / 1000; "| \($p) | \(.sample) | \(.values) | \(.unsupported_rate.fable | r3) | \(.unsupported_rate.astra | r3) | \(.agreement | r3) | \(.incomplete) | \(.sections_missing_from_store) |"' "evals/results/docsqa/T2/$p/panel/cards.json"; done
+```
+
+**Independent rerun.** The runs and the grades are model outputs: a rerun of `t2.sh run` (a fresh directory) and of `grade` is an independent rerun, published beside the original with the paired difference, never in its place (plan §2.0b).
 
 ### 7.3 T3 — axis E, first-build cost (M6, 2026-09-25)
 
-No run: the table is rendered from committed records (`cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings) and from `T3/sizes.json`, the live artifact sizes measured with `scripts/eval/t3.sh sizes` on the benchmark machine (recorded with host and time; not a frozen input). `scripts/eval/t3.sh table` regenerates the page table byte for byte from those files. Incremental cost after one edit is T4 (M7).
+No run: the table is rendered from committed records (`cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings) and from `T3/sizes.json`, the live artifact sizes measured with `scripts/eval/t3.sh sizes` on the benchmark machine (recorded with host and time; not a frozen input). **Regeneration:** with mda 0.1.1 built (`t3.sh` picks the provenance file by the binary's version) and the committed `T3/sizes.json`, `scripts/eval/t3.sh table | shasum -a 256` gives `4c38b4b73f204a45a6e8c4696ec48175cf5f71a7b65c26f8da776549671f33c1` (the table and its caption as published); do not run `sizes` during a regeneration — it measures the current artifacts again and writes a new timestamp, and rebuilding an arm is an independent build observation, reported beside the archived one. The sizes are MiB (2^20 bytes) although the renderer prints "MB" (to be corrected with the M7 renderer change; the page says so). Incremental cost after one edit is T4 (M7).
 
 ## 8. Report
 
