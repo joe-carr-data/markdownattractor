@@ -1,0 +1,1795 @@
+{
+  "seed": "20260922",
+  "stamp": "20260926T065706Z",
+  "cards_file": "cards-0.1.1-prisma.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 100,
+  "values": 442,
+  "unsupported_rate": {
+    "fable": 0.017766497461928935,
+    "astra": 0.020050125313283207
+  },
+  "incomplete": 8,
+  "agreement": 0.9873096446700508,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Filter conditions and operators\",\"lte\",\"Examples\",\"Get all Post records where likes is less or equal to 9\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c002",
+      "page": "apps/docs/content/docs/guides/database/multiple-databases.mdx",
+      "heading": "[\"4. Integrate multiple Prisma Clients in your Next.js app\",\"4.1. Populate your databases with data\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "apps/docs/content/docs/guides/v7/frameworks/sveltekit.mdx",
+      "heading": "[\"2. Install and Configure Prisma\",\"2.4. Configure the Prisma Client generator\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "apps/docs/content/docs/orm/v6/prisma-migrate/workflows/generating-down-migrations.mdx",
+      "heading": "[\"How to generate and run down migrations\",\"Generating the migrations\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c005",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/observability-and-logging/sql-comments.mdx",
+      "heading": "[\"First-party plugins\",\"Query tags\",\"Nested scopes with tag replacement\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/queries/crud.mdx",
+      "heading": "[\"Read\",\"Include related records\",\"Include a filtered list of relations\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c007",
+      "page": "apps/docs/content/docs/cli/skills.mdx",
+      "heading": "[\"Where skills come from\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "apps/docs/content/docs/guides/deployment/turborepo.mdx",
+      "heading": "[\"2. Add a new database package to the monorepo\",\"2.2. Initialize Prisma and define models\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Atomic number operations\",\"Examples\",\"Set all views fields of all Post records to 0\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c010",
+      "page": "apps/docs/content/docs/(index)/v7/prisma-orm/add-to-existing-project/mongodb.mdx",
+      "heading": "[\"8. Evolve your schema\",\"8.2. Push the changes to your database\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "apps/docs/content/docs/guides/integrations/permit-io.mdx",
+      "heading": "[\"6. Define your access control policy in Permit.io\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/type-safety/prisma-validator.mdx",
+      "heading": "[\"Using the Prisma.validator\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c013",
+      "page": "apps/docs/content/docs/guides/deployment/docker.mdx",
+      "heading": "[\"3. Run the app and database together with Docker Compose\",\"3.2. Create and configure a Docker Compose file\"]",
+      "values": 8,
+      "fable": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "apps/docs/content/docs/orm/v7/prisma-migrate/workflows/customizing-migrations.mdx",
+      "heading": "[\"How to edit a migration file\",\"Example: Change the direction of a 1-1 relation\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "apps/docs/content/docs/rest-api/sdk.mdx",
+      "heading": "[\"API reference\",\"createManagementApiClient(options)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "apps/docs/content/docs/orm/v6/tools/prisma-studio.mdx",
+      "heading": "[\"Prerequisites\",\"Option 2: Use with a Prisma ORM project\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-schema-reference.mdx",
+      "heading": "[\"Attribute functions\",\"cuid()\",\"Remarks\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "apps/docs/content/docs/orm/contract-authoring/typescript-schema-builder.mdx",
+      "heading": "[\"Extension types\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/queries/transactions.mdx",
+      "heading": "[\"Read, modify, write\",\"Optimistic concurrency control\",\"Scenario: Reserving a seat at the cinema\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "apps/docs/content/docs/cli/deploy.mdx",
+      "heading": "[\"The control API\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c021",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/queries/excluding-fields.mdx",
+      "heading": "[\"When to use omit globally or locally\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c022",
+      "page": "apps/docs/content/docs/postgres/integrations/raycast.mdx",
+      "heading": "[\"Features\",\"Create Database\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c023",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/composite-types.mdx",
+      "heading": "[]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c024",
+      "page": "apps/docs/content/docs/guides/postgres/vscode.mdx",
+      "heading": "[\"Agent mode\"]",
+      "values": 5,
+      "fable": [
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c025",
+      "page": "apps/docs/content/docs/cli/error-reference.mdx",
+      "heading": "[\"SERVICE\",\"SERVICE.SELECTION_INVALID [#SERVICE.SELECTION_INVALID]\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c026",
+      "page": "apps/docs/content/docs/guides/v7/frameworks/hono.mdx",
+      "heading": "[\"Next Steps\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c027",
+      "page": "apps/docs/content/docs/orm/v7/prisma-migrate/understanding-prisma-migrate/shadow-database.mdx",
+      "heading": "[\"Cloud-hosted shadow databases must be created manually\"]",
+      "values": 7,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c028",
+      "page": "apps/docs/content/docs/orm/reference/pipeline-builder.mdx",
+      "heading": "[\"Pipeline stages\",\"Atlas-only stages\",\"Return type\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c029",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/deployment/caveats-when-deploying-to-aws-platforms.mdx",
+      "heading": "[\"AWS RDS Postgres\",\"Solution\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c030",
+      "page": "apps/docs/content/docs/orm/v7/reference/database-features.mdx",
+      "heading": "[\"Relational database features\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c031",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/client-extensions/model.mdx",
+      "heading": "[\"Add a custom method\",\"Add a custom method to a specific model\"]",
+      "values": 2,
+      "fable": [
+        true,
+        false
+      ],
+      "astra": [
+        true,
+        false
+      ]
+    },
+    {
+      "sample_id": "c032",
+      "page": "apps/docs/content/docs/cli/v7/migrate/reset.mdx",
+      "heading": "[\"Examples\",\"Specify a schema path\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c033",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/deployment/traditional/deploy-to-flyio.mdx",
+      "heading": "[\"Prerequisites\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c034",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/observability-and-logging/sql-comments.mdx",
+      "heading": "[\"Framework integration\",\"Express\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        false
+      ],
+      "astra": [
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "sample_id": "c035",
+      "page": "apps/docs/content/docs/postgres/database/connecting-to-your-database.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c036",
+      "page": "apps/docs/content/docs/postgres/iac/pulumi.mdx",
+      "heading": "[\"1. Optional: use Bun for dependency installs\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c037",
+      "page": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+      "heading": "[\"Read terminals\",\"Custom Collection subclass\",\"Examples\",\"Register a subclass with a domain method (PostgreSQL)\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c038",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/deployment/edge/deploy-to-deno-deploy.mdx",
+      "heading": "[\"6. Test your application locally\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c039",
+      "page": "apps/docs/content/docs/orm/v7/reference/error-reference.mdx",
+      "heading": "[\"Error codes\",\"Common\",\"P1015\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c040",
+      "page": "apps/docs/content/docs/guides/frameworks/solid-start.mdx",
+      "heading": "[\"Next Steps\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c041",
+      "page": "apps/docs/content/docs/orm/reference/sql-query-builder.mdx",
+      "heading": "[\"Entry points\",\"Aliasing a query with .as()\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c042",
+      "page": "apps/docs/content/docs/compute/getting-started.mdx",
+      "heading": "[\"Console\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c043",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/type-safety/prisma-validator.mdx",
+      "heading": "[\"Creating a typed query statement\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c044",
+      "page": "apps/docs/content/docs/orm/v6/overview/databases/postgresql.mdx",
+      "heading": "[\"Connection details\",\"Connection URL\",\"Arguments\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c045",
+      "page": "apps/docs/content/docs/rest-api/partner-integration.mdx",
+      "heading": "[\"Database claim flow\",\"Overview: How the claim flow works\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c046",
+      "page": "apps/docs/content/docs/orm/migrations/applying-a-migration.mdx",
+      "heading": "[\"Choosing a target\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c047",
+      "page": "apps/docs/content/docs/ai/tools/cursor.mdx",
+      "heading": "[\"Using Cursor's context-aware capabilities\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "sample_id": "c048",
+      "page": "apps/docs/content/docs/orm/middleware/authoring-custom-middleware.mdx",
+      "heading": "[\"Introduction\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c049",
+      "page": "apps/docs/content/docs/rest-api/api-clients.mdx",
+      "heading": "[\"Insomnia\",\"Prerequisites\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c050",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx",
+      "heading": "[\"Relation filters\",\"Filter on \\\"-to-one\\\" relations\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c051",
+      "page": "apps/docs/content/docs/ai/tutorials/linktree-clone.mdx",
+      "heading": "[\"5. Upgrade the UI Design\",\"Quick Check\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c052",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/introduction.mdx",
+      "heading": "[\"Installation\"]",
+      "values": 14,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c053",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/deployment/traditional/deploy-to-heroku.mdx",
+      "heading": "[\"1. Download the example and install dependencies\"]",
+      "values": 17,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c054",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/deployment/edge/deploy-to-vercel.mdx",
+      "heading": "[\"Database-specific considerations & examples\",\"PlanetScale\",\"5. Use Prisma Client in an Edge Function to send a query to the database\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c055",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Model queries\",\"findMany()\",\"Examples\",\"Get all User records where the name is Alice\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c056",
+      "page": "apps/docs/content/docs/orm/data-modeling/index.mdx",
+      "heading": "[\"Primary keys\",\"Surrogate keys\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c057",
+      "page": "apps/docs/content/docs/orm/v6/more/ai-tools/tabnine.mdx",
+      "heading": "[\"Overview\",\"Leveraging the Prisma schema\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c058",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/queries/pagination.mdx",
+      "heading": "[\"Cursor-based pagination\",\"FAQ\",\"Does cursor-based pagination use the concept of a cursor in the underlying database?\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c059",
+      "page": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+      "heading": "[\"Grouped aggregates\",\"groupBy()\",\"Return type\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c060",
+      "page": "apps/docs/content/docs/composer/deploying.mdx",
+      "heading": "[\"Next steps\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c061",
+      "page": "apps/docs/content/docs/orm/middleware/authoring-custom-middleware.mdx",
+      "heading": "[\"Prompt your coding agent\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c062",
+      "page": "apps/docs/content/docs/orm/core-concepts.mdx",
+      "heading": "[\"Extensions\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c063",
+      "page": "apps/docs/content/docs/cli/bucket.mdx",
+      "heading": "[\"Usage\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c064",
+      "page": "apps/docs/content/docs/orm/v6/prisma-schema/data-model/relations/one-to-many-relations.mdx",
+      "heading": "[\"1-n relations in the database\",\"Relational databases\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c065",
+      "page": "apps/docs/content/docs/orm/extensions/using-extensions.mdx",
+      "heading": "[\"See also\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c066",
+      "page": "apps/docs/content/docs/orm/v6/reference/prisma-cli-reference.mdx",
+      "heading": "[\"db\",\"db seed\"]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c067",
+      "page": "apps/docs/content/docs/guides/upgrade-prisma-orm/v4.mdx",
+      "heading": "[\"New Features in Prisma 4\",\"1. Improved Index Configuration (GA)\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c068",
+      "page": "apps/docs/content/docs/orm/migrations/editing-a-migration.mdx",
+      "heading": "[]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c069",
+      "page": "apps/docs/content/docs/guides/deployment/turborepo.mdx",
+      "heading": "[\"2. Add a new database package to the monorepo\",\"2.3. Add scripts and run migrations\"]",
+      "values": 17,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c070",
+      "page": "apps/docs/content/docs/cli/v7/dev/rm.mdx",
+      "heading": "[\"Examples\",\"Remove a specific database\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c071",
+      "page": "apps/docs/content/docs/orm/reference/transactions-and-runtime.mdx",
+      "heading": "[\"Client lifecycle on MongoDB\",\"runtime()\",\"Remarks\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c072",
+      "page": "apps/docs/content/docs/orm/reference/transactions-and-runtime.mdx",
+      "heading": "[\"Transactions (PostgreSQL)\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c073",
+      "page": "apps/docs/content/docs/orm/v6/prisma-migrate/understanding-prisma-migrate/migration-histories.mdx",
+      "heading": "[\"Do not edit or delete migrations that have been applied\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c074",
+      "page": "apps/docs/content/docs/cli/v7/db/pull.mdx",
+      "heading": "[\"Options\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c075",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/testing/index.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c076",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/using-raw-sql/raw-queries.mdx",
+      "heading": "[\"Raw queries with MongoDB\",\"$runCommandRaw()\",\"Signature\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c077",
+      "page": "apps/docs/content/docs/orm/reference/raw-queries.mdx",
+      "heading": "[\"MongoDB raw commands\",\"updateOne() and updateMany()\",\"Pipeline form\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c078",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/client-extensions/shared-extensions/permit-rbac.mdx",
+      "heading": "[\"Implementing RBAC (Role-Based Access Control)\"]",
+      "values": 5,
+      "fable": null,
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c079",
+      "page": "apps/docs/content/docs/guides/authentication/better-auth/nextjs.mdx",
+      "heading": "[\"Next steps\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c080",
+      "page": "apps/docs/content/docs/orm/v6/tools/prisma-cli.mdx",
+      "heading": "[\"Command reference\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c081",
+      "page": "apps/docs/content/docs/(index)/v7/prisma-orm/quickstart/sqlite.mdx",
+      "heading": "[\"9. Explore your data with Prisma Studio\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c082",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Nested queries\",\"create\",\"Examples\",\"Create a new Profile record with a new User record\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c083",
+      "page": "apps/docs/content/docs/guides/integrations/datadog.mdx",
+      "heading": "[\"5. Instantiate Prisma and run queries\",\"5.1. Create the Prisma Client instance\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c084",
+      "page": "apps/docs/content/docs/ai/tools/skills.mdx",
+      "heading": "[\"Available skills for Prisma Composer\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c085",
+      "page": "apps/docs/content/docs/orm/v6/overview/databases/postgresql.mdx",
+      "heading": "[\"Type mapping between PostgreSQL and Prisma schema\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c086",
+      "page": "apps/docs/content/docs/orm/v7/reference/connection-urls.mdx",
+      "heading": "[\"Examples\",\"Prisma Postgres\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c087",
+      "page": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+      "heading": "[\"Setting up the client\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c088",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/index.mdx",
+      "heading": "[\"Optimizing the connection pool\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c089",
+      "page": "apps/docs/content/docs/orm/v6/prisma-client/queries/case-sensitivity.mdx",
+      "heading": "[\"Options for case-insensitive filtering\",\"SQLite provider\",\"Adding case-insensitive filtering to an existing column.\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c090",
+      "page": "apps/docs/content/docs/postgres/database/connecting-to-your-database.mdx",
+      "heading": "[\"Recommended setups\",\"Serverless and edge runtimes\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c091",
+      "page": "apps/docs/content/docs/cli/db-verify.mdx",
+      "heading": "[\"Usage\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c092",
+      "page": "apps/docs/content/docs/guides/integrations/pgfence.mdx",
+      "heading": "[\"Introduction\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c093",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Where to go next\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c094",
+      "page": "apps/docs/content/docs/orm/v7/reference/prisma-client-reference.mdx",
+      "heading": "[\"Filter on non-unique fields with UserWhereUniqueInput\",\"Soft deletes\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c095",
+      "page": "apps/docs/content/docs/orm/reference/error-reference.mdx",
+      "heading": "[\"MIGRATION\",\"MIGRATION.CONSENT_PLAN_MISMATCH [#MIGRATION.CONSENT_PLAN_MISMATCH]\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c096",
+      "page": "apps/docs/content/docs/orm/core-concepts.mdx",
+      "heading": "[\"Middleware\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c097",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/observability-and-logging/opentelemetry-tracing.mdx",
+      "heading": "[\"Tracing how-tos\",\"Reduce performance impact\",\"Send traces in batches using the BatchSpanProcessor\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c098",
+      "page": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+      "heading": "[\"Query-building methods\",\"where()\",\"Examples\",\"Shorthand object form\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c099",
+      "page": "apps/docs/content/docs/orm/v7/prisma-schema/data-model/relations/relation-mode.mdx",
+      "heading": "[\"Emulate relations in Prisma ORM with the prisma relation mode\",\"Indexes\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c100",
+      "page": "apps/docs/content/docs/orm/v7/prisma-client/client-extensions/model.mdx",
+      "heading": "[\"Call a custom method from another custom method\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    }
+  ]
+}

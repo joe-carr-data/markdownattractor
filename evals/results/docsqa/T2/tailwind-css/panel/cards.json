@@ -1,0 +1,1473 @@
+{
+  "seed": "20260922",
+  "stamp": "20260926T055024Z",
+  "cards_file": "cards-0.1.1-tailwind-css.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 100,
+  "values": 228,
+  "unsupported_rate": {
+    "fable": 0.0043859649122807015,
+    "astra": 0.0043859649122807015
+  },
+  "incomplete": 0,
+  "agreement": 1,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "src/docs/white-space.mdx",
+      "heading": "[\"Examples\",\"No Wrap\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c002",
+      "page": "src/docs/filter-drop-shadow.mdx",
+      "heading": "[\"Examples\",\"Changing the opacity\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "src/docs/font-smoothing.mdx",
+      "heading": "[\"Examples\",\"Subpixel antialiasing\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "src/docs/scroll-margin.mdx",
+      "heading": "[\"Examples\",\"Using logical properties\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c005",
+      "page": "src/docs/hover-focus-and-other-states.mdx",
+      "heading": "[\"Media and feature queries\",\"forced-colors\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "src/docs/styling-with-utility-classes.mdx",
+      "heading": "[\"Managing style conflicts\",\"Using the prefix option\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c007",
+      "page": "src/docs/justify-items.mdx",
+      "heading": "[\"Examples\",\"Stretch\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "src/docs/border-color.mdx",
+      "heading": "[]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "src/docs/border-radius.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c010",
+      "page": "src/docs/object-fit.mdx",
+      "heading": "[\"Examples\",\"Resizing to cover\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "src/docs/place-content.mdx",
+      "heading": "[\"Examples\",\"Stretch\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "src/docs/vertical-align.mdx",
+      "heading": "[\"Examples\",\"Aligning to parent bottom\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c013",
+      "page": "src/docs/break-inside.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "src/docs/justify-content.mdx",
+      "heading": "[\"Examples\",\"Stretch\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "src/docs/mix-blend-mode.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "src/docs/upgrade-guide.mdx",
+      "heading": "[\"Changes from v3\",\"Using the theme() function\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "src/docs/block-size.mdx",
+      "heading": "[\"Examples\",\"Using a custom value\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "src/docs/margin.mdx",
+      "heading": "[\"Examples\",\"Adding vertical margin\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "src/docs/responsive-design.mdx",
+      "heading": "[\"Using custom breakpoints\",\"Using arbitrary values\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "src/docs/border-collapse.mdx",
+      "heading": "[\"Examples\",\"Collapsing table borders\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c021",
+      "page": "src/docs/line-clamp.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c022",
+      "page": "src/docs/backdrop-filter-brightness.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c023",
+      "page": "src/docs/upgrade-guide.mdx",
+      "heading": "[\"Changes from v3\",\"Preflight changes\",\"New default placeholder color\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c024",
+      "page": "src/docs/border-color.mdx",
+      "heading": "[\"Examples\",\"Applying on focus\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c025",
+      "page": "src/docs/caption-side.mdx",
+      "heading": "[\"Examples\",\"Placing at bottom of table\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c026",
+      "page": "src/docs/scroll-snap-type.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c027",
+      "page": "src/docs/min-inline-size.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c028",
+      "page": "src/docs/compatibility.mdx",
+      "heading": "[\"Sass, Less, and Stylus\",\"Nesting\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c029",
+      "page": "src/docs/float.mdx",
+      "heading": "[\"Examples\",\"Floating elements to the right\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c030",
+      "page": "src/docs/styling-with-utility-classes.mdx",
+      "heading": "[\"Overview\",\"Why not just use inline styles?\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c031",
+      "page": "src/docs/adding-custom-styles.mdx",
+      "heading": "[\"Using arbitrary values\",\"Arbitrary variants\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c032",
+      "page": "src/docs/adding-custom-styles.mdx",
+      "heading": "[\"Adding custom utilities\",\"Functional utilities\",\"Fractions\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c033",
+      "page": "src/docs/background-repeat.mdx",
+      "heading": "[\"Examples\",\"Disabling repeating\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c034",
+      "page": "src/docs/flex-direction.mdx",
+      "heading": "[\"Examples\",\"Column\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c035",
+      "page": "src/docs/z-index.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c036",
+      "page": "src/docs/inline-size.mdx",
+      "heading": "[\"Examples\",\"Resetting the inline size\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c037",
+      "page": "src/docs/align-items.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c038",
+      "page": "src/docs/mask-position.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c039",
+      "page": "src/docs/background-color.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c040",
+      "page": "src/docs/outline-color.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c041",
+      "page": "src/docs/zoom.mdx",
+      "heading": "[\"Examples\",\"Applying on hover\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c042",
+      "page": "src/docs/backdrop-filter.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c043",
+      "page": "src/docs/scroll-padding.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c044",
+      "page": "src/docs/gap.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c045",
+      "page": "src/docs/backdrop-filter-blur.mdx",
+      "heading": "[]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c046",
+      "page": "src/docs/transition-behavior.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c047",
+      "page": "src/docs/isolation.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c048",
+      "page": "src/docs/min-block-size.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c049",
+      "page": "src/docs/text-decoration-style.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c050",
+      "page": "src/docs/min-block-size.mdx",
+      "heading": "[\"Examples\",\"Using a custom value\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c051",
+      "page": "src/docs/caption-side.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c052",
+      "page": "src/docs/word-break.mdx",
+      "heading": "[\"Examples\",\"Break All\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c053",
+      "page": "src/docs/justify-content.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c054",
+      "page": "src/docs/responsive-design.mdx",
+      "heading": "[\"Container queries\",\"Max-width container queries\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c055",
+      "page": "src/docs/transform.mdx",
+      "heading": "[\"Examples\",\"Using a custom value\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c056",
+      "page": "src/docs/adding-custom-styles.mdx",
+      "heading": "[\"Adding custom utilities\",\"Simple utilities\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c057",
+      "page": "src/docs/transform-style.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c058",
+      "page": "src/docs/scrollbar-gutter.mdx",
+      "heading": "[\"Examples\",\"Reserving space on both sides\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c059",
+      "page": "src/docs/upgrade-guide.mdx",
+      "heading": "[]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c060",
+      "page": "src/docs/responsive-design.mdx",
+      "heading": "[\"Overview\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c061",
+      "page": "src/docs/font-smoothing.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c062",
+      "page": "src/docs/overflow.mdx",
+      "heading": "[\"Examples\",\"Scrolling horizontally if needed\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c063",
+      "page": "src/docs/isolation.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c064",
+      "page": "src/docs/transform-style.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c065",
+      "page": "src/docs/upgrade-guide.mdx",
+      "heading": "[\"Upgrading manually\",\"Using Tailwind CLI\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c066",
+      "page": "src/docs/overscroll-behavior.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c067",
+      "page": "src/docs/styling-with-utility-classes.mdx",
+      "heading": "[\"Thinking in utility classes\",\"Styling hover and focus states\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c068",
+      "page": "src/docs/hover-focus-and-other-states.mdx",
+      "heading": "[\"Appendix\",\"Pseudo-class reference\",\":visited\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c069",
+      "page": "src/docs/border-width.mdx",
+      "heading": "[\"Examples\",\"Between children\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c070",
+      "page": "src/docs/skew.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c071",
+      "page": "src/docs/grid-auto-flow.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c072",
+      "page": "src/docs/background-image.mdx",
+      "heading": "[\"Examples\",\"Changing interpolation mode\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c073",
+      "page": "src/docs/background-image.mdx",
+      "heading": "[\"Examples\",\"Responsive design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c074",
+      "page": "src/docs/overscroll-behavior.mdx",
+      "heading": "[\"Examples\",\"Preventing parent overscrolling\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c075",
+      "page": "src/docs/block-size.mdx",
+      "heading": "[\"Customizing your theme\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c076",
+      "page": "src/docs/perspective.mdx",
+      "heading": "[\"Customizing your theme\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c077",
+      "page": "src/docs/overflow.mdx",
+      "heading": "[\"Examples\",\"Scrolling vertically always\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c078",
+      "page": "src/docs/upgrade-guide.mdx",
+      "heading": "[\"Changes from v3\",\"Arbitrary values in grid and object-position utilities\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c079",
+      "page": "src/docs/hover-focus-and-other-states.mdx",
+      "heading": "[\"Media and feature queries\",\"Responsive breakpoints\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c080",
+      "page": "src/docs/box-sizing.mdx",
+      "heading": "[]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c081",
+      "page": "src/docs/filter-saturate.mdx",
+      "heading": "[]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c082",
+      "page": "src/docs/hover-focus-and-other-states.mdx",
+      "heading": "[\"Media and feature queries\",\"prefers-reduced-motion\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c083",
+      "page": "src/docs/theme.mdx",
+      "heading": "[\"Overview\",\"Default theme variables\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c084",
+      "page": "src/docs/box-shadow.mdx",
+      "heading": "[\"Examples\",\"Changing the opacity\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c085",
+      "page": "src/docs/hover-focus-and-other-states.mdx",
+      "heading": "[\"Appendix\",\"Pseudo-class reference\",\":nth-child(even)\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c086",
+      "page": "src/docs/editor-setup.mdx",
+      "heading": "[\"Class sorting with Prettier\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c087",
+      "page": "src/docs/max-block-size.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c088",
+      "page": "src/docs/scroll-snap-align.mdx",
+      "heading": "[\"Examples\",\"Snapping to the end\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c089",
+      "page": "src/docs/align-content.mdx",
+      "heading": "[\"Examples\",\"Space around\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c090",
+      "page": "src/docs/flex-grow.mdx",
+      "heading": "[\"Examples\",\"Allowing items to grow\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c091",
+      "page": "src/docs/preflight.mdx",
+      "heading": "[\"Overview\",\"Margins are removed\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c092",
+      "page": "src/docs/content.mdx",
+      "heading": "[\"Examples\",\"Using spaces and underscores\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c093",
+      "page": "src/docs/overflow.mdx",
+      "heading": "[]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c094",
+      "page": "src/docs/font-variant-numeric.mdx",
+      "heading": "[\"Examples\",\"Using diagonal fractions\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c095",
+      "page": "src/docs/list-style-image.mdx",
+      "heading": "[\"Examples\",\"Removing a marker image\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c096",
+      "page": "src/docs/caret-color.mdx",
+      "heading": "[\"Examples\",\"Basic example\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c097",
+      "page": "src/docs/min-width.mdx",
+      "heading": "[\"Examples\",\"Using the container scale\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c098",
+      "page": "src/docs/compatibility.mdx",
+      "heading": "[\"Sass, Less, and Stylus\",\"Build-time imports\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c099",
+      "page": "src/docs/hover-focus-and-other-states.mdx",
+      "heading": "[\"Appendix\",\"Pseudo-class reference\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c100",
+      "page": "src/docs/adding-custom-styles.mdx",
+      "heading": "[\"Customizing your theme\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ]
+}

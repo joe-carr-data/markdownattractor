@@ -274,6 +274,7 @@ scripts/eval/panel.sh cards prisma 100                                          
 
 - *Manifest and resume.* `manifest.json` records the project, model, runs, arms, question ids, the questions file's sha256, every arm's launch record, the binary's sha256, the search-first rules' sha256 and the preamble. A resume must match all of it except the timestamp and the source commit (temporary file names inside the launch records are normalised); otherwise it refuses and prints the diff. The analysis requires the manifest, validates every row against it (an unknown question or arm, or a run number outside 1..=runs, is an error) and treats every expected run without a row as a failure; `status` prints expected / ok / error / missing / duplicate per arm.
 - *Tokens.* `source_tokens` is the clipped sum (per-turn deltas below 0 count as 0); `source_tokens_signed` and `source_tokens_negative_total` are beside it with the number of clamped turns; the page reports the clipped figure and states the reductions' magnitude. Every attempt of a retried run records its own tokens and cost; the row's metrics are the final attempt's (a failed attempt contributes to no saving), `cost_usd_all_attempts` is the operational total.
+- *Grounding rubric (amended before the T2 freeze, plan §2.4, 2026-09-25).* The claims that must be supported are the factual claims about the product (a behaviour, option, default, version, API, selector, command, limit, quotation, or a statement that the documentation says something), verbatim or as a fair paraphrase; the answer's own reasoning, advice framed as a suggestion, and uncontradicted general knowledge are not counted against it; the rubric text is hashed in `T2/FROZEN.md`.
 - *Citations and grounding.* The accepted citation syntax is a `.md/.mdx/.markdown` path in the answer, resolved by one declared rule for every arm: an exact repository-relative path; or, after stripping a leading `<project>/` (qmd's MCP returns `<collection>/<path>`), the unique suffix of one corpus page (`guides/queues/quickstart.mdx` resolves when exactly one page ends with it; a bare file name shared by several pages does not); a heading alone does not resolve. Every cited path is resolved: one that does not exist in the checkout, or a page longer than 120,000 characters, makes the answer ungrounded with the reason in `evidence_policy`; every resolvable page is checked whole, in batches of four, and the answer is grounded only when every batch says so; an answer with no resolvable citation is ungrounded.
 - *Savings.* Per metric (source tokens, tool calls, cost): the median of per-question ratios comparator / mda over questions with a completed run on both sides, each with its own denominator and the questions excluded for a missing value or a zero mda value (a zero is reported, never divided by).
 - *Panel.* The trigger of rule 0.8's resolution: either panel member differs from the Sonnet grade by more than one point on 0–6 → the resolved score is the panel members' mean; otherwise the Sonnet grade stands. `panel.sh regrade` writes `panel/grades.adjudicated.jsonl` and `t2.sh analysis --adjudicated` analyses it; the page reports the original and the adjudicated analysis. The card audit judges each date as "raw → iso (precision)" and each entity, and a verdict that does not cover every value once, in order, is invalid.
@@ -365,6 +366,82 @@ e99bd2bc2fbe5bc337bd65f25466f2852bca5d42111590f4e294b012f5a5274d  evals/results/
 ```
 
 **Independent rerun.** T1 is deterministic retrieval; a rerun (`t1.sh run` after moving the T1 rows aside) must reproduce the store rows exactly (the preflight's `replay` check) and the external arms' rows given the same indexes and graphs (qmd's reranker is deterministic on the same model files; graphify's `query_graph` is deterministic on the same graph). Latency differs by machine and is reported with hardware. A rerun is published beside the original, never in its place (plan §2.0b).
+
+### 7.2 T2 — axis B on DocsQA, answer quality (M6, 2026-09-25)
+
+**Freeze.** `evals/results/docsqa/T2/FROZEN.md` (protocol final, table T2; written by `scripts/eval/freeze.sh --protocol final --table T2` and committed before any run) records the four frozen samples (`T2/<project>/questions.jsonl`: 25 test questions each for Tailwind, Prisma and GitHub Docs and 21 for Supabase — every eligible test question with a reference — as ids and sha256 of the question and reference texts, which stay in the dataset), the harness and rubric hashes (the grounding rubric as amended), the models (requested `sonnet`, resolved `claude-sonnet-5` per the transcripts; the panel's `claude-fable-5-1` and `gpt-6-astra`), the run parameters and the analysis parameters. `t2.sh preflight` is T2's gate: the freeze checks, no provider key, `claude` and `codex` on PATH, the sample's hashes match the dataset, and three activation probes per arm on the sample's first questions (`evals/results/docsqa/preflight/T2-<project>.json` with the traces).
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
+for p in tailwind-css supabase prisma github-docs; do arms=grep,mda,qmd; case $p in tailwind-css|supabase) arms=grep,mda,qmd,graphify;; esac
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t2.sh preflight "$p" "evals/results/docsqa/T2/$p/questions.jsonl" "$arms"
+  T2_MODEL=sonnet scripts/eval/t2.sh run "$p" "evals/results/docsqa/T2/$p/questions.jsonl" "$RUN/t2/$p" 3 "$arms"     # resumable; ≈ 2 h per project at one job
+  scripts/eval/t2.sh status "$RUN/t2/$p"; scripts/eval/t2.sh grade "$p" "$RUN/t2/$p"; scripts/eval/t2.sh analysis "$RUN/t2/$p"
+  scripts/eval/panel.sh regrade "$RUN/t2/$p" 30; scripts/eval/t2.sh analysis "$RUN/t2/$p" --adjudicated; scripts/eval/panel.sh cards "$p" 100
+done
+```
+
+**What is committed** (`evals/results/docsqa/T2/<project>/`): `questions.jsonl` (the frozen sample), `manifest.json` (paths under the home directory abbreviated), `grades.jsonl` and `grades.adjudicated.jsonl` with the answer text removed (`answer_sha256` in its place: the answers quote page text and are kept under the run directory), `analysis.json` and `analysis.adjudicated.json`, `panel/regrade.json` and the members' score files, `panel/cards.json` and the members' verdicts; `evals/results/docsqa/preflight/T2-<project>.json` with the probe traces. Expected hashes at the end of this subsection.
+
+**Preflight outcome.** `evals/results/docsqa/preflight/T2-<project>.json`: all four passed (freeze check, sample hashes, 3 of 3 activation probes for every arm) under the freeze as re-written during the first preflight round (the T3 renderer had been added under the first freeze; inputs identical; both versions in git). **Runs.** 1,002 answers, 0 failures, 6 first attempts at the 12-turn cap retried once (declared), 135 runs per hour at one job.
+
+**Expected artifacts and hashes (sha256, regenerated by `shasum -a 256` on a clean checkout at the commit that published this table):**
+
+```
+bb13b95cd5e3756ab98a1249df24cae8830da2be74ff9cbc2c44d82f7a85d666  evals/results/docsqa/T2/FROZEN.md
+8acb84e3a17cea2755820397e4e67200a48e4f35abd562ccc7a68f6145e843cc  evals/results/docsqa/T2/github-docs/questions.jsonl
+f3a16f3475d2562b7208a37be636ce910c61650c012add3fb283dd6b5601d29e  evals/results/docsqa/T2/prisma/questions.jsonl
+12f3b7b3f2db715521abaf2e97d59108c9b13a409c1ce841f54e434ffea68ea3  evals/results/docsqa/T2/supabase/questions.jsonl
+68ca0a3ab04f8060090170cebfd3e71325e0b99f2de5cbead361a9d1b602c731  evals/results/docsqa/T2/tailwind-css/questions.jsonl
+e3bc16ffb322e964cc3c584f41b14c03e2d89acfdbf7528b25e9082b75f9437f  evals/results/docsqa/T2/github-docs/manifest.json
+b932a45c44c642e175114cd2336e84d84a96b1245b5a54852b2e7a172cc632af  evals/results/docsqa/T2/prisma/manifest.json
+1ec4ec07ea571a873d566097f8154eedce768b2e82390022e04b61443a0259f4  evals/results/docsqa/T2/supabase/manifest.json
+45771a471cca401a2e6baad8aa5b534672e1e2edc1f835d1ba031c74c8190ec9  evals/results/docsqa/T2/tailwind-css/manifest.json
+64fe4621ed428d828a87eeb05c3bacc97525e2bc4a5969a359e8ba19a018d6e1  evals/results/docsqa/T2/github-docs/grades.jsonl
+4a062039fffc73c09cf55dd65f093782d933c69efeec65b2f5cf7b7e38a94599  evals/results/docsqa/T2/prisma/grades.jsonl
+41c6433ac5a8b0ba6c41bc7993ea72c926a1c0e0139661a462b9e87dbf95bad1  evals/results/docsqa/T2/supabase/grades.jsonl
+f374e0906955a25e1ea945fe6addf597aa341b65d02e1f3e6aad0b40f61634bb  evals/results/docsqa/T2/tailwind-css/grades.jsonl
+3b040a6ff32eee81055c8e819083ab87e04c5395552368424a0a7104a18521f4  evals/results/docsqa/T2/github-docs/grades.adjudicated.jsonl
+6c598c7e475c1253495aaf7668863652121a2193d7d1b13c644053ad8df4dbc2  evals/results/docsqa/T2/prisma/grades.adjudicated.jsonl
+b51866fd93a35c7ca7d79cabea093fb00a4752f074d8976b9b8aa0055c47963f  evals/results/docsqa/T2/supabase/grades.adjudicated.jsonl
+afd609b1f918aaf9723203adc60dcd6ce1bbf0443259707d22489591cbf9e8c9  evals/results/docsqa/T2/tailwind-css/grades.adjudicated.jsonl
+f75ef5b55f5a22377fbc47841b3b93865e3c25d7b83ee46bd08b3d1c8a223971  evals/results/docsqa/T2/github-docs/analysis.json
+82eb551ac3d078495474d2f2afb2971b917816b8dad68a0e48876f027ee03d92  evals/results/docsqa/T2/prisma/analysis.json
+c37520e48f1959eaa871babb0491eba930d50576491838cf06e02c9fcbec852b  evals/results/docsqa/T2/supabase/analysis.json
+c2018d52a5436151471640b4de44c1d3279f0505af1e5c15cd153629fde51961  evals/results/docsqa/T2/tailwind-css/analysis.json
+c6cf8f1744ff1a025ec44d0fd60fd3c1a9b4a46a3059771d2ad3fab2f58c7663  evals/results/docsqa/T2/github-docs/analysis.adjudicated.json
+3cfdb0c746006ee4cd2b53d16e7dba62ad9002f19bc98aec9fa5dd8e3bf42952  evals/results/docsqa/T2/prisma/analysis.adjudicated.json
+56a602f6e2170436f67cedc7bfff913af177102024a49eb87a7bf22788c368b4  evals/results/docsqa/T2/supabase/analysis.adjudicated.json
+a0549b2a26a86483923584e1e2cce6206be36a858d0e4ef36f9630c53bdaae4c  evals/results/docsqa/T2/tailwind-css/analysis.adjudicated.json
+35247a9e6ae6909518a065f9597ecd2f4c58ed7dfdfd3135fc4eeb497ad6814d  evals/results/docsqa/T2/github-docs/panel/regrade.json
+4382def738b0c3073936d4076b6271abb96f5f867fb84163e1e1842b8c653f31  evals/results/docsqa/T2/prisma/panel/regrade.json
+d7ef1fa056db6c938d7bfe2416b2476937cd4ccff36852b91f6fb1dfd7d864e0  evals/results/docsqa/T2/supabase/panel/regrade.json
+bf3c6ac2115c475917405fcc18e6186756f22edd959ed0e24a276e9bebf93e82  evals/results/docsqa/T2/tailwind-css/panel/regrade.json
+e1b099d3934f0452d3fae316157d32993dda2d6643a85ccbfdc91e5d2323e3ff  evals/results/docsqa/T2/github-docs/panel/cards.json
+bf042f4666b544413e57ffc0dc0f0810a4e39db8ee9fc7adaea0a84c7f8c1314  evals/results/docsqa/T2/prisma/panel/cards.json
+19b19f69c4f79525df8064fa7658cdb849bedbec1793e091b79a1bbc5c6bc249  evals/results/docsqa/T2/supabase/panel/cards.json
+b6ad57306f861f1e5142090e6c048b08d6ba5fcfd0b73cd554d6579dad876259  evals/results/docsqa/T2/tailwind-css/panel/cards.json
+c2eaaa389d8a8fb64669a3cea805e44706db74f4136544501c28877e8044d660  evals/results/docsqa/T3/sizes.json
+```
+
+**Regeneration (exact).** The analyses regenerate from the committed grades and manifests with `mda --json eval` (the `--adjudicated` switch belongs to `t2.sh`, not to `mda eval`); the JSON embeds the input paths, so normalise those two provenance fields before the byte comparison:
+
+```bash
+for p in tailwind-css supabase prisma github-docs; do d="evals/results/docsqa/T2/$p"; comps="$(jq -r '[.arms[] | select(. != "mda")] | join(",")' "$d/manifest.json")"
+  for g in grades grades.adjudicated; do a="$d/analysis$( [ $g = grades ] || echo .adjudicated).json"
+    "$MDA" --json eval --analysis "$d/$g.jsonl" --manifest "$d/manifest.json" --comparators "$comps" --draws 10000 --seed 20260922 \
+      | jq -S 'del(.grades, .manifest)' | diff - <(jq -S 'del(.grades, .manifest)' "$a") && echo "regenerates: $p $g"; done; done
+# the page tables: runs/consumption from the run metrics in grades.jsonl; the panel and card tables from panel/regrade.json and panel/cards.json
+for p in tailwind-css supabase prisma github-docs; do jq -s -r --arg p "$p" 'def med: sort | if length == 0 then null elif length % 2 == 1 then .[length/2|floor] else (.[length/2-1] + .[length/2]) / 2 end; group_by(.arm)[] | "| \($p) | \(.[0].arm) | \(length) | \(map(select(.error)) | length) | \(map(.wall_s) | med) | \(map(.source_tokens) | med) | \(map(select(.source_tokens_negative_turns > 0)) | length) | \(map(.source_tokens_signed) | med) | \(map(.input_tokens) | med) | \(map(.tool_calls) | med) | \(map(.cost_usd) | med | . * 1000 | round / 1000) | \(map(.turns) | med) |"' "evals/results/docsqa/T2/$p/grades.jsonl"; done
+for p in tailwind-css supabase prisma github-docs; do jq -r --arg p "$p" 'def r2: . * 100 | round / 100; "| \($p) | \(.sample) | \(.incomplete) | \(.agreement.fable_astra.exact | r2) | \(.agreement.fable_astra.within_one | r2) | \(.agreement.fable_sonnet.exact | r2) | \(.agreement.astra_sonnet.exact | r2) | \(.resolved_by_panel) | \(.mean_sonnet | r2) / \(.mean_fable | r2) / \(.mean_astra | r2) |"' "evals/results/docsqa/T2/$p/panel/regrade.json"; done
+for p in tailwind-css supabase prisma github-docs; do jq -r --arg p "$p" 'def r3: . * 1000 | round / 1000; "| \($p) | \(.sample) | \(.values) | \(.unsupported_rate.fable | r3) | \(.unsupported_rate.astra | r3) | \(.agreement | r3) | \(.incomplete) | \(.sections_missing_from_store) |"' "evals/results/docsqa/T2/$p/panel/cards.json"; done
+```
+
+**Independent rerun.** The runs and the grades are model outputs: a rerun of `t2.sh run` (a fresh directory) and of `grade` is an independent rerun, published beside the original with the paired difference, never in its place (plan §2.0b).
+
+### 7.3 T3 — axis E, first-build cost (M6, 2026-09-25)
+
+No run: the table is rendered from committed records (`cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings) and from `T3/sizes.json`, the live artifact sizes measured with `scripts/eval/t3.sh sizes` on the benchmark machine (recorded with host and time; not a frozen input). **Regeneration:** with mda 0.1.1 built (`t3.sh` picks the provenance file by the binary's version) and the committed `T3/sizes.json`, `scripts/eval/t3.sh table | shasum -a 256` gives `4c38b4b73f204a45a6e8c4696ec48175cf5f71a7b65c26f8da776549671f33c1` (the table and its caption as published); do not run `sizes` during a regeneration — it measures the current artifacts again and writes a new timestamp, and rebuilding an arm is an independent build observation, reported beside the archived one. The sizes are MiB (2^20 bytes) although the renderer prints "MB" (to be corrected with the M7 renderer change; the page says so). Incremental cost after one edit is T4 (M7).
 
 ## 8. Report
 

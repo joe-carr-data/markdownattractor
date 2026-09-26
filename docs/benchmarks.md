@@ -449,6 +449,188 @@ Generated from `evals/results/docsqa/prisma/panel/cards.json` (`scripts/eval/pan
 
 Reading: 2.4% of the sampled dates and entities were judged unsupported by each member, with 98% per-value agreement; the M6 audit is 100 cards per corpus.
 
+## T2 — axis B on DocsQA-Repo, answer quality (final, 2026-09-25)
+
+The second published table. Test split, 25 questions per project (21 on Supabase, every eligible test question with a reference), 3 runs per question and arm, under the final freeze `evals/results/docsqa/T2/FROZEN.md` (protocol final; the grounding rubric as amended before the freeze, plan §2.4; every `claude -p` run starts its arm's MCP server cold, rule 0.9 as amended). Arms: grep (Read/Grep/Glob), mda (MCP + search-first rules), qmd full (MCP + qmd's skill), graphify (MCP from its checkout copy, on the two corpora where its Sonnet-built graph exists); every arm launched exactly as its activation probes were (`preflight/T2-<project>.json`). Sonnet answers and grades; the two-model panel re-graded 30 answers per project and audited 100 cards per corpus. The analysis of rule 0.4: question-level medians with failed runs as 0, a 10,000-draw paired bootstrap per comparator pair, the three gates, and savings only where they pass. Reproduction: runbook §7.2.
+
+### Runs and consumption (rule 0.7 tokens)
+
+| Project | arm | runs | errors | median wall s | median source tokens (clipped) | runs with a clamped turn | median signed source tokens | median input tokens | median tool calls | median cost $ | median turns |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| tailwind-css | graphify | 75 | 0 | 25 | 7343 | 0 | 7343 | 131524 | 7 | 0.076 | 8 |
+| tailwind-css | grep | 75 | 0 | 17 | 2486 | 0 | 2486 | 63344 | 5 | 0.04 | 6 |
+| tailwind-css | mda | 75 | 0 | 14 | 2612 | 0 | 2612 | 53577 | 4 | 0.032 | 5 |
+| tailwind-css | qmd | 75 | 0 | 46 | 3487 | 0 | 3487 | 92630 | 3 | 0.045 | 4 |
+| supabase | graphify | 63 | 0 | 17 | 7687 | 0 | 7687 | 82552 | 4 | 0.065 | 5 |
+| supabase | grep | 63 | 0 | 14 | 3873 | 0 | 3873 | 50003 | 3 | 0.039 | 4 |
+| supabase | mda | 63 | 0 | 13 | 2648 | 0 | 2648 | 51000 | 3 | 0.031 | 4 |
+| supabase | qmd | 63 | 0 | 40 | 4219 | 0 | 4219 | 71095 | 3 | 0.047 | 4 |
+| prisma | grep | 75 | 0 | 14 | 3927 | 0 | 3927 | 60166 | 4 | 0.043 | 5 |
+| prisma | mda | 75 | 0 | 12 | 2331 | 0 | 2331 | 51637 | 3 | 0.029 | 4 |
+| prisma | qmd | 75 | 0 | 39 | 4270 | 0 | 4270 | 71260 | 3 | 0.046 | 4 |
+| github-docs | grep | 75 | 0 | 15 | 4080 | 0 | 4080 | 54817 | 3 | 0.039 | 4 |
+| github-docs | mda | 75 | 0 | 15 | 3288 | 0 | 3288 | 68822 | 4 | 0.036 | 5 |
+| github-docs | qmd | 75 | 0 | 41 | 4850 | 0 | 4850 | 72389 | 3 | 0.048 | 4 |
+
+Totals: 1,002 completed answer runs, no final failures, six successful retries after a first attempt at the 12-turn cap; $49.74 list-price equivalent for the final attempts, $50.42 including the failed first attempts; these totals exclude grading and panel calls. 26,655 s of wall-clock at one job (2026-09-25 17:38 → 2026-09-26 01:05 UTC, 135 runs per hour). Generated from the run metrics carried in `evals/results/docsqa/T2/<project>/grades.jsonl` (rule 0.7: per-turn usage from the transcript; source tokens = Σ over turns of the input-total growth minus the previous output, clipped at 0 per turn, the signed sum beside it; the rendering command is in runbook §7.2).
+
+Reading: 1,002 answers, no failures, 135 runs per hour at one job. mda's median run reads the fewest source tokens on three projects (2.3–3.3K against grep 2.5–4.1K, qmd 3.5–4.9K, graphify 7.3–7.7K; on Tailwind grep reads 5% fewer than mda), makes 3–4 tool calls, and costs the least on every project ($0.029–0.036 against grep $0.039–0.043, qmd $0.045–0.048, graphify $0.065–0.076); qmd's runs are the slowest (39–46 s median wall, its reranker per query). No run had a negative source-token delta, so the clipped and signed sums coincide.
+
+### Quality, grounding and the gates (original grades)
+
+**tailwind-css** (25 questions × 3 runs)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| graphify | 25 | 4.92 | 4.9 (25) | 75 | 75 | 0 | 70.7% | 7846.0 | 7.0 | \$0.076 |
+| grep | 25 | 4.80 | 4.8 (25) | 75 | 75 | 0 | 69.3% | 2631.0 | 5.0 | \$0.040 |
+| mda | 25 | 4.88 | 4.9 (25) | 75 | 75 | 0 | 77.3% | 2452.0 | 4.0 | \$0.030 |
+| qmd | 25 | 4.68 | 4.7 (25) | 75 | 75 | 0 | 80.0% | 3487.0 | 3.0 | \$0.045 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | +0.08 | [-0.60, +0.68] | 5/3/17 | FAIL | pass | FAIL | none claimed |
+| mda vs qmd | 25 | +0.20 | [-0.12, +0.56] | 4/2/19 | pass | pass | FAIL | none claimed |
+| mda vs graphify | 25 | -0.04 | [-0.76, +0.72] | 3/4/18 | FAIL | pass | FAIL | none claimed |
+
+**supabase** (21 questions × 3 runs)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| graphify | 21 | 4.14 | 4.1 (21) | 63 | 63 | 0 | 66.7% | 7398.0 | 4.0 | \$0.066 |
+| grep | 21 | 4.33 | 4.3 (21) | 63 | 63 | 0 | 73.0% | 3856.0 | 4.0 | \$0.040 |
+| mda | 21 | 4.43 | 4.4 (21) | 63 | 63 | 0 | 61.9% | 2648.0 | 3.0 | \$0.031 |
+| qmd | 21 | 4.57 | 4.6 (21) | 63 | 63 | 0 | 50.8% | 4303.0 | 3.0 | \$0.044 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 21 | +0.10 | [-0.29, +0.48] | 4/3/14 | FAIL | pass | FAIL | none claimed |
+| mda vs qmd | 21 | -0.14 | [-0.62, +0.33] | 3/4/14 | FAIL | pass | FAIL | none claimed |
+| mda vs graphify | 21 | +0.29 | [-0.24, +0.86] | 5/2/14 | pass | pass | FAIL | none claimed |
+
+**prisma** (25 questions × 3 runs)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| grep | 25 | 4.96 | 5.0 (25) | 75 | 75 | 0 | 61.3% | 3888.0 | 4.0 | \$0.040 |
+| mda | 25 | 4.96 | 5.0 (25) | 75 | 75 | 0 | 50.7% | 2400.0 | 3.0 | \$0.028 |
+| qmd | 25 | 5.48 | 5.5 (25) | 75 | 75 | 0 | 44.0% | 4270.0 | 3.0 | \$0.047 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | +0.00 | [-0.80, +0.76] | 6/4/15 | FAIL | pass | FAIL | none claimed |
+| mda vs qmd | 25 | -0.52 | [-1.16, +0.00] | 2/4/19 | FAIL | pass | FAIL | none claimed |
+
+**github-docs** (25 questions × 3 runs)
+
+| arm | questions | mean score (failed = 0) | completed-only mean (n) | runs | completed | failed | grounding | median source tokens | median calls | median cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| grep | 25 | 3.72 | 3.7 (25) | 75 | 75 | 0 | 82.7% | 4102.0 | 3.0 | \$0.038 |
+| mda | 25 | 3.68 | 3.7 (25) | 75 | 75 | 0 | 72.0% | 3543.0 | 4.0 | \$0.035 |
+| qmd | 25 | 3.76 | 3.8 (25) | 75 | 75 | 0 | 70.7% | 4811.0 | 3.0 | \$0.044 |
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | -0.04 | [-0.60, +0.56] | 3/5/17 | FAIL | FAIL | FAIL | none claimed |
+| mda vs qmd | 25 | -0.08 | [-0.52, +0.40] | 3/6/16 | FAIL | FAIL | FAIL | none claimed |
+
+Reading: on the 0–6 scale, mda's mean is within 0.1 of grep's on every project (+0.08, +0.10, 0.00, −0.04), above qmd on Tailwind (+0.20, interval [−0.12, +0.56]) and below it on Prisma (−0.52, interval [−1.16, 0.00]) and within 0.15 elsewhere; against graphify +0.29 on Supabase and −0.04 on Tailwind. The original mean-score estimates differ from grep's by at most 0.10 points and every original-grade paired interval includes zero, but that does not establish equivalence: most pairs fail the declared non-inferiority criterion (a lower bound ≥ −0.25), and the medians of three runs make most questions ties (14–19 of 21–25). **No pair passes the three gates, so no savings are claimed.** Gate (a) passes for mda vs qmd on Tailwind and mda vs graphify on Supabase; gate (b), mda's mean ≥ 4.0, passes on three projects and fails on GitHub Docs (3.68, where every arm scores 3.7–3.8); gate (c), grounding ≥ 95%, fails for every arm on every project (mda 51–77%, grep 61–83%, qmd 44–80%, graphify 67–71%) — grounding failures are rejected product claims and citation-policy failures; the counts and their definitions are in the disclosures below. The consumption differences above are therefore reported as measurements, not as savings.
+
+### The same, on the adjudicated grades (panel-resolved scores in place, rule 0.8)
+
+**tailwind-css** (adjudicated)
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+| mda vs grep | 25 | +0.12 | [-0.58, +0.74] | 6/4/15 | FAIL | pass | FAIL | none claimed |
+| mda vs qmd | 25 | +0.44 | [+0.00, +0.92] | 6/2/17 | pass | pass | FAIL | none claimed |
+| mda vs graphify | 25 | +0.04 | [-0.72, +0.80] | 4/4/17 | FAIL | pass | FAIL | none claimed |
+
+**supabase** (adjudicated)
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+| mda vs grep | 21 | +0.38 | [-0.05, +0.86] | 6/2/13 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 21 | +0.21 | [-0.31, +0.74] | 6/3/12 | FAIL | pass | FAIL | none claimed |
+| mda vs graphify | 21 | +0.62 | [+0.10, +1.19] | 7/1/13 | pass | pass | FAIL | none claimed |
+
+**prisma** (adjudicated)
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+| mda vs grep | 25 | +0.08 | [-0.72, +0.84] | 7/4/14 | FAIL | pass | FAIL | none claimed |
+| mda vs qmd | 25 | -0.40 | [-1.02, +0.12] | 4/5/16 | FAIL | pass | FAIL | none claimed |
+
+**github-docs** (adjudicated)
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+| mda vs grep | 25 | -0.14 | [-0.78, +0.52] | 4/6/15 | FAIL | FAIL | FAIL | none claimed |
+| mda vs qmd | 25 | -0.12 | [-0.52, +0.30] | 3/5/17 | FAIL | FAIL | FAIL | none claimed |
+
+Reading: with the panel's resolved scores in place for the 30 sampled answers per project, the pair means move by up to 0.4 points; gate (a) newly passes for mda vs grep on Supabase (lower bound −0.05), Tailwind's mda vs qmd stays passing with its lower bound moving from −0.12 to 0.00, and the adjudicated Supabase mda vs graphify interval excludes zero ([+0.10, +1.19]); gate (c) still fails everywhere, so nothing is claimed. Both analyses are published; the original is the table of record and the adjudicated one its rule-0.8 companion.
+
+### Panel calibration (30 answers per project, Fable and Astra, blind)
+
+| project | answers | incomplete | Fable/Astra exact | within one | Fable/Sonnet exact | Astra/Sonnet exact | trigger fired | mean Sonnet / Fable / Astra |
+|---|---|---|---|---|---|---|---|---|
+| tailwind-css | 30 | 0 | 0.37 | 0.53 | 0.5 | 0.37 | 18 | 4.87 / 4.77 / 2.73 |
+| supabase | 30 | 0 | 0.13 | 0.13 | 0.4 | 0.17 | 28 | 4.37 / 4.87 / 1.1 |
+| prisma | 30 | 0 | 0.33 | 0.47 | 0.57 | 0.37 | 18 | 4.83 / 4.93 / 2.8 |
+| github-docs | 30 | 0 | 0.23 | 0.33 | 0.33 | 0.2 | 23 | 3.8 / 4.73 / 1.93 |
+
+Generated from `evals/results/docsqa/T2/<project>/panel/regrade.json` (`scripts/eval/panel.sh regrade <out> 30`). Trigger: either panel member differs from the Sonnet grade by more than one point → the panel mean replaces it in the adjudicated grades.
+
+Reading: the two panel members do not agree with each other or with Sonnet at the level the protocol assumed: exact agreement 0.13–0.37 between Fable and Astra and within one point only 0.13–0.53; Fable tracks Sonnet (means within 0.1–0.9); Astra's project mean is 1.87–3.27 points below Sonnet's and 2.03–3.77 below Fable's (1.1–2.8 against Sonnet's 3.8–4.9). The declared trigger fired on 18, 28, 18 and 23 of 30 answers; every individual score is committed. Before T2 is reused, the panel's rubric wording for Astra needs a calibration pass — that is a finding of this table, recorded in STATUS, not a correction applied to it.
+
+### Card audit (100 cards per corpus, both members)
+
+| project | cards | values | unsupported (Fable) | unsupported (Astra) | per-value agreement | incomplete verdicts | sections missing from the store |
+|---|---|---|---|---|---|---|---|
+| tailwind-css | 100 | 228 | 0.004 | 0.004 | 1 | 0 | 0 |
+| supabase | 100 | 474 | 0.016 | 0.018 | 0.995 | 18 | 0 |
+| prisma | 100 | 442 | 0.018 | 0.02 | 0.987 | 8 | 0 |
+| github-docs | 100 | 352 | 0.038 | 0.032 | 0.987 | 10 | 0 |
+
+Generated from `evals/results/docsqa/T2/<project>/panel/cards.json` (`scripts/eval/panel.sh cards <project> 100`): 100 cards per corpus with at least one date or entity, seeded; each date judged as "raw → iso (precision)", each entity against the section text; an incomplete verdict is one member not covering every value once, in order (counted, not scored).
+
+Reading: 0.4–3.8% of the sampled dates and entities are judged unsupported by either member, with per-value agreement above 0.98; GitHub Docs has the highest rate (3–4%). Incomplete verdicts (a member's reply not covering every value once) are counted, not scored: 0, 18, 8 and 10 of 100 cards. This is the audit of rule 0.8 on the metadata G6 promises: every date and entity carries evidence in the source, and among the values covered by valid member verdicts, 96.2–99.6% were judged supported; invalid verdicts are excluded from these rates, and a sample audit does not verify every stored date or entity.
+
+### What travels with the table
+
+Every model call went through the owner's logins; provider keys were unset by the scripts. The freeze `T2/FROZEN.md` was committed before any run and re-written once during the preflights, with identical inputs, because the T3 table renderer (`scripts/eval/t3.sh`, no T2 input) was added under it; both versions are in git history and the four preflights were rerun under the second (all passed: freeze check, sample hashes, three activation probes per arm with traces under `preflight/T2-<project>/`). The runs: 1,002 answers, none failed; 6 first attempts (4 graphify, 2 grep) hit the 12-turn cap and the declared single retry succeeded — the rows carry the final attempt's metrics and `cost_usd_all_attempts`. Grading: Sonnet through `claude -p`, one row without a grounding verdict (Prisma) is a failed grounding. The grounding rubric is the amended one (plan §2.4): factual claims about the product; the failure indicators overlap: at least one cited-page batch was explicitly judged ungrounded in 75 mda, 86 qmd, 53 grep and 39 graphify answers; unresolved citations were recorded in 28, 38, 24 and 1 answers; oversized cited pages in 11, 1, 5 and 3; no resolvable citation at all in 1 mda and 5 grep answers; the denominators are 288 answers for mda, qmd and grep and 138 for graphify, and one mda answer on Prisma has no grounding verdict (a failed grounding). Citations must identify `.md/.mdx/.markdown` paths: an exact repository-relative path, or a unique corpus-page suffix after stripping a leading project prefix; ambiguous file names and headings alone do not resolve; every cited page is checked whole, in batches of four, and any unresolved citation or page over 120,000 characters makes the answer ungrounded. The panel's Astra member grades the 0–6 rubric 1.9–3.3 points below Sonnet and 2.0–3.8 below Fable on every project; the declared trigger therefore fired on 18–28 of 30 answers per project and the adjudicated analysis is shown beside the original, not in its place. Committed under `evals/results/docsqa/T2/<project>/`: the frozen sample, the manifest (home paths abbreviated), `grades.jsonl` and `grades.adjudicated.jsonl` with the answer text replaced by its sha256 (answers quote page text; they stay under the run directory), both analyses, the panel's per-answer scores and the card verdicts (rationales removed); the analysis regenerates byte-identically from the committed grades and manifest. T2's latency is not a table: every run started every arm's MCP server cold (rule 0.9 as amended) and the wall-clock medians above are that configuration's. T1 published this table's arms' retrieval quality; T2 does not reopen tuning.
+
+## T3 — axis E, what a first build costs (final, 2026-09-25)
+
+The first build of each arm on the four corpora, from the committed records: mda's cards from their provenance (`cards-0.1.1-<project>.json.provenance.json`), the raw index and attach-plus-embed times from the T1 preflight's clean reconstruction, the qmd, graphify and BM25-over-files arm records (`arms/<arm>-<project>.json`), and the size of the artifact each arm scores from, measured on the benchmark machine (`T3/sizes.json`). Costs are list-price equivalents of calls that went through the owner's Claude Code login. The incremental cost after one edited section is T4's measurement (M7) and the last column says so. These are archived build-cost observations and reconstruction timings, not a complete measurement of first-build latency: mda's summarisation wall-clock was not recorded at M1, and its "attach + embed" timings are the T1 reconstruction's attach-plus-embed-plus-score step; every successful build timing is a single observation; the sizes are in MiB (2^20 bytes) although the table prints "MB". Costs across configurations are descriptive, with different models, artifacts and coverage (graphify's usage includes its headless host-agent orchestration). This is a table of design properties, not a savings claim: a build-cost comparison across arms is only fair at matched models and matched outputs (Codex, `docs/reviews/codex/2026-09-23-build-cost-claim.md`), and the model each arm used is in its row.
+
+| Project | sections | arm | first build wall-clock | model cost (list-price eq.) | tokens in / out | wall per 1K sections | cost per 1K sections | artifact size | incremental after one edit |
+|---|---|---|---|---|---|---|---|---|---|
+| github-docs | 23066 | mda (cards + vectors) | raw index 5 s · summarise: one `claude -p` per section, wall not recorded at M1 · attach + embed 1733 s | $99.93 (Haiku 4.5) | 55979737 / 8635389 | embed ≈ 75 s | $4.33 | 181.3 MB | one section: hash-keyed, only the edited section is re-summarised and re-embedded (measured at M7, T4) |
+| github-docs | 23066 | qmd 2.8.3 | 1397 s (embed 1390 s, local EmbeddingGemma on Metal) | $0 (no remote model call) | – | 61 s | $0 | 92.8 MB | `qmd update && qmd embed` (measured at M7, T4) |
+| github-docs | 23066 | graphify | did not complete (1 attempt(s), last 4745 s · 98 turns) | $73.54 spent, no graph | – | – | – | – | – |
+| github-docs | 23066 | graphify-haiku (haiku-hosted `/graphify`) | 454 s · 11 turns | $1.6 + $0.62 in 1 failed attempt(s) | 5197298 / 118463 | 20 s | $0.07 | 45.7 MB | `/graphify --update` skill flow through the login (measured at M7, T4) |
+| github-docs | 23066 | BM25-over-files | 2 s | $0 | – | 0.1 s | $0 | 28.7 MB | rebuild the table (seconds) |
+| prisma | 10438 | mda (cards + vectors) | raw index 2 s · summarise: one `claude -p` per section, wall not recorded at M1 · attach + embed 713 s | $39.29 (Haiku 4.5) | 21679828 / 3466004 | embed ≈ 68 s | $3.76 | 106.4 MB | one section: hash-keyed, only the edited section is re-summarised and re-embedded (measured at M7, T4) |
+| prisma | 10438 | qmd 2.8.3 | 496 s (embed 494 s, local EmbeddingGemma on Metal) | $0 (no remote model call) | – | 48 s | $0 | 31.1 MB | `qmd update && qmd embed` (measured at M7, T4) |
+| prisma | 10438 | graphify | did not complete (2 attempt(s), last 2518 s · 69 turns) | $82.77 spent, no graph | – | – | – | – | – |
+| prisma | 10438 | graphify-haiku (haiku-hosted `/graphify`) | 340 s · 1 turns | $0.97 + $4.28 in 1 failed attempt(s) | 2758765 / 73155 | 33 s | $0.09 | 1.4 MB | `/graphify --update` skill flow through the login (measured at M7, T4) |
+| prisma | 10438 | BM25-over-files | 1 s | $0 | – | 0.1 s | $0 | 9.5 MB | rebuild the table (seconds) |
+| supabase | 6548 | mda (cards + vectors) | raw index 1 s · summarise: one `claude -p` per section, wall not recorded at M1 · attach + embed 483 s | $30.48 (Haiku 4.5) | 16615918 / 2675968 | embed ≈ 74 s | $4.66 | 80.3 MB | one section: hash-keyed, only the edited section is re-summarised and re-embedded (measured at M7, T4) |
+| supabase | 6548 | qmd 2.8.3 | 397 s (embed 394 s, local EmbeddingGemma on Metal) | $0 (no remote model call) | – | 61 s | $0 | 25 MB | `qmd update && qmd embed` (measured at M7, T4) |
+| supabase | 6548 | graphify (sonnet-hosted `/graphify`) | 2053 s · 264 turns | $47.17 | 80562590 / 1783121 | 314 s | $7.2 | 2.2 MB | `/graphify --update` skill flow through the login (measured at M7, T4) |
+| supabase | 6548 | graphify-haiku (haiku-hosted `/graphify`) | 451 s · 71 turns | $6.14 | 12908648 / 441091 | 69 s | $0.94 | 1.2 MB | `/graphify --update` skill flow through the login (measured at M7, T4) |
+| supabase | 6548 | BM25-over-files | 0 s | $0 | – | 0 s | $0 | 7.7 MB | rebuild the table (seconds) |
+| tailwind-css | 1518 | mda (cards + vectors) | raw index 0 s · summarise: one `claude -p` per section, wall not recorded at M1 · attach + embed 103 s | $6.51 (Haiku 4.5) | 3591960 / 498631 | embed ≈ 68 s | $4.29 | 11.5 MB | one section: hash-keyed, only the edited section is re-summarised and re-embedded (measured at M7, T4) |
+| tailwind-css | 1518 | qmd 2.8.3 | 162 s (embed 161 s, local EmbeddingGemma on Metal) | $0 (no remote model call) | – | 107 s | $0 | 8 MB | `qmd update && qmd embed` (measured at M7, T4) |
+| tailwind-css | 1518 | graphify (sonnet-hosted `/graphify`) | 825 s · 83 turns | $10.25 | 10340885 / 410586 | 543 s | $6.75 | 0.4 MB | `/graphify --update` skill flow through the login (measured at M7, T4) |
+| tailwind-css | 1518 | graphify-haiku (haiku-hosted `/graphify`) | 342 s · 40 turns | $2.31 | 5205526 / 143619 | 225 s | $1.52 | 0.4 MB | `/graphify --update` skill flow through the login (measured at M7, T4) |
+| tailwind-css | 1518 | BM25-over-files | not recorded (the table was built at M2, its record written afterwards: `arms/bm25-files-tailwind-css.json`) | $0 | – | – | $0 | 2.1 MB | rebuild the table (seconds) |
+
+Generated by `scripts/eval/t3.sh table` from `evals/results/docsqa/cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings and `T3/sizes.json` (arm64 15.2, measured 2026-09-25T17:23:08Z). Sections = the corpus's markdown sections as mda parses them (the unit for every arm's per-1K figure). Model costs are list-price equivalents of calls that went through the owner's Claude Code login. mda's summarisation wall-clock was not recorded at M1 (cards were built across sessions); its per-section cost is the provenance's. Incremental cost after one edit is T4 (M7).
+
+Reading:
+- **mda** pays once per section, in bounded Haiku calls: $3.76 to $4.66 per 1,000 sections across the four corpora, with no agent loop, and the summarisation is hash-keyed (an unchanged section is never sent again). Its store is the largest artifact (FTS content plus f32 vectors: 181 MiB for GitHub Docs); the T1 page lists the levers.
+- **qmd** makes no remote model call: a local embedding model on Metal, 48 to 107 seconds per 1,000 sections, an index of 8 to 93 MiB that also holds its query cache.
+- **graphify** with a Sonnet host completed on the two small corpora only ($6.75 and $7.20 per 1,000 sections, 314 and 543 seconds) and did not complete on Prisma ($82.77 over two attempts) or GitHub Docs ($73.54, one attempt), both stopped by the account's weekly limit mid-build; the Haiku-hosted builds completed everywhere at $0.07 to $1.52 per 1,000 sections for the successful attempt (failed attempts' spending shown separately) and scored near zero on T1. The graphs are small (0.4 to 46 MiB).
+- **BM25-over-files** costs seconds and nothing else, and is the control T1 uses.
+
 ## Not measured yet
 
 - The A/B protocol on corpora beyond the golden set (design-partner repos; this repository's own `docs/` is a candidate at 28 files / 5K lines).
