@@ -178,9 +178,6 @@ with open(out, "w", encoding="utf-8") as fh:
     for i, r in enumerate(chosen):
         path = os.path.join(corpus, r["page"])
         text = open(path, encoding="utf-8", errors="replace").read()[:6000]   # a corpus page exists on disk; a missing one is an error
-        # The page text is NOT stored (a documentation page can carry example keys that trip
-        # secret scanning, and nothing that looks like a key enters the repo): the judge reads
-        # the page from the pinned checkout, its sha256 recorded here for the audit.
         import hashlib
         # Neither the page text nor the question text is stored (community questions quote
         # their own keys and documentation pages carry example keys; nothing that looks like
@@ -189,5 +186,5 @@ with open(out, "w", encoding="utf-8") as fh:
         q = qtext.get(r["question_id"], "")
         fh.write(json.dumps({"pair_id": f"{project}-{i:03d}", "question_id": r["question_id"], "question_sha256": hashlib.sha256(q.encode("utf-8")).hexdigest(),
                              "page": r["page"], "arms": sorted(arms_of[(r["question_id"], r["page"])]), "page_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(), "page_chars_judged": len(text)}, ensure_ascii=False) + "\n")
-print(f"{len(chosen)} pairs from {len(seen)} candidates across {len(arms)} arms -> {out}")
+print(f"{len(chosen)} pairs sampled from {len(arms_of)} distinct candidate (question, page) pairs across {len(arms)} arms -> {out}")
 PY
