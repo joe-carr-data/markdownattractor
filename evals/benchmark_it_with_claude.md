@@ -443,6 +443,23 @@ for p in tailwind-css supabase prisma github-docs; do jq -r --arg p "$p" 'def r3
 
 No run: the table is rendered from committed records (`cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings) and from `T3/sizes.json`, the live artifact sizes measured with `scripts/eval/t3.sh sizes` on the benchmark machine (recorded with host and time; not a frozen input). **Regeneration:** with mda 0.1.1 built (`t3.sh` picks the provenance file by the binary's version) and the committed `T3/sizes.json`, `scripts/eval/t3.sh table | shasum -a 256` gives `c7c61a9c15e3e5dfdc6d7ade0c00fa7b4bf279bdb1276a974d6fb91d92fa8099` (the table and its caption as published on 2026-09-27, after the renderer's MiB and reconstruction labels; the first publication's renderer gave `4c38b4b7…`); do not run `sizes` during a regeneration — it measures the current artifacts again and writes a new timestamp, and rebuilding an arm is an independent build observation, reported beside the archived one. Incremental cost after one edit is T4 (M7).
 
+### 7.4 T4 — axis C, update latency on Prisma (M7, 2026-09-27)
+
+**Freeze.** `evals/results/docsqa/T4/FROZEN.md` (protocol final, table T4; written after `t4.sh setup` and committed before any edit): the edit plan (`T4/edits.jsonl`, 20 seeded sections with their tokens), the mda copy's store and config hashes, the qmd `t4-qmd` index fingerprint, the graphify (Haiku-built) graph hash, the answering model, the harness hash. `t4.sh preflight` is the gate: the freeze checks, no provider key, the daemon running with nothing pending, no token present in any copy, the plan unchanged, and three answer-endpoint probes per arm on the first three edits' pages (no edit applied) proving each arm's tool is used.
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t4.sh setup       # copies of the pinned Prisma checkout per arm (mda's with its frozen store), qmd index t4-qmd on the qmd copy (≈ 8 min), the Haiku graphify build's copy, `mda start` on the mda copy, the edit plan
+scripts/eval/freeze.sh --protocol final --table T4 --note "…"; git add evals/results/docsqa/T4/FROZEN.md evals/results/docsqa/T4/edits.jsonl; git commit …   # before any edit
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t4.sh preflight
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t4.sh run          # 20 edits × 4 arms, sequential (one arm at a time so the daemon, the qmd embed and the graphify update never contend); resumable
+scripts/eval/t4.sh table; scripts/eval/t4.sh teardown
+```
+
+**What a row is** (`T4/rows/<edit>-<arm>.json`): the save instant, the update trigger's own duration, exit code and cost (qmd, graphify), the raw-searchable endpoint (ms from the save, timed out, polls), the card endpoint (mda), the answer endpoint (ms from the save, whether the answer quoted the token and cited the page, the arm's tool used, turns, cost, the answer's first 600 characters). The traces of every answer session and update trigger stay under the run directory (`~/.cache/markdownattractor/bench/t4/traces/`).
+
+**Regeneration (exact).** `scripts/eval/t4.sh table` renders the page table from the committed rows. **Independent rerun.** New copies, the same seeded plan (`setup` rebuilds it identically from the frozen store) or a new one: an independent observation, published beside the original.
+
 ## 8. Report
 
 Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, `mda --version` and SHA, `claude --version`, the model file hashes, the checksums of §2, every attempt (timestamp, step, outcome) including failed ones, the tables of §3–§5 with your numbers next to the expected ones marked *regeneration* (exact match: yes/no) or *rerun* (paired difference), and every deviation. A regeneration that does not match is the most valuable outcome this file can produce: open an issue with the report.

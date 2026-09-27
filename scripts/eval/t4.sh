@@ -72,19 +72,33 @@ case "$cmd" in
     if ! "$MDA" --json status --root "$(copy_of mda)" 2>/dev/null | jq -e '.daemon != null' >/dev/null; then
       "$MDA" start --root "$(copy_of mda)" --no-example >/dev/null 2>&1 || true; sleep 3
     fi
-    "$MDA" --json status --root "$(copy_of mda)" | jq -c '{daemon: (.daemon != null), pending: .summaries.pending, summarized: .summaries.summarized}' 2>/dev/null || echo "status unavailable"
+    "$MDA" --json status --root "$(copy_of mda)" | jq -c '{daemon: (.daemon != null), pending: .counts.pending, summarized: .counts.summarized}' 2>/dev/null || echo "status unavailable"
     # the edit plan: twenty sections, seeded, one per document, body ≥ MIN_BODY chars; tokens unique in the corpus
     if [ ! -f "$T4/edits.jsonl" ]; then
       db="$(copy_of mda)/.markdownattractor/index.sqlite"
-      sqlite3 -json "$db" "SELECT s.section_id, d.rel_path AS page, s.heading_path, s.line_start, s.line_end, s.section_hash, length(s.text) AS chars FROM sections s JOIN docs d ON d.doc_id = s.doc_id WHERE length(s.text) >= $MIN_BODY AND s.heading_path != '[]'" \
-        | jq -c --arg seed "$SEED" '.[]' | while IFS= read -r r; do k="$(printf '%s\x00%s' "$SEED" "$(jq -r .section_id <<<"$r")" | shasum -a 256 | cut -c1-16)"; jq -c --arg k "$k" '. + {key: $k}' <<<"$r"; done \
-        | jq -s -c --argjson n "$N_EDITS" 'sort_by(.key) | reduce .[] as $s ({seen: [], out: []}; if (.out | length) >= $n or (.seen | index([$s.page])) != null then . else {seen: (.seen + [$s.page]), out: (.out + [$s])} end) | .out | to_entries[] | .value + {edit: (.key + 1)} | del(.key)' \
-        | while IFS= read -r r; do tok="t4-$(jq -r .edit <<<"$r")-$(printf '%s\x00%s' "$SEED" "$(jq -r .section_id <<<"$r")" | shasum -a 256 | cut -c1-8)"; n="$(grep -rl --include='*.md' --include='*.mdx' --include='*.markdown' -e "$tok" "$PIN" | wc -l | tr -d ' ')"; [ "$n" = 0 ] || die "token $tok already occurs in the corpus"; jq -c --arg t "$tok" --arg d "$(date -u +%F)" '. + {token: $t, note: ("T4 note (" + $d + "): " + $t + ".")}' <<<"$r"; done > "$T4/edits.jsonl"
+      sqlite3 -json "$db" "SELECT s.section_id, d.rel_path AS page, s.heading_path, s.line_start, s.line_end, s.section_hash, length(s.text) AS chars FROM sections s JOIN docs d ON d.doc_id = s.doc_id WHERE length(s.text) >= $MIN_BODY AND s.heading_path != '[]'" > "$T4/candidates.json"
+      python3 - "$T4/candidates.json" "$SEED" "$N_EDITS" "$PIN" "$(date -u +%F)" > "$T4/edits.jsonl" <<'PY' || die "edit plan failed"
+import hashlib, json, os, subprocess, sys
+cands, seed, n, pin, today = json.load(open(sys.argv[1])), sys.argv[2], int(sys.argv[3]), sys.argv[4], sys.argv[5]
+key = lambda sid: hashlib.sha256((seed + "\0" + sid).encode()).hexdigest()
+cands.sort(key=lambda c: key(c["section_id"]))
+seen, out = set(), []
+for c in cands:
+    if len(out) >= n: break
+    if c["page"] in seen: continue
+    seen.add(c["page"]); out.append(c)
+for i, c in enumerate(out, 1):
+    tok = f"t4-{i}-{key(c['section_id'])[:8]}"
+    r = subprocess.run(["grep", "-rlF", "--include=*.md", "--include=*.mdx", "--include=*.markdown", "-e", tok, pin], capture_output=True, text=True)
+    if r.stdout.strip(): sys.exit(f"token {tok} already occurs in the corpus")
+    c.update({"edit": i, "token": tok, "note": f"T4 note ({today}): {tok}."})
+    print(json.dumps(c))
+PY
       cp "$T4/edits.jsonl" "$RES/edits.jsonl"
       echo "edit plan: $(grep -c . "$T4/edits.jsonl") edits → $RES/edits.jsonl ($(jq -r .page "$T4/edits.jsonl" | sort -u | wc -l | tr -d ' ') distinct pages)"
     fi ;;
   status)
-    "$MDA" --json status --root "$(copy_of mda)" | jq -c '{daemon: (.daemon != null), pending: .summaries.pending, failed: .summaries.failed}'
+    "$MDA" --json status --root "$(copy_of mda)" | jq -c '{daemon: (.daemon != null), pending: .counts.pending, failed: .counts.failed}'
     qmd --index "$QINDEX" status 2>/dev/null | head -3
     echo "rows: $(ls "$T4/rows" 2>/dev/null | wc -l | tr -d ' ')" ;;
   preflight)
@@ -93,7 +107,7 @@ case "$cmd" in
     jq -n --arg at "$(date -u +%FT%TZ)" '{table: "T4", project: "prisma", run_at: $at, status: "in progress", passed: false}' > "$report"
     if env | grep -qE '^[A-Z_]*_API_KEY='; then rec env FAIL "a provider key is exported"; else rec env ok "no provider key · claude $(claude --version 2>/dev/null | head -1)"; fi
     if out="$("$REPO/scripts/eval/freeze.sh" --protocol final --table T4 --check 2>&1)"; then rec frozen ok "$out"; else rec frozen FAIL "$out"; fi
-    if "$MDA" --json status --root "$(copy_of mda)" | jq -e '.daemon != null and .summaries.pending == 0' >/dev/null; then rec daemon ok "running on $(copy_of mda), nothing pending"; else rec daemon FAIL "not running or pending work on the mda copy"; fi
+    if "$MDA" --json status --root "$(copy_of mda)" | jq -e '.daemon != null and .counts.pending == 0' >/dev/null; then rec daemon ok "running on $(copy_of mda), nothing pending"; else rec daemon FAIL "not running or pending work on the mda copy"; fi
     n_tok=0; while IFS= read -r r; do t="$(jq -r .token <<<"$r")"; for a in $ARMS; do d="$(copy_of $a)"; [ "$a" = graphify ] && d="$T4/graphify/src"; if grep -rq --include='*.md' --include='*.mdx' -e "$t" "$d"; then n_tok=$((n_tok + 1)); fi; done; done < "$T4/edits.jsonl"
     if [ "$n_tok" = 0 ]; then rec tokens ok "no edit token present in any copy yet ($(grep -c . "$T4/edits.jsonl") edits planned)"; else rec tokens FAIL "$n_tok token occurrences already present: the copies are not clean"; fi
     [ "$(sha256 "$T4/edits.jsonl")" = "$(sha256 "$RES/edits.jsonl")" ] && rec plan ok "edits.jsonl matches the committed plan" || rec plan FAIL "edits.jsonl differs from the committed plan"
