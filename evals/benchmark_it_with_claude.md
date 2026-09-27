@@ -445,7 +445,7 @@ No run: the table is rendered from committed records (`cards-0.1.1-<project>.jso
 
 ### 7.4 T4 — axis C, update latency on Prisma (M7, 2026-09-27)
 
-**Freeze.** `evals/results/docsqa/T4/FROZEN.md` (protocol final, table T4; written after `t4.sh setup` and committed before any edit): the edit plan (`T4/edits.jsonl`, 20 seeded sections with their tokens), the mda copy's store and config hashes, the qmd `t4-qmd` index fingerprint, the graphify (Haiku-built) graph hash, the answering model, the harness hash. `t4.sh preflight` is the gate: the freeze checks, no provider key, the daemon running with nothing pending, no token present in any copy, the plan unchanged, and three answer-endpoint probes per arm on the first three edits' pages (no edit applied) proving each arm's tool is used.
+**Freeze and preflight.** T4 has an original freeze, a rewrite before the counted run (after the aborted attempt) and a rewrite after the counted run before the three mda replacement measurements — all three in the git history of `evals/results/docsqa/T4/FROZEN.md`, the chronology in the current note. The current freeze checks the edit plan, the mda configuration, the archived graph, the declared models and the harness; the mutable store, index and served-graph hashes are recorded under Runtime. The committed passing preflight (`preflight/T4-prisma.json`, 2026-09-27T09:47:01Z) checked the pre-counted-run freeze, the daemon's readiness, clean copies and the plan, and proved tool activation on the first three questions of the T2 Prisma sample through `probe.sh` on the copies — probes distinct from the measured token questions, which do not certify tool use in every measured answer (the rows record it: `answer.arm_tool_used`).
 
 ```bash
 cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
@@ -470,7 +470,14 @@ dd1256f653071cec4163d99482d23aa352be06c4f7ac4a5cac9f916bc5bd13b6  evals/results/
 22e8f6f990fb88554a69c426e19e19bcf9aa9cf66f60f45c970d34f9909e85cd  scripts/eval/t4.sh table (the rendered table and caption)
 ```
 
-**Regeneration (exact).** `scripts/eval/t4.sh table` renders the page table from the committed rows (`evals/results/docsqa/T4/rows/`); its hash is above. **Independent rerun.** New copies, the same seeded plan (`setup` rebuilds it identically from the frozen store) or a new one: an independent observation, published beside the original.
+**Regeneration (exact).** The renderer reads `$RUN/t4/rows/`, so stage only the archived observations in a fresh runtime directory:
+
+```bash
+T4_REGEN=$(mktemp -d); mkdir -p "$T4_REGEN/t4/rows"; cp evals/results/docsqa/T4/rows/*.json "$T4_REGEN/t4/rows/"
+RUN="$T4_REGEN" scripts/eval/t4.sh table | shasum -a 256      # 22e8f6f990fb88554a69c426e19e19bcf9aa9cf66f60f45c970d34f9909e85cd
+```
+
+No daemon, copies, model calls, setup, purge or freeze rewrite are involved. **Independent rerun.** Preregister one rerun with the same frozen edit plan and twenty edits; publish its results and the paired differences beside the original whatever they show. Run the setup / freeze / preflight / run sequence in a disposable checkout and an isolated environment with no existing `t4-qmd` index and a fresh runtime directory holding the prerequisite pinned Prisma store and the restored Haiku graph build; keep the original publication checkout untouched (setup and preflight write repository artifacts). Setup creates the arm copies and starts the daemon but does not reset existing copies or rows; copy the committed `T4/edits.jsonl` into the new runtime's `t4/edits.jsonl` before setup so the original dates and tokens are kept (a plan generated on another date is not byte-identical). Record and compare the new freeze before running, allowing documented Runtime differences. Do not run `purge` on a clean rerun: the historical repair was `scripts/eval/t4.sh purge 1 3` then `T4_ARMS=mda scripts/eval/t4.sh run 1 3`, and any future repair must copy the superseded rows and traces aside before purging and disclose the replacements. A different edit plan is an additional experiment, not the required paired rerun.
 
 ## 8. Report
 

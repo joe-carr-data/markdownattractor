@@ -30,3 +30,5 @@ Milestone M7 of the execution plan (`2026-09-benchmark-execution.md` §4 T4, §5
 ## Outcome (2026-09-27)
 
 80 rows, no timeouts, every answer correct. mda: raw-searchable p50 1.7 s, card p50 8.4 s (max 10.7 s; G1 met), grounded answer 17.9 s; qmd raw 6.8 s (trigger 6.0 s p50, 44.6 s max), answer 16.6 s; grep answer 7.4 s; graphify answer 37.3 s including its update flow (28.4 s, $0.80 for twenty), graph tool unused. Two lessons: an activation probe or an endpoint question must not name the page (the agents read the file instead of using their tool); an aborted attempt must be purged from every cache before the counted run (three cards came back from the store in under 2 s and were re-measured).
+
+Follow-ups from the 2026-09-27 publication check (`docs/reviews/codex/2026-09-27-t4-page.md`): `t4.sh purge` must copy superseded rows and traces aside before deleting them; the plan's "blake3" wording for the edit order is SHA-256 in the harness (documented on the page); the renderer's quantile is the nearest-rank index, stated on the page.
