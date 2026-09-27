@@ -13,14 +13,14 @@
 #              --raw`; qmd: `qmd search`, after its trigger); n/a for graphify and grep
 #   card     — mda only: the store's summaries row for the edited section's new hash is `summarized`
 #   answer   — a headless `claude -p` with the arm's launch configuration (lib.sh arm_launch on the
-#              copy) answers "what does the T4 note in <page> › <heading> say?" with the token and
-#              cites the page (T2's citation rule); every arm; for qmd and graphify the trigger runs
-#              first and its duration is part of the endpoint
+#              copy) is asked to find the note carrying the token (the page is not named) and quote
+#              it; success = the token in the answer and the page cited (T2's citation rule); every
+#              arm; for qmd and graphify the trigger runs first and its duration is part of the endpoint
 #
 # Usage:
 #   scripts/eval/t4.sh setup                 # copies, qmd index, graphify copy, the mda daemon, the edit plan (edits.jsonl) — before the freeze
 #   scripts/eval/t4.sh status                # daemon, indexes, rows present
-#   scripts/eval/t4.sh preflight             # freeze check, env, daemon healthy, token uniqueness, three answer probes per arm on edits 1–3 (no edit applied)
+#   scripts/eval/t4.sh preflight             # freeze check, env, daemon healthy, token uniqueness, three activation probes per arm (probe.sh on the T2 sample's first questions, on the copies)
 #   scripts/eval/t4.sh run [from] [to]       # edits from..to (default 1..20), every arm in turn; resumable (a present row is never redone)
 #   scripts/eval/t4.sh table                 # the page table from the rows
 #   scripts/eval/t4.sh teardown              # stop the daemon (copies are kept)
@@ -111,19 +111,19 @@ PY
     n_tok=0; while IFS= read -r r; do t="$(jq -r .token <<<"$r")"; for a in $ARMS; do d="$(copy_of $a)"; [ "$a" = graphify ] && d="$T4/graphify/src"; if grep -rq --include='*.md' --include='*.mdx' -e "$t" "$d"; then n_tok=$((n_tok + 1)); fi; done; done < "$T4/edits.jsonl"
     if [ "$n_tok" = 0 ]; then rec tokens ok "no edit token present in any copy yet ($(grep -c . "$T4/edits.jsonl") edits planned)"; else rec tokens FAIL "$n_tok token occurrences already present: the copies are not clean"; fi
     [ "$(sha256 "$T4/edits.jsonl")" = "$(sha256 "$RES/edits.jsonl")" ] && rec plan ok "edits.jsonl matches the committed plan" || rec plan FAIL "edits.jsonl differs from the committed plan"
-    # answer probes: three sessions per arm on the first three edits' pages (no edit applied): the arm's tool must be used
-    mkdir -p "$RESULTS/preflight/T4-$PROJECT/probes"
+    # activation probes (rule 0.5): the first three questions of the T2 sample through probe.sh,
+    # each arm on its copy (a probe question that names the page would be answered by reading
+    # the file and prove nothing about the arm's tool: seen on 2026-09-27)
+    mkdir -p "$RESULTS/preflight/T4-$PROJECT/probes"; : > "$RESULTS/preflight/T4-$PROJECT/probes/summary.jsonl"
     for a in $ARMS; do
       n_ok=0
-      for e in 1 2 3; do
-        page="$(jq -r --argjson e "$e" 'select(.edit == $e) | .page' "$T4/edits.jsonl")"; heading="$(jq -r --argjson e "$e" 'select(.edit == $e) | .heading_path | fromjson | join(" › ")' "$T4/edits.jsonl" 2>/dev/null || jq -r --argjson e "$e" 'select(.edit == $e) | .heading_path' "$T4/edits.jsonl")"
-        launch_env "$a"; arm_launch "$(arm_name "$a")" "$PROJECT" "$MODEL"; clear_env
-        trace="$RESULTS/preflight/T4-$PROJECT/probes/$a-$e.jsonl"; rc=0
-        (cd "$ARM_CORPUS" && claude --print --no-session-persistence --model "$MODEL" --max-turns 12 --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config --setting-sources "$ARM_SETTING_SOURCES" "${ARM_ARGS[@]}" -- "Answer from the documents in the current directory. In $page, section '$heading': summarise the section in two lines and cite the file." </dev/null > "$trace" 2>"$trace.err") || rc=$?
-        [ -s "$trace.err" ] || rm -f "$trace.err"; [ "${#ARM_TMP[@]}" = 0 ] || rm -f "${ARM_TMP[@]}"
-        if jq -s --arg w "$ARM_WANT" '(map(select(.type == "assistant")) | map(.message.content[]? | select(.type == "tool_use") | .name) | map(select(test($w))) | length) > 0' "$trace" | grep -q true; then n_ok=$((n_ok + 1)); fi
+      for qid in $(head -3 "$RESULTS/T2/$PROJECT/questions.jsonl" | jq -r .id); do
+        launch_env "$a"; rc=0
+        line="$("$REPO/scripts/eval/probe.sh" "$(arm_name "$a")" "$PROJECT" "$qid" "$RESULTS/preflight/T4-$PROJECT/probes/$a-${qid//[^A-Za-z0-9_.-]/_}.jsonl" "$MODEL" 2>>"$T4/probes.err")" || rc=$?
+        clear_env; [ -z "$line" ] || echo "$line" >> "$RESULTS/preflight/T4-$PROJECT/probes/summary.jsonl"
+        [ "$rc" = 0 ] && n_ok=$((n_ok + 1))
       done
-      if [ "$n_ok" = 3 ]; then rec "probes-$a" ok "3 of 3 sessions used the arm's tool"; else rec "probes-$a" FAIL "$n_ok of 3 sessions used the arm's tool"; fi
+      if [ "$n_ok" = 3 ]; then rec "probes-$a" ok "3 of 3 probes made a successful call of the arm's tool (on its copy)"; else rec "probes-$a" FAIL "$n_ok of 3 probes activated (see $T4/probes.err)"; fi
     done
     jq -n --arg at "$(date -u +%FT%TZ)" --argjson checks "$checks" --argjson failed "$failed" '{table: "T4", project: "prisma", run_at: $at, status: "completed", passed: ($failed == 0), checks: $checks}' > "$report"
     echo "report: ${report#"$REPO"/} · passed=$([ "$failed" = 0 ] && echo true || echo false)"; [ "$failed" = 0 ] ;;
@@ -147,7 +147,6 @@ PY
     for ((e = from; e <= to; e++)); do
       r="$(jq -c --argjson e "$e" 'select(.edit == $e)' "$T4/edits.jsonl")"; [ -n "$r" ] || die "no edit $e in the plan"
       page="$(jq -r .page <<<"$r")"; line_end="$(jq -r .line_end <<<"$r")"; note="$(jq -r .note <<<"$r")"; tok="$(jq -r .token <<<"$r")"
-      heading="$(jq -r '.heading_path | fromjson | join(" › ")' <<<"$r" 2>/dev/null || jq -r .heading_path <<<"$r")"
       for a in $ARMS; do
         row="$T4/rows/$e-$a.json"; [ ! -f "$row" ] || { echo "edit $e $a: present"; continue; }
         copy="$(copy_of $a)"; [ "$a" = graphify ] && copy="$T4/graphify/src"
@@ -189,7 +188,7 @@ PY
         # answer endpoint: one headless session with the arm's configuration on the copy
         launch_env "$a"; arm_launch "$(arm_name "$a")" "$PROJECT" "$MODEL"; clear_env
         trace="$T4/traces/$e-$a-answer.jsonl"; rc=0; t0="$(now_ms)"
-        (cd "$ARM_CORPUS" && claude --print --no-session-persistence --model "$MODEL" --max-turns 12 --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config --setting-sources "$ARM_SETTING_SOURCES" "${ARM_ARGS[@]}" -- "Answer from the documents in the current directory. In $page, section '$heading', there is a line starting with 'T4 note'. Quote that line exactly and cite the file." </dev/null > "$trace" 2>"$trace.err") || rc=$?
+        (cd "$ARM_CORPUS" && claude --print --no-session-persistence --model "$MODEL" --max-turns 12 --output-format stream-json --verbose --permission-mode dontAsk --strict-mcp-config --setting-sources "$ARM_SETTING_SOURCES" "${ARM_ARGS[@]}" -- "Answer from the documents in the current directory. A one-line note starting with 'T4 note' and containing the token $tok was added to one page of these docs today. Find it, quote that line exactly, and cite the file." </dev/null > "$trace" 2>"$trace.err") || rc=$?
         [ -s "$trace.err" ] || rm -f "$trace.err"; [ "${#ARM_TMP[@]}" = 0 ] || rm -f "${ARM_TMP[@]}"
         ans="$(jq -s -r '(map(select(.type == "result")) | last | .result) // ""' "$trace")"
         ans_ms=$(( $(now_ms) - t_save )); ok=false; grep -qF -e "$tok" <<<"$ans" && cites_page "$ans" "$page" && ok=true
