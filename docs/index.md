@@ -6,6 +6,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 |---|---|---|
 | 2026-09-27 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-09-27 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-09-27 | [plans/2026-09-m8-t5-replay.md](plans/2026-09-m8-t5-replay.md) | Milestone M8 of the execution plan (`2026-09-benchmark-execution.md` §4 T5, §5 M8): axis D, the… |
 | 2026-09-27 | [plans/2026-09-m7-t4-harness.md](plans/2026-09-m7-t4-harness.md) | Milestone M7 of the execution plan (`2026-09-benchmark-execution.md` §4 T4, §5 M7): axis C on P… |
 | 2026-09-27 | [plans/2026-09-benchmark-execution.md](plans/2026-09-benchmark-execution.md) | Status: **draft v1 for Codex pre-mortem** · 2026-09-23 · companion to `2026-09-benchmarks.md` v… |
 | 2026-09-25 | [plans/2026-09-m5-t2-harness.md](plans/2026-09-m5-t2-harness.md) | Milestone M5 of the execution plan (`2026-09-benchmark-execution.md` §5), protocol §2.4–2.7, … |
