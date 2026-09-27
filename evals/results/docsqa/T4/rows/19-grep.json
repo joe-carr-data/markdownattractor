@@ -1,0 +1,20 @@
+{
+  "edit": 19,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+  "token": "t4-19-00b75c7c",
+  "t_save_ms": 1790504160067,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 7066,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0101908,
+    "text": "Found it in `apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx:731`:\n\n> T4 note (2026-09-27): t4-19-00b75c7c.",
+    "timed_out": false
+  }
+}

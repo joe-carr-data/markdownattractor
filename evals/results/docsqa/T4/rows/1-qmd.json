@@ -1,0 +1,28 @@
+{
+  "edit": 1,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/guides/upgrade-prisma-orm/v1.mdx",
+  "token": "t4-1-0007bc56",
+  "t_save_ms": 1790502442379,
+  "trigger": {
+    "ms": 1224,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 1992,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 18680,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 4,
+    "cost_usd": 0.030962999999999997,
+    "text": "Found it:\n\n> `T4 note (2026-09-27): t4-1-0007bc56.`\n\n**File:** `t4-qmd/apps/docs/content/docs/guides/upgrade-prisma-orm/v1.mdx`, line 359",
+    "timed_out": false
+  }
+}

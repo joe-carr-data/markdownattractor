@@ -1,0 +1,28 @@
+{
+  "edit": 7,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/more/releases.mdx",
+  "token": "t4-7-0063e30b",
+  "t_save_ms": 1790502966401,
+  "trigger": {
+    "ms": 4645,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 5303,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 15924,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0158388,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-7-0063e30b.`\n**File:** `apps/docs/content/docs/orm/v6/more/releases.mdx:47`",
+    "timed_out": false
+  }
+}

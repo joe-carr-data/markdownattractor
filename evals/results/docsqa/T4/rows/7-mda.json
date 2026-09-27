@@ -1,0 +1,27 @@
+{
+  "edit": 7,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v6/more/releases.mdx",
+  "token": "t4-7-0063e30b",
+  "t_save_ms": 1790502947242,
+  "trigger": null,
+  "raw": {
+    "ms": 1663,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 7942,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 18688,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.018513,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-7-0063e30b.\n\n**File:** `apps/docs/content/docs/orm/v6/more/releases.mdx`",
+    "timed_out": false
+  }
+}

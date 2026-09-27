@@ -1,0 +1,24 @@
+{
+  "edit": 2,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+  "token": "t4-2-001a8411",
+  "t_save_ms": 1790502531677,
+  "trigger": {
+    "ms": 13746,
+    "exit_code": 0,
+    "cost_usd": 0.012905600000000001
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 21364,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0139718,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-2-001a8411.\n\nCited in `apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx:315`.",
+    "timed_out": false
+  }
+}

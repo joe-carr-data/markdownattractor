@@ -1,0 +1,27 @@
+{
+  "edit": 11,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+  "token": "t4-11-0084edef",
+  "t_save_ms": 1790503383324,
+  "trigger": null,
+  "raw": {
+    "ms": 1665,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8423,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 15959,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0181576,
+    "text": "Found it in `apps/docs/content/docs/orm/reference/orm-client.mdx`:\n\n> T4 note (2026-09-27): t4-11-0084edef.",
+    "timed_out": false
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "edit": 15,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/orm/reference/error-reference.mdx",
+  "token": "t4-15-00a814b9",
+  "t_save_ms": 1790503779256,
+  "trigger": {
+    "ms": 25409,
+    "exit_code": 0,
+    "cost_usd": 0.030818300000000003
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 32924,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.014194,
+    "text": "Found it directly via the token search.\n\nT4 note: `T4 note (2026-09-27): t4-15-00a814b9.`\n\nCited in `apps/docs/content/docs/orm/reference/error-reference.mdx:652`.",
+    "timed_out": false
+  }
+}

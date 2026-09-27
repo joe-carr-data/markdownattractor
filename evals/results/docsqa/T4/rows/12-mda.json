@@ -1,0 +1,27 @@
+{
+  "edit": 12,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx",
+  "token": "t4-12-0085c51c",
+  "t_save_ms": 1790503476950,
+  "trigger": null,
+  "raw": {
+    "ms": 1669,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 9322,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 17157,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0221008,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-12-0085c51c.`\n\n**File:** `apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx` (end of the \"Building raw queries elsewhere or in stages\" section)",
+    "timed_out": false
+  }
+}

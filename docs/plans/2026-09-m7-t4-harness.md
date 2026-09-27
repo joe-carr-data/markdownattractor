@@ -12,17 +12,21 @@ Milestone M7 of the execution plan (`2026-09-benchmark-execution.md` §4 T4, §5
 
 ## Tasks
 
-- [ ] **H1** `scripts/eval/t4.sh setup`: the copies (mda: files + `.markdownattractor/` store; qmd: files + `qmd --index t4-qmd collection add`, `update`, `embed`; graphify: the haiku build's copy), the daemon started on mda's copy (`mda start --root`, backend `claude-cli`, Haiku), the seeded edit plan (`t4/edits.jsonl`: edit, page, heading, section hash before, token) written before any edit.
-- [ ] **H2** `t4.sh run [edit-range]`: per edit, for every arm in turn: apply the edit to the arm's copy at a recorded wall-clock instant, fire the update trigger where the arm has one, poll the endpoints (1 s) to 300 s, write one row per (edit, arm, endpoint) with `t_save`, `t_ready`, latency, timed-out, and the poll count; resumable (a present row is never redone); the mda daemon's own events (`mda watch`) archived per edit.
-- [ ] **H3** `t4.sh table`: per arm and endpoint p50 / p90 / max, timeouts, the update trigger's own duration (qmd, graphify) and mda's raw-search latency; the G1 line (mda p50 save → card vs 15 s).
-- [ ] **H4** freeze: `freeze.sh --protocol final --table T4` (copies' provenance: the pinned commit, the store hash, the qmd index fingerprint, the graph hash; the edit plan's hash; the daemon's config; the harness hash; the models); preflight = the T2-style checks plus three activation probes for the answer endpoint per arm on the first three edits.
-- [ ] **H5** the deferred T3 renderer fixes in `t3.sh` (MiB; "reconstruction: attach + embed + score"), the T3 page regenerated, its hash in runbook §7.3 updated.
-- [ ] **D1** run: twenty edits, all arms; publish the table and its runbook §7.4 with hashes.
-- [ ] **Docs**: page section, runbook §7.4, STATUS, CHANGELOG, handoff, this plan ticked.
+- [x] **H1** `scripts/eval/t4.sh setup`: the copies (mda: files + `.markdownattractor/` store; qmd: files + `qmd --index t4-qmd collection add`, `update`, `embed`; graphify: the haiku build's copy), the daemon started on mda's copy (`mda start --root`, backend `claude-cli`, Haiku), the seeded edit plan (`t4/edits.jsonl`: edit, page, heading, section hash before, token) written before any edit.
+- [x] **H2** `t4.sh run [edit-range]`: per edit, for every arm in turn: apply the edit to the arm's copy at a recorded wall-clock instant, fire the update trigger where the arm has one, poll the endpoints (1 s) to 300 s, write one row per (edit, arm, endpoint) with `t_save`, `t_ready`, latency, timed-out, and the poll count; resumable (a present row is never redone); the mda daemon's own events (`mda watch`) archived per edit.
+- [x] **H3** `t4.sh table`: per arm and endpoint p50 / p90 / max, timeouts, the update trigger's own duration (qmd, graphify) and mda's raw-search latency; the G1 line (mda p50 save → card vs 15 s).
+- [x] **H4** freeze: `freeze.sh --protocol final --table T4` (copies' provenance: the pinned commit, the store hash, the qmd index fingerprint, the graph hash; the edit plan's hash; the daemon's config; the harness hash; the models); preflight = the T2-style checks plus three activation probes for the answer endpoint per arm on the first three edits.
+- [x] **H5** the deferred T3 renderer fixes in `t3.sh` (MiB; "reconstruction: attach + embed + score"), the T3 page regenerated, its hash in runbook §7.3 updated.
+- [x] **D1** run: twenty edits, all arms; publish the table and its runbook §7.4 with hashes.
+- [x] **Docs**: page section, runbook §7.4, STATUS, CHANGELOG, handoff, this plan ticked.
 
 ## Exit criteria
 
-- [ ] Twenty edits × every arm × every applicable endpoint has a row (a timeout is a row).
-- [ ] mda's p50 save → card is published against G1 (< 15 s) whichever way it falls.
-- [ ] The T4 freeze precedes the rows in git; the table regenerates from the archived rows; the pinned checkouts and the T1/T2 artifacts are unchanged (hashes checked).
-- [ ] Runbook §7.4 reproduces the setup and the run on a fresh machine.
+- [x] Twenty edits × every arm × every applicable endpoint has a row (a timeout is a row).
+- [x] mda's p50 save → card is published against G1 (< 15 s) whichever way it falls.
+- [x] The T4 freeze precedes the rows in git; the table regenerates from the archived rows; the pinned checkouts and the T1/T2 artifacts are unchanged (hashes checked).
+- [x] Runbook §7.4 reproduces the setup and the run on a fresh machine.
+
+## Outcome (2026-09-27)
+
+80 rows, no timeouts, every answer correct. mda: raw-searchable p50 1.7 s, card p50 8.4 s (max 10.7 s; G1 met), grounded answer 17.9 s; qmd raw 6.8 s (trigger 6.0 s p50, 44.6 s max), answer 16.6 s; grep answer 7.4 s; graphify answer 37.3 s including its update flow (28.4 s, $0.80 for twenty), graph tool unused. Two lessons: an activation probe or an endpoint question must not name the page (the agents read the file instead of using their tool); an aborted attempt must be purged from every cache before the counted run (three cards came back from the store in under 2 s and were re-measured).

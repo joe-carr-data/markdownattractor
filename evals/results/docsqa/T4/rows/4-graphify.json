@@ -1,0 +1,24 @@
+{
+  "edit": 4,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx",
+  "token": "t4-4-002c606f",
+  "t_save_ms": 1790502668134,
+  "trigger": {
+    "ms": 83434,
+    "exit_code": 0,
+    "cost_usd": 0.1406344
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 93363,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0145976,
+    "text": "Found it.\n\n**T4 note (2026-09-27): t4-4-002c606f.**\n\nCited in: `apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx:79`",
+    "timed_out": false
+  }
+}

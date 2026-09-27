@@ -1,0 +1,28 @@
+{
+  "edit": 19,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+  "token": "t4-19-00b75c7c",
+  "t_save_ms": 1790504102192,
+  "trigger": {
+    "ms": 15399,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 16079,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 23650,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.015996999999999997,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-19-00b75c7c.`\n\n**File:** `apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx:731`",
+    "timed_out": false
+  }
+}

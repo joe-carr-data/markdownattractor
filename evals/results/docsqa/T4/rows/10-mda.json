@@ -1,0 +1,27 @@
+{
+  "edit": 10,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v6/more/troubleshooting/check-constraints.mdx",
+  "token": "t4-10-007cb3c7",
+  "t_save_ms": 1790503304746,
+  "trigger": null,
+  "raw": {
+    "ms": 2289,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 9010,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 18928,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0184254,
+    "text": "**Line found:**\n> T4 note (2026-09-27): t4-10-007cb3c7.\n\n**File:** `apps/docs/content/docs/orm/v6/more/troubleshooting/check-constraints.mdx` (under \"Adding check constraints to existing tables\")",
+    "timed_out": false
+  }
+}

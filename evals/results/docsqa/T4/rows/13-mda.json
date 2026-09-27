@@ -1,0 +1,27 @@
+{
+  "edit": 13,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/cli/skills.mdx",
+  "token": "t4-13-00929665",
+  "t_save_ms": 1790503557193,
+  "trigger": null,
+  "raw": {
+    "ms": 1684,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8050,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 18730,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.01827,
+    "text": "Found it in `apps/docs/content/docs/cli/skills.mdx`:\n\n> T4 note (2026-09-27): t4-13-00929665.",
+    "timed_out": false
+  }
+}

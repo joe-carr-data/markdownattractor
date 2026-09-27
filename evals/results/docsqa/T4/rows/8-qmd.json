@@ -1,0 +1,28 @@
+{
+  "edit": 8,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/guides/upgrade-prisma-orm/postgresql.mdx",
+  "token": "t4-8-0063f7a8",
+  "t_save_ms": 1790503047734,
+  "trigger": {
+    "ms": 6242,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 6946,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 15970,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0160152,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-8-0063f7a8.`\n\n**File:** `apps/docs/content/docs/guides/upgrade-prisma-orm/postgresql.mdx:421`",
+    "timed_out": false
+  }
+}

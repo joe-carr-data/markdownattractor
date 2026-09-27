@@ -4,8 +4,9 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 
 | Date | Doc | What it is |
 |---|---|---|
-| 2026-09-26 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
+| 2026-09-27 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-09-26 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-09-27 | [plans/2026-09-m7-t4-harness.md](plans/2026-09-m7-t4-harness.md) | Milestone M7 of the execution plan (`2026-09-benchmark-execution.md` §4 T4, §5 M7): axis C on P… |
 | 2026-09-26 | [plans/2026-09-benchmark-execution.md](plans/2026-09-benchmark-execution.md) | Status: **draft v1 for Codex pre-mortem** · 2026-09-23 · companion to `2026-09-benchmarks.md` v… |
 | 2026-09-25 | [plans/2026-09-m5-t2-harness.md](plans/2026-09-m5-t2-harness.md) | Milestone M5 of the execution plan (`2026-09-benchmark-execution.md` §5), protocol §2.4–2.7, … |
 | 2026-09-22 | [plans/2026-09-phase4-launch.md](plans/2026-09-phase4-launch.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 4, §9 distribution, §9.5 first … |
@@ -50,7 +51,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-23 | [handoffs/2026-09-23-session4-final-handoff.md](handoffs/2026-09-23-session4-final-handoff.md) | Written by Claude (Fable 5.1) at the end of the fourth build session, for the next session after … |
 | 2026-09-22 | [handoffs/2026-09-22-session4-handoff.md](handoffs/2026-09-22-session4-handoff.md) | Written by Claude (Fable 5.1) at the end of the fourth build session, for the next session after … |
 | 2026-09-22 | [handoffs/2026-09-22-session3-final-handoff.md](handoffs/2026-09-22-session3-final-handoff.md) | Written by Claude (Fable 5.1) at the end of the third build session, for the next session after c… |
-| 2026-09-26 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
+| 2026-09-27 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 | 2026-09-22 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |

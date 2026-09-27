@@ -1,0 +1,20 @@
+{
+  "edit": 14,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/ai/tools/skills.mdx",
+  "token": "t4-14-00a5579d",
+  "t_save_ms": 1790503730327,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 5647,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0100906,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-14-00a5579d.\n\n**File:** `apps/docs/content/docs/ai/tools/skills.mdx:52`",
+    "timed_out": false
+  }
+}

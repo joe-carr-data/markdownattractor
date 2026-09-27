@@ -1,0 +1,20 @@
+{
+  "edit": 10,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v6/more/troubleshooting/check-constraints.mdx",
+  "token": "t4-10-007cb3c7",
+  "t_save_ms": 1790503376299,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 6534,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.010325,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-10-007cb3c7.\n\n**File:** `apps/docs/content/docs/orm/v6/more/troubleshooting/check-constraints.mdx` (line 74)",
+    "timed_out": false
+  }
+}

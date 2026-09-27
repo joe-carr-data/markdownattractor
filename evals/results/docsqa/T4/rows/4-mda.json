@@ -1,0 +1,27 @@
+{
+  "edit": 4,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx",
+  "token": "t4-4-002c606f",
+  "t_save_ms": 1790502633603,
+  "trigger": null,
+  "raw": {
+    "ms": 1719,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 9145,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 17377,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0193084,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-4-002c606f.`\n\n**File:** `apps/docs/content/docs/orm/v7/prisma-client/queries/relation-queries.mdx` (under \"When to use which load strategy?\")",
+    "timed_out": false
+  }
+}

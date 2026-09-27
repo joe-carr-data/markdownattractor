@@ -1,0 +1,24 @@
+{
+  "edit": 19,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+  "token": "t4-19-00b75c7c",
+  "t_save_ms": 1790504126333,
+  "trigger": {
+    "ms": 25362,
+    "exit_code": 0,
+    "cost_usd": 0.030701100000000002
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 33190,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.014306000000000001,
+    "text": "Found it.\n\nT4 note (2026-09-27): t4-19-00b75c7c.\n\nCited from `apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx:731`.",
+    "timed_out": false
+  }
+}

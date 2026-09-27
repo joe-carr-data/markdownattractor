@@ -1,0 +1,20 @@
+{
+  "edit": 2,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+  "token": "t4-2-001a8411",
+  "t_save_ms": 1790502553505,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 8421,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0102926,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-2-001a8411.`\n\n**File:** `apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx` (line 315)",
+    "timed_out": false
+  }
+}

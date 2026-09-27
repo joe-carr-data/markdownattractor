@@ -1,0 +1,27 @@
+{
+  "edit": 9,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/local-development/app-development.mdx",
+  "token": "t4-9-00734d06",
+  "t_save_ms": 1790503099823,
+  "trigger": null,
+  "raw": {
+    "ms": 1889,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8329,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 22813,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0183858,
+    "text": "Found it in `apps/docs/content/docs/local-development/app-development.mdx`:\n\n> T4 note (2026-09-27): t4-9-00734d06.",
+    "timed_out": false
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "edit": 14,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/ai/tools/skills.mdx",
+  "token": "t4-14-00a5579d",
+  "t_save_ms": 1790503700328,
+  "trigger": {
+    "ms": 21614,
+    "exit_code": 0,
+    "cost_usd": 0.0245088
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 29570,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.013681800000000001,
+    "text": "Found it:\n\n> T4 note (2026-09-27): t4-14-00a5579d.\n\n**File:** `apps/docs/content/docs/ai/tools/skills.mdx:52`",
+    "timed_out": false
+  }
+}

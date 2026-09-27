@@ -1,0 +1,27 @@
+{
+  "edit": 19,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx",
+  "token": "t4-19-00b75c7c",
+  "t_save_ms": 1790504082623,
+  "trigger": null,
+  "raw": {
+    "ms": 1878,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8437,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 19039,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 4,
+    "cost_usd": 0.023979,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-19-00b75c7c.\n\n**File:** `apps/docs/content/docs/orm/v6/reference/prisma-schema-reference.mdx` (line 731, under \"model field scalar types > Float > PostgreSQL\")",
+    "timed_out": false
+  }
+}

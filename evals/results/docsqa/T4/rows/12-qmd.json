@@ -1,0 +1,28 @@
+{
+  "edit": 12,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx",
+  "token": "t4-12-0085c51c",
+  "t_save_ms": 1790503494635,
+  "trigger": {
+    "ms": 7866,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 8691,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 20616,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0168328,
+    "text": "Found it. The line is:\n\n> T4 note (2026-09-27): t4-12-0085c51c.\n\nCited in `t4-qmd/apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx`, line 681.",
+    "timed_out": false
+  }
+}

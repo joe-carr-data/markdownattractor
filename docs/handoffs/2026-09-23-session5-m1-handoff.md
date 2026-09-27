@@ -116,6 +116,13 @@ Branch `feat/bench-m2` (worktree `~/mda-worktrees/m2`, rebased on `main` = merge
 - **Result**: quality at parity (mda within 0.1 of grep everywhere; vs qmd +0.20 Tailwind, −0.14 Supabase, −0.52 Prisma, −0.08 GitHub; all intervals include 0); gate (c) fails everywhere → no savings claim; mda cheapest run on every project; mda fewest source tokens on 3 of 4 projects (grep 5% fewer on Tailwind). Panel: Astra 2–3 points below Sonnet/Fable, trigger on 18–28 of 30 — a calibration finding for any reuse. Cards: 0.4–3.8% unsupported, agreement ≥ 0.987. T3: `t3.sh table`; mda $4.29–4.66 per 1K sections; graphify Sonnet did not complete on the two large corpora ($73.54 and $82.77 spent).
 - **Archived** under `evals/results/docsqa/T2/<project>/` (answers replaced by sha256; grades regenerate the analysis byte for byte), `T3/sizes.json`; run directories stay under `~/.cache/markdownattractor/bench/t2/`.
 
+## 5h. M7 — T4 published (branch `feat/bench-m7`, 2026-09-27)
+
+- **Harness** `scripts/eval/t4.sh` (setup / preflight / run / table / purge / teardown), `arm_launch` overrides (`ARM_CORPUS_OVERRIDE`, `ARM_QMD_INDEX`, `ARM_GRAPHIFY_DIR`), the T4 freeze block with the mutable hashes under Runtime. Copies under `~/.cache/markdownattractor/bench/t4/<arm>/src` (kept; the daemon is stopped); qmd index `t4-qmd`; traces under `t4/traces/`.
+- **Result**: mda raw 1.7 s / card 8.4 s (G1 met) / answer 17.9 s; qmd raw 6.8 s / answer 16.6 s; grep answer 7.4 s; graphify answer 37.3 s incl. update 28.4 s. 80 rows committed (`T4/rows/`), no timeouts.
+- **Two mistakes fixed in flight and disclosed**: (1) the first probe/answer questions named the page → agents read the file (qmd 0/3 probes); aborted after two edits, reverted, freeze re-written; (2) the aborted attempt's summaries stayed in the store → edits 1–3 got cached cards (< 2 s); `purge` deletes summary + vectors and reverts the note; re-measured. The freeze was re-written a third time after the run to move the store/index/graph hashes to Runtime (a resumed `run` must be able to check it). Aha entries for both.
+- **Deferred T3 fixes done**: `t3.sh` MiB + "reconstruction (attach + embed + score)"; new rendered hash in runbook §7.3.
+
 ## 6. Next steps, in order
 
 1. If the preflight reports are not all committed and green: read `~/.cache/markdownattractor/bench/preflight/development/<project>/<ts>/` and the log at the session scratchpad (`preflight-all.log`), fix, re-freeze (`scripts/eval/freeze.sh --protocol development --note …`, commit, `--check`), rerun. Then commit `evals/results/docsqa/preflight/`, open the PR, merge on eleven green jobs, `git checkout main && git pull`.

@@ -1,0 +1,27 @@
+{
+  "edit": 18,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-mongoose.mdx",
+  "token": "t4-18-00b3018b",
+  "t_save_ms": 1790503994533,
+  "trigger": null,
+  "raw": {
+    "ms": 1612,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8047,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 18269,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0189618,
+    "text": "Found it in `apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-mongoose.mdx`:\n\n> T4 note (2026-09-27): t4-18-00b3018b.",
+    "timed_out": false
+  }
+}

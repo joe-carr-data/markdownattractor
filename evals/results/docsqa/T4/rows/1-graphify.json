@@ -1,0 +1,24 @@
+{
+  "edit": 1,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/guides/upgrade-prisma-orm/v1.mdx",
+  "token": "t4-1-0007bc56",
+  "t_save_ms": 1790502461625,
+  "trigger": {
+    "ms": 15158,
+    "exit_code": 0,
+    "cost_usd": 0.015248600000000001
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 23627,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.01397,
+    "text": "Found it directly with a targeted grep (the token is a literal unique string, so a graph query wouldn't add value here).\n\n**T4 note (2026-09-27): t4-1-0007bc56.**\n\nCited from: `apps/docs/content/docs/guides/upgrade-prisma-orm/v1.mdx:359`",
+    "timed_out": false
+  }
+}

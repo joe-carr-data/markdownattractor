@@ -1,0 +1,27 @@
+{
+  "edit": 15,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/reference/error-reference.mdx",
+  "token": "t4-15-00a814b9",
+  "t_save_ms": 1790503736520,
+  "trigger": null,
+  "raw": {
+    "ms": 1707,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8113,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 17828,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0190912,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-15-00a814b9.\n\nCited from `apps/docs/content/docs/orm/reference/error-reference.mdx`, in the `RUNTIME.DUPLICATE_AGGREGATE_DESCRIPTOR` section.",
+    "timed_out": false
+  }
+}

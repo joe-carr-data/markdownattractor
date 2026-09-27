@@ -1,0 +1,24 @@
+{
+  "edit": 8,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/guides/upgrade-prisma-orm/postgresql.mdx",
+  "token": "t4-8-0063f7a8",
+  "t_save_ms": 1790503064222,
+  "trigger": {
+    "ms": 19984,
+    "exit_code": 0,
+    "cost_usd": 0.0190021
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 27338,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0142082,
+    "text": "Found it directly with a targeted search for the exact token.\n\n**T4 note (2026-09-27): t4-8-0063f7a8.**\n\nCited from: `apps/docs/content/docs/guides/upgrade-prisma-orm/postgresql.mdx:421`",
+    "timed_out": false
+  }
+}

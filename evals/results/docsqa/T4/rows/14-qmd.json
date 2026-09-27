@@ -1,0 +1,28 @@
+{
+  "edit": 14,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/ai/tools/skills.mdx",
+  "token": "t4-14-00a5579d",
+  "t_save_ms": 1790503687261,
+  "trigger": {
+    "ms": 4666,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 5309,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 12586,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0156548,
+    "text": "Found it in `apps/docs/content/docs/ai/tools/skills.mdx:52`:\n\n> T4 note (2026-09-27): t4-14-00a5579d.",
+    "timed_out": false
+  }
+}

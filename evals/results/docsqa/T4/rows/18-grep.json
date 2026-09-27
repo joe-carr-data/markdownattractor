@@ -1,0 +1,20 @@
+{
+  "edit": 18,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-mongoose.mdx",
+  "token": "t4-18-00b3018b",
+  "t_save_ms": 1790504074586,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 7434,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.010270600000000001,
+    "text": "Found it in `apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-mongoose.mdx:81`:\n\n> T4 note (2026-09-27): t4-18-00b3018b.",
+    "timed_out": false
+  }
+}

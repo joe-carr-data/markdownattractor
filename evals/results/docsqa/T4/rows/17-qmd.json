@@ -1,0 +1,28 @@
+{
+  "edit": 17,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/more/ai-tools/tabnine.mdx",
+  "token": "t4-17-00aed19e",
+  "t_save_ms": 1790503912495,
+  "trigger": {
+    "ms": 5330,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 6002,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 27614,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 4,
+    "cost_usd": 0.0307884,
+    "text": "Found it:\n\n**Line:** `T4 note (2026-09-27): t4-17-00aed19e.`\n\n**File:** `t4-qmd/apps/docs/content/docs/orm/v6/more/ai-tools/tabnine.mdx` (line 300)",
+    "timed_out": false
+  }
+}

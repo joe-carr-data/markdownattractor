@@ -1,0 +1,20 @@
+{
+  "edit": 5,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v6/prisma-client/client-extensions/result.mdx",
+  "token": "t4-5-003b29bc",
+  "t_save_ms": 1790502852729,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 7700,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0102726,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-5-003b29bc.\n\n**File:** `apps/docs/content/docs/orm/v6/prisma-client/client-extensions/result.mdx:173`",
+    "timed_out": false
+  }
+}

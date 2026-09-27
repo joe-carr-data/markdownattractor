@@ -1,0 +1,24 @@
+{
+  "edit": 16,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx",
+  "token": "t4-16-00aeb860",
+  "t_save_ms": 1790503852424,
+  "trigger": {
+    "ms": 20178,
+    "exit_code": 0,
+    "cost_usd": 0.0230575
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 34111,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 3,
+    "cost_usd": 0.028345000000000002,
+    "text": "Found it:\n\n> T4 note (2026-09-27): t4-16-00aeb860.\n\nCited in `apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx:141`.",
+    "timed_out": false
+  }
+}

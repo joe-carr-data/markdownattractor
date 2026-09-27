@@ -458,7 +458,19 @@ scripts/eval/t4.sh table; scripts/eval/t4.sh teardown
 
 **What a row is** (`T4/rows/<edit>-<arm>.json`): the save instant, the update trigger's own duration, exit code and cost (qmd, graphify), the raw-searchable endpoint (ms from the save, timed out, polls), the card endpoint (mda), the answer endpoint (ms from the save, whether the answer quoted the token and cited the page, the arm's tool used, turns, cost, the answer's first 600 characters). The traces of every answer session and update trigger stay under the run directory (`~/.cache/markdownattractor/bench/t4/traces/`).
 
-**Regeneration (exact).** `scripts/eval/t4.sh table` renders the page table from the committed rows. **Independent rerun.** New copies, the same seeded plan (`setup` rebuilds it identically from the frozen store) or a new one: an independent observation, published beside the original.
+**Outcome and chronology.** The preflight passed (freeze, env, daemon, clean copies, plan, 3 of 3 probes per arm); 80 rows, no timeouts; a first attempt with page-naming questions was aborted and reverted before the counted run; the freeze was re-written twice (before the counted run, and after it to move the mutable store/index/graph hashes to Runtime); the mda rows of edits 1–3 were purged and re-measured because the aborted attempt had pre-cached their cards (`t4.sh purge 1 3`, then `T4_ARMS=mda t4.sh run 1 3`). Both are in the freeze note and on the page.
+
+**Expected artifacts and hashes (sha256):**
+
+```
+19d2b398d28c5edce12b0b27990711d1773bf13a02c2aeee3370a95f00baf5a9  evals/results/docsqa/T4/FROZEN.md
+f2b4bdb15c80f500d5287c31ae7dd8ad476d557694755f52261a20c12b7533d1  evals/results/docsqa/T4/edits.jsonl
+dd1256f653071cec4163d99482d23aa352be06c4f7ac4a5cac9f916bc5bd13b6  evals/results/docsqa/preflight/T4-prisma.json
+6d9201d201b7cbc946891b492b20f060afcc155878ce1722ff9d3cfa0bb5cab1  evals/results/docsqa/T4/rows/*.json (concatenated in name order)
+22e8f6f990fb88554a69c426e19e19bcf9aa9cf66f60f45c970d34f9909e85cd  scripts/eval/t4.sh table (the rendered table and caption)
+```
+
+**Regeneration (exact).** `scripts/eval/t4.sh table` renders the page table from the committed rows (`evals/results/docsqa/T4/rows/`); its hash is above. **Independent rerun.** New copies, the same seeded plan (`setup` rebuilds it identically from the frozen store) or a new one: an independent observation, published beside the original.
 
 ## 8. Report
 
