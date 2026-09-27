@@ -12,7 +12,7 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 
 ## Next (in order)
 1. **Before any T2 reuse (owner call or a declared default)**: the panel's Astra rubric needs calibration (1.9–3.3 points below Sonnet on every project); the grounding grader's "cited but unsupported" rate is either the finding or the next rubric refinement — declared before a rerun, never applied to the published table.
-2. **M8** (on "go M8"; the plan document may be drafted before it): T5, the simulated historical replay (`MDA_NOW`, fixed commit ranges, git-computed ground truth, the git baseline as an arm); then M9 (T6, README row, page by axis).
+2. **M8** (on "go M8"; plan drafted: `docs/plans/2026-09-m8-t5-replay.md` — decisions, tasks H1–H5, exit criteria, three items open before the freeze): T5, the simulated historical replay (`MDA_NOW`, fixed commit ranges, git-computed ground truth, the git baseline as an arm); then M9 (T6, README row, page by axis).
 
 ## Blockers / open questions
 - Repo is **public** since 2026-09-22 (history rewritten to scrub workspace ids; old SHAs in docs are stale). Actions budget is $0 by owner choice; public-repo minutes are free. Earlier today GitHub Actions stopped starting jobs: "The job was not started because recent account payments have failed or your spending limit needs to be increased" (Billing & plans → Actions spending limit; the release dry run's macOS/Windows/arm64 minutes are billed at multipliers). PR #10 (`docs/phase4-wrap`: two release-workflow fixes + handoff) has no CI until that is fixed; merge it after a green job list, then re-run the release dry run.
