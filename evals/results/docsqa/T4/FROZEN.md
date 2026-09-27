@@ -1,6 +1,6 @@
 # FROZEN — DocsQA-Repo, protocol: final, table T4
 
-Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T4 final freeze (M7): 20 seeded edits on Prisma, arms mda · qmd · graphify (Haiku-built graph) · grep on working copies of the pinned checkout; endpoints raw-searchable, card (mda), correct grounded answer; Sonnet answers through the owner's login; the mda daemon on its copy with backend claude-cli (Haiku); triggers qmd update && qmd embed and /graphify --update through the login.
+Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** section is compared byte for byte by `scripts/eval/preflight.sh` before any run; the **Runtime** section is recorded for the reader and a difference there is reported, never a failure. Numbers produced under this freeze are labelled *final*. T4 final freeze (M7): 20 seeded edits on Prisma, arms mda · qmd · graphify (Haiku-built graph) · grep on working copies of the pinned checkout; endpoints raw-searchable, card (mda), correct grounded answer (the agent is asked to find the note; the page is not named); Sonnet answers through the owner's login; the mda daemon on its copy with backend claude-cli (Haiku); triggers qmd update && qmd embed and /graphify --update through the login. Re-written at b8fc85d before any counted row: a first attempt (2026-09-27 09:31 UTC, edits 1–2) was stopped because its probe and answer questions named the page; its edits were reverted in every copy, the graphify copy restored from the archived Haiku build, the qmd index re-run; the copies' hashes below are the state before any counted edit.
 
 ## Inputs
 
@@ -19,7 +19,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1
-- source commit: 2ed03cb698c7e23a005508e1377a331688dfafcc (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
+- source commit: b8fc85dbad5fc26c99e85cf3afb68d0c62c6dd73 (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit; the preflight builds with `cargo build --release --locked` and uses the executable Cargo reports, recording its sha256)
 - build profile: release
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files: evals/results/docsqa/model.sha (regular files and the snapshot links the loader opens, each with the sha256 of its content; sha256 of the file 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc)
 - search configuration: the code defaults at the source commit (adapter fetch 30, doubled until ten distinct pages; RRF k 60; cards_fts weights heading 3 / tldr 3 / summary 1 / keywords 1 / questions_answered 2 / entities 1; sections_raw_fts heading 3 / text 1; recency off in the adapter; OR fallback on)
@@ -52,9 +52,9 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 ### Analysis
 - table: T4 · protocol final · axis C, update latency on Prisma (plan §4, docs/plans/2026-09-m7-t4-harness.md): 20 seeded edits (evals/results/docsqa/T4/edits.jsonl sha256 f2b4bdb15c80f500d5287c31ae7dd8ad476d557694755f52261a20c12b7533d1), arms mda · qmd · graphify (the Haiku-built graph, the only completed graphify build on Prisma) · grep, each on its own copy of the pinned checkout; endpoints raw-searchable, card (mda), correct grounded answer; 1 s polling, 300 s timeout
 - mda copy: store sha256 before any edit 3c1e7e070a4866c2e87bb8d3854e8dbcccb924a73065a34ae377410a0456d94b · config.toml sha256 808738cc33c8e91fec330fc497141694d2fb79b5fbb49140200cdc67b5b9155f · daemon defaults (debounce 1 s) · summariser backend claude-cli, model claude-haiku-4-5
-- qmd copy: index t4-qmd fingerprint before any edit 52fc0c0dfa6acd3324b3c4e26444461f90fa23618e80a6220ffdd098a3b023bb · trigger `qmd --index t4-qmd update && qmd --index t4-qmd embed`
+- qmd copy: index t4-qmd fingerprint before any edit 857047f97f1e2847b6bd793bc8fa5b9ae3c6cc4db19464d76e9cf3676b8951c1 · trigger `qmd --index t4-qmd update && qmd --index t4-qmd embed`
 - graphify copy: graph.json sha256 before any edit 7117e221b558ae31b50d0863deaee8abfdbc1617d051622d41d781af4d3a66aa (the graphify-haiku build of Prisma) · trigger `/graphify <copy> --update --no-viz` through the login, Haiku host
-- answering model: requested `sonnet` through the owner's login (resolved ids recorded per row's trace); harness scripts/eval/t4.sh sha256 b3e41239b5feab5734bd0953b32bfdf01183f818440e25eb5c1e2ca0f48f6a06
+- answering model: requested `sonnet` through the owner's login (resolved ids recorded per row's trace); harness scripts/eval/t4.sh sha256 7dffc17c0bef71a608284f42b6cd599197225ddf401a4a298a26268d59175d32
 - regeneration (plan §2.0b): `scripts/eval/t4.sh table` renders the page table from the archived rows (evals/results/docsqa/T4/rows/); a rerun (new copies, new edits) is an independent rerun, published beside the original
 
 ### Arms
@@ -67,7 +67,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ## Runtime
 
-- frozen_at: 2026-09-27T09:28:06Z
+- frozen_at: 2026-09-27T09:36:19Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.283 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
