@@ -1,0 +1,54 @@
+{
+  "table": "T4",
+  "project": "prisma",
+  "run_at": "2026-09-27T09:47:01Z",
+  "status": "completed",
+  "passed": true,
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.283 (Claude Code)"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T4/FROZEN.md (source commit b8fc85dbad5fc26c99e85cf3afb68d0c62c6dd73, HEAD b29ad504984f88a19f4db9e2481a9f60de9dee65)"
+    },
+    {
+      "name": "daemon",
+      "status": "ok",
+      "detail": "running on /Users/jcarr/.cache/markdownattractor/bench/t4/mda/src, nothing pending"
+    },
+    {
+      "name": "tokens",
+      "status": "ok",
+      "detail": "no edit token present in any copy yet (20 edits planned)"
+    },
+    {
+      "name": "plan",
+      "status": "ok",
+      "detail": "edits.jsonl matches the committed plan"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    }
+  ]
+}
