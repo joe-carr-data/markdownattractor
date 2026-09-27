@@ -134,9 +134,9 @@ inputs() {
   elif [ "$protocol" = final ] && [ "$table" = T4 ]; then
     local t4="$RUN/t4"
     echo "- table: T4 · protocol final · axis C, update latency on Prisma (plan §4, docs/plans/2026-09-m7-t4-harness.md): 20 seeded edits (evals/results/docsqa/T4/edits.jsonl sha256 $(sha256 "$RESULTS/T4/edits.jsonl")), arms mda · qmd · graphify (the Haiku-built graph, the only completed graphify build on Prisma) · grep, each on its own copy of the pinned checkout; endpoints raw-searchable, card (mda), correct grounded answer; 1 s polling, 300 s timeout"
-    echo "- mda copy: store sha256 before any edit $(sha256 "$t4/mda/src/.markdownattractor/index.sqlite") · config.toml sha256 $(sha256 "$t4/mda/src/.markdownattractor/config.toml") · daemon defaults (debounce 1 s) · summariser backend claude-cli, model $(grep -E '^summarization_model' "$t4/mda/src/.markdownattractor/config.toml" | cut -d'"' -f2)"
-    echo "- qmd copy: index t4-qmd fingerprint before any edit $(qmd_fingerprint t4-qmd) · trigger \`qmd --index t4-qmd update && qmd --index t4-qmd embed\`"
-    echo "- graphify copy: graph.json sha256 before any edit $(sha256 "$t4/graphify/graph.json") (the graphify-haiku build of Prisma) · trigger \`/graphify <copy> --update --no-viz\` through the login, Haiku host"
+    echo "- mda copy: config.toml sha256 $(sha256 "$t4/mda/src/.markdownattractor/config.toml") · daemon defaults (debounce 1 s) · summariser backend claude-cli, model $(grep -E '^summarization_model' "$t4/mda/src/.markdownattractor/config.toml" | cut -d'"' -f2) (the store's hash is recorded under Runtime: every counted edit changes it)"
+    echo "- qmd copy: trigger \`qmd --index t4-qmd update && qmd --index t4-qmd embed\` (the index fingerprint is recorded under Runtime)"
+    echo "- graphify copy: the graphify-haiku build of Prisma (archived graph sha256 $(gunzip -c "$RESULTS/arms/graphs/graphify-haiku-prisma.graph.json.gz" | shasum -a 256 | cut -c1-64)) · trigger \`/graphify <copy> --update --no-viz\` through the login, Haiku host (the served graph's hash at freeze time is recorded under Runtime)"
     echo "- answering model: requested \`sonnet\` through the owner's login (resolved ids recorded per row's trace); harness scripts/eval/t4.sh sha256 $(sha256 "$REPO/scripts/eval/t4.sh")"
     echo "- regeneration (plan §2.0b): \`scripts/eval/t4.sh table\` renders the page table from the archived rows (evals/results/docsqa/T4/rows/); a rerun (new copies, new edits) is an independent rerun, published beside the original"
   elif [ "$protocol" = final ]; then
@@ -188,6 +188,9 @@ runtime() {
   echo "- frozen_at: $(date -u +%FT%TZ)"
   echo "- hardware: $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m) · $(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1073741824 )) GB · $(sw_vers -productName 2>/dev/null || uname -s) $(sw_vers -productVersion 2>/dev/null || uname -r)"
   echo "- toolchain: $(rustc --version 2>/dev/null || echo 'rustc n/a')"
+  if [ "${table:-}" = T4 ]; then
+    echo "- T4 state at freeze time (mutable during the run, so recorded here and not checked): mda copy store sha256 $(sha256 "$RUN/t4/mda/src/.markdownattractor/index.sqlite") · qmd t4-qmd index fingerprint $(qmd_fingerprint t4-qmd) · served graph.json sha256 $(sha256 "$RUN/t4/graphify/graph.json")"
+  fi
   echo "- claude: $(claude --version 2>/dev/null || echo 'n/a') (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)"
 }
 
