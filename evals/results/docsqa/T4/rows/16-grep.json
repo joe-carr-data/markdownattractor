@@ -1,0 +1,20 @@
+{
+  "edit": 16,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx",
+  "token": "t4-16-00aeb860",
+  "t_save_ms": 1790503887008,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 7560,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.010396800000000001,
+    "text": "Found it. The line is:\n\n> T4 note (2026-09-27): t4-16-00aeb860.\n\n**File:** `apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx:141`",
+    "timed_out": false
+  }
+}

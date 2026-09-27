@@ -441,7 +441,43 @@ for p in tailwind-css supabase prisma github-docs; do jq -r --arg p "$p" 'def r3
 
 ### 7.3 T3 — axis E, first-build cost (M6, 2026-09-25)
 
-No run: the table is rendered from committed records (`cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings) and from `T3/sizes.json`, the live artifact sizes measured with `scripts/eval/t3.sh sizes` on the benchmark machine (recorded with host and time; not a frozen input). **Regeneration:** with mda 0.1.1 built (`t3.sh` picks the provenance file by the binary's version) and the committed `T3/sizes.json`, `scripts/eval/t3.sh table | shasum -a 256` gives `4c38b4b73f204a45a6e8c4696ec48175cf5f71a7b65c26f8da776549671f33c1` (the table and its caption as published); do not run `sizes` during a regeneration — it measures the current artifacts again and writes a new timestamp, and rebuilding an arm is an independent build observation, reported beside the archived one. The sizes are MiB (2^20 bytes) although the renderer prints "MB" (to be corrected with the M7 renderer change; the page says so). Incremental cost after one edit is T4 (M7).
+No run: the table is rendered from committed records (`cards-0.1.1-<project>.json.provenance.json`, `arms/<arm>-<project>.json`, the T1 preflight reconstruction timings) and from `T3/sizes.json`, the live artifact sizes measured with `scripts/eval/t3.sh sizes` on the benchmark machine (recorded with host and time; not a frozen input). **Regeneration:** with mda 0.1.1 built (`t3.sh` picks the provenance file by the binary's version) and the committed `T3/sizes.json`, `scripts/eval/t3.sh table | shasum -a 256` gives `c7c61a9c15e3e5dfdc6d7ade0c00fa7b4bf279bdb1276a974d6fb91d92fa8099` (the table and its caption as published on 2026-09-27, after the renderer's MiB and reconstruction labels; the first publication's renderer gave `4c38b4b7…`); do not run `sizes` during a regeneration — it measures the current artifacts again and writes a new timestamp, and rebuilding an arm is an independent build observation, reported beside the archived one. Incremental cost after one edit is T4 (M7).
+
+### 7.4 T4 — axis C, update latency on Prisma (M7, 2026-09-27)
+
+**Freeze and preflight.** T4 has an original freeze, a rewrite before the counted run (after the aborted attempt) and a rewrite after the counted run before the three mda replacement measurements — all three in the git history of `evals/results/docsqa/T4/FROZEN.md`, the chronology in the current note. The current freeze checks the edit plan, the mda configuration, the archived graph, the declared models and the harness; the mutable store, index and served-graph hashes are recorded under Runtime. The committed passing preflight (`preflight/T4-prisma.json`, 2026-09-27T09:47:01Z) checked the pre-counted-run freeze, the daemon's readiness, clean copies and the plan, and proved tool activation on the first three questions of the T2 Prisma sample through `probe.sh` on the copies — probes distinct from the measured token questions, which do not certify tool use in every measured answer (the rows record it: `answer.arm_tool_used`).
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t4.sh setup       # copies of the pinned Prisma checkout per arm (mda's with its frozen store), qmd index t4-qmd on the qmd copy (≈ 8 min), the Haiku graphify build's copy, `mda start` on the mda copy, the edit plan
+scripts/eval/freeze.sh --protocol final --table T4 --note "…"; git add evals/results/docsqa/T4/FROZEN.md evals/results/docsqa/T4/edits.jsonl; git commit …   # before any edit
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t4.sh preflight
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t4.sh run          # 20 edits × 4 arms, sequential (one arm at a time so the daemon, the qmd embed and the graphify update never contend); resumable
+scripts/eval/t4.sh table; scripts/eval/t4.sh teardown
+```
+
+**What a row is** (`T4/rows/<edit>-<arm>.json`): the save instant, the update trigger's own duration, exit code and cost (qmd, graphify), the raw-searchable endpoint (ms from the save, timed out, polls), the card endpoint (mda), the answer endpoint (ms from the save, whether the answer quoted the token and cited the page, the arm's tool used, turns, cost, the answer's first 600 characters). The traces of every answer session and update trigger stay under the run directory (`~/.cache/markdownattractor/bench/t4/traces/`).
+
+**Outcome and chronology.** The preflight passed (freeze, env, daemon, clean copies, plan, 3 of 3 probes per arm); 80 rows, no timeouts; a first attempt with page-naming questions was aborted and reverted before the counted run; the freeze was re-written twice (before the counted run, and after it to move the mutable store/index/graph hashes to Runtime); the mda rows of edits 1–3 were purged and re-measured because the aborted attempt had pre-cached their cards (`t4.sh purge 1 3`, then `T4_ARMS=mda t4.sh run 1 3`). Both are in the freeze note and on the page.
+
+**Expected artifacts and hashes (sha256):**
+
+```
+19d2b398d28c5edce12b0b27990711d1773bf13a02c2aeee3370a95f00baf5a9  evals/results/docsqa/T4/FROZEN.md
+f2b4bdb15c80f500d5287c31ae7dd8ad476d557694755f52261a20c12b7533d1  evals/results/docsqa/T4/edits.jsonl
+dd1256f653071cec4163d99482d23aa352be06c4f7ac4a5cac9f916bc5bd13b6  evals/results/docsqa/preflight/T4-prisma.json
+6d9201d201b7cbc946891b492b20f060afcc155878ce1722ff9d3cfa0bb5cab1  evals/results/docsqa/T4/rows/*.json (concatenated in name order)
+22e8f6f990fb88554a69c426e19e19bcf9aa9cf66f60f45c970d34f9909e85cd  scripts/eval/t4.sh table (the rendered table and caption)
+```
+
+**Regeneration (exact).** The renderer reads `$RUN/t4/rows/`, so stage only the archived observations in a fresh runtime directory:
+
+```bash
+T4_REGEN=$(mktemp -d); mkdir -p "$T4_REGEN/t4/rows"; cp evals/results/docsqa/T4/rows/*.json "$T4_REGEN/t4/rows/"
+RUN="$T4_REGEN" scripts/eval/t4.sh table | shasum -a 256      # 22e8f6f990fb88554a69c426e19e19bcf9aa9cf66f60f45c970d34f9909e85cd
+```
+
+No daemon, copies, model calls, setup, purge or freeze rewrite are involved. **Independent rerun.** Preregister one rerun with the same frozen edit plan and twenty edits; publish its results and the paired differences beside the original whatever they show. Run the setup / freeze / preflight / run sequence in a disposable checkout and an isolated environment with no existing `t4-qmd` index and a fresh runtime directory holding the prerequisite pinned Prisma store and the restored Haiku graph build; keep the original publication checkout untouched (setup and preflight write repository artifacts). Setup creates the arm copies and starts the daemon but does not reset existing copies or rows; copy the committed `T4/edits.jsonl` into the new runtime's `t4/edits.jsonl` before setup so the original dates and tokens are kept (a plan generated on another date is not byte-identical). Record and compare the new freeze before running, allowing documented Runtime differences. Do not run `purge` on a clean rerun: the historical repair was `scripts/eval/t4.sh purge 1 3` then `T4_ARMS=mda scripts/eval/t4.sh run 1 3`, and any future repair must copy the superseded rows and traces aside before purging and disclose the replacements. A different edit plan is an additional experiment, not the required paired rerun.
 
 ## 8. Report
 

@@ -176,7 +176,7 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 - [x] M4 T1 published (test split), Codex pass (2026-09-24/25; `docs/reviews/codex/2026-09-24-bench-m4.md`).
 - [ ] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass.
 - [x] M6 T2 + T3 published (2026-09-26; no savings claim passed the gates).
-- [ ] M7 T4 published.
+- [x] M7 T4 published (2026-09-27; mda save → card p50 8.4 s, G1 met).
 - [ ] M8 T5 published.
 - [ ] M9 T6, README row, page restructure.
 

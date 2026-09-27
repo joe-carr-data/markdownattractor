@@ -1,0 +1,27 @@
+{
+  "edit": 1,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/guides/upgrade-prisma-orm/v1.mdx",
+  "token": "t4-1-0007bc56",
+  "t_save_ms": 1790504441588,
+  "trigger": null,
+  "raw": {
+    "ms": 1628,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 7917,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 18279,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0159484,
+    "text": "Found it in `apps/docs/content/docs/guides/upgrade-prisma-orm/v1.mdx`:\n\n> T4 note (2026-09-27): t4-1-0007bc56.",
+    "timed_out": false
+  }
+}

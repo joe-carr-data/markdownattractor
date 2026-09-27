@@ -1,0 +1,28 @@
+{
+  "edit": 18,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-mongoose.mdx",
+  "token": "t4-18-00b3018b",
+  "t_save_ms": 1790504013302,
+  "trigger": {
+    "ms": 4510,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 5129,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 16550,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0171048,
+    "text": "The line is:\n\n**\"T4 note (2026-09-27): t4-18-00b3018b.\"**\n\nFound in `t4-qmd/apps/docs/content/docs/orm/v6/more/comparisons/prisma-and-mongoose.mdx` (line 83).",
+    "timed_out": false
+  }
+}

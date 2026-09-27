@@ -1,0 +1,28 @@
+{
+  "edit": 15,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/reference/error-reference.mdx",
+  "token": "t4-15-00a814b9",
+  "t_save_ms": 1790503754728,
+  "trigger": {
+    "ms": 14578,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 15293,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 24035,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.016087,
+    "text": "Found it. The line reads exactly:\n\n> T4 note (2026-09-27): t4-15-00a814b9.\n\nCited in `apps/docs/content/docs/orm/reference/error-reference.mdx:652`",
+    "timed_out": false
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "edit": 6,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-typeorm.mdx",
+  "token": "t4-6-0055e2ba",
+  "t_save_ms": 1790502939826,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 6937,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0103188,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-6-0055e2ba.\n\n**File:** `apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-typeorm.mdx:103`",
+    "timed_out": false
+  }
+}

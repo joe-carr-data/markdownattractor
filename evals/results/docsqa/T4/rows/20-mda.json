@@ -1,0 +1,27 @@
+{
+  "edit": 20,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v6/prisma-client/observability-and-logging/sql-comments.mdx",
+  "token": "t4-20-00b85603",
+  "t_save_ms": 1790504167793,
+  "trigger": null,
+  "raw": {
+    "ms": 1943,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8856,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 17898,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0181766,
+    "text": "Found it in `apps/docs/content/docs/orm/v6/prisma-client/observability-and-logging/sql-comments.mdx`:\n\n> T4 note (2026-09-27): t4-20-00b85603.",
+    "timed_out": false
+  }
+}

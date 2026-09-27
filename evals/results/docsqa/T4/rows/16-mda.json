@@ -1,0 +1,27 @@
+{
+  "edit": 16,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx",
+  "token": "t4-16-00aeb860",
+  "t_save_ms": 1790503820675,
+  "trigger": null,
+  "raw": {
+    "ms": 1626,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8026,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 16205,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0191266,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-16-00aeb860.`\n\n**File:** `apps/docs/content/docs/orm/v7/prisma-client/special-fields-and-types/working-with-json-fields.mdx` (under the \"Filter on a `Json` field (advanced)\" section, line 141)",
+    "timed_out": false
+  }
+}

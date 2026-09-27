@@ -1,0 +1,28 @@
+{
+  "edit": 10,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/more/troubleshooting/check-constraints.mdx",
+  "token": "t4-10-007cb3c7",
+  "t_save_ms": 1790503324242,
+  "trigger": {
+    "ms": 4292,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 4947,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 15009,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0157452,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-10-007cb3c7.\n\nCited from `apps/docs/content/docs/orm/v6/more/troubleshooting/check-constraints.mdx:74`",
+    "timed_out": false
+  }
+}

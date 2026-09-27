@@ -1,0 +1,24 @@
+{
+  "edit": 12,
+  "arm": "graphify",
+  "page": "apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx",
+  "token": "t4-12-0085c51c",
+  "t_save_ms": 1790503515724,
+  "trigger": {
+    "ms": 24723,
+    "exit_code": 0,
+    "cost_usd": 0.023665799999999997
+  },
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 33724,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.0154918,
+    "text": "Found it.\n\n**T4 note (2026-09-27): t4-12-0085c51c.**\n\nSource: `apps/docs/content/docs/orm/v6/prisma-client/using-raw-sql/raw-queries.mdx:679`",
+    "timed_out": false
+  }
+}

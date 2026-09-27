@@ -1,0 +1,28 @@
+{
+  "edit": 3,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v7/prisma-client/deployment/traditional/deploy-to-koyeb.mdx",
+  "token": "t4-3-001ff122",
+  "t_save_ms": 1790502577412,
+  "trigger": {
+    "ms": 948,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 1549,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 15375,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.024553600000000002,
+    "text": "Found it.\n\n**Line:** `T4 note (2026-09-27): t4-3-001ff122.`\n\n**File:** `apps/docs/content/docs/orm/v7/prisma-client/deployment/traditional/deploy-to-koyeb.mdx:181`",
+    "timed_out": false
+  }
+}

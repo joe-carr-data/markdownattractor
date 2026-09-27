@@ -1,0 +1,20 @@
+{
+  "edit": 15,
+  "arm": "grep",
+  "page": "apps/docs/content/docs/orm/reference/error-reference.mdx",
+  "token": "t4-15-00a814b9",
+  "t_save_ms": 1790503812688,
+  "trigger": null,
+  "raw": null,
+  "card": null,
+  "answer": {
+    "ms": 7474,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 2,
+    "cost_usd": 0.0101128,
+    "text": "Found it in `apps/docs/content/docs/orm/reference/error-reference.mdx` (line 652):\n\n> T4 note (2026-09-27): t4-15-00a814b9.",
+    "timed_out": false
+  }
+}

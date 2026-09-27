@@ -1,0 +1,27 @@
+{
+  "edit": 2,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx",
+  "token": "t4-2-001a8411",
+  "t_save_ms": 1790504460310,
+  "trigger": null,
+  "raw": {
+    "ms": 1556,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8943,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 17470,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.016439000000000002,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-2-001a8411.\n\n**File:** `apps/docs/content/docs/orm/v7/prisma-schema/data-model/models.mdx` (end of the \"Native types mapping\" section, line 315)",
+    "timed_out": false
+  }
+}

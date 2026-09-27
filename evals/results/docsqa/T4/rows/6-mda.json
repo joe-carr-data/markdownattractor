@@ -1,0 +1,27 @@
+{
+  "edit": 6,
+  "arm": "mda",
+  "page": "apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-typeorm.mdx",
+  "token": "t4-6-0055e2ba",
+  "t_save_ms": 1790502861054,
+  "trigger": null,
+  "raw": {
+    "ms": 1698,
+    "timed_out": false,
+    "polls": 2
+  },
+  "card": {
+    "ms": 8725,
+    "timed_out": false
+  },
+  "answer": {
+    "ms": 16840,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": true,
+    "turns": 3,
+    "cost_usd": 0.0189872,
+    "text": "Found it:\n\n> T4 note (2026-09-27): t4-6-0055e2ba.\n\n**File:** `apps/docs/content/docs/orm/v7/more/comparisons/prisma-and-typeorm.mdx` (end of the \"Pagination\" section, line 103)",
+    "timed_out": false
+  }
+}

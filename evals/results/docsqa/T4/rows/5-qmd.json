@@ -1,0 +1,28 @@
+{
+  "edit": 5,
+  "arm": "qmd",
+  "page": "apps/docs/content/docs/orm/v6/prisma-client/client-extensions/result.mdx",
+  "token": "t4-5-003b29bc",
+  "t_save_ms": 1790502789699,
+  "trigger": {
+    "ms": 4808,
+    "exit_code": 0,
+    "cost_usd": null
+  },
+  "raw": {
+    "ms": 5466,
+    "timed_out": false,
+    "polls": 1
+  },
+  "card": null,
+  "answer": {
+    "ms": 12019,
+    "correct_grounded": true,
+    "exit_code": 0,
+    "arm_tool_used": false,
+    "turns": 2,
+    "cost_usd": 0.016138800000000002,
+    "text": "Found it.\n\n> T4 note (2026-09-27): t4-5-003b29bc.\n\n**File:** `apps/docs/content/docs/orm/v6/prisma-client/client-extensions/result.mdx:173`",
+    "timed_out": false
+  }
+}
