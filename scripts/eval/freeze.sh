@@ -131,14 +131,22 @@ inputs() {
     echo "- analysis: \`mda eval --analysis grades.jsonl --manifest manifest.json\` — question median with failed runs as 0, 10,000 paired bootstrap draws, seed $SEED, gates (a) lower bound ≥ −0.25 (b) mda mean ≥ 4.0 (c) mda grounding ≥ 95%, savings per metric only where the gates pass; the adjudicated grades (panel trigger: either member differs from Sonnet by > 1 → panel mean) analysed beside the originals"
     echo "- panel: 30 answers per project re-graded by both members; 100 cards per corpus audited; every individual score kept"
     echo "- regeneration (plan §2.0b): the analysis regenerates byte-identically from the archived grades.jsonl and manifest.json; grading reruns are independent reruns, published beside the original"
+  elif [ "$protocol" = final ] && [ "$table" = T4 ]; then
+    local t4="$RUN/t4"
+    echo "- table: T4 · protocol final · axis C, update latency on Prisma (plan §4, docs/plans/2026-09-m7-t4-harness.md): 20 seeded edits (evals/results/docsqa/T4/edits.jsonl sha256 $(sha256 "$RESULTS/T4/edits.jsonl")), arms mda · qmd · graphify (the Haiku-built graph, the only completed graphify build on Prisma) · grep, each on its own copy of the pinned checkout; endpoints raw-searchable, card (mda), correct grounded answer; 1 s polling, 300 s timeout"
+    echo "- mda copy: store sha256 before any edit $(sha256 "$t4/mda/src/.markdownattractor/index.sqlite") · config.toml sha256 $(sha256 "$t4/mda/src/.markdownattractor/config.toml") · daemon defaults (debounce 1 s) · summariser backend claude-cli, model $(grep -E '^summarization_model' "$t4/mda/src/.markdownattractor/config.toml" | cut -d'"' -f2)"
+    echo "- qmd copy: index t4-qmd fingerprint before any edit $(qmd_fingerprint t4-qmd) · trigger \`qmd --index t4-qmd update && qmd --index t4-qmd embed\`"
+    echo "- graphify copy: graph.json sha256 before any edit $(sha256 "$t4/graphify/graph.json") (the graphify-haiku build of Prisma) · trigger \`/graphify <copy> --update --no-viz\` through the login, Haiku host"
+    echo "- answering model: requested \`sonnet\` through the owner's login (resolved ids recorded per row's trace); harness scripts/eval/t4.sh sha256 $(sha256 "$REPO/scripts/eval/t4.sh")"
+    echo "- regeneration (plan §2.0b): \`scripts/eval/t4.sh table\` renders the page table from the archived rows (evals/results/docsqa/T4/rows/); a rerun (new copies, new edits) is an independent rerun, published beside the original"
   elif [ "$protocol" = final ]; then
     rows_path="evals/results/docsqa/$table/<project>/results.json"
     echo "- table: $table · protocol final · split scored: test, once (plan §2.0; reuse of the test split by a later release is stated on the page)"
     echo "- selection: original §3 winner (the pre-tuning configuration, \`evals/results/docsqa/TUNING.md\`); post-stop diagnostics excluded from selection (plan §3, 2026-09-24 amendment)"
     echo "- intervals: per row, 95% bootstrap over the row's questions, 5,000 draws, seed $SEED (\`mda eval --interval\`); mda hybrid vs qmd full per project: within-project paired bootstrap (\`mda eval --compare\`), reported as the product target met or not"
   fi
-  [ "$table" = T2 ] || echo "- scorer: \`mda eval --dataset docsqa\` at the source commit (the store's own rows and \`--arm-output\` for external arms, one page rule for all: sections deduplicated by path in rank order, a truncated list is scored and counted)"
-  [ "$table" = T2 ] || echo "- regeneration (plan §2.0b): \`scripts/eval/preflight.sh\` feeds the archived page lists of \`$rows_path\` back through \`--arm-output\` and requires the same metrics and per-question results; the store replay and the clean reconstruction from the committed cards are separate checks, each compared on every row and question (latency excluded)"
+  [ "$table" = T2 ] || [ "$table" = T4 ] || echo "- scorer: \`mda eval --dataset docsqa\` at the source commit (the store's own rows and \`--arm-output\` for external arms, one page rule for all: sections deduplicated by path in rank order, a truncated list is scored and counted)"
+  [ "$table" = T2 ] || [ "$table" = T4 ] || echo "- regeneration (plan §2.0b): \`scripts/eval/preflight.sh\` feeds the archived page lists of \`$rows_path\` back through \`--arm-output\` and requires the same metrics and per-question results; the store replay and the clean reconstruction from the committed cards are separate checks, each compared on every row and question (latency excluded)"
   echo
   echo "### Arms"
   echo "- mda: this binary through \`mda mcp\` (\`mda_search\`, default k 5, up to 50; \`mda_open\`); the search-first rules \`skills/search-first/SKILL.md\`; store per checkout under \`.markdownattractor/\` (\`backend = claude-cli\`, \`claude_cli_policy_ack = true\`, \`embeddings = local-small\`); the adapter scores the store directly"
