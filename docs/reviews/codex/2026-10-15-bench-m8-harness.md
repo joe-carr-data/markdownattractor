@@ -31,3 +31,7 @@
 | 16 | Med | The table aggregated present grade rows; the analysis counts missing runs as failures. | The table renders per-arm numbers from `analysis.json` (manifest-complete) and shows `failed/total` runs. |
 
 Also from the review's verdict: the dry-run Tailwind replay is re-validated with the two-way validator before the freeze, and the counted replays start only under the freeze (`T5_DRY_RUN` is never set for them).
+
+## After the review (same day)
+
+Two further changes before any answer row, outside the review's scope and recorded here for completeness: `t5.sh replay` refuses a reused working copy (file birth times older than the clone: macOS moves a birth time down to an earlier mtime and never back, so a second replay in the same clone inherits the first one's `created_at`; found on the second dry run); and the declared accepted-probe-failure mechanism for graphify's activation probes under equal evidence (plan amendment of 2026-10-15), which required one freeze rewrite after the Tailwind replay and before any answer run.
