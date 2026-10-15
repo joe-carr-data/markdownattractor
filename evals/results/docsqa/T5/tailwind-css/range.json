@@ -9,6 +9,6 @@
   "src/docs"
  ],
  "first_parent_commits": 65,
- "steps": 11,
- "date_semantics": "committer date of the first-parent commit, UTC calendar day"
+ "steps": 10,
+ "date_semantics": "committer date of the day's last first-parent commit, UTC calendar day; a step's changes are the tree diff against the previous step (the first step against its parent commit)"
 }

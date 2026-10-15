@@ -1,0 +1,419 @@
+{
+ "project": "tailwind-css",
+ "steps": 10,
+ "expected_documents": 263,
+ "docs_checked": 263,
+ "sections_checked": 1889,
+ "expected_tombstones": 0,
+ "tombstones_checked": 0,
+ "ignored_markdown_in_final_tree": [],
+ "mismatches": 2728,
+ "mismatch_kinds": {
+  "created_at": 257,
+  "first_seen_at": 257,
+  "section_updated_at": 1785,
+  "sections_differ": 210,
+  "updated_at": 219
+ },
+ "mismatch_sample": [
+  {
+   "path": "README.md",
+   "kind": "updated_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "README.md",
+   "kind": "first_seen_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "README.md",
+   "kind": "created_at",
+   "stored": "2026-02-18T19:45:17.000000000Z (birthtime)",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "README.md",
+   "kind": "section_updated_at",
+   "section": "[\"Tailwind CSS Documentation\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "README.md",
+   "kind": "section_updated_at",
+   "section": "[\"Tailwind CSS Documentation\",\"License\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "README.md",
+   "kind": "sections_differ",
+   "stored": 2,
+   "parsed": 2
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "updated_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "first_seen_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "created_at",
+   "stored": "2026-02-18T19:45:17.000000000Z (birthtime)",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Trademark usage agreement\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Assets\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Assets\",\"Mark\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Assets\",\"Logotype\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/app/(docs)/brand/page.mdx",
+   "kind": "sections_differ",
+   "stored": 4,
+   "parsed": 4
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "updated_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "first_seen_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "created_at",
+   "stored": "2026-02-18T19:45:17.000000000Z (birthtime)",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.6 is out\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.6 is out\",\"Multiselect support\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.6 is out\",\"Nullable comboboxes\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.6 is out\",\"Easy HTML form support\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.6 is out\",\"Scrollable dialog improvements\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.6 is out\",\"Better focus trapping\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Team management features for Tailwind UI\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Updating the Vue examples in Tailwind UI to <script setup>\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"New Tailwind CSS language mode for VS Code\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"\u201cGenerated CSS\u201d panel in Tailwind Play\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Redesigning the Refactoring UI website\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Tailwind CSS templates are coming soon\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-05-23-headless-ui-v1-6-tailwind-ui-team-management/index.mdx",
+   "kind": "sections_differ",
+   "stored": 13,
+   "parsed": 13
+  },
+  {
+   "path": "src/blog/2022-06-23-tailwind-templates-and-all-access/index.mdx",
+   "kind": "first_seen_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-06-23-tailwind-templates-and-all-access/index.mdx",
+   "kind": "created_at",
+   "stored": "2026-02-18T19:45:17.000000000Z (birthtime)",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-06-23-tailwind-templates-and-all-access/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Going all in on all-access\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z",
+    "2026-07-16T17:14:03Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "updated_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "first_seen_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "created_at",
+   "stored": "2026-02-18T19:45:17.000000000Z (birthtime)",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Tailwind + Framer Motion = Pocket\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Tailwind Jobs\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-08-17-tailwind-framer-motion-template-and-tailwind-jobs/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Work in progress...\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "updated_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "first_seen_at",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "created_at",
+   "stored": "2026-02-18T19:45:17.000000000Z (birthtime)",
+   "expected": "2026-02-19T11:33:45Z"
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Spotlight: Your new personal website\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Heroicons v2.0\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.7\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.7\",\"Added \\\"by\\\" prop for controlling object comparisons\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  },
+  {
+   "path": "src/blog/2022-09-09-new-personal-website-heroicons-2-headless-ui-v17/index.mdx",
+   "kind": "section_updated_at",
+   "section": "[\"Headless UI v1.7\",\"Use form controls as uncontrolled components\"]",
+   "stored": "2026-02-18T19:45:17.000000000Z",
+   "expected_one_of": [
+    "2026-02-19T11:33:45Z"
+   ]
+  }
+ ],
+ "created_at_sources": {
+  "birthtime": 263
+ },
+ "store_sha256": "5ad8dc97351dbb63fd9b2dde5fb1f1062f147e02c79f16374ae20d24b8520122",
+ "steps_sha256": "264bd78457e87b3bb585ff142a45fb52acf44fccfae22f7ab12b52e8b8a1368f",
+ "validated_at": "2026-10-15T08:13:56Z",
+ "passed": false,
+ "semantics": "expectations from the step trees: a live document for every markdown file of the final tree the walker indexes (config ignore rules applied), its sections equal to `mda parse` of the file; updated_at = the date of the last step whose tree changed the file, else the first step; first_seen_at and created_at (source birthtime or first_seen \u2014 macOS moves the birth time down to an earlier mtime) = the first step the file is present at; section updated_at \u2208 {first step} \u222a the file's change steps; a tombstone dated at the first step the file is absent after being present, and no other tombstones"
+}
