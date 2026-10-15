@@ -1,0 +1,14 @@
+{
+ "repository": "https://github.com/prisma/web.git",
+ "end_sha": "c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c",
+ "start_day": "2026-06-26",
+ "end_day": "2026-08-25",
+ "range_days": 60,
+ "shallow_since": "2026-06-19",
+ "content_roots": [
+  "apps/docs/content/docs"
+ ],
+ "first_parent_commits": 172,
+ "steps": 26,
+ "date_semantics": "committer date of the first-parent commit, UTC calendar day"
+}

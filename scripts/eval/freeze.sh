@@ -131,6 +131,18 @@ inputs() {
     echo "- analysis: \`mda eval --analysis grades.jsonl --manifest manifest.json\` — question median with failed runs as 0, 10,000 paired bootstrap draws, seed $SEED, gates (a) lower bound ≥ −0.25 (b) mda mean ≥ 4.0 (c) mda grounding ≥ 95%, savings per metric only where the gates pass; the adjudicated grades (panel trigger: either member differs from Sonnet by > 1 → panel mean) analysed beside the originals"
     echo "- panel: 30 answers per project re-graded by both members; 100 cards per corpus audited; every individual score kept"
     echo "- regeneration (plan §2.0b): the analysis regenerates byte-identically from the archived grades.jsonl and manifest.json; grading reruns are independent reruns, published beside the original"
+  elif [ "$protocol" = final ] && [ "$table" = T5 ]; then
+    local pr5 t5="$RUN/t5"
+    echo "- table: T5 · protocol final · axis D, simulated historical replay (plan §4 T5, docs/plans/2026-09-m8-t5-replay.md): per project a fixed first-parent commit range of its documentation repository replayed one step per UTC day under the test-only clock \`MDA_NOW\` (ADR-0006; committer dates), stored timestamps validated against git before any answer run; 40 generated questions per project with git-computed ground truth; arms git (Read/Grep/Glob + \`git\` in Bash, no index) · mda · qmd · graphify (Prisma: the Haiku-built graph), every arm on its own copy of the final checkout with \`.git\` and \`git\` in Bash; 3 runs per question and arm; structured answers scored deterministically (set F1 ≥ 0.8; dates within one day)"
+    for pr5 in ${T5_PROJECTS:-prisma tailwind-css}; do
+      [ -f "$RESULTS/T5/$pr5/range.json" ] && [ -f "$RESULTS/T5/$pr5/steps.jsonl" ] && [ -f "$RESULTS/T5/$pr5/questions.jsonl" ] || die "T5/$pr5: range.json, steps.jsonl and questions.jsonl must exist before the freeze (t5.sh setup, questions)"
+      echo "- $pr5: range $(jq -r '"\(.start_day) → \(.end_day) (\(.range_days) days, \(.first_parent_commits) first-parent commits, \(.steps) steps; end \(.end_sha[:12]); clone --shallow-since \(.shallow_since))"' "$RESULTS/T5/$pr5/range.json") · range.json sha256 $(sha256 "$RESULTS/T5/$pr5/range.json") · steps.jsonl sha256 $(sha256 "$RESULTS/T5/$pr5/steps.jsonl") · questions.jsonl ($(grep -c . "$RESULTS/T5/$pr5/questions.jsonl") questions: $(jq -r .type "$RESULTS/T5/$pr5/questions.jsonl" | sort | uniq -c | awk '{printf "%s %s · ", $2, $1}' | sed 's/ · $//')) sha256 $(sha256 "$RESULTS/T5/$pr5/questions.jsonl") · replay config.toml sha256 $(sha256 "$t5/$pr5/src/.markdownattractor/config.toml")"
+    done
+    echo "- graphify graphs: tailwind-css $(gunzip -c "$RESULTS/arms/graphs/graphify-tailwind-css.graph.json.gz" | shasum -a 256 | cut -c1-64) · prisma (graphify-haiku) $(gunzip -c "$RESULTS/arms/graphs/graphify-haiku-prisma.graph.json.gz" | shasum -a 256 | cut -c1-64)"
+    echo "- answering model: requested \`sonnet\` through the owner's login (resolved ids recorded per row); summariser of the replay: the pinned config (backend claude-cli, Haiku 4.5), inline \`mda index\` under \`MDA_NOW\`; harness scripts/eval/t5.sh sha256 $(sha256 "$REPO/scripts/eval/t5.sh") · preamble sha256 $(grep -m1 '^PREAMBLE=' "$REPO/scripts/eval/t5.sh" | shasum -a 256 | cut -c1-64) · answer schema sha256 $(grep -m1 '^SCHEMA=' "$REPO/scripts/eval/t5.sh" | shasum -a 256 | cut -c1-64)"
+    echo "- run parameters: max turns 12 · timeout 600 s · one retry · one job · every run starts its MCP server cold (rule 0.9)"
+    echo "- analysis: \`mda eval --replay-analysis grades.jsonl --manifest manifest.json\` — question medians over 3 runs with failed runs as 0 correct, 10,000 paired bootstrap draws per (pair, metric), seed $SEED, nearest-rank percentiles; the claim \"correct with less effort at equal evidence\" only when Δcorrect's lower bound ≥ −0.05 and both effort differences' upper bounds (tool calls, source tokens) are < 0; every pair published either way"
+    echo "- regeneration (plan §2.0b): the analyses and \`scripts/eval/t5.sh table\` regenerate from the archived grades.jsonl, manifest.json, replay.json and validation.json; a new replay or new answer runs are an independent rerun, published beside the original"
   elif [ "$protocol" = final ] && [ "$table" = T4 ]; then
     local t4="$RUN/t4"
     echo "- table: T4 · protocol final · axis C, update latency on Prisma (plan §4, docs/plans/2026-09-m7-t4-harness.md): 20 seeded edits (evals/results/docsqa/T4/edits.jsonl sha256 $(sha256 "$RESULTS/T4/edits.jsonl")), arms mda · qmd · graphify (the Haiku-built graph, the only completed graphify build on Prisma) · grep, each on its own copy of the pinned checkout; endpoints raw-searchable, card (mda), correct grounded answer; 1 s polling, 300 s timeout"
@@ -145,8 +157,8 @@ inputs() {
     echo "- selection: original §3 winner (the pre-tuning configuration, \`evals/results/docsqa/TUNING.md\`); post-stop diagnostics excluded from selection (plan §3, 2026-09-24 amendment)"
     echo "- intervals: per row, 95% bootstrap over the row's questions, 5,000 draws, seed $SEED (\`mda eval --interval\`); mda hybrid vs qmd full per project: within-project paired bootstrap (\`mda eval --compare\`), reported as the product target met or not"
   fi
-  [ "$table" = T2 ] || [ "$table" = T4 ] || echo "- scorer: \`mda eval --dataset docsqa\` at the source commit (the store's own rows and \`--arm-output\` for external arms, one page rule for all: sections deduplicated by path in rank order, a truncated list is scored and counted)"
-  [ "$table" = T2 ] || [ "$table" = T4 ] || echo "- regeneration (plan §2.0b): \`scripts/eval/preflight.sh\` feeds the archived page lists of \`$rows_path\` back through \`--arm-output\` and requires the same metrics and per-question results; the store replay and the clean reconstruction from the committed cards are separate checks, each compared on every row and question (latency excluded)"
+  [ "$table" = T2 ] || [ "$table" = T4 ] || [ "$table" = T5 ] || echo "- scorer: \`mda eval --dataset docsqa\` at the source commit (the store's own rows and \`--arm-output\` for external arms, one page rule for all: sections deduplicated by path in rank order, a truncated list is scored and counted)"
+  [ "$table" = T2 ] || [ "$table" = T4 ] || [ "$table" = T5 ] || echo "- regeneration (plan §2.0b): \`scripts/eval/preflight.sh\` feeds the archived page lists of \`$rows_path\` back through \`--arm-output\` and requires the same metrics and per-question results; the store replay and the clean reconstruction from the committed cards are separate checks, each compared on every row and question (latency excluded)"
   echo
   echo "### Arms"
   echo "- mda: this binary through \`mda mcp\` (\`mda_search\`, default k 5, up to 50; \`mda_open\`); the search-first rules \`skills/search-first/SKILL.md\`; store per checkout under \`.markdownattractor/\` (\`backend = claude-cli\`, \`claude_cli_policy_ack = true\`, \`embeddings = local-small\`); the adapter scores the store directly"
@@ -188,6 +200,12 @@ runtime() {
   echo "- frozen_at: $(date -u +%FT%TZ)"
   echo "- hardware: $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m) · $(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1073741824 )) GB · $(sw_vers -productName 2>/dev/null || uname -s) $(sw_vers -productVersion 2>/dev/null || uname -r)"
   echo "- toolchain: $(rustc --version 2>/dev/null || echo 'rustc n/a')"
+  if [ "${table:-}" = T5 ]; then
+    local pr5
+    for pr5 in ${T5_PROJECTS:-prisma tailwind-css}; do
+      echo "- T5 $pr5 state at freeze time (the counted replay runs after the freeze and changes it; recorded, not checked): replay store $([ -f "$RUN/t5/$pr5/src/.markdownattractor/index.sqlite" ] && sha256 "$RUN/t5/$pr5/src/.markdownattractor/index.sqlite" || echo none) · clone HEAD $(git -C "$RUN/t5/$pr5/src" rev-parse HEAD 2>/dev/null || echo none) · replayed steps $(ls "$RUN/t5/$pr5/replay" 2>/dev/null | grep -c '^[0-9]*\.json$' || true)"
+    done
+  fi
   if [ "${table:-}" = T4 ]; then
     echo "- T4 state at freeze time (mutable during the run, so recorded here and not checked): mda copy store sha256 $(sha256 "$RUN/t4/mda/src/.markdownattractor/index.sqlite") · qmd t4-qmd index fingerprint $(qmd_fingerprint t4-qmd) · served graph.json sha256 $(sha256 "$RUN/t4/graphify/graph.json")"
   fi
