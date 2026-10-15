@@ -280,6 +280,12 @@ steps = [json.loads(l) for l in open(steps_f)]
 step = steps[n - 1]; ts = datetime.datetime.fromisoformat(step["date"].replace("Z", "+00:00")).timestamp()
 if n == 1:   # history before the range is flattened to the first step
     files = [p for p in subprocess.run(["git", "-C", src, "ls-files"], check=True, capture_output=True, text=True).stdout.splitlines() if p.endswith((".md", ".mdx", ".markdown"))]
+    # A reused working copy carries birth times from an earlier replay (macOS moves a file's
+    # birth time down to an earlier mtime and never back up), which `created_at` would inherit:
+    # every file's birth time must be at or after the clone's own creation.
+    clone_born = os.stat(os.path.join(src, ".git")).st_birthtime
+    stale = [p for p in files if os.path.isfile(os.path.join(src, p)) and os.stat(os.path.join(src, p)).st_birthtime < clone_born - 1]
+    if stale: sys.exit(f"{len(stale)} files carry birth times older than the clone (an earlier replay touched this copy): re-clone before a replay (e.g. {stale[0]})")
 else:
     files = [c["path"] for c in step["changes"] if c["status"] != "D"]
 for p in files:
