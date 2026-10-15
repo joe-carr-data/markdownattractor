@@ -179,7 +179,7 @@ arm_launch() { # arm project model
         '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: $models}}}}' > "$mcp_cfg"
       ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__markdownattractor__*"
                 --append-system-prompt-file "$REPO/skills/search-first/SKILL.md")
-      ARM_WANT='^mcp__markdownattractor__mda_search$' ;;
+      ARM_WANT='^mcp__markdownattractor__(mda_search|mda_timeline|mda_recent)$' ;;   # the temporal tools count since T5 (2026-10-15)
     grep)
       ARM_ARGS=(--tools Read Grep Glob --allowedTools Read Grep Glob)
       ARM_WANT='^(Grep|Read|Glob)$' ;;

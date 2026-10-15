@@ -5,8 +5,8 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | Date | Doc | What it is |
 |---|---|---|
 | 2026-09-27 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
-| 2026-09-27 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
-| 2026-09-27 | [plans/2026-09-m8-t5-replay.md](plans/2026-09-m8-t5-replay.md) | Milestone M8 of the execution plan (`2026-09-benchmark-execution.md` §4 T5, §5 M8): axis D, the… |
+| 2026-10-15 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-10-15 | [plans/2026-09-m8-t5-replay.md](plans/2026-09-m8-t5-replay.md) | Milestone M8 of the execution plan (`2026-09-benchmark-execution.md` §4 T5, §5 M8): axis D, the… |
 | 2026-09-27 | [plans/2026-09-m7-t4-harness.md](plans/2026-09-m7-t4-harness.md) | Milestone M7 of the execution plan (`2026-09-benchmark-execution.md` §4 T4, §5 M7): axis C on P… |
 | 2026-09-27 | [plans/2026-09-benchmark-execution.md](plans/2026-09-benchmark-execution.md) | Status: **draft v1 for Codex pre-mortem** · 2026-09-23 · companion to `2026-09-benchmarks.md` v… |
 | 2026-09-25 | [plans/2026-09-m5-t2-harness.md](plans/2026-09-m5-t2-harness.md) | Milestone M5 of the execution plan (`2026-09-benchmark-execution.md` §5), protocol §2.4–2.7, … |
@@ -29,6 +29,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-10-15 | [reviews/codex/2026-10-15-bench-m8-harness.md](reviews/codex/2026-10-15-bench-m8-harness.md) | \| \| \| |
 | 2026-09-27 | [reviews/codex/2026-09-27-t4-page.md](reviews/codex/2026-09-27-t4-page.md) | \ |
 | 2026-09-26 | [reviews/codex/2026-09-26-t2-t3-page.md](reviews/codex/2026-09-26-t2-t3-page.md) | \ |
 | 2026-09-25 | [reviews/codex/2026-09-25-bench-m5.md](reviews/codex/2026-09-25-bench-m5.md) | \ |
