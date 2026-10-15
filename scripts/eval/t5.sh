@@ -657,7 +657,7 @@ PY
     n_rec="$(ls "$P"/replay/[0-9]*.json 2>/dev/null | wc -l | tr -d ' ')"
     if [ "$n_rec" = 0 ]; then rec replay FAIL "no step records"; else
       known="$(frozen_versions | tr '\n' ' ')"
-      bad="$(jq -r --arg known "$known" --arg bin "$(sha256 "$MDA")" 'select((($known | split(" ")) | index(.frozen_sha256)) == null or .mda_sha256 != $bin) | .step' "$P"/replay/[0-9]*.json | tr '\n' ' ')"
+      bad="$(jq -r --arg known "$known" --arg bin "$(sha256 "$MDA")" '. as $r | select((($known | split(" ")) | index($r.frozen_sha256)) == null or $r.mda_sha256 != $bin) | .step' "$P"/replay/[0-9]*.json | tr '\n' ' ')"
       under="$(jq -r '.frozen_sha256' "$P"/replay/[0-9]*.json | sort -u | tr '\n' ' ')"
       [ -z "$bad" ] && rec replay ok "$n_rec step records under this binary and a committed T5 freeze (FROZEN.md sha256 $under; current $(frozen_sha))" || rec replay FAIL "steps $bad were replayed under an unknown freeze or another binary (a dry run is never counted)"
     fi
