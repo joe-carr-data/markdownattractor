@@ -479,6 +479,33 @@ RUN="$T4_REGEN" scripts/eval/t4.sh table | shasum -a 256      # 22e8f6f990fb8855
 
 No daemon, copies, model calls, setup, purge or freeze rewrite are involved. **Independent rerun.** Preregister one rerun with the same frozen edit plan and twenty edits; publish its results and the paired differences beside the original whatever they show. Run the setup / freeze / preflight / run sequence in a disposable checkout and an isolated environment with no existing `t4-qmd` index and a fresh runtime directory holding the prerequisite pinned Prisma store and the restored Haiku graph build; keep the original publication checkout untouched (setup and preflight write repository artifacts). Setup creates the arm copies and starts the daemon but does not reset existing copies or rows; copy the committed `T4/edits.jsonl` into the new runtime's `t4/edits.jsonl` before setup so the original dates and tokens are kept (a plan generated on another date is not byte-identical). Record and compare the new freeze before running, allowing documented Runtime differences. Do not run `purge` on a clean rerun: the historical repair was `scripts/eval/t4.sh purge 1 3` then `T4_ARMS=mda scripts/eval/t4.sh run 1 3`, and any future repair must copy the superseded rows and traces aside before purging and disclose the replacements. A different edit plan is an additional experiment, not the required paired rerun.
 
+### 7.5 T5 — axis D, the simulated historical replay (M8, 2026-10-15; skeleton, numbers land with the table)
+
+**What it is.** For Prisma (60 days before the pinned commit) and Tailwind CSS (180 days: its docs change slowly), the first-parent history of the documentation repository is replayed one step per UTC day into a fresh mda store under the test-only clock `MDA_NOW` (ADR-0006): at each step the harness checks the step's commit out, sets the mtime of every markdown file changed that day to the commit's committer date (at the first step: every tracked markdown file, so history before the range is flattened to the first step), and runs `mda index` inline with `MDA_NOW=<committer date>`; the daemon refuses to run under the override. After the last step the stored `updated_at`, `first_seen_at`, `created_at` (source `first_seen`), section `updated_at` and tombstones are validated against the step list derived from git; one mismatch voids the project's replay and the page says so. Forty questions per project are generated from git (which pages/sections changed in a window; when a page was last changed or a section added; which pages were added in a month) with the ground truth and its evidence stored beside them; every arm answers on its own copy of the final checkout with `.git` and `git` in Bash through the structured output of `claude -p --json-schema`; scoring is deterministic (set F1 ≥ 0.8; dates within one day). Dates everywhere are first-parent committer dates. Arms: git (Read/Grep/Glob + git, no index), mda (MCP + search-first rules + git), qmd (its MCP on an index of the final checkout + git), graphify (its archived graph + git; Prisma's is the Haiku build).
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
+export ARM_WITH_GIT=1   # set by t5.sh itself; shown for the probes
+for p in prisma tailwind-css; do
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh setup "$p" $([ "$p" = tailwind-css ] && echo 180)   # history clone, the step list → T5/<p>/{range.json,steps.jsonl}
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh questions "$p"                                   # → T5/<p>/questions.jsonl (generated text, ground truth, evidence)
+done
+scripts/eval/freeze.sh --protocol final --table T5 --note "…"; git add evals/results/docsqa/T5; git commit …                       # before any replay step
+for p in prisma tailwind-css; do
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh replay "$p"      # inline Haiku summarisation through the login; resumable by step; never rebuild $MDA meanwhile
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh validate "$p"    # → T5/<p>/validation.json (passed: true, or the replay is void)
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh arms "$p"        # the git/qmd/graphify copies, qmd index t5-qmd-<p>
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh preflight "$p"   # freeze check, validation, copies at the pinned commit, three activation probes per arm
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh run "$p"         # 40 × 4 arms × 3 runs, resumable
+  env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY scripts/eval/t5.sh grade "$p"; scripts/eval/t5.sh analysis "$p" --json > evals/results/docsqa/T5/"$p"/analysis.json
+done
+scripts/eval/t5.sh table
+```
+
+**Expected artifacts and hashes (sha256):** filled in when the table is published (range.json, steps.jsonl, questions.jsonl, validation.json, replay.json, manifest.json, grades.jsonl, analysis.json per project; the rendered table).
+
+**Regeneration (exact).** `scripts/eval/t5.sh table` and `mda --json eval --replay-analysis T5/<p>/grades.jsonl --manifest T5/<p>/manifest.json --mda-arm mda --comparators git,qmd,graphify` regenerate from the archive without a clone, a store or a model call (normalise the two provenance paths in the JSON before a byte comparison, as in §7.2). **Independent rerun.** A new replay (fresh clones, the same frozen step lists and questions) followed by new answer runs is the preregistered rerun; publish it beside the original with the paired differences.
+
 ## 8. Report
 
 Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, `mda --version` and SHA, `claude --version`, the model file hashes, the checksums of §2, every attempt (timestamp, step, outcome) including failed ones, the tables of §3–§5 with your numbers next to the expected ones marked *regeneration* (exact match: yes/no) or *rerun* (paired difference), and every deviation. A regeneration that does not match is the most valuable outcome this file can produce: open an issue with the report.
