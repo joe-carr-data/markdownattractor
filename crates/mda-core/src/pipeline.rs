@@ -997,7 +997,7 @@ fn request_for(p: &PendingSection, cfg: PlanConfig) -> SummarizeRequest {
 pub fn file_times(path: &Path) -> Result<DocTimes> {
     let meta = std::fs::metadata(path).map_err(|e| Error::io(path, e))?;
     let to_ts = |t: std::time::SystemTime| Timestamp::try_from(t).ok();
-    let modified = meta.modified().ok().and_then(to_ts).unwrap_or_else(Timestamp::now);
+    let modified = meta.modified().ok().and_then(to_ts).unwrap_or_else(crate::clock::now);
     let created = meta.created().ok().and_then(to_ts).filter(|c| *c <= modified);
     Ok(DocTimes {
         created_at: created,

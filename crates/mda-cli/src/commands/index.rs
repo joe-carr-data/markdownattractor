@@ -38,6 +38,14 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let st = Style::auto();
 
     if super::block_on(mda_core::daemon::is_running(engine.root()))? {
+        // The daemon indexes on its own clock; under the override (ADR-0006) only an inline run
+        // stamps the fixed instant, so delegating would silently defeat it.
+        anyhow::ensure!(
+            !mda_core::clock::override_active(),
+            "{} is set but a daemon is running on {}: stop it (`mda stop`) — the clock override applies to inline indexing only",
+            mda_core::clock::ENV,
+            engine.root().display()
+        );
         return delegate(args, path, &mut engine, json, &st);
     }
 

@@ -383,9 +383,15 @@ pub fn analyse(
         let tool_calls = difference(&tool_calls, opts.draws, opts.seed, &label("tool_calls"));
         let source_tokens =
             difference(&source_tokens, opts.draws, opts.seed, &label("source_tokens"));
+        // Eligibility (Codex M8 F10): the three intervals must be over the same questions (an
+        // effort value for every question of both arms), and mda must have answered something
+        // correctly — two arms that fail everything have a zero correctness difference and
+        // must not earn an effort claim (rule 0.3).
+        let mda_correct = mq.iter().filter(|q| q.correct >= 0.5).count();
+        let same_sample = tool_calls.n == correct.n && source_tokens.n == correct.n;
         let claim = correct.n > 0
-            && tool_calls.n > 0
-            && source_tokens.n > 0
+            && same_sample
+            && mda_correct > 0
             && correct.lower >= opts.min_correct_lower
             && tool_calls.upper < 0.0
             && source_tokens.upper < 0.0;
@@ -396,7 +402,7 @@ pub fn analyse(
             source_tokens,
             claim,
             criterion: format!(
-                "lower bound of Δcorrect ≥ {} and upper bounds of Δtool_calls and Δsource_tokens < 0",
+                "lower bound of Δcorrect ≥ {} and upper bounds of Δtool_calls and Δsource_tokens < 0; eligible only with an effort value for every question of both arms and at least one correct mda answer",
                 opts.min_correct_lower
             ),
         });
@@ -492,6 +498,31 @@ mod tests {
         let p = &a.pairs[0];
         assert!(p.correct.diff.abs() < 1e-12);
         assert!(p.claim, "{p:?}");
+    }
+
+    #[test]
+    fn two_arms_that_fail_everything_earn_no_claim_and_missing_effort_blocks_it() {
+        let ids: Vec<String> = (1..=12).map(|i| format!("q{i}")).collect();
+        let idr: Vec<&str> = ids.iter().map(String::as_str).collect();
+        let mut rows = Vec::new();
+        for id in &idr {
+            for r in 1..=3 {
+                rows.push(row(id, "mda", r, 0, 2, 100, false));
+                rows.push(row(id, "git", r, 0, 6, 900, false));
+            }
+        }
+        let a = analyse(&rows, &manifest(&idr), &opts()).unwrap();
+        assert!(!a.pairs[0].claim, "all-failed arms must not claim");
+        // correct answers, but one question without an effort value for git
+        for r in &mut rows {
+            r.correct = 1;
+        }
+        for r in rows.iter_mut().filter(|r| r.id == "q1" && r.arm == "git") {
+            r.tool_calls = None;
+        }
+        let a = analyse(&rows, &manifest(&idr), &opts()).unwrap();
+        assert_eq!(a.pairs[0].tool_calls.n, 11);
+        assert!(!a.pairs[0].claim, "effort missing for a question blocks the claim");
     }
 
     #[test]
