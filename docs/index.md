@@ -23,6 +23,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [design/distribution.md](design/distribution.md) | As built in Phase 4 (2026-09-22). Decisions: ADR-0005. This document describes *what the pipeline… |
 | 2026-09-22 | [design/daemon.md](design/daemon.md) | As built at the end of Phase 1 (2026-09-22). Decisions and their reasons: ADR-0003. This document… |
 | 2026-09-22 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
+| 2026-10-15 | [adr/0006-mda-now-clock-override-for-the-historical-replay.md](adr/0006-mda-now-clock-override-for-the-historical-replay.md) | Date: 2026-10-15 |
 | 2026-09-22 | [adr/0005-release-pipeline.md](adr/0005-release-pipeline.md) | Status: **Accepted** · 2026-09-22 · Plan §9.3, §9.4, Phase 4 plan row 7 |
 | 2026-09-22 | [adr/0004-phase2-vectors-embeddings-mcp.md](adr/0004-phase2-vectors-embeddings-mcp.md) | Status: **Accepted** · 2026-09-22 · Plan §5, §13 questions 1 and 3, §16 · Evidence: `docs/p… |
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |

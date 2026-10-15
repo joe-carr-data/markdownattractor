@@ -1011,7 +1011,7 @@ fn attach_cards(
         prompt_version: "recorded".to_owned(),
         schema_version: SCHEMA_VERSION,
         backend: "golden".to_owned(),
-        summarized_at: jiff::Timestamp::now(),
+        summarized_at: mda_core::clock::now(),
         truncated: false,
     };
     for p in store.pending_hashes(usize::MAX)? {

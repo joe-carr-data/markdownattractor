@@ -28,7 +28,7 @@ pub fn parse_time(s: &str) -> Result<Timestamp> {
             }
             _ => return Err(bad(format!("unknown time unit {unit:?} in {s:?} (use m, h, d, w)"))),
         };
-        return Timestamp::now().checked_sub(span).map_err(|_| too_big());
+        return crate::clock::now().checked_sub(span).map_err(|_| too_big());
     }
     if let Ok(ts) = s.parse::<Timestamp>() {
         return Ok(ts);
@@ -54,7 +54,7 @@ fn split_relative(s: &str) -> Option<(&str, &str)> {
 /// `2 days ago`, `3 hours ago`, `just now`.
 #[must_use]
 pub fn humanize_age(ts: Timestamp) -> String {
-    let secs = (Timestamp::now().as_second() - ts.as_second()).max(0);
+    let secs = (crate::clock::now().as_second() - ts.as_second()).max(0);
     let (n, unit) = match secs {
         0..=59 => return "just now".to_owned(),
         60..=3_599 => (secs / 60, "min"),
@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn relative_and_absolute_forms() {
-        let now = Timestamp::now();
+        let now = crate::clock::now();
         let t = parse_time("7d").unwrap();
         assert!(((now.as_second() - t.as_second()) - 7 * 86_400).abs() <= 2);
         assert!(parse_time("90m").is_ok());

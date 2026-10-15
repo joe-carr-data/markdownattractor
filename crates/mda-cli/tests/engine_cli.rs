@@ -1230,3 +1230,78 @@ fn eval_docsqa_adds_extra_labels_without_removing_the_originals() {
     assert_eq!(sub["runs"][0]["results"][0]["id"], "q2");
     assert_eq!(sub["only_questions"], 2);
 }
+
+// ---- MDA_NOW: the clock override behind the benchmark's historical replay (ADR-0006) ----
+
+#[test]
+fn mda_now_fixes_every_stored_timestamp_at_index_time() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    // A replay sets file mtimes from git author dates and the clock from the commit; section
+    // `updated_at` follows the mtime, events and first-seen times follow the clock.
+    let at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_785_585_600); // 2026-08-01T12:00:00Z
+    for rel in ["docs/runbook.md", "notes/adr.md"] {
+        std::fs::File::options()
+            .write(true)
+            .open(root.join(rel))
+            .unwrap()
+            .set_modified(at)
+            .unwrap();
+    }
+    mda()
+        .env("MDA_NOW", "2026-08-01T12:00:00Z")
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .assert()
+        .success();
+    let out = mda()
+        .args(["--json", "search", "rollback", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let hits = json_of(&out)["hits"].as_array().unwrap().clone();
+    assert!(!hits.is_empty());
+    for h in &hits {
+        assert_eq!(h["updated_at"], "2026-08-01T12:00:00Z", "{h}");
+    }
+    let out = mda()
+        .args(["--json", "timeline", "--since", "2026-07-01", "--until", "2026-09-01", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let entries = json_of(&out)["entries"].as_array().unwrap().clone();
+    assert!(!entries.is_empty());
+    for e in &entries {
+        assert!(e.to_string().contains("2026-08-01T12:00:00Z"), "{e}");
+    }
+}
+
+#[test]
+fn malformed_mda_now_refuses_to_index() {
+    let dir = root_with_docs();
+    mda()
+        .env("MDA_NOW", "yesterday")
+        .args(["index", "--no-summarize", "--root"])
+        .arg(dir.path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("MDA_NOW"));
+}
+
+#[test]
+fn the_daemon_refuses_to_run_under_mda_now() {
+    let dir = root_with_docs();
+    mda()
+        .env("MDA_NOW", "2026-08-01")
+        .args(["daemon", "--root"])
+        .arg(dir.path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("MDA_NOW"));
+}

@@ -258,7 +258,7 @@ fn bundle(root: &Path) -> serde_json::Value {
         log_tail(&canon).unwrap_or_default().iter().map(|l| scrub.text(l)).collect();
 
     serde_json::json!({
-        "generated_at": jiff::Timestamp::now(),
+        "generated_at": mda_core::clock::now(),
         "mda_version": mda_core::VERSION,
         "built_with_embeddings": mda_core::embed::BUILT_WITH_EMBEDDINGS,
         "os": std::env::consts::OS,

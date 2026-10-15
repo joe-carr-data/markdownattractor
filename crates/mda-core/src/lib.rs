@@ -28,6 +28,7 @@
 //! | [`daemon`] | The long-running process: watcher, debounced intake, summarizer loop, control socket. |
 //! | [`mcp`] | The MCP server Claude talks to (`mda mcp`, stdio): search, cards, open, timeline, status. |
 //! | [`timefmt`] | Time parsing (`7d`, dates) and rendering shared by the CLI and MCP. |
+//! | [`clock`] | The one source of "now": the real clock, or the `MDA_NOW` override used by the benchmark's historical replay. |
 //! | [`eval`] | Dataset adapters for the benchmark plan: page-level metrics, coverage, the seeded split. |
 //!
 //! Two rules hold everywhere in this crate:
@@ -39,6 +40,7 @@
 #![doc(html_root_url = "https://docs.rs/mda-core/0.1.0")]
 
 pub mod card;
+pub mod clock;
 pub mod config;
 pub mod daemon;
 pub mod diff;
