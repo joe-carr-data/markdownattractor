@@ -240,7 +240,10 @@ for i, l in enumerate(lines):
 open(p, "w", encoding="utf-8").write("\n".join(out))
 PY
       [ -z "$h" ] || sqlite3 "$db" "DELETE FROM embeddings WHERE section_hash = '$h'; DELETE FROM summaries WHERE section_hash = '$h';"
-      rm -f "$T4/rows/$e-mda.json"; echo "purged edit $e (mda): note reverted, summary ${h:0:12}… deleted, row removed"
+      # the superseded row and its traces are kept, never deleted (2026-09-27 publication check)
+      sup="$T4/superseded/$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$sup"
+      for f in "$T4/rows/$e-mda.json" "$T4"/traces/"$e"-mda*; do [ -e "$f" ] && mv "$f" "$sup/"; done
+      echo "purged edit $e (mda): note reverted, summary ${h:0:12}… deleted, row and traces moved to $sup"
     done
     sleep 3; "$MDA" --json status --root "$copy" | jq -c '{daemon: (.daemon != null), pending: .counts.pending}' ;;
   teardown)
