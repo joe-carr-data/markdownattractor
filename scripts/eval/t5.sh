@@ -30,14 +30,15 @@
 #   scripts/eval/t5.sh analysis <project> [--json] # mda eval --replay-analysis
 #   scripts/eval/t5.sh table                      # the page table from the archived grades and analyses
 #   scripts/eval/t5.sh redo <project> <id> <arm> <run>   # move one row and its traces to superseded/ (never deleted) for a disclosed re-measurement
-# Env: T5_PROJECTS (prisma tailwind-css), T5_RANGE_DAYS (60), T5_MODEL (sonnet), T5_ARMS (git mda qmd graphify),
+# Env: T5_PROJECTS (prisma tailwind-css), T5_RANGE_DAYS (60), T5_MODEL (sonnet), T5_ARMS (git mda mda-index qmd graphify;
+#      mda-index = mda without git in Bash, the time index alone — the disclosed fifth arm, decided 2026-10-15 after the smoke run),
 #      T5_JOBS (1), T5_MAX_TURNS (12), T5_TIMEOUT (600), T5_RETRIES (1), REPO/RUN/MDA (lib.sh).
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 set -euo pipefail
 cmd="${1:?setup|replay|validate|arms|questions|preflight|run|status|grade|analysis|table|redo}"; shift
 T5="$RUN/t5"; RES="$RESULTS/T5"; PROJECTS="${T5_PROJECTS:-prisma tailwind-css}"; RANGE_DAYS="${T5_RANGE_DAYS:-60}"; N_Q=40
-MODEL="${T5_MODEL:-sonnet}"; ARMS="${T5_ARMS:-git mda qmd graphify}"; JOBS="${T5_JOBS:-1}"; MAX_TURNS="${T5_MAX_TURNS:-12}"; TIMEOUT="${T5_TIMEOUT:-600}"; RETRIES="${T5_RETRIES:-1}"
+MODEL="${T5_MODEL:-sonnet}"; ARMS="${T5_ARMS:-git mda mda-index qmd graphify}"; JOBS="${T5_JOBS:-1}"; MAX_TURNS="${T5_MAX_TURNS:-12}"; TIMEOUT="${T5_TIMEOUT:-600}"; RETRIES="${T5_RETRIES:-1}"
 SOURCES="$RUN/docsqa-data/sources.json"; CORPUS="$RUN/docsqa-data/data/corpus.jsonl"
 PREAMBLE="The current directory is a git checkout of a documentation site; you may run git. Dates are the UTC calendar days on which changes landed on the main branch. Answer through the structured output only: pages as repository-relative paths, sections as heading paths joined by ' › ', date as YYYY-MM-DD; leave the fields the question does not need empty."
 SCHEMA='{"type":"object","properties":{"pages":{"type":"array","items":{"type":"string"}},"sections":{"type":"array","items":{"type":"string"}},"date":{"type":"string"},"evidence":{"type":"string"}},"required":["pages","sections","date","evidence"],"additionalProperties":false}'
@@ -120,7 +121,9 @@ PY
     project="${1:?project}"; ident "$project"; P="$(pdir "$project")"; SRC="$P/src"; mkdir -p "$P/replay"
     [ -f "$P/steps.jsonl" ] || die "no steps.jsonl (run setup)"
     ! "$MDA" --json status --root "$SRC" 2>/dev/null | jq -e '.daemon != null' >/dev/null || die "a daemon is running on $SRC"
-    first_day="$(jq -r 'select(.step == 1) | .date' "$P/steps.jsonl")"
+    bin_sha="$(sha256 "$MDA")"
+    prev_bin="$(jq -r '.mda_sha256 // empty' "$P"/replay/[0-9]*.json 2>/dev/null | sort -u | head -1)"
+    [ -z "$prev_bin" ] || [ "$prev_bin" = "$bin_sha" ] || die "the binary changed since the replayed steps ($prev_bin → $bin_sha): a replay runs one binary end to end; start over"
     while IFS= read -r s; do
       n="$(jq -r .step <<<"$s")"; sha="$(jq -r .sha <<<"$s")"; at="$(jq -r .date <<<"$s")"
       [ -f "$P/replay/$n.json" ] && continue
@@ -150,8 +153,8 @@ PY
         MDA_NOW="$at" "$MDA" index --root "$SRC" >> "$P/replay/$n.log" 2>&1 || true
       done
       t1=$(date +%s); after="$("$MDA" --json status --root "$SRC" | jq -c '.counts')"
-      jq -n --argjson n "$n" --arg sha "$sha" --arg at "$at" --argjson before "$before" --argjson after "$after" --argjson secs "$((t1 - t0))" --arg store "$(store_sha "$SRC")" --arg done_at "$(date -u +%FT%TZ)" \
-        '{step: $n, sha: $sha, mda_now: $at, seconds: $secs, counts_before: $before, counts_after: $after, cost_usd_delta: (($after.total_cost_usd // 0) - ($before.total_cost_usd // 0)), store_sha256: $store, replayed_at: $done_at}' > "$P/replay/$n.json.tmp" && mv "$P/replay/$n.json.tmp" "$P/replay/$n.json"
+      jq -n --argjson n "$n" --arg sha "$sha" --arg at "$at" --argjson before "$before" --argjson after "$after" --argjson secs "$((t1 - t0))" --arg store "$(store_sha "$SRC")" --arg done_at "$(date -u +%FT%TZ)" --arg bin "$bin_sha" \
+        '{step: $n, sha: $sha, mda_now: $at, seconds: $secs, counts_before: $before, counts_after: $after, cost_usd_delta: (($after.total_cost_usd // 0) - ($before.total_cost_usd // 0)), store_sha256: $store, mda_sha256: $bin, replayed_at: $done_at}' > "$P/replay/$n.json.tmp" && mv "$P/replay/$n.json.tmp" "$P/replay/$n.json"
       echo "step $n $sha ($at): $((t1 - t0)) s · docs $(jq -r .docs <<<"$after") · sections $(jq -r .sections <<<"$after") · summarized $(jq -r .summarized <<<"$after") · failed $(jq -r .failed <<<"$after") · +\$$(jq -r .cost_usd_delta "$P/replay/$n.json")"
     done < "$P/steps.jsonl"
     if [ ! -f "$P/replay/embeddings.json" ]; then
@@ -187,29 +190,37 @@ for s in steps:
         if c["status"] == "D": deleted[p] = s["date"]
         if c["status"] in ("A", "R") and p in deleted: del deleted[p]   # re-added later
 con = sqlite3.connect(db)
-mism, n_docs, n_secs, n_tomb = [], 0, 0, 0
+import datetime as _dt
+def norm(t):   # the store writes nanoseconds; the step list writes seconds — compare instants
+    if t is None: return None
+    try: return _dt.datetime.fromisoformat(t.replace("Z", "+00:00")).astimezone(_dt.timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except ValueError: return t
+mism, n_docs, n_secs, n_tomb, created_sources = [], 0, 0, 0, {}
 for doc_id, rel, created, src_, updated, seen, deleted_at in con.execute("SELECT doc_id, rel_path, created_at, created_at_source, updated_at, first_seen_at, deleted_at FROM docs"):
     if deleted_at:
         n_tomb += 1
         exp = deleted.get(rel)
         if exp is None: mism.append({"path": rel, "kind": "tombstone_without_deletion", "stored": deleted_at})
-        elif exp != deleted_at: mism.append({"path": rel, "kind": "deleted_at", "stored": deleted_at, "expected": exp})
+        elif exp != norm(deleted_at): mism.append({"path": rel, "kind": "deleted_at", "stored": deleted_at, "expected": exp})
         continue
     n_docs += 1
     if rel not in tracked: mism.append({"path": rel, "kind": "doc_not_tracked"}); continue
     exp_updated = changes[rel][-1] if rel in changes else first
-    if updated != exp_updated: mism.append({"path": rel, "kind": "updated_at", "stored": updated, "expected": exp_updated})
+    if norm(updated) != exp_updated: mism.append({"path": rel, "kind": "updated_at", "stored": updated, "expected": exp_updated})
     exp_seen = first_seen.get(rel, first)
-    if seen != exp_seen: mism.append({"path": rel, "kind": "first_seen_at", "stored": seen, "expected": exp_seen})
-    if created != exp_seen or src_ != "first_seen": mism.append({"path": rel, "kind": "created_at", "stored": f"{created} ({src_})", "expected": f"{exp_seen} (first_seen)"})
+    if norm(seen) != exp_seen: mism.append({"path": rel, "kind": "first_seen_at", "stored": seen, "expected": exp_seen})
+    # created_at: the first step the file exists at. Its source may be `birthtime` (macOS moves a
+    # file's birth time down to a new, earlier mtime) or `first_seen`; both must give that instant.
+    created_sources[src_] = created_sources.get(src_, 0) + 1
+    if norm(created) != exp_seen: mism.append({"path": rel, "kind": "created_at", "stored": f"{created} ({src_})", "expected": exp_seen})
     allowed = set(changes.get(rel, [])) | {first}
     for sid, hp, sup in con.execute("SELECT section_id, heading_path, updated_at FROM sections WHERE doc_id = ?", (doc_id,)):
         n_secs += 1
-        if sup not in allowed: mism.append({"path": rel, "kind": "section_updated_at", "section": sid, "stored": sup, "expected_one_of": sorted(allowed)[-3:]})
+        if norm(sup) not in allowed: mism.append({"path": rel, "kind": "section_updated_at", "section": sid, "stored": sup, "expected_one_of": sorted(allowed)[-3:]})
 missing = sorted(p for p in tracked if p not in {r for (r,) in con.execute("SELECT rel_path FROM docs WHERE deleted_at IS NULL")} and not any(p.startswith(x) for x in ("node_modules/", "target/", "vendor/")))
 rep = {"project": os.path.basename(os.path.dirname(src)), "steps": len(steps), "docs_checked": n_docs, "sections_checked": n_secs, "tombstones_checked": n_tomb,
        "tracked_markdown_not_indexed": len(missing), "tracked_markdown_not_indexed_sample": missing[:20], "mismatches": len(mism), "mismatch_kinds": {k: sum(1 for m in mism if m["kind"] == k) for k in sorted({m["kind"] for m in mism})},
-       "mismatch_sample": mism[:50], "passed": len(mism) == 0, "semantics": "updated_at = committer date of the last in-range first-parent change, else the first step; first_seen_at/created_at (source first_seen) = the first step the file exists at; section updated_at ∈ {first step} ∪ the file's in-range change dates; deleted_at = the deleting step"}
+       "mismatch_sample": mism[:50], "created_at_sources": created_sources, "passed": len(mism) == 0, "semantics": "updated_at = committer date of the last in-range first-parent change, else the first step; first_seen_at and created_at (source birthtime or first_seen: macOS moves the birth time down to an earlier mtime) = the first step the file exists at; section updated_at ∈ {first step} ∪ the file's in-range change dates; deleted_at = the deleting step"}
 json.dump(rep, open(out, "w"), indent=1)
 print(f"{'PASS' if rep['passed'] else 'FAIL'}: {n_docs} docs, {n_secs} sections, {n_tomb} tombstones checked; {len(mism)} mismatches {rep['mismatch_kinds']}; {len(missing)} tracked markdown files not indexed (ignore rules)")
 PY
@@ -400,7 +411,7 @@ row_of() { # id arm run q trace attempts-json wall want-regex -> json (T2's row 
 launch_env() { # project arm
   local P; P="$(pdir "$1")"
   case "$2" in
-    mda) ARM_CORPUS_OVERRIDE="$P/src" ;; git) ARM_CORPUS_OVERRIDE="$P/git/src" ;;
+    mda|mda-index) ARM_CORPUS_OVERRIDE="$P/src" ;; git) ARM_CORPUS_OVERRIDE="$P/git/src" ;;
     qmd) ARM_CORPUS_OVERRIDE="$P/qmd/src"; export ARM_QMD_INDEX="t5-qmd-$1" ;;
     graphify) ARM_CORPUS_OVERRIDE="$P/graphify/src"; export ARM_GRAPHIFY_DIR="$P/graphify" ;;
   esac; export ARM_CORPUS_OVERRIDE
@@ -413,6 +424,9 @@ case "$cmd" in
     project="${1:?project}"; runs="${2:-3}"; arms="${3:-$ARMS}"; arms="${arms//,/ }"; ident "$project"; P="$(pdir "$project")"; out="$P/runs"
     [ -f "$RES/$project/questions.jsonl" ] || die "no committed questions for $project"; questions="$RES/$project/questions.jsonl"
     [ "$(jq -r .passed "$RES/$project/validation.json")" = true ] || die "the replay of $project is not validated (or voided): no answer runs"
+    if [ -n "${T5_SMOKE:-}" ]; then   # harness check on the first n questions, in its own directory; never a published row
+      out="$P/runs-smoke"; mkdir -p "$out"; head -n "$T5_SMOKE" "$questions" > "$out/questions.jsonl"; questions="$out/questions.jsonl"; echo "SMOKE: $T5_SMOKE question(s) → $out"
+    fi
     mkdir -p "$out/rows" "$out/traces"
     common=(--print --no-session-persistence --model "$MODEL" --max-turns "$MAX_TURNS" --output-format stream-json --verbose
             --include-partial-messages --permission-mode dontAsk --strict-mcp-config --json-schema "$SCHEMA")
@@ -471,7 +485,7 @@ case "$cmd" in
     # F1 ≥ 0.8. Sections: heading paths compared after whitespace/case folding; an answer that
     # gives only the last heading matches a truth path ending in it (declared leniency). Dates:
     # correct when within one day of the truth. A failed run scores 0 with its effort kept.
-    project="${1:?project}"; ident "$project"; P="$(pdir "$project")"; out="$P/runs"; [ -f "$out/manifest.json" ] || die "no manifest"; assemble "$out"
+    project="${1:?project}"; ident "$project"; P="$(pdir "$project")"; out="$P/runs${T5_SMOKE:+-smoke}"; [ -f "$out/manifest.json" ] || die "no manifest"; assemble "$out"
     cdir="$(src_field "$project" checkout_dir)"
     python3 - "$out/runs.jsonl" "$RES/$project/questions.jsonl" "$P/corpus-pages.txt" "$cdir" "$project" "$out/grades.jsonl" <<'PY' || die "grading failed"
 import datetime, json, re, sys
@@ -522,12 +536,14 @@ with open(out, "w", encoding="utf-8") as fh:
         fh.write(json.dumps(g, ensure_ascii=False) + "\n"); n += 1
 print(f"{n} rows graded → {out}")
 PY
-    mkdir -p "$RES/$project"; cp "$out/grades.jsonl" "$RES/$project/grades.jsonl"; cp "$out/manifest.json" "$RES/$project/manifest.json"
+    if [ -z "${T5_SMOKE:-}" ]; then mkdir -p "$RES/$project"; cp "$out/grades.jsonl" "$RES/$project/grades.jsonl"; cp "$out/manifest.json" "$RES/$project/manifest.json"; fi
     jq -s 'group_by(.arm) | map({(.[0].arm): {rows: length, correct: (map(.correct) | add), errors: (map(select(.error)) | length), git_used: (map(select(.git_used)) | length), tool_used: (map(select(.arm_tool_used)) | length)}}) | add' "$out/grades.jsonl" ;;
 
   analysis)
-    project="${1:?project}"; shift; ident "$project"
-    "$MDA" ${1:+"$1"} eval --replay-analysis "$RES/$project/grades.jsonl" --manifest "$RES/$project/manifest.json" --mda-arm mda --comparators "$(printf '%s' "$ARMS" | tr ' ' ',' | sed 's/mda,//; s/,mda//')" ;;
+    project="${1:?project}"; shift; ident "$project"; src="$RES/$project"; [ -z "${T5_SMOKE:-}" ] || src="$(pdir "$project")/runs-smoke"
+    comps="$(jq -r '.arms | map(select(. != "mda" and . != "mda-index")) | join(",")' "$src/manifest.json")"
+    arm="${T5_ANALYSIS_ARM:-mda}"   # T5_ANALYSIS_ARM=mda-index: the time index alone against the same comparators (informational companion)
+    "$MDA" ${1:+"$1"} eval --replay-analysis "$src/grades.jsonl" --manifest "$src/manifest.json" --mda-arm "$arm" --comparators "$comps" ;;
 
   redo)
     project="${1:?project}"; id="${2:?id}"; arm="${3:?arm}"; r="${4:?run}"; P="$(pdir "$project")"; out="$P/runs"; key="$id-$arm-$r"
@@ -595,16 +611,16 @@ for p in projects:
         print(f"| {a} | {fmt(sum(1 for c in allc if c >= 0.5)/len(allc), 2)} | " + " | ".join(fmt(sum(1 for c in v if c >= 0.5)/len(v), 2) if v else "–" for v in corr.values()) +
               f" | {fmt(med(qmed('tool_calls')))} | {fmt(med(qmed('source_tokens')), 0)} | {fmt(med(qmed('wall_s')))} | ${fmt(med([r['cost_usd'] for r in rows]), 3)} | {sum(1 for r in rows if r['error'])} | {sum(1 for r in rows if r['git_used'])}/{len(rows)} | {sum(1 for r in rows if r.get('arm_tool_used'))}/{len(rows)} |")
     print()
-    an = f"{d}/analysis.json"
-    if os.path.exists(an):
-        A = json.load(open(an))["analysis"] if "analysis" in json.load(open(an)) else json.load(open(an))
-        print(f"**{p}** — mda vs each arm (paired bootstrap over the questions, {A.get('draws', 10000)} draws, seed {A.get('seed', 20260922)}; difference = mda − arm)")
+    for an, who in ((f"{d}/analysis.json", "mda"), (f"{d}/analysis.mda-index.json", "mda-index")):
+        if not os.path.exists(an): continue
+        J = json.load(open(an)); A = J["analysis"] if "analysis" in J else J
+        print(f"**{p}** — {who} vs each arm (paired bootstrap over the questions, {A.get('draws', 10000)} draws, seed {A.get('seed', 20260922)}; difference = {who} − arm" + ("; the claim is reserved for mda, this companion is informational)" if who != "mda" else ")"))
         print()
         print("| Pair | Δ correct [95% CI] | Δ tool calls [95% CI] | Δ source tokens [95% CI] | Claim (correct with less effort) |")
         print("|---|---|---|---|---|")
         for pr in A["pairs"]:
             c = pr["correct"]; t = pr["tool_calls"]; s = pr["source_tokens"]
-            print(f"| mda vs {pr['comparator']} | {c['diff']:+.3f} [{c['lower']:+.3f}, {c['upper']:+.3f}] | {t['diff']:+.1f} [{t['lower']:+.1f}, {t['upper']:+.1f}] | {s['diff']:+.0f} [{s['lower']:+.0f}, {s['upper']:+.0f}] | {'**yes**' if pr['claim'] else 'no'} |")
+            print(f"| {who} vs {pr['comparator']} | {c['diff']:+.3f} [{c['lower']:+.3f}, {c['upper']:+.3f}] | {t['diff']:+.1f} [{t['lower']:+.1f}, {t['upper']:+.1f}] | {s['diff']:+.0f} [{s['lower']:+.0f}, {s['upper']:+.0f}] | {('**yes**' if pr['claim'] else 'no') if who == 'mda' else ('would hold' if pr['claim'] else 'no')} |")
         print()
 print("Generated by `scripts/eval/t5.sh table` from `evals/results/docsqa/T5/<project>/{range,replay,validation}.json`, `grades.jsonl` and `analysis.json`. Correctness: set F1 ≥ 0.8 for which/added questions, within one day for when questions; a failed run is a row scored 0 with its effort as recorded. Dates are first-parent committer dates (UTC days). The claim is made for a pair only when the lower bound of Δ correct ≥ −0.05 and the upper bounds of both effort differences are < 0 (plan §4 T5).")
 PY

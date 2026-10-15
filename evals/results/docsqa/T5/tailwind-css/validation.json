@@ -1,0 +1,17 @@
+{
+ "project": "tailwind-css",
+ "steps": 11,
+ "docs_checked": 263,
+ "sections_checked": 1889,
+ "tombstones_checked": 0,
+ "tracked_markdown_not_indexed": 0,
+ "tracked_markdown_not_indexed_sample": [],
+ "mismatches": 0,
+ "mismatch_kinds": {},
+ "mismatch_sample": [],
+ "created_at_sources": {
+  "birthtime": 263
+ },
+ "passed": true,
+ "semantics": "updated_at = committer date of the last in-range first-parent change, else the first step; first_seen_at and created_at (source birthtime or first_seen: macOS moves the birth time down to an earlier mtime) = the first step the file exists at; section updated_at \u2208 {first step} \u222a the file's in-range change dates; deleted_at = the deleting step"
+}
