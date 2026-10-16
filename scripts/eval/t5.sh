@@ -341,18 +341,42 @@ db, steps_f, src, out, mda, ignores, store_sha, steps_sha = sys.argv[1:9]
 ignores = ignores.split(); steps = [json.loads(l) for l in open(steps_f)]
 def git(*a): return subprocess.run(["git", "-C", src, *a], check=True, capture_output=True, text=True).stdout
 def is_md(p): return p.endswith((".md", ".mdx", ".markdown"))
-def ignored(p):
+# What the walker indexes (crates/mda-core/src/walk.rs): no hidden entry (a component starting
+# with "."), nothing matched by .gitignore / .ignore / .git/info/exclude (asked of git itself:
+# `check-ignore --no-index`, tracked or not), nothing matched by config.ignore; the count of
+# files excluded by each rule is reported.
+excluded = {"hidden": 0, "gitignore": 0, "config_ignore": 0}
+def git_ignored(paths):
+    if not paths: return set()
+    r = subprocess.run(["git", "-C", src, "check-ignore", "--no-index", "--stdin"], input="\n".join(paths) + "\n", capture_output=True, text=True)
+    return set(r.stdout.splitlines())
+def hidden(p): return any(c.startswith(".") for c in p.split("/"))
+def config_ignored(p):
     for g in ignores:
         if g.endswith("/"):
             if p.startswith(g) or ("/" + g) in ("/" + p): return True
         elif fnmatch.fnmatch(p, g) or fnmatch.fnmatch(os.path.basename(p), g): return True
     return False
+_gi_cache = {}
+def ignored(p):
+    if hidden(p): return True
+    if p in _gi_cache and _gi_cache[p]: return True
+    return config_ignored(p)
+def prime_gitignore(paths):
+    for p in git_ignored(sorted(paths)): _gi_cache[p] = True
 def norm(t):
     if t is None: return None
     try: return datetime.datetime.fromisoformat(t.replace("Z", "+00:00")).astimezone(datetime.timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
     except ValueError: return t
 first = steps[0]["date"]
-trees = {s["step"]: {p for p in git("ls-tree", "-r", "--name-only", s["sha"]).splitlines() if is_md(p)} for s in steps}
+# regular files only (mode 100644/100755): the walker skips symlinks (walk.rs: links are skipped)
+def md_tree(sha):
+    out = set()
+    for row in git("ls-tree", "-r", sha).splitlines():
+        meta, path = row.split("\t", 1); mode = meta.split(" ")[0]
+        if is_md(path) and mode != "120000": out.add(path)
+    return out
+trees = {s["step"]: md_tree(s["sha"]) for s in steps}
 first_seen, deleted_at, changes = {}, {}, {}
 for s in steps:
     t = trees[s["step"]]
@@ -365,6 +389,11 @@ for s in steps:
         elif p in touched: changes.setdefault(p, []).append(s["date"])
     for p in prev - t: deleted_at[p] = s["date"]
 final = trees[steps[-1]["step"]]
+prime_gitignore(final | set(deleted_at))
+for p in final | set(deleted_at):
+    if hidden(p): excluded["hidden"] += 1
+    elif _gi_cache.get(p): excluded["gitignore"] += 1
+    elif config_ignored(p): excluded["config_ignore"] += 1
 expected_live = {p for p in final if not ignored(p)}
 expected_tomb = {p: d for p, d in deleted_at.items() if p not in final and not ignored(p)}
 con = sqlite3.connect(db)
@@ -398,10 +427,10 @@ for rel in sorted(expected_live & set(live_rows)):
     stored = sorted(json.dumps(json.loads(hp), separators=(",", ":")) for hp, _ in stored_secs)
     if parsed != stored: mism.append({"path": rel, "kind": "sections_differ", "stored": len(stored_secs), "parsed": len(parsed)})
 rep = {"project": os.path.basename(os.path.dirname(src)), "steps": len(steps), "expected_documents": len(expected_live), "docs_checked": n_docs, "sections_checked": n_secs, "expected_tombstones": len(expected_tomb), "tombstones_checked": n_tomb,
-       "ignored_markdown_in_final_tree": sorted(p for p in final if ignored(p))[:20], "mismatches": len(mism), "mismatch_kinds": {k: sum(1 for m in mism if m["kind"] == k) for k in sorted({m["kind"] for m in mism})},
+       "ignored_markdown_in_final_tree": sorted(p for p in final if ignored(p))[:20], "excluded_by_rule": excluded, "mismatches": len(mism), "mismatch_kinds": {k: sum(1 for m in mism if m["kind"] == k) for k in sorted({m["kind"] for m in mism})},
        "mismatch_sample": mism[:50], "created_at_sources": created_sources, "store_sha256": store_sha, "steps_sha256": steps_sha, "validated_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
        "passed": len(mism) == 0 and n_docs > 0 and n_docs == len(expected_live),
-       "semantics": "expectations from the step trees: a live document for every markdown file of the final tree the walker indexes (config ignore rules applied), its sections equal to `mda parse` of the file; updated_at = the date of the last step whose tree changed the file, else the first step; first_seen_at and created_at (source birthtime or first_seen — macOS moves the birth time down to an earlier mtime) = the first step the file is present at; section updated_at ∈ {first step} ∪ the file's change steps; a tombstone dated at the first step the file is absent after being present, and no other tombstones"}
+       "semantics": "expectations from the step trees: a live document for every markdown file of the final tree the walker indexes (symlinks, hidden entries, .gitignore/.ignore matches and config.ignore patterns excluded, as walk.rs does), its sections equal to `mda parse` of the file; updated_at = the date of the last step whose tree changed the file, else the first step; first_seen_at and created_at (source birthtime or first_seen — macOS moves the birth time down to an earlier mtime) = the first step the file is present at; section updated_at ∈ {first step} ∪ the file's change steps; a tombstone dated at the first step the file is absent after being present, and no other tombstones"}
 json.dump(rep, open(out, "w"), indent=1)
 print(f"{'PASS' if rep['passed'] else 'FAIL'}: {n_docs}/{len(expected_live)} docs, {n_secs} sections, {n_tomb}/{len(expected_tomb)} tombstones checked; {len(mism)} mismatches {rep['mismatch_kinds']}")
 PY
