@@ -1,0 +1,301 @@
+{
+  "table": "T5",
+  "project": "prisma",
+  "smoke": false,
+  "accepted_probe_failures": [
+    {
+      "arm": "graphify",
+      "probes_activated": 1,
+      "of": 3,
+      "reason": "under equal evidence the agents reach for grep/git rather than the arm's tool, and a compound git command is denied by the Bash(git *) rule; published with this disclosure (T1 precedent), per-row tool use reported in the table"
+    }
+  ],
+  "model": "sonnet",
+  "runs": 3,
+  "arms": [
+    "git",
+    "mda",
+    "mda-index",
+    "qmd",
+    "graphify"
+  ],
+  "question_ids": [
+    "t5-01-when",
+    "t5-02-which",
+    "t5-03-which",
+    "t5-04-which",
+    "t5-05-which",
+    "t5-06-which",
+    "t5-07-which",
+    "t5-08-which",
+    "t5-09-which",
+    "t5-10-which",
+    "t5-11-which",
+    "t5-12-which",
+    "t5-13-which",
+    "t5-14-which",
+    "t5-15-added",
+    "t5-16-which",
+    "t5-17-when",
+    "t5-18-when",
+    "t5-19-when",
+    "t5-20-when",
+    "t5-21-which",
+    "t5-22-which",
+    "t5-23-which",
+    "t5-24-when",
+    "t5-25-when",
+    "t5-26-when",
+    "t5-27-when",
+    "t5-28-when",
+    "t5-29-when",
+    "t5-30-when",
+    "t5-31-when",
+    "t5-32-added",
+    "t5-33-added",
+    "t5-34-added",
+    "t5-35-added",
+    "t5-36-added",
+    "t5-37-added",
+    "t5-38-added",
+    "t5-39-added",
+    "t5-40-added"
+  ],
+  "questions_file": "/Users/jcarr/markdownattractor/evals/results/docsqa/T5/prisma/questions.jsonl",
+  "questions_sha256": "ad5eca2f65e076bdae0d95bf958e81aecb5140a4d8db8525c2f6610a80d4ddf5",
+  "launches": {
+    "git": {
+      "claude_flags": [
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/git/src",
+      "with_git": true,
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.PIl7bHZVRW",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__markdownattractor__*",
+        "--append-system-prompt-file",
+        "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/src",
+      "with_git": true,
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "/Users/jcarr/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ],
+        "env": {
+          "MDA_ROOT": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/src",
+          "MDA_MODEL_DIR": "/Users/jcarr/.cache/markdownattractor/models"
+        }
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "mda-index": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.JM5lwkoBuL",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__markdownattractor__*",
+        "--append-system-prompt-file",
+        "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/src",
+      "with_git": false,
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "/Users/jcarr/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ],
+        "env": {
+          "MDA_ROOT": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/src",
+          "MDA_MODEL_DIR": "/Users/jcarr/.cache/markdownattractor/models"
+        }
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.QIw6Jx3kGl",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__qmd__*",
+        "--append-system-prompt-file",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/qmd-skill.XXXXXX.yIW9HUIPRf",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/qmd/src",
+      "with_git": true,
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "t5-qmd-prisma",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    },
+    "graphify": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.cJAxF5JmsX",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__graphify__*",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        "project"
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/graphify/src",
+      "with_git": true,
+      "mcp": {
+        "server": "graphify",
+        "command": "graphify-mcp",
+        "args": [
+          "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/graphify/src/../graph.json"
+        ],
+        "project_settings": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/graphify/src/.claude"
+      },
+      "system_prompt": {
+        "source": "project .claude/ written by graphify install --project"
+      }
+    }
+  },
+  "mda": "mda 0.1.1",
+  "mda_sha256": "f1a29935684844ab7d15d61412f2f92db4d142077fa3bb2d12f4a23fe423341d",
+  "preamble": "The current directory is a git checkout of a documentation site; you may run git. Dates are the UTC calendar days on which changes landed on the main branch. Answer through the structured output only: pages as repository-relative paths, sections as heading paths joined by ' › ', date as YYYY-MM-DD; leave the fields the question does not need empty.",
+  "answer_schema": {
+    "type": "object",
+    "properties": {
+      "pages": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "sections": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "date": {
+        "type": "string"
+      },
+      "evidence": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "pages",
+      "sections",
+      "date",
+      "evidence"
+    ],
+    "additionalProperties": false
+  },
+  "store_sha256": "a4af03c41c820b7445597f7a817d53898892b97a48ad06e73d9d078a42bea858",
+  "validation_sha256": "0d65905dbd49ae25c435f60bf62e39c6119300dacb9088b4c4fd4e6448b55262",
+  "steps_sha256": "52b9dc7a357d389b8c8de616d88ab3b6125dbd0a7801a659cfbafe989bd238f8",
+  "frozen_sha256": "ce89002d9c919ad175abe6e10bd97b740163e47bb7e811532256b4ed478ee703",
+  "source_commit": "99e8f86f330e58e8e9769363819b0d5e894a089d",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-10-16T12:56:30Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out run or one without a structured answer is a row scored 0 correct; its effort (every attempt summed) is kept (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta, summed over attempts (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9)",
+    "git": "every arm but mda-index has .git and Bash restricted to git (plan §4 T5)"
+  }
+}

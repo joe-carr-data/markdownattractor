@@ -1,0 +1,107 @@
+{
+  "table": "T5",
+  "project": "prisma",
+  "run_at": "2026-10-16T12:56:25Z",
+  "source_commit": "99e8f86f330e58e8e9769363819b0d5e894a089d",
+  "frozen_sha256": "ce89002d9c919ad175abe6e10bd97b740163e47bb7e811532256b4ed478ee703",
+  "store_sha256": "a4af03c41c820b7445597f7a817d53898892b97a48ad06e73d9d078a42bea858",
+  "qmd_index_fingerprint": "2b2c4122f09fb8a9ba53cbd6cf8d2984be9dd5dae821706dbd9923dae6d4d1a3",
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.301 (Claude Code)"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T5/FROZEN.md (source commit 923aae7d11b0359d206a5ac525ca70317807d5b1, HEAD 99e8f86f330e58e8e9769363819b0d5e894a089d)"
+    },
+    {
+      "name": "validation",
+      "status": "ok",
+      "detail": "1095/1095 docs, 14994 sections, 396/396 tombstones, 0 mismatches; bound to store a4af03c41c82…"
+    },
+    {
+      "name": "replay",
+      "status": "ok",
+      "detail": "23 step records under this binary and a committed T5 freeze (FROZEN.md sha256 2b05043a90526aaecfb41f422bca49826ad6b9363d857dd6c9a57d91cd9a237b c0be5c06c7d4e1b439d33c91ec6d163784527f04d64277909ee1bea830ffc070 ; current ce89002d9c919ad175abe6e10bd97b740163e47bb7e811532256b4ed478ee703)"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "mda store unchanged since the replay (a4af03c41c82…)"
+    },
+    {
+      "name": "copy-git",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/git/src: main at c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c, no other refs"
+    },
+    {
+      "name": "copy-mda",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/src: main at c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c, no other refs"
+    },
+    {
+      "name": "copy-mda-index",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/src: main at c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c, no other refs"
+    },
+    {
+      "name": "copy-qmd",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/qmd/src: main at c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c, no other refs"
+    },
+    {
+      "name": "copy-graphify",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/prisma/graphify/src: main at c4ac0e9dd35d46ae34b5e979b2768be5cd0c390c, no other refs"
+    },
+    {
+      "name": "graph",
+      "status": "ok",
+      "detail": "served graph = archived graphify-haiku-prisma.graph.json.gz"
+    },
+    {
+      "name": "qmd-index",
+      "status": "ok",
+      "detail": "t5-qmd-prisma fingerprint 2b2c4122f09fb8a9ba53cbd6cf8d2984be9dd5dae821706dbd9923dae6d4d1a3"
+    },
+    {
+      "name": "probes-git",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-mda-index",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ACCEPTED-FAIL",
+      "detail": "1 of 3 probes activated; accepted and disclosed: under equal evidence the agents reach for grep/git rather than the arm's tool, and a compound git command is denied by the Bash(git *) rule; published with this disclosure (T1 precedent), per-row tool use reported in the table"
+    }
+  ],
+  "failed": 0,
+  "accepted_probe_failures": [
+    {
+      "arm": "graphify",
+      "probes_activated": 1,
+      "of": 3,
+      "reason": "under equal evidence the agents reach for grep/git rather than the arm's tool, and a compound git command is denied by the Bash(git *) rule; published with this disclosure (T1 precedent), per-row tool use reported in the table"
+    }
+  ],
+  "status": "passed with accepted probe failures",
+  "passed": true
+}

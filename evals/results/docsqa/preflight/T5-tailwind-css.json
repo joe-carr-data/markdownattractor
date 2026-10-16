@@ -1,0 +1,107 @@
+{
+  "table": "T5",
+  "project": "tailwind-css",
+  "run_at": "2026-10-16T11:40:43Z",
+  "source_commit": "cd770ba7a3669268110bd798247136cdef324bec",
+  "frozen_sha256": "744710571be2b76e754487f45e734ea0cb2688d69a6c29d04171fa8b1268b8b5",
+  "store_sha256": "3716c63141fb2cd57f7639cc32ae5da2401798af5c13341361e9a76fd6dde0b5",
+  "qmd_index_fingerprint": "3ef382e44f279f82bf387e19cbe9037dc7a8271568ec55e67ac7186cc5b5d686",
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.300 (Claude Code)"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T5/FROZEN.md (source commit 2e643d6d67c03a36d0bd2dabb9eaf0809f4ec7cc, HEAD cd770ba7a3669268110bd798247136cdef324bec)"
+    },
+    {
+      "name": "validation",
+      "status": "ok",
+      "detail": "263/263 docs, 1889 sections, 0/0 tombstones, 0 mismatches; bound to store 3716c63141fb…"
+    },
+    {
+      "name": "replay",
+      "status": "ok",
+      "detail": "10 step records under this binary and a committed T5 freeze (FROZEN.md sha256 2b05043a90526aaecfb41f422bca49826ad6b9363d857dd6c9a57d91cd9a237b ; current 744710571be2b76e754487f45e734ea0cb2688d69a6c29d04171fa8b1268b8b5)"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "mda store unchanged since the replay (3716c63141fb…)"
+    },
+    {
+      "name": "copy-git",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/git/src: main at bd868a314bd05ca78acd047e3da289274dd6ccd7, no other refs"
+    },
+    {
+      "name": "copy-mda",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src: main at bd868a314bd05ca78acd047e3da289274dd6ccd7, no other refs"
+    },
+    {
+      "name": "copy-mda-index",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src: main at bd868a314bd05ca78acd047e3da289274dd6ccd7, no other refs"
+    },
+    {
+      "name": "copy-qmd",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/qmd/src: main at bd868a314bd05ca78acd047e3da289274dd6ccd7, no other refs"
+    },
+    {
+      "name": "copy-graphify",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/graphify/src: main at bd868a314bd05ca78acd047e3da289274dd6ccd7, no other refs"
+    },
+    {
+      "name": "graph",
+      "status": "ok",
+      "detail": "served graph = archived graphify-tailwind-css.graph.json.gz"
+    },
+    {
+      "name": "qmd-index",
+      "status": "ok",
+      "detail": "t5-qmd-tailwind-css fingerprint 3ef382e44f279f82bf387e19cbe9037dc7a8271568ec55e67ac7186cc5b5d686"
+    },
+    {
+      "name": "probes-git",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-mda-index",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ACCEPTED-FAIL",
+      "detail": "1 of 3 probes activated; accepted and disclosed: under equal evidence the agents reach for grep/git rather than the arm's tool, and a compound git command is denied by the Bash(git *) rule: graphify activated 2/3, 1/3, 3/3 and git 3/3, 3/3, 2/3 across the kept attempts; published with this disclosure (T1 precedent), per-row tool use reported in the table"
+    }
+  ],
+  "failed": 0,
+  "accepted_probe_failures": [
+    {
+      "arm": "graphify",
+      "probes_activated": 1,
+      "of": 3,
+      "reason": "under equal evidence the agents reach for grep/git rather than the arm's tool, and a compound git command is denied by the Bash(git *) rule: graphify activated 2/3, 1/3, 3/3 and git 3/3, 3/3, 2/3 across the kept attempts; published with this disclosure (T1 precedent), per-row tool use reported in the table"
+    }
+  ],
+  "status": "passed with accepted probe failures",
+  "passed": true
+}

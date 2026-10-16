@@ -1,0 +1,301 @@
+{
+  "table": "T5",
+  "project": "tailwind-css",
+  "smoke": false,
+  "accepted_probe_failures": [
+    {
+      "arm": "graphify",
+      "probes_activated": 1,
+      "of": 3,
+      "reason": "under equal evidence the agents reach for grep/git rather than the arm's tool, and a compound git command is denied by the Bash(git *) rule: graphify activated 2/3, 1/3, 3/3 and git 3/3, 3/3, 2/3 across the kept attempts; published with this disclosure (T1 precedent), per-row tool use reported in the table"
+    }
+  ],
+  "model": "sonnet",
+  "runs": 3,
+  "arms": [
+    "git",
+    "mda",
+    "mda-index",
+    "qmd",
+    "graphify"
+  ],
+  "question_ids": [
+    "t5-01-which",
+    "t5-02-when",
+    "t5-03-when",
+    "t5-04-which",
+    "t5-05-which",
+    "t5-06-when",
+    "t5-07-when",
+    "t5-08-which",
+    "t5-09-which",
+    "t5-10-when",
+    "t5-11-when",
+    "t5-12-which",
+    "t5-13-when",
+    "t5-14-which",
+    "t5-15-when",
+    "t5-16-when",
+    "t5-17-when",
+    "t5-18-when",
+    "t5-19-which",
+    "t5-20-which",
+    "t5-21-which",
+    "t5-22-when",
+    "t5-23-which",
+    "t5-24-which",
+    "t5-25-when",
+    "t5-26-which",
+    "t5-27-which",
+    "t5-28-when",
+    "t5-29-when",
+    "t5-30-when",
+    "t5-31-which",
+    "t5-32-which",
+    "t5-33-which",
+    "t5-34-which",
+    "t5-35-which",
+    "t5-36-which",
+    "t5-37-when",
+    "t5-38-added",
+    "t5-39-which",
+    "t5-40-which"
+  ],
+  "questions_file": "/Users/jcarr/markdownattractor/evals/results/docsqa/T5/tailwind-css/questions.jsonl",
+  "questions_sha256": "4e4f3ee4d2207b8e122bacc003406187261b0e259141cd5aac956e2c0bfa43dc",
+  "launches": {
+    "git": {
+      "claude_flags": [
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/git/src",
+      "with_git": true,
+      "mcp": null,
+      "system_prompt": null
+    },
+    "mda": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.3IyavYs7pz",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__markdownattractor__*",
+        "--append-system-prompt-file",
+        "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src",
+      "with_git": true,
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "/Users/jcarr/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ],
+        "env": {
+          "MDA_ROOT": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src",
+          "MDA_MODEL_DIR": "/Users/jcarr/.cache/markdownattractor/models"
+        }
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "mda-index": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.CYmv0yhvZG",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__markdownattractor__*",
+        "--append-system-prompt-file",
+        "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src",
+      "with_git": false,
+      "mcp": {
+        "server": "markdownattractor",
+        "command": "/Users/jcarr/markdownattractor/target/release/mda",
+        "args": [
+          "mcp"
+        ],
+        "env": {
+          "MDA_ROOT": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src",
+          "MDA_MODEL_DIR": "/Users/jcarr/.cache/markdownattractor/models"
+        }
+      },
+      "system_prompt": {
+        "file": "/Users/jcarr/markdownattractor/skills/search-first/SKILL.md"
+      }
+    },
+    "qmd": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.qEdQ7XLF7K",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__qmd__*",
+        "--append-system-prompt-file",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/qmd-skill.XXXXXX.kFwX6dzc5q",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        ""
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/qmd/src",
+      "with_git": true,
+      "mcp": {
+        "server": "qmd",
+        "command": "qmd",
+        "args": [
+          "--index",
+          "t5-qmd-tailwind-css",
+          "mcp"
+        ]
+      },
+      "system_prompt": {
+        "source": "qmd skills get qmd --full",
+        "sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da"
+      }
+    },
+    "graphify": {
+      "claude_flags": [
+        "--mcp-config",
+        "/var/folders/1d/d6fpy07s6wb77r4j7kk1p4v80000gn/T/mda-arm-mcp.XXXXXX.giKlxUbl6A",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "--allowedTools",
+        "Read",
+        "Grep",
+        "Glob",
+        "mcp__graphify__*",
+        "--tools",
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "--allowedTools",
+        "Bash(git *)",
+        "--setting-sources",
+        "project"
+      ],
+      "model": "sonnet",
+      "cwd": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/graphify/src",
+      "with_git": true,
+      "mcp": {
+        "server": "graphify",
+        "command": "graphify-mcp",
+        "args": [
+          "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/graphify/src/../graph.json"
+        ],
+        "project_settings": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/graphify/src/.claude"
+      },
+      "system_prompt": {
+        "source": "project .claude/ written by graphify install --project"
+      }
+    }
+  },
+  "mda": "mda 0.1.1",
+  "mda_sha256": "f1a29935684844ab7d15d61412f2f92db4d142077fa3bb2d12f4a23fe423341d",
+  "preamble": "The current directory is a git checkout of a documentation site; you may run git. Dates are the UTC calendar days on which changes landed on the main branch. Answer through the structured output only: pages as repository-relative paths, sections as heading paths joined by ' › ', date as YYYY-MM-DD; leave the fields the question does not need empty.",
+  "answer_schema": {
+    "type": "object",
+    "properties": {
+      "pages": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "sections": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "date": {
+        "type": "string"
+      },
+      "evidence": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "pages",
+      "sections",
+      "date",
+      "evidence"
+    ],
+    "additionalProperties": false
+  },
+  "store_sha256": "3716c63141fb2cd57f7639cc32ae5da2401798af5c13341361e9a76fd6dde0b5",
+  "validation_sha256": "5175fdc2f670ea93c15e5ff3714b5df4bf74f64cc3c52642f0b5c7fa3d1f0954",
+  "steps_sha256": "264bd78457e87b3bb585ff142a45fb52acf44fccfae22f7ab12b52e8b8a1368f",
+  "frozen_sha256": "ce89002d9c919ad175abe6e10bd97b740163e47bb7e811532256b4ed478ee703",
+  "source_commit": "99e8f86f330e58e8e9769363819b0d5e894a089d",
+  "max_turns": 12,
+  "timeout_s": 600,
+  "retries": 1,
+  "recorded_at": "2026-10-16T12:33:07Z",
+  "rules": {
+    "failures": "a missing, errored, timed-out run or one without a structured answer is a row scored 0 correct; its effort (every attempt summed) is kept (rule 0.3)",
+    "tokens": "transcript usage per turn from message_delta, summed over attempts (rule 0.7)",
+    "servers": "every run starts its MCP server cold (rule 0.9)",
+    "git": "every arm but mda-index has .git and Bash restricted to git (plan §4 T5)"
+  }
+}
