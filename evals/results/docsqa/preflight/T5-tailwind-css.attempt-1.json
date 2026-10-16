@@ -1,0 +1,99 @@
+{
+  "table": "T5",
+  "project": "tailwind-css",
+  "run_at": "2026-10-15T09:13:16Z",
+  "source_commit": "5d495987e929580911c28c2fc3af41e2a464ac8a",
+  "frozen_sha256": "2b05043a90526aaecfb41f422bca49826ad6b9363d857dd6c9a57d91cd9a237b",
+  "store_sha256": "3716c63141fb2cd57f7639cc32ae5da2401798af5c13341361e9a76fd6dde0b5",
+  "qmd_index_fingerprint": "3ef382e44f279f82bf387e19cbe9037dc7a8271568ec55e67ac7186cc5b5d686",
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.300 (Claude Code)"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/docsqa/T5/FROZEN.md (source commit 45d328c5d4ad7f3d2650fd505b3300a0340e5b9f, HEAD 5d495987e929580911c28c2fc3af41e2a464ac8a)"
+    },
+    {
+      "name": "validation",
+      "status": "ok",
+      "detail": "263/263 docs, 1889 sections, 0/0 tombstones, 0 mismatches; bound to store 3716c63141fb…"
+    },
+    {
+      "name": "replay",
+      "status": "ok",
+      "detail": "10 step records under this freeze and this binary"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "mda store unchanged since the replay (3716c63141fb…)"
+    },
+    {
+      "name": "copy-git",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/git/src at bd868a314bd05ca78acd047e3da289274dd6ccd7"
+    },
+    {
+      "name": "copy-mda",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src at bd868a314bd05ca78acd047e3da289274dd6ccd7"
+    },
+    {
+      "name": "copy-mda-index",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/src at bd868a314bd05ca78acd047e3da289274dd6ccd7"
+    },
+    {
+      "name": "copy-qmd",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/qmd/src at bd868a314bd05ca78acd047e3da289274dd6ccd7"
+    },
+    {
+      "name": "copy-graphify",
+      "status": "ok",
+      "detail": "/Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/graphify/src at bd868a314bd05ca78acd047e3da289274dd6ccd7"
+    },
+    {
+      "name": "graph",
+      "status": "ok",
+      "detail": "served graph = archived graphify-tailwind-css.graph.json.gz"
+    },
+    {
+      "name": "qmd-index",
+      "status": "ok",
+      "detail": "t5-qmd-tailwind-css fingerprint 3ef382e44f279f82bf387e19cbe9037dc7a8271568ec55e67ac7186cc5b5d686"
+    },
+    {
+      "name": "probes-git",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-mda-index",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool (on its copy)"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "FAIL",
+      "detail": "2 of 3 probes activated (see /Users/jcarr/.cache/markdownattractor/bench/t5/tailwind-css/probes.err and the probe traces)"
+    }
+  ],
+  "failed": 1,
+  "status": "failed",
+  "passed": false
+}

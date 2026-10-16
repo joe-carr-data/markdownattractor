@@ -254,6 +254,7 @@ pub struct Opened {
 impl Engine {
     /// Open (or create) the engine for `root`: loads `config.toml` and opens the store.
     pub fn open(root: &Path) -> Result<Self> {
+        crate::clock::check()?;
         let root = root.canonicalize().map_err(|e| Error::io(root, e))?;
         let config = Config::load(&root)?;
         let store = Store::open(&crate::config::state_dir(&root)?.join(INDEX_FILE))?;
@@ -405,7 +406,7 @@ impl Engine {
             Ok(_) => ignored("not a regular file"),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => match known {
                 Some(content_hash) => {
-                    self.store.tombstone(&rel_path, Timestamp::now())?;
+                    self.store.tombstone(&rel_path, crate::clock::now())?;
                     Ok(SyncOutcome::Tombstoned { rel_path, content_hash })
                 }
                 None => ignored("never indexed"),
@@ -442,7 +443,7 @@ impl Engine {
             }
         }
 
-        let now = Timestamp::now();
+        let now = crate::clock::now();
         for doc in self.store.documents()? {
             if !discovered.contains(&doc.rel_path) && self.store.tombstone(&doc.rel_path, now)? {
                 tracing::info!(path = doc.rel_path, "tombstoned: no longer discovered");
@@ -543,7 +544,7 @@ impl Engine {
                 prompt_version: "deterministic".to_owned(),
                 schema_version: SCHEMA_VERSION,
                 backend: "deterministic".to_owned(),
-                summarized_at: Timestamp::now(),
+                summarized_at: crate::clock::now(),
                 truncated: false,
             };
             self.store.attach_summary(
@@ -641,7 +642,7 @@ impl Engine {
                         prompt_version: crate::worker::PROMPT_VERSION.to_owned(),
                         schema_version: SCHEMA_VERSION,
                         backend: backend_name.to_owned(),
-                        summarized_at: Timestamp::now(),
+                        summarized_at: crate::clock::now(),
                         truncated: truncated.contains(&r.id),
                     };
                     let stored_usage = StoredUsage {
@@ -950,7 +951,7 @@ struct Round {
 
 /// Midnight UTC today. The daily budget resets on UTC days so it is the same everywhere.
 fn start_of_today() -> Timestamp {
-    let now = Timestamp::now();
+    let now = crate::clock::now();
     let secs = now.as_second();
     Timestamp::from_second(secs - secs.rem_euclid(86_400)).unwrap_or(now)
 }
@@ -996,12 +997,12 @@ fn request_for(p: &PendingSection, cfg: PlanConfig) -> SummarizeRequest {
 pub fn file_times(path: &Path) -> Result<DocTimes> {
     let meta = std::fs::metadata(path).map_err(|e| Error::io(path, e))?;
     let to_ts = |t: std::time::SystemTime| Timestamp::try_from(t).ok();
-    let modified = meta.modified().ok().and_then(to_ts).unwrap_or_else(Timestamp::now);
+    let modified = meta.modified().ok().and_then(to_ts).unwrap_or_else(crate::clock::now);
     let created = meta.created().ok().and_then(to_ts).filter(|c| *c <= modified);
     Ok(DocTimes {
         created_at: created,
         modified_at: modified,
-        now: Timestamp::now(),
+        now: crate::clock::now(),
         size_bytes: meta.len(),
     })
 }

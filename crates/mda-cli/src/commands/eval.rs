@@ -116,20 +116,26 @@ pub struct Args {
     /// expected run that has no row a failure.
     #[arg(long, conflicts_with_all = ["dataset", "golden", "record", "compare", "interval"])]
     pub analysis: Option<PathBuf>,
-    /// The runner's `manifest.json` for `--analysis`: required, so that every expected run
-    /// that has no row is a failure and every row is validated against the run set; an
-    /// analysis without one is diagnostic only (`--no-manifest`).
-    #[arg(long, requires = "analysis", conflicts_with = "no_manifest")]
+    /// The T5 analysis (plan §4 T5) of a replay `grades.jsonl`: question-level medians with
+    /// failed runs as 0 correct, mda against each comparator with a paired bootstrap of the
+    /// correctness, tool-call and source-token differences, and the preregistered claim
+    /// (Δcorrect lower bound ≥ −0.05 and both effort upper bounds < 0). Needs `--manifest`.
+    #[arg(long, conflicts_with_all = ["dataset", "golden", "record", "compare", "interval", "analysis"])]
+    pub replay_analysis: Option<PathBuf>,
+    /// The runner's `manifest.json` for `--analysis` / `--replay-analysis`: required, so that
+    /// every expected run that has no row is a failure and every row is validated against the
+    /// run set; a T2 analysis without one is diagnostic only (`--no-manifest`).
+    #[arg(long, conflicts_with = "no_manifest")]
     pub manifest: Option<PathBuf>,
     /// Analyse a grades file without a manifest (diagnostic: absent questions and runs
     /// missing from every question are invisible).
     #[arg(long, requires = "analysis")]
     pub no_manifest: bool,
     /// The mda arm's name in the grade rows.
-    #[arg(long, default_value = "mda", requires = "analysis")]
+    #[arg(long, default_value = "mda")]
     pub mda_arm: String,
     /// The comparator arms, in order.
-    #[arg(long, default_value = "grep,qmd,graphify", value_delimiter = ',', requires = "analysis")]
+    #[arg(long, default_value = "grep,qmd,graphify", value_delimiter = ',')]
     pub comparators: Vec<String>,
     /// Paired comparison of archived runs instead of an evaluation (execution plan §3,
     /// 2026-09-24 amendment): `--compare <label> <baseline results.json> <candidate
@@ -201,6 +207,7 @@ pub struct Miss {
 }
 
 /// Run the command.
+#[allow(clippy::too_many_lines)] // one dispatch per mode; each mode has its own function
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     if !args.compare.is_empty() {
         return run_compare(args, json);
@@ -210,6 +217,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     }
     if args.analysis.is_some() {
         return run_analysis(args, json);
+    }
+    if args.replay_analysis.is_some() {
+        return run_replay_analysis(args, json);
     }
     if args.dataset.as_deref() == Some("docsqa") {
         return run_docsqa(args, json);
@@ -304,6 +314,65 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "  {} no cards.json in the golden set: only the lexical run was measured",
             st.dim("note:")
         );
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// `--replay-analysis`: the T5 analysis of a replay grades file (plan §4 T5).
+fn run_replay_analysis(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    use mda_core::eval::{analysis, replay};
+    let Some(grades) = &args.replay_analysis else { unreachable!("checked by the caller") };
+    let Some(manifest) = &args.manifest else {
+        anyhow::bail!("--replay-analysis needs --manifest <manifest.json>");
+    };
+    let rows = replay::read_rows(grades)?;
+    let manifest_v = analysis::read_manifest(manifest)?;
+    let opts = replay::ReplayOptions {
+        mda_arm: args.mda_arm.clone(),
+        comparators: args.comparators.clone(),
+        draws: if args.draws == 5000 { 10_000 } else { args.draws },
+        seed: args.seed,
+        ..replay::ReplayOptions::default()
+    };
+    let a = replay::analyse(&rows, &manifest_v, &opts)?;
+    if json {
+        output::json(&serde_json::json!({
+            "grades": portable(grades), "manifest": portable(manifest),
+            "options": {"mda_arm": opts.mda_arm, "comparators": opts.comparators, "draws": opts.draws, "seed": opts.seed, "min_correct_lower": opts.min_correct_lower},
+            "analysis": a,
+        }));
+        return Ok(ExitCode::SUCCESS);
+    }
+    for arm in &a.arms {
+        println!(
+            "{}: correct {:.2} over {} questions · failed runs {} · median tool calls {} · median source tokens {}",
+            arm.arm,
+            arm.correct_rate,
+            arm.questions,
+            arm.failed,
+            arm.tool_calls.map_or("n/a".to_owned(), |x| format!("{x:.1}")),
+            arm.source_tokens.map_or("n/a".to_owned(), |x| format!("{x:.0}"))
+        );
+    }
+    for p in &a.pairs {
+        println!(
+            "{} vs {}: Δcorrect {:+.3} [{:+.3}, {:+.3}] · Δcalls {:+.1} [{:+.1}, {:+.1}] · Δsource {:+.0} [{:+.0}, {:+.0}] · claim {}",
+            opts.mda_arm,
+            p.comparator,
+            p.correct.diff,
+            p.correct.lower,
+            p.correct.upper,
+            p.tool_calls.diff,
+            p.tool_calls.lower,
+            p.tool_calls.upper,
+            p.source_tokens.diff,
+            p.source_tokens.lower,
+            p.source_tokens.upper,
+            p.claim
+        );
+    }
+    if !a.missing_comparators.is_empty() {
+        println!("comparators absent from the manifest: {}", a.missing_comparators.join(", "));
     }
     Ok(ExitCode::SUCCESS)
 }
@@ -1011,7 +1080,7 @@ fn attach_cards(
         prompt_version: "recorded".to_owned(),
         schema_version: SCHEMA_VERSION,
         backend: "golden".to_owned(),
-        summarized_at: jiff::Timestamp::now(),
+        summarized_at: mda_core::clock::now(),
         truncated: false,
     };
     for p in store.pending_hashes(usize::MAX)? {

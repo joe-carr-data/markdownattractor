@@ -1,0 +1,44 @@
+{
+ "project": "prisma",
+ "steps": 23,
+ "expected_documents": 1095,
+ "docs_checked": 1095,
+ "sections_checked": 14994,
+ "expected_tombstones": 396,
+ "tombstones_checked": 396,
+ "ignored_markdown_in_final_tree": [
+  ".claude/CLAUDE.md",
+  ".claude/skills/README.md",
+  ".claude/skills/content-create-hero-image/README.md",
+  ".claude/skills/content-create-hero-image/SKILL.md",
+  ".claude/skills/content-create-hero-image/assets/fonts/README.md",
+  ".claude/skills/content-create-hero-image/assets/logos/README.md",
+  ".claude/skills/content-create-hero-image/references/design-review.md",
+  ".claude/skills/content-create-hero-image/references/design-system.md",
+  ".claude/skills/content-create-hero-image/references/figma-mcp.md",
+  ".claude/skills/content-create-hero-image/references/figma-source.md",
+  ".claude/skills/content-seo-geo/SKILL.md",
+  ".claude/skills/content-write-blog/SKILL.md",
+  ".claude/skills/docs-agent-ready/SKILL.md",
+  ".claude/skills/docs-writer/README.md",
+  ".claude/skills/docs-writer/SKILL.md",
+  ".claude/skills/docs-writer/references/how-to-use.md",
+  ".claude/skills/docs-writer/references/prisma-8.md"
+ ],
+ "excluded_by_rule": {
+  "hidden": 18,
+  "gitignore": 0,
+  "config_ignore": 0
+ },
+ "mismatches": 0,
+ "mismatch_kinds": {},
+ "mismatch_sample": [],
+ "created_at_sources": {
+  "birthtime": 1095
+ },
+ "store_sha256": "a4af03c41c820b7445597f7a817d53898892b97a48ad06e73d9d078a42bea858",
+ "steps_sha256": "52b9dc7a357d389b8c8de616d88ab3b6125dbd0a7801a659cfbafe989bd238f8",
+ "validated_at": "2026-10-16T12:33:03Z",
+ "passed": true,
+ "semantics": "expectations from the step trees: a live document for every markdown file of the final tree the walker indexes (symlinks, hidden entries, .gitignore/.ignore matches and config.ignore patterns excluded, as walk.rs does), its sections equal to `mda parse` of the file; updated_at = the date of the last step whose tree changed the file, else the first step; first_seen_at and created_at (source birthtime or first_seen \u2014 macOS moves the birth time down to an earlier mtime) = the first step the file is present at; section updated_at \u2208 {first step} \u222a the file's change steps; a tombstone dated at the first step the file is absent after being present, and no other tombstones"
+}

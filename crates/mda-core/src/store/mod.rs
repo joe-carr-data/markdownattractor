@@ -806,7 +806,7 @@ impl Store {
     /// [`Error::NotFound`] if the hash has never been seen.
     pub fn mark_failed(&mut self, section_hash: &str, reason: &str) -> Result<()> {
         let tx = self.write_tx()?;
-        let now = Timestamp::now();
+        let now = crate::clock::now();
         let updated = tx.execute(
             "UPDATE summaries SET state = 'failed', fail_reason = ?2
              WHERE section_hash = ?1 AND state = 'pending'",
@@ -1223,7 +1223,7 @@ impl Store {
              VALUES (?1, ?2, ?3, ?4, ?5)
              ON CONFLICT(section_hash, model) DO UPDATE SET dim = excluded.dim,
                 vector = excluded.vector, embedded_at = excluded.embedded_at",
-            params![section_hash, model, dim, blob, fmt_ts(Timestamp::now())],
+            params![section_hash, model, dim, blob, fmt_ts(crate::clock::now())],
         )?;
         Ok(())
     }
@@ -1674,7 +1674,7 @@ impl Store {
             "INSERT INTO usage_log (at, section_hash, model, outcome, input_tokens, output_tokens, cost_usd)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
-                fmt_ts(Timestamp::now()),
+                fmt_ts(crate::clock::now()),
                 section_hash,
                 model,
                 outcome,

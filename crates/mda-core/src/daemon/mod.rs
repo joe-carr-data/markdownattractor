@@ -313,6 +313,15 @@ pub async fn run(
     cancel: CancellationToken,
 ) -> Result<()> {
     let root = root.canonicalize().map_err(|e| Error::io(root, e))?;
+    crate::clock::check()?;
+    if crate::clock::override_active() {
+        // A watcher under a frozen clock would stamp every later edit with the same instant;
+        // the override exists for inline replays (`MDA_NOW=… mda index`) only.
+        return Err(Error::Daemon(format!(
+            "refusing to run with {} set: the clock override is for inline indexing only",
+            crate::clock::ENV
+        )));
+    }
     // The lock is what makes "one daemon per root" true, whatever the socket says; it is
     // held until this function returns and released by the OS if the process dies.
     let root_lock = Lock::acquire(&root).map_err(|e| {
@@ -325,7 +334,7 @@ pub async fn run(
     let info = DaemonInfo {
         pid: std::process::id(),
         version: crate::VERSION.to_owned(),
-        started_at: Timestamp::now(),
+        started_at: crate::clock::now(),
         root: root.display().to_string(),
         socket: server.location().to_string(),
     };
@@ -561,7 +570,7 @@ fn apply_batch(engine: &mut Engine, batch: Batch, shared: &Arc<Shared>) {
             && let Some(i) = created.iter().position(|(_, h)| *h == hash)
         {
             let (to, _) = created.remove(i);
-            match engine.store_mut().note_rename(&rel, &to, Timestamp::now()) {
+            match engine.store_mut().note_rename(&rel, &to, crate::clock::now()) {
                 Ok(true) => {
                     lock(&shared.live).renamed += 1;
                     shared.publish(DaemonEvent::Renamed { from: rel, to });
@@ -766,7 +775,7 @@ fn record_round(shared: &Shared, r: &crate::pipeline::SummarizeReport) {
         live.cards += (r.ok + r.deterministic) as u64;
         live.failures += r.failed as u64;
         live.cost_usd += r.pool.usage.cost_usd;
-        live.last_round_at = Some(Timestamp::now());
+        live.last_round_at = Some(crate::clock::now());
     }
     shared.publish(DaemonEvent::RoundFinished {
         ok: r.ok,

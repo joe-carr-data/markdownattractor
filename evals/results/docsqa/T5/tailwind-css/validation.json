@@ -1,0 +1,26 @@
+{
+ "project": "tailwind-css",
+ "steps": 10,
+ "expected_documents": 263,
+ "docs_checked": 263,
+ "sections_checked": 1889,
+ "expected_tombstones": 0,
+ "tombstones_checked": 0,
+ "ignored_markdown_in_final_tree": [],
+ "excluded_by_rule": {
+  "hidden": 0,
+  "gitignore": 0,
+  "config_ignore": 0
+ },
+ "mismatches": 0,
+ "mismatch_kinds": {},
+ "mismatch_sample": [],
+ "created_at_sources": {
+  "birthtime": 263
+ },
+ "store_sha256": "3716c63141fb2cd57f7639cc32ae5da2401798af5c13341361e9a76fd6dde0b5",
+ "steps_sha256": "264bd78457e87b3bb585ff142a45fb52acf44fccfae22f7ab12b52e8b8a1368f",
+ "validated_at": "2026-10-16T12:32:55Z",
+ "passed": true,
+ "semantics": "expectations from the step trees: a live document for every markdown file of the final tree the walker indexes (symlinks, hidden entries, .gitignore/.ignore matches and config.ignore patterns excluded, as walk.rs does), its sections equal to `mda parse` of the file; updated_at = the date of the last step whose tree changed the file, else the first step; first_seen_at and created_at (source birthtime or first_seen \u2014 macOS moves the birth time down to an earlier mtime) = the first step the file is present at; section updated_at \u2208 {first step} \u222a the file's change steps; a tombstone dated at the first step the file is absent after being present, and no other tombstones"
+}

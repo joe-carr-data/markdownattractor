@@ -7,6 +7,7 @@
 pub mod analysis;
 pub mod docsqa;
 pub mod paired;
+pub mod replay;
 
 use std::collections::HashMap;
 

@@ -174,10 +174,10 @@ Estimates come from the pilots (M1 runbook timing for builds, M5 pilot for T2 th
 - [x] M3 T1 development rows, pooled judgments, tuning loop (PR #24).
 - [ ] Post-stop exploration c3–c7, information only (2026-09-24 amendment of §3).
 - [x] M4 T1 published (test split), Codex pass (2026-09-24/25; `docs/reviews/codex/2026-09-24-bench-m4.md`).
-- [ ] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass.
+- [x] M5 T2 harness (runner, tokens, grounding, analysis, panel, pilot), Codex pass (2026-09-25; `docs/reviews/codex/2026-09-25-bench-m5.md`).
 - [x] M6 T2 + T3 published (2026-09-26; no savings claim passed the gates).
 - [x] M7 T4 published (2026-09-27; mda save → card p50 8.4 s, G1 met).
-- [ ] M8 T5 published.
+- [x] M8 T5 published (2026-10-16; no pair earns the claim: mda is never cheaper on effort under equal evidence; correctness intervals include zero on Tailwind, mda above git and qmd and below graphify on Prisma).
 - [ ] M9 T6, README row, page restructure.
 
 ## 9. Exit criteria

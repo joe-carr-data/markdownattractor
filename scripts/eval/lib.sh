@@ -151,18 +151,35 @@ bm25_fingerprint() { # project
 # T4 runs every arm on a working copy: ARM_CORPUS_OVERRIDE (the copy the session runs in; mda's
 # server is pointed at it), ARM_QMD_INDEX (the qmd index name registered on the copy) and
 # ARM_GRAPHIFY_DIR (the graphify build directory holding graph.json and src/) override the
-# defaults derived from the project.
+# defaults derived from the project. T5 (the historical replay) sets ARM_WITH_GIT=1: every arm
+# also gets Bash restricted to `git` (plan §4 T5: every answering arm may read history the same
+# way), and the `git` arm — Claude with Read/Grep/Glob and `git` in Bash, no index — exists only
+# under it.
 arm_launch() { # arm project model
   local arm="$1" project="$2" model="$3" dir mcp_cfg="" skill="" skill_sha=""
   dir="$(project_dir "$project")"; ARM_CORPUS="${ARM_CORPUS_OVERRIDE:-$RUN/$dir}"; ARM_SETTING_SOURCES=""; ARM_TMP=()
   case "$arm" in
+    mda-index)
+      # T5 only: mda through its MCP server WITHOUT git in Bash — the time index has to answer
+      # alone (ARM_WITH_GIT does not apply to this arm); otherwise identical to mda.
+      [ "${ARM_WITH_GIT:-0}" = 1 ] || die "the mda-index arm exists only under ARM_WITH_GIT=1 (T5)"
+      mcp_cfg="$(mktemp -t mda-arm-mcp.XXXXXX)"; ARM_TMP+=("$mcp_cfg")
+      jq -n --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg models "$MDA_MODEL_DIR" \
+        '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: $models}}}}' > "$mcp_cfg"
+      ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__markdownattractor__*"
+                --append-system-prompt-file "$REPO/skills/search-first/SKILL.md")
+      ARM_WANT='^mcp__markdownattractor__(mda_search|mda_timeline|mda_recent)$' ;;
+    git)
+      [ "${ARM_WITH_GIT:-0}" = 1 ] || die "the git arm exists only under ARM_WITH_GIT=1 (T5)"
+      ARM_ARGS=(--tools Read Grep Glob --allowedTools Read Grep Glob)
+      ARM_WANT='^Bash$' ;;
     mda)
       mcp_cfg="$(mktemp -t mda-arm-mcp.XXXXXX)"; ARM_TMP+=("$mcp_cfg")
       jq -n --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg models "$MDA_MODEL_DIR" \
         '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: $models}}}}' > "$mcp_cfg"
       ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__markdownattractor__*"
                 --append-system-prompt-file "$REPO/skills/search-first/SKILL.md")
-      ARM_WANT='^mcp__markdownattractor__mda_search$' ;;
+      ARM_WANT='^mcp__markdownattractor__(mda_search|mda_timeline|mda_recent)$' ;;   # the temporal tools count since T5 (2026-10-15)
     grep)
       ARM_ARGS=(--tools Read Grep Glob --allowedTools Read Grep Glob)
       ARM_WANT='^(Grep|Read|Glob)$' ;;
@@ -187,14 +204,20 @@ arm_launch() { # arm project model
       jq -n --arg graph "$G/graph.json" '{mcpServers: {graphify: {command: "graphify-mcp", args: [$graph]}}}' > "$mcp_cfg"
       ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__graphify__*")
       ARM_WANT='^mcp__graphify__(query_graph|get_node|get_neighbors|get_community|god_nodes|shortest_path)$' ;;
-    *) die "unknown arm $arm (mda|grep|qmd|graphify|graphify-haiku)" ;;
+    *) die "unknown arm $arm (mda|grep|qmd|graphify|graphify-haiku|git|mda-index)" ;;
   esac
-  ARM_LAUNCH="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" --arg sources "$ARM_SETTING_SOURCES" --arg skill_sha "$skill_sha" \
-    --args '{claude_flags: ($ARGS.positional + ["--setting-sources", $sources]), model: $model, cwd: $root,
-             mcp: (if $arm == "mda" then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
+  if [ "${ARM_WITH_GIT:-0}" = 1 ] && [ "$arm" != mda-index ]; then
+    # `--tools` lists the built-in set; `--allowedTools` pre-approves `git` invocations only
+    # (any other Bash command would prompt and, under dontAsk, be denied). Appended after the
+    # arm's own flags so the launch record shows both.
+    ARM_ARGS+=(--tools Read Grep Glob Bash --allowedTools "Bash(git *)")
+  fi
+  ARM_LAUNCH="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" --arg sources "$ARM_SETTING_SOURCES" --arg skill_sha "$skill_sha" --arg with_git "$([ "${ARM_WITH_GIT:-0}" = 1 ] && [ "$arm" != mda-index ] && echo 1 || echo 0)" \
+    --args '{claude_flags: ($ARGS.positional + ["--setting-sources", $sources]), model: $model, cwd: $root, with_git: ($with_git == "1"),
+             mcp: (if ($arm == "mda" or $arm == "mda-index") then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
                    elif $arm == "qmd" then {server: "qmd", command: "qmd", args: ["--index", (env.ARM_QMD_INDEX // $project), "mcp"]}
                    elif ($arm | startswith("graphify")) then {server: "graphify", command: "graphify-mcp", args: [($root + "/../graph.json")], project_settings: ($root + "/.claude")} else null end),
-             system_prompt: (if $arm == "mda" then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} elif ($arm | startswith("graphify")) then {source: "project .claude/ written by graphify install --project"} else null end)}' -- "${ARM_ARGS[@]}")"
+             system_prompt: (if ($arm == "mda" or $arm == "mda-index") then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} elif ($arm | startswith("graphify")) then {source: "project .claude/ written by graphify install --project"} else null end)}' -- "${ARM_ARGS[@]}")"
 }
 
 # The split a question belongs to, from the committed split.json.

@@ -220,7 +220,7 @@ pub fn search_with(
     let (lexical, via_or) = lexical_lists(store, query, fetch, opts)?;
     let fused = fuse(store, &lexical, &vector_hits, opts)?;
 
-    let now = Timestamp::now();
+    let now = crate::clock::now();
     let mut scored: Vec<Hit> = fused
         .into_iter()
         .map(|(section, matched, vector_score, rrf)| {
@@ -588,7 +588,7 @@ mod tests {
 
     #[test]
     fn recency_is_one_now_and_half_plus_at_one_half_life() {
-        let now = Timestamp::now();
+        let now = crate::clock::now();
         assert!((recency_factor(now, now, 30.0) - 1.0).abs() < 1e-9);
         let month_ago = now - jiff::SignedDuration::from_hours(24 * 30);
         assert!((recency_factor(month_ago, now, 30.0) - 0.75).abs() < 0.01);

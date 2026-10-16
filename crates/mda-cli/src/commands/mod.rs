@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn relative_forms_parse() {
-        let now = Timestamp::now();
+        let now = mda_core::clock::now();
         let t = parse_time("7d").unwrap();
         let diff = now.as_second() - t.as_second();
         assert!((diff - 7 * 86_400).abs() <= 2);
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn humanize() {
-        let now = Timestamp::now();
+        let now = mda_core::clock::now();
         assert_eq!(humanize_age(now), "just now");
         assert_eq!(humanize_age(now - 90.minutes()), "1 hour ago");
         assert_eq!(humanize_age(now - (3 * 24).hours()), "3 days ago");
