@@ -57,4 +57,3 @@ Dated one-liners. Newest first. Pruned monthly: entries that became rules gradua
 - 2026-09-21 — `--json-schema` output is a tool call. Without thinking, Haiku often writes the JSON as text first; the CLI's reminder turn then loses the content ~25% of the time. One protocol line in the system prompt ("your ONLY action is to call the StructuredOutput tool… on your first turn") → 0/24 failures.
 - 2026-09-21 — `claude -p` result JSON: `subtype` is unreliable (a 404 came back as `subtype: "success"`). Branch on `is_error`, `api_error_status`, and `structured_output != null`.
 - 2026-09-21 — `claude -p` waits 3 s for stdin when stdin is not a TTY. Always write the chunk and close stdin immediately.
-- 2026-09-21 — Haiku straightens curly quotes in `evidence` strings. Grounding check must fold quotes/dashes and collapse whitespace before substring matching, or 2/9 correct dates fail validation.
