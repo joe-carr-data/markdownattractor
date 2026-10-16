@@ -203,7 +203,7 @@ runtime() {
   if [ "${table:-}" = T5 ]; then
     local pr5
     for pr5 in ${T5_PROJECTS:-prisma tailwind-css}; do
-      echo "- T5 $pr5 state at freeze time (the counted replay runs after the freeze and changes it; recorded, not checked): replay store $([ -f "$RUN/t5/$pr5/src/.markdownattractor/index.sqlite" ] && sha256 "$RUN/t5/$pr5/src/.markdownattractor/index.sqlite" || echo none) · clone HEAD $(git -C "$RUN/t5/$pr5/src" rev-parse HEAD 2>/dev/null || echo none) · replayed steps $(ls "$RUN/t5/$pr5/replay" 2>/dev/null | grep -c '^[0-9]*\.json$' || true)"
+      echo "- T5 $pr5 state at freeze time (the counted replay runs after the freeze and changes it; recorded, not checked): replay store $([ -f "$RUN/t5/$pr5/src/.markdownattractor/index.sqlite" ] && sha256 "$RUN/t5/$pr5/src/.markdownattractor/index.sqlite" || echo none) · clone HEAD $(git -C "$RUN/t5/$pr5/src" rev-parse HEAD 2>/dev/null || echo none) · replayed steps $(find "$RUN/t5/$pr5/replay" -maxdepth 1 -name '[0-9]*.json' 2>/dev/null | wc -l | tr -d ' ')"
     done
   fi
   if [ "${table:-}" = T4 ]; then

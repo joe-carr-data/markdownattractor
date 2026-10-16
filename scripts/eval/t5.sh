@@ -467,7 +467,7 @@ PY
 
   status)
     project="${1:?project}"; P="$(pdir "$project")"
-    echo "steps: $(grep -c . "$RES/$project/steps.jsonl" 2>/dev/null || echo 0) · replayed: $(ls "$P/replay" 2>/dev/null | grep -c '^[0-9]*\.json$' || true) · validation: $(jq -r '.passed // "n/a"' "$RES/$project/validation.json" 2>/dev/null || echo n/a) · questions: $(grep -c . "$RES/$project/questions.jsonl" 2>/dev/null || echo 0) · rows: $(ls "$P/runs/rows" 2>/dev/null | wc -l | tr -d ' ')" ;;
+    echo "steps: $(grep -c . "$RES/$project/steps.jsonl" 2>/dev/null || echo 0) · replayed: $(find "$P/replay" -maxdepth 1 -name '[0-9]*.json' 2>/dev/null | wc -l | tr -d ' ') · validation: $(jq -r '.passed // "n/a"' "$RES/$project/validation.json" 2>/dev/null || echo n/a) · questions: $(grep -c . "$RES/$project/questions.jsonl" 2>/dev/null || echo 0) · rows: $(ls "$P/runs/rows" 2>/dev/null | wc -l | tr -d ' ')" ;;
 
   *) ;;
 esac
