@@ -305,8 +305,15 @@ PY
         pend="$("$MDA" --json status --root "$SRC" | jq -r '.counts.pending')"; [ "$pend" = 0 ] && break
         MDA_NOW="$at" "$MDA" index --root "$SRC" >> "$P/replay/$n.log" 2>&1 || true
       done
+      # Sections whose summarisation failed are retried twice (`--retry-failed`); a card that still
+      # fails is product behaviour (the section stays raw-searchable, its dates are unaffected) and
+      # is recorded in the step record, not a reason to stop the replay. Pending work is.
+      for ((k = 0; k < 2; k++)); do
+        [ "$("$MDA" --json status --root "$SRC" | jq -r '.counts.failed')" = 0 ] && break
+        MDA_NOW="$at" "$MDA" index --retry-failed --root "$SRC" >> "$P/replay/$n.log" 2>&1 || true
+      done
       t1=$(date +%s); after="$("$MDA" --json status --root "$SRC" | jq -c '.counts')"
-      [ "$(jq -r .pending <<<"$after")" = 0 ] && [ "$(jq -r .failed <<<"$after")" = 0 ] || die "step $n did not complete: $(jq -c '{pending, failed}' <<<"$after") (no step record written; fix and rerun)"
+      [ "$(jq -r .pending <<<"$after")" = 0 ] || die "step $n did not complete: $(jq -c '{pending, failed}' <<<"$after") (no step record written; fix and rerun)"
       jq -n --argjson n "$n" --arg sha "$sha" --arg at "$at" --argjson before "$before" --argjson after "$after" --argjson secs "$((t1 - t0))" --arg store "$(store_sha "$SRC")" --arg done_at "$(date -u +%FT%TZ)" --arg bin "$bin_sha" --arg fz "$fz" \
         '{step: $n, sha: $sha, mda_now: $at, seconds: $secs, counts_before: $before, counts_after: $after, cost_usd_delta: (($after.total_cost_usd // 0) - ($before.total_cost_usd // 0)), store_sha256: $store, mda_sha256: $bin, frozen_sha256: $fz, replayed_at: $done_at}' > "$P/replay/$n.json.tmp" && mv "$P/replay/$n.json.tmp" "$P/replay/$n.json"
       echo "step $n $sha ($at): $((t1 - t0)) s · docs $(jq -r .docs <<<"$after") · sections $(jq -r .sections <<<"$after") · summarized $(jq -r .summarized <<<"$after") · failed $(jq -r .failed <<<"$after") · +\$$(jq -r .cost_usd_delta "$P/replay/$n.json")"
@@ -403,6 +410,11 @@ PY
   arms)
     project="${1:?project}"; ident "$project"; P="$(pdir "$project")"; SRC="$P/src"; rev="$(src_field "$project" revision)"
     [ "$(git -C "$SRC" rev-parse HEAD)" = "$rev" ] || die "the replay clone is not at the pinned revision (replay incomplete?)"
+    # Equal evidence ends at the pinned revision: the clone's `main` is the fetched tip (weeks past
+    # the range) and `git log main` would show history the store never saw. Every copy gets `main`
+    # at the pinned revision as its checked-out branch and no remote-tracking refs.
+    pin_refs() { git -C "$1" update-ref refs/heads/main "$rev"; git -C "$1" symbolic-ref HEAD refs/heads/main; git -C "$1" update-ref -d refs/remotes/origin/main 2>/dev/null || true; git -C "$1" update-ref -d refs/remotes/origin/HEAD 2>/dev/null || true; git -C "$1" remote remove origin 2>/dev/null || true; }
+    pin_refs "$SRC"
     for a in git qmd; do
       if [ ! -d "$P/$a/src" ]; then mkdir -p "$P/$a/src"; rsync -a --exclude .markdownattractor "$SRC/" "$P/$a/src/"; echo "$a copy: $P/$a/src"; fi
     done
@@ -412,6 +424,10 @@ PY
       (cd "$P/graphify/src" && git reset -q --hard "$rev")   # the build's tracked files were unmodified; its .claude/, CLAUDE.md, graphify-out/ stay untracked beside the full tree
       echo "graphify copy: $P/graphify (history attached)"
     fi
+    for d in "$P/git/src" "$P/qmd/src" "$P/graphify/src"; do pin_refs "$d"; done
+    for d in "$SRC" "$P/git/src" "$P/qmd/src" "$P/graphify/src"; do
+      [ "$(git -C "$d" for-each-ref --format='%(refname) %(objectname)' | tr '\n' ' ')" = "refs/heads/main $rev " ] || die "$d: refs are not exactly main at $rev: $(git -C "$d" for-each-ref --format='%(refname)' | tr '\n' ' ')"
+    done
     [ "$(sha256 "$P/graphify/graph.json")" = "$(gunzip -c "$(graphify_archive "$project")" | shasum -a 256 | cut -c1-64)" ] || die "the served graph $P/graphify/graph.json differs from the archived $(graphify_archive "$project")"
     qi="t5-qmd-$project"
     if [ ! -f "$HOME/.config/qmd/$qi.yml" ]; then
@@ -662,7 +678,7 @@ PY
       [ -z "$bad" ] && rec replay ok "$n_rec step records under this binary and a committed T5 freeze (FROZEN.md sha256 $under; current $(frozen_sha))" || rec replay FAIL "steps $bad were replayed under an unknown freeze or another binary (a dry run is never counted)"
     fi
     [ "$(store_sha "$P/src")" = "$(jq -r .store_sha256 "$P/replay/embeddings.json" 2>/dev/null)" ] && rec store ok "mda store unchanged since the replay ($(store_sha "$P/src" | cut -c1-12)…)" || rec store FAIL "mda store differs from the end of the replay"
-    for a in $ARMS; do launch_env "$project" "$a"; d="$ARM_CORPUS_OVERRIDE"; clear_env; h="$(git -C "$d" rev-parse HEAD 2>/dev/null || echo none)"; [ "$h" = "$rev" ] && rec "copy-$a" ok "$d at $rev" || rec "copy-$a" FAIL "$d at $h"; done
+    for a in $ARMS; do launch_env "$project" "$a"; d="$ARM_CORPUS_OVERRIDE"; clear_env; refs="$(git -C "$d" for-each-ref --format='%(refname) %(objectname)' 2>/dev/null | tr '\n' ' ')"; [ "$refs" = "refs/heads/main $rev " ] && [ "$(git -C "$d" rev-parse HEAD)" = "$rev" ] && rec "copy-$a" ok "$d: main at $rev, no other refs" || rec "copy-$a" FAIL "$d: HEAD $(git -C "$d" rev-parse HEAD 2>/dev/null || echo none), refs: $refs"; done
     [ "$(sha256 "$P/graphify/graph.json" 2>/dev/null)" = "$(gunzip -c "$(graphify_archive "$project")" | shasum -a 256 | cut -c1-64)" ] && rec graph ok "served graph = archived $(basename "$(graphify_archive "$project")")" || rec graph FAIL "served graph differs from the archive"
     [ -f "$HOME/.config/qmd/t5-qmd-$project.yml" ] && rec qmd-index ok "t5-qmd-$project fingerprint $(qmd_fingerprint "t5-qmd-$project")" || rec qmd-index FAIL "no index t5-qmd-$project"
     # activation probes (rule 0.5): the first three questions of the T2 sample through probe.sh,
