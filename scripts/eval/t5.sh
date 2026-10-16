@@ -68,7 +68,7 @@ frozen_sha() { if [ -f "$RES/FROZEN.md" ]; then sha256 "$RES/FROZEN.md"; else ec
 # version is accepted — a freeze rewritten after the replay for a harness-only change does not
 # make the replay void — and the preflight says which version it was.
 frozen_versions() { local h; for h in $(git -C "$REPO" log --format=%H -- evals/results/docsqa/T5/FROZEN.md); do git -C "$REPO" show "$h:evals/results/docsqa/T5/FROZEN.md" | shasum -a 256 | cut -c1-64; done; frozen_sha; }
-frozen_known() { frozen_versions | grep -qxF "$1"; }
+frozen_known() { local v; v="$(frozen_versions)"; grep -qxF "$1" <<<"$v"; }   # no `grep -q` on a live pipe under pipefail (SIGPIPE upstream)
 freeze_ok() { "$REPO/scripts/eval/freeze.sh" --protocol final --table T5 --check >/dev/null 2>&1; }
 # the committed step list is the one every phase reads (the freeze hashes it)
 steps_file() { local f="$RES/$1/steps.jsonl"; [ -f "$f" ] || die "no committed step list $f (run setup)"; echo "$f"; }
