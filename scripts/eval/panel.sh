@@ -216,22 +216,23 @@ PY
     [ "$accepted" -le $((n_counted + n_pilot)) ] || die "$accepted already accepted: the target $((n_counted + n_pilot)) is smaller than the existing accepted set"
     [ "$(jq -s --arg r "$rubric_sha" 'map(select(.panel != null and .rubric_sha256 != $r)) | length' "$cf")" = 0 ] || die "$cf holds judgments made under another rubric or panel configuration: start in a fresh directory"
     # the candidate's identity binds its text, its facts and its source (page, heading, section id)
-    cand_sha() { jq -r '[.q, .section, (.required_facts | tostring), .page, .heading, .section_id] | join("\u0000")' <<<"$1" | shasum -a 256 | cut -c1-64; }
+    cand_sha() { python3 -I "$REPO/scripts/eval/t6_scan.py" cand-hash "$1"; }   # the one hash function of a candidate (pass 3 F1; tested in t6-helpers.sh)
     # Before anything (review 2 F13): every judged row must still match a candidate of the file by
     # content hash, and the targets must be the ones the file was started with.
     tf="$out/questions.targets.json"
     if [ -s "$cf" ]; then
       [ -f "$tf" ] && [ "$(jq -r '"\(.counted) \(.pilot)"' "$tf")" = "$n_counted $n_pilot" ] || die "the candidates file was started with other targets (see $tf): start in a fresh directory"
-      python3 -I - "$cands" "$cf" <<'PY' || die "a judged row no longer matches its candidate (content, facts or source changed): start in a fresh directory"
-import hashlib, json, sys
-sha = lambda c: hashlib.sha256("\u0000".join([c["q"] or "", c["section"], json.dumps(c["required_facts"], separators=(",", ":")), c["page"], c["heading"], c["section_id"]]).encode()).hexdigest()
-cands = {}
-for l in open(sys.argv[1]):
-    c = json.loads(l); cands[c["id"]] = c
+      python3 -I "$REPO/scripts/eval/t6_scan.py" cand-hash-file "$cands" > "$out/.cand-hashes" || die "cannot hash the candidates"
+      python3 -I - "$out/.cand-hashes" "$cf" "$REPO/scripts/eval/t6_scan.py" <<'PY' || die "a judged row no longer matches its candidate (content, facts or source changed), or carries no hash: start in a fresh directory"
+import json, subprocess, sys
+hashes = dict(l.rstrip("\n").split("\t") for l in open(sys.argv[1]) if l.strip())
 for l in open(sys.argv[2]):
-    r = json.loads(l); c = cands.get(r["id"])
-    if c is None or (r.get("candidate_sha256") and r["candidate_sha256"] != sha(c)): sys.exit(1)
+    r = json.loads(l)
+    # the stored hash must equal the candidate's current hash AND the judged row's own content hash
+    own = subprocess.run([sys.executable, "-I", sys.argv[3], "cand-hash", json.dumps(r)], capture_output=True, text=True).stdout.strip()
+    if not r.get("candidate_sha256") or r["candidate_sha256"] != hashes.get(r["id"]) or r["candidate_sha256"] != own: sys.exit(1)
 PY
+      rm -f "$out/.cand-hashes"
     else jq -n --argjson c "$n_counted" --argjson p "$n_pilot" '{counted: $c, pilot: $p}' > "$tf"; fi
     seen=0
     while IFS= read -r c; do
@@ -274,9 +275,11 @@ PY
     done < "$cands"
     # the accepted questions in T2's shape (the reference is the required facts joined; the
     # evidence is the section text with its hash; sources and relevant name the section's page)
-    emit() { # role -> jsonl
-      jq -c --arg role "$1" 'select(.decision.accepted and .decision.role == $role) | {id, split: "own", category: "single-section", q, reference: ([.required_facts[].fact] | join(" ")), evidence: .section, evidence_sha256: "", sources: [(.page + "#" + .heading)], relevant: [.page], required_facts: [.required_facts[].fact]}' "$cf" \
-        | python3 -I -c 'import hashlib, json, sys
+    emit() { # role -> jsonl; every published row is re-verified against its stored hash first
+      jq -c --arg role "$1" 'select(.decision.accepted and .decision.role == $role)' "$cf" | while IFS= read -r r; do
+        [ "$(jq -r .candidate_sha256 <<<"$r")" = "$(cand_sha "$r")" ] || die "an accepted row's content does not match its hash: $(jq -r .id <<<"$r")"
+        jq -c '{id, split: "own", category: "single-section", q, reference: ([.required_facts[].fact] | join(" ")), evidence: .section, evidence_sha256: "", sources: [(.page + "#" + .heading)], relevant: [.page], required_facts: [.required_facts[].fact]}' <<<"$r"
+      done | python3 -I -c 'import hashlib, json, sys
 for l in sys.stdin:
     r = json.loads(l); r["evidence_sha256"] = hashlib.sha256(r["evidence"].encode("utf-8")).hexdigest(); print(json.dumps(r, sort_keys=True))'
     }

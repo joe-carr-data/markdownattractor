@@ -55,19 +55,26 @@ project_dir() { case "$1" in tailwind-css) echo tailwindcss ;; *) echo "$1" ;; e
 # opens) with the sha256 of the file it resolves to and its target, which must stay inside
 # the cache. A broken or outward link is fatal. This is evals/results/docsqa/model.sha.
 model_sha() {
-  local f target resolved
+  local f target resolved h n=0
   ( cd "$MDA_MODEL_DIR" || exit 1
-    find . \( -type f -o -type l \) ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do
+    find . \( -type f -o -type l \) ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort > .model_sha.list || exit 1
+    [ -s .model_sha.list ] || die "model_sha: no model files under $MDA_MODEL_DIR"
+    while IFS= read -r f; do
+      n=$((n + 1))
       if [ -L "$f" ]; then
         target="$(readlink "$f")"
         resolved="$(cd "$(dirname "$f")" && cd "$(dirname "$target")" 2>/dev/null && pwd -P)/$(basename "$target")"
         [ -f "$resolved" ] || die "model link $f -> $target does not resolve to a file"
         case "$resolved" in "$(pwd -P)"/*) ;; *) die "model link $f -> $target leaves the cache" ;; esac
-        printf '%s  %s -> %s\n' "$(shasum -a 256 "$resolved" | cut -c1-64)" "$f" "$target"
+        # every hash is a checked assignment (a failed shasum is fatal, never an empty digest)
+        h="$(shasum -a 256 "$resolved" | cut -c1-64)" && [ "${#h}" = 64 ] || die "model_sha: cannot hash $resolved"
+        printf '%s  %s -> %s\n' "$h" "$f" "$target"
       else
-        printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"
+        h="$(shasum -a 256 "$f" | cut -c1-64)" && [ "${#h}" = 64 ] || die "model_sha: cannot hash $f"
+        printf '%s  %s\n' "$h" "$f"
       fi
-    done )
+    done < .model_sha.list
+    rm -f .model_sha.list )
 }
 
 # No arm may reach a model through a provider key (plan §0a.3: every model call goes through

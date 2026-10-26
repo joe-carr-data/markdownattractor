@@ -141,8 +141,18 @@ case "$cmd" in
       # the public baseline text, once: every text file of the repository at the merge-base with main
       pub="$(mktemp -d -t mda-t6-pub.XXXXXX)"; base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD)"
       git -C "$REPO" archive --format=tar "$base" | tar -x -C "$pub"
-      find "$pub" -type f -exec grep -I -q . {} \; -print0 2>/dev/null | xargs -0 cat > "$pub.txt" 2>/dev/null || true
-      python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY'
+      python3 -I -c '
+import os, sys
+root, out = sys.argv[1], sys.argv[2]
+with open(out, "wb") as o:
+    for d, _, fs in os.walk(root):
+        for f in fs:
+            p = os.path.join(d, f)
+            try: data = open(p, "rb").read()
+            except OSError as e: sys.exit("baseline: unreadable " + p + ": " + str(e))
+            if b"\0" in data: continue
+            o.write(data); o.write(b"\n")' "$pub" "$pub.txt" || die "the public baseline could not be assembled"
+      T6_SCAN="$REPO/scripts/eval/t6_scan.py" python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY'
 import os, re, subprocess, sys
 src, root, home, pub_txt, out = sys.argv[1:6]
 items = set(); always = set()
@@ -166,10 +176,12 @@ for d, _, fs in os.walk(src):
 # the collision filter, one pass (review F2, second pass F7): an optional entry (heading, excerpt) that
 # also occurs in the IMMUTABLE public baseline is not evidence of a leak and is dropped; a mandatory
 # entry (root, directory names, relative paths) is always kept, whatever its length
-optional = sorted(s for s in items if s not in always and len(s) >= 6)
+optional = sorted(s for s in items if s not in always and len(s) >= 6 and "\n" not in s)
 with open(out + ".items", "w", encoding="utf-8") as fh:
     for s_ in optional: fh.write(s_ + "\n")
-r = subprocess.run(["grep", "-o", "-i", "-F", "-f", out + ".items", pub_txt], capture_output=True, text=True)
+# every optional item is tested on its own against the lower-cased baseline (overlapping items both count; pass 3 F5)
+r = subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])) if sys.argv[0] not in ("-", "") else os.environ["T6_SCAN"], "t6_scan.py") if False else os.environ["T6_SCAN"], "collide", out + ".items", pub_txt], capture_output=True, text=True)
+if r.returncode != 0: sys.exit("collision filter failed: " + r.stderr)
 found = {l.lower() for l in r.stdout.split("\n") if l}
 os.remove(out + ".items")
 kept = sorted(always) + [s_ for s_ in optional if s_.lower() not in found]
@@ -356,8 +368,8 @@ PY
       f="$(cdir "$c")/pilot.json"; [ -f "$f" ] || continue
       pilots="$(jq -c --arg c "$c" --argjson p "$(python3 -I "$REPO/scripts/eval/t6_private_export.py" project-pilot "$f" "$c")" '. + {($c): $p}' <<<"$pilots")"
       g="$(cdir "$c")/pilot/grades.jsonl"; [ -f "$g" ] || continue
-      m="$(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grade.model // empty) | unique), grounding: (map(.grounding.model // empty) | unique)}' "$g")"
-      rf="$(jq -s 'map(.model // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" 2>/dev/null || echo '[]')"; ra="$(jq -s 'map(.model // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" 2>/dev/null || echo '[]')"
+      m="$(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grade.model // empty) | unique), grounding: (map(.grounding.model // empty) | unique)} | map_values(map(select(test("^(claude|gpt)-"))))' "$g")"
+      rf="$(jq -s 'map(.model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" 2>/dev/null || echo '[]')"; ra="$(jq -s 'map(.model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" 2>/dev/null || echo '[]')"
       models="$(jq -c --argjson m "$m" --argjson rf "$rf" --argjson ra "$ra" '.answering = (.answering + $m.answering | unique) | .grader = (.grader + $m.grader | unique) | .grounding = (.grounding + $m.grounding | unique) | .panel_fable = (.panel_fable + $rf | unique) | .panel_astra = (.panel_astra + $ra | unique)' <<<"$models")"
     done
     [ "$(jq 'length' <<<"$pilots")" -gt 0 ] || die "no pilot.json under $T6/<corpus>/ (run t6.sh pilot)"
@@ -367,6 +379,7 @@ PY
         estimates: {runs_per_hour: ([$p[] | select(.runs.n > 0 and .seconds.runs > 0) | (.runs.n / (.seconds.runs / 3600))] | if length == 0 then null else (add / length) end), cost_per_run_usd: ([$p[] | select(.runs.n > 0) | ((.runs.cost_usd // 0) / .runs.n)] | if length == 0 then null else (add / length) end),
                     grade_seconds_per_run: ([$p[] | select(.runs.n > 0) | (.seconds.grade / .runs.n)] | if length == 0 then null else (add / length) end), acceptance_rate: ([$p[] | select(.candidates.judged > 0) | (.candidates.accepted / .candidates.judged)] | if length == 0 then null else (add / length) end)},
         note: "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"}' > "$out.tmp"
+    jq -e --arg r "$rule" '$r == "either-member-differs-by-more-than-one-point-then-panel-mean"' -n >/dev/null || { rm -f "$out.tmp"; die "the resolution rule must be the id of an implemented policy (panel.sh regrade): either-member-differs-by-more-than-one-point-then-panel-mean"; }
     python3 -I "$REPO/scripts/eval/t6_private_export.py" check-file calibration "$out.tmp" >/dev/null || { rm -f "$out.tmp"; die "calibration.json does not conform to its schema: not written"; }
     mv "$out.tmp" "$out"
     jq -c '{resolved_models, estimates, resolution_rule}' "$out"; echo "→ $out" ;;
@@ -391,8 +404,11 @@ PY
     if out="$(RESULTS="$RES_PUB" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6 --check 2>&1)"; then rec frozen ok "$out"; else rec frozen FAIL "$out"; fi
     # the binary is the frozen one AND builds from the frozen source (review F12)
     fbin="$(sed -n 's/.*binary sha256 \([0-9a-f]\{64\}\).*/\1/p' "$(pub_frozen)" | head -1)"
-    art="$( (cd "$REPO" && cargo build --release --locked --message-format=json 2>/dev/null | jq -r 'select(.reason == "compiler-artifact" and .target.name == "mda" and .executable != null) | .executable' | tail -1) || true)"
-    if [ -n "$art" ] && [ -f "$art" ] && [ "$(sha256 "$art")" = "$fbin" ] && [ "$(sha256 "$MDA")" = "$fbin" ]; then rec binary ok "cargo's executable ($art) and \$MDA both have the frozen hash ($fbin)"; else rec binary FAIL "cargo's --locked executable ($art) or \$MDA differs from the frozen binary"; fi
+    art=""
+    if ( cd "$REPO" && cargo build --release --locked -q 2>/dev/null ); then
+      art="$( (cd "$REPO" && cargo build --release --locked --message-format=json 2>/dev/null) | jq -r 'select(.reason == "compiler-artifact" and .target.name == "mda" and .executable != null) | .executable' | tail -1)" || art=""
+    fi
+    if [ -n "$art" ] && [ -f "$art" ] && [ "$(sha256 "$art")" = "$fbin" ] && [ "$(sha256 "$MDA")" = "$fbin" ]; then rec binary ok "the --locked build completed; cargo's executable ($art) and \$MDA both have the frozen hash ($fbin)"; else rec binary FAIL "the --locked build failed, or cargo's executable (${art:-none}) or \$MDA differs from the frozen binary"; fi
     cal="$RES_PUB/T6/calibration.json"
     if [ -f "$cal" ] && python3 -I "$REPO/scripts/eval/t6_private_export.py" check-file calibration "$cal" >/dev/null 2>&1 && jq -e --arg c "$c" '.corpora[$c] != null and ([.corpora[] | select(.runs.n > 0)] | length) > 0 and (.resolved_models.answering | length) > 0 and (.resolved_models.grader | length) > 0 and (.resolution_rule | length) > 0' "$cal" >/dev/null; then rec calibration ok "calibration.json conforms, names $c, has pilot runs and resolved ids; rule: $(jq -r .resolution_rule "$cal")"; else rec calibration FAIL "no conforming, complete calibration record naming $c (t6.sh pilot, then t6.sh calibration)"; fi
     if is_private "$c"; then
@@ -409,9 +425,8 @@ PY
     # what graphify itself writes there (.claude/ at the root, the root CLAUDE.md, graphify-out/)
     grec="$(res_of "$c")/arms/graphify-$c.json"
     if [ -f "$grec" ] && [ "$(jq -r .build.completed "$grec")" = true ]; then
-      G="$P/graphify/src"
-      tree_hash() { ( cd "$1" && find . -type f -not -path './.markdownattractor/*' -not -path './graphify-out/*' -not -path './.claude/*' -not -path './CLAUDE.md' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"; done ); }
-      if [ -d "$G" ] && diff <(tree_hash "$S") <(tree_hash "$G") >/dev/null; then rec copy-graphify ok "graphify's serving copy equals the source copy on every file (its .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy is absent or differs from the source copy"; fi
+      G="$P/graphify/src"; ma=""; mb=""
+      if [ -d "$G" ] && ma="$(python3 -I "$REPO/scripts/eval/t6_scan.py" tree-manifest "$S" .markdownattractor graphify-out .claude CLAUDE.md)" && mb="$(python3 -I "$REPO/scripts/eval/t6_scan.py" tree-manifest "$G" .markdownattractor graphify-out .claude CLAUDE.md)" && [ -n "$ma" ] && [ "$ma" = "$mb" ] && ! grep -q '^link	' <<<"$mb"; then rec copy-graphify ok "graphify's serving copy equals the source copy on every file and holds no symlink (its .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy is absent, differs from the source copy, holds a symlink, or could not be listed"; fi
     fi
     diff <(inventory "$S") "$P/pages.txt" >/dev/null && rec inventory ok "$(grep -c . "$P/pages.txt") pages, unchanged since setup (sha256 $(sha256 "$P/pages.txt" | cut -c1-12)…)" || rec inventory FAIL "the inventory changed since setup"
     [ "$(jq -r .store_sha256 "$P/index.json" 2>/dev/null)" = "$(store_sha "$S")" ] && rec store ok "store unchanged since indexing ($(store_sha "$S" | cut -c1-12)…)" || rec store FAIL "the store changed since indexing (or no index.json)"
@@ -554,12 +569,12 @@ PY
     base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD~1)"
     tmp="$(mktemp -d -t mda-t6-leak.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
     : > "$tmp/change.txt"; : > "$tmp/names.txt"; : > "$tmp/bins.txt"
-    is_binary() { ! grep -qI . "$1" 2>/dev/null && [ -s "$1" ]; }
+    is_binary() { python3 -I "$REPO/scripts/eval/t6_scan.py" is-binary "$1"; local rc=$?; [ "$rc" != 2 ] || die "leak-scan: cannot read $1"; [ "$rc" = 0 ]; }
     decode_json() { jq -r '.. | strings' "$1" >> "$tmp/change.txt" 2>/dev/null || true; jq -r '.. | objects | keys[]' "$1" >> "$tmp/change.txt" 2>/dev/null || true; }
-    emit_blob() { # <git object spec> <name>
+    emit_blob() { # <git object spec> <name> [status]: a D status is a deletion (nothing to scan); anything else must be readable
       printf '%s\n' "$2" >> "$tmp/names.txt"
-      git -C "$REPO" cat-file -e "$1" 2>/dev/null || return 0        # deleted in this change: nothing to scan
-      git -C "$REPO" cat-file -p "$1" > "$tmp/blob" || die "leak-scan: cannot read $1"
+      [ "${3:-}" != D ] || return 0
+      git -C "$REPO" cat-file -p "$1" > "$tmp/blob" || die "leak-scan: cannot read $1 (status ${3:-?})"
       if is_binary "$tmp/blob"; then printf '%s\n' "$2" >> "$tmp/bins.txt"; fi
       cat "$tmp/blob" >> "$tmp/change.txt"
       case "$2" in *.json|*.jsonl) decode_json "$tmp/blob" ;; esac
@@ -570,10 +585,21 @@ PY
       cat "$REPO/$1" >> "$tmp/change.txt" || die "leak-scan: cannot read $1"
       case "$1" in *.json|*.jsonl) decode_json "$REPO/$1" ;; esac
     }
-    while IFS= read -r -d '' f; do emit_blob "HEAD:$f" "$f"; done < <(git -C "$REPO" diff -z --name-only "$base" HEAD)
-    while IFS= read -r -d '' f; do emit_blob ":$f" "$f"; done < <(git -C "$REPO" diff -z --cached --name-only)
-    while IFS= read -r -d '' f; do emit_work "$f"; done < <(git -C "$REPO" diff -z --name-only)
-    while IFS= read -r -d '' f; do emit_work "$f"; done < <(git -C "$REPO" ls-files -z --others --exclude-standard)
+    # the lists are produced into checked files first (a failed enumeration is fatal, never an empty scan)
+    git -C "$REPO" diff -z --name-status "$base" HEAD > "$tmp/branch.z" || die "leak-scan: cannot list the branch's changes"
+    git -C "$REPO" diff -z --cached --name-status > "$tmp/staged.z" || die "leak-scan: cannot list the index"
+    git -C "$REPO" diff -z --name-only > "$tmp/unstaged.z" || die "leak-scan: cannot list unstaged changes"
+    git -C "$REPO" ls-files -z --others --exclude-standard > "$tmp/untracked.z" || die "leak-scan: cannot list untracked files"
+    read_status() { # <file> <spec-prefix>: NUL-delimited name-status pairs (renames carry two names)
+      local st f g
+      while IFS= read -r -d '' st && IFS= read -r -d '' f; do
+        case "$st" in R*|C*) IFS= read -r -d '' g || true; printf '%s\n' "$f" >> "$tmp/names.txt"; f="$g" ;; esac
+        emit_blob "$2$f" "$f" "${st:0:1}"
+      done < "$1"
+    }
+    read_status "$tmp/branch.z" "HEAD:"; read_status "$tmp/staged.z" ":"
+    while IFS= read -r -d '' f; do emit_work "$f"; done < "$tmp/unstaged.z"
+    while IFS= read -r -d '' f; do emit_work "$f"; done < "$tmp/untracked.z"
     bins="$(sort -u "$tmp/bins.txt" | grep -vE '^evals/results/own/arms/graphs/graphify-(golden|docs)\.graph\.json\.gz$' || true)"
     [ -z "$bins" ] || { echo "leak-scan: binary file(s) in the proposed change are refused: $(printf '%s' "$bins" | tr '\n' ' ')" >&2; exit 1; }
     cat "$tmp/names.txt" >> "$tmp/change.txt"

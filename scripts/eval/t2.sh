@@ -49,8 +49,9 @@ unset_nested_session; unset_provider_keys
 materialise() { # project sample.jsonl out.full.jsonl
   local project="$1" sample="$2" full="$3" data="$DOCSQA_DATA/data"
   if jq -e 'has("q") and has("reference")' <(head -1 "$sample") >/dev/null 2>&1; then
-    # a full sample: T6's own rows are validated like a materialised one (review 2 F15); T2's dataset rows have no evidence and pass through
-    if jq -e 'has("evidence")' <(head -1 "$sample") >/dev/null 2>&1; then validate_full "$sample" || die "materialise: the full question file is invalid"; fi
+    # a full sample: under the T6 rubric every row is validated like a materialised one (review 2 F15, pass 3 F10);
+    # T2's dataset rows (no T6 rubric) pass through
+    if [ "${T2_RUBRIC:-}" = t6 ]; then validate_full "$sample" || die "materialise: the full question file is invalid"; fi
     cp "$sample" "$full"; return
   fi
   if [ -n "${T2_QUESTIONS_FULL:-}" ]; then
@@ -116,7 +117,8 @@ for l in open(sys.argv[1], encoding="utf-8"):
     if h(r["evidence"]) != r.get("evidence_sha256"): sys.exit("row %s: evidence_sha256 does not match the text" % i)
     f = r.get("required_facts")
     if not isinstance(f, list) or not f or not all(isinstance(x, str) and x.strip() for x in f): sys.exit("row %s: required_facts must be a non-empty list of non-empty strings" % i)
-    if not isinstance(r.get("relevant"), list) or not r["relevant"]: sys.exit("row %s: relevant missing" % i)
+    if not isinstance(r.get("relevant"), list) or not r["relevant"] or not all(isinstance(x, str) and x.strip() for x in r["relevant"]): sys.exit("row %s: relevant must be a non-empty list of non-empty strings" % i)
+    if not i.strip(): sys.exit("empty id")
 print(len(seen))' "$1" >/dev/null
 }
 hash_sample() { # full.jsonl -> the committed form on stdout (ids and hashes, no texts)
@@ -141,10 +143,17 @@ cite_paths() {
   python3 -I -c '
 import re, sys
 t = sys.stdin.read(); out = []
-EXT = r"\.(?:mdx|markdown|md)(?![A-Za-z0-9])"   # the whole extension, never .md out of .mdx
-for m in re.finditer(r"`([^`\n]+?" + EXT + r")(?:#[^`\n]*)?`", t): out.append(m.group(1).strip())
+EXT = re.compile(r"\.(?:mdx|markdown|md)$")
+def path_of(tok):   # the token without an anchor and trailing punctuation; a citation only when it ENDS with the extension
+    tok = tok.split("#", 1)[0].rstrip(".,;:)]}\x27\"")
+    return tok if EXT.search(tok) else None
+for m in re.finditer(r"`([^`\n]+)`", t):
+    c = path_of(m.group(1).strip())
+    if c: out.append(c)
 rest = re.sub(r"`[^`\n]+`", " ", t)
-out += re.findall(r"[A-Za-z0-9_./-]+" + EXT, rest)
+for tok in re.findall(r"[A-Za-z0-9_./#-]+", rest):
+    c = path_of(tok)
+    if c: out.append(c)
 seen = set()
 for c in out:
     if c not in seen: seen.add(c); print(c)'

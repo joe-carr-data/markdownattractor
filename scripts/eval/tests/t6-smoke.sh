@@ -44,10 +44,8 @@ if T2_QUESTIONS_FULL="$tmp/bad.jsonl" "$repo/scripts/eval/t2.sh" materialise pri
 cat "$tmp/full.jsonl" "$tmp/full.jsonl" > "$tmp/dup.jsonl"
 if T2_QUESTIONS_FULL="$tmp/dup.jsonl" "$repo/scripts/eval/t2.sh" materialise private "$tmp/sample.jsonl" "$tmp/x.jsonl" >/dev/null 2>&1; then fail "a duplicate id was accepted"; fi
 # 6. citation extraction (review F23): a backticked odd name yields one citation, not two; bare paths still found
-cites="$(printf 'See `c/odd name (v2).md` and docs/a.md, plus `x/y.mdx`.' | "$repo/scripts/eval/t2.sh" cite)"
-[ "$(printf '%s\n' "$cites" | grep -c .)" = 3 ] || fail "citation extraction: expected 3, got: $cites"
-printf '%s\n' "$cites" | grep -qxF 'c/odd name (v2).md' || fail "the backticked odd name was not extracted whole"
-if printf '%s\n' "$cites" | grep -qx 'name (v2).md'; then fail "the odd name was also extracted as a fragment"; fi
+cites="$(printf 'See `c/odd name (v2).md` and docs/a.mdx, plus `x/y.md#anchor`, not docs/a.md.bak nor docs/b.md_old nor docs/c.md/child; (e/f.markdown).' | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
+[ "$cites" = "c/odd name (v2).md|docs/a.mdx|e/f.markdown|x/y.md|" ] || fail "citation extraction: got $cites"
 # 7. the private export round trip: a synthetic private run directory exports and conforms; a hand
 #    edit of a committed file (a heading in a numeric field), an unknown key and an unknown file are
 #    each refused; the question digests are the exporter's own serialisation
@@ -75,10 +73,28 @@ if python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$
 [ -f "$tmp/privout/questions.jsonl" ] || fail "the committed export was lost on a refused replacement"
 # the calibration schema: a conforming record passes, a path in the rule is still prose but a wrong field is refused
 python3 -I "$repo/scripts/eval/t6_private_export.py" project-pilot <(echo '{"corpus":"golden","at":"2026-10-27T00:00:00Z","index":{"seconds":1,"counts":{"docs":1}},"candidates":{},"runs":{"n":2,"errors":0,"wall_s_total":10,"cost_usd":0.1},"seconds":{"runs":10,"grade":5,"panel":5},"panel":{"sample":2,"incomplete":0,"agreement":{},"resolved_by_panel":0}}') golden > "$tmp/pp.json" || fail "project-pilot failed"
-jq -n --slurpfile p "$tmp/pp.json" '{at: "2026-10-27T00:00:00Z", corpora: {golden: $p[0]}, resolved_models: {answering: ["claude-sonnet-5-5"], grader: ["claude-sonnet-5-5"], grounding: ["claude-sonnet-5-5"], panel_fable: ["claude-fable-5-1"], panel_astra: ["gpt-6-astra"]}, resolution_rule: "the Sonnet grade stands unless both members differ from it by more than one point", estimates: {runs_per_hour: 100, cost_per_run_usd: 0.05, grade_seconds_per_run: 20, acceptance_rate: 0.8}, note: "synthetic"}' > "$tmp/cal.json"
+note="the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"
+jq -n --slurpfile p "$tmp/pp.json" --arg note "$note" '{at: "2026-10-27T00:00:00Z", corpora: {golden: $p[0]}, resolved_models: {answering: ["claude-sonnet-5-5"], grader: ["claude-sonnet-5-5"], grounding: ["claude-sonnet-5-5"], panel_fable: ["claude-fable-5-1"], panel_astra: ["gpt-6-astra"]}, resolution_rule: "either-member-differs-by-more-than-one-point-then-panel-mean", estimates: {runs_per_hour: 100, cost_per_run_usd: 0.05, grade_seconds_per_run: 20, acceptance_rate: 0.8}, note: $note}' > "$tmp/cal.json"
 python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal.json" >/dev/null || fail "a conforming calibration record was refused"
 jq '.resolved_models.answering = ["/Users/someone/secret"]' "$tmp/cal.json" > "$tmp/cal2.json"
 if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal2.json" >/dev/null 2>&1; then fail "an unlisted model id in the calibration record was accepted"; fi
+jq '.resolved_models.grader = ["sonnet"]' "$tmp/cal.json" > "$tmp/cal3.json"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal3.json" >/dev/null 2>&1; then fail "an alias as a resolved id was accepted"; fi
+jq '.resolution_rule = "whatever the owner wrote"' "$tmp/cal.json" > "$tmp/cal4.json"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal4.json" >/dev/null 2>&1; then fail "a prose resolution rule was accepted"; fi
+# an interrupted replacement: a lone .replaced backup is restored, then the export proceeds; both present → refused
+cp "$tmp/full.jsonl" "$tmp/privrun/questions.full.jsonl"
+mv "$tmp/privout" "$tmp/privout.replaced"
+python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$tmp/privout" >/dev/null || fail "the export did not recover from a lone backup"
+[ -d "$tmp/privout" ] && [ ! -d "$tmp/privout.replaced" ] || fail "the backup was not consumed"
+mkdir -p "$tmp/privout.replaced"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$tmp/privout" >/dev/null 2>&1; then fail "an export proceeded with both the directory and its backup present"; fi
+rm -rf "$tmp/privout.replaced"
+# no questions in the run while digests are committed → refused
+mv "$tmp/privrun/questions.full.jsonl" "$tmp/privrun/q.away"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$tmp/privout" >/dev/null 2>&1; then fail "an export without the frozen questions replaced the committed digests"; fi
+[ -f "$tmp/privout/questions.jsonl" ] || fail "the committed digests were lost"
+mv "$tmp/privrun/q.away" "$tmp/privrun/questions.full.jsonl"
 # 8. no DocsQA read happened: the unreadable location was never created
 [ ! -e "$DOCSQA_DATA" ] || fail "something touched the DocsQA location"
-echo "t6-smoke: setup, inventory, raw index, own-root cards, resolver, completeness gate, multiline materialisation, citations, private export round trip (hidden files, digest file, frozen digests), calibration schema: ok (DocsQA unreadable throughout)"
+echo "t6-smoke: setup, inventory, raw index, own-root cards, resolver, completeness gate, multiline materialisation, citations, private export round trip (hidden files, digest file, frozen digests, interrupted replacement), calibration schema: ok (DocsQA unreadable throughout)"

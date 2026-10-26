@@ -28,4 +28,7 @@ expect ".markdownattractor/note.md" ""               # store: not in the invento
 expect "graphify-out/graph.md" ""                    # arm artifact: not in the inventory
 expect "/etc/passwd" ""                              # absolute
 expect "nope.md" ""                                  # unknown
+expect "a/b/index.md#some-heading" "a/b/index.md"    # an anchor names a heading
+expect "t6-proj/a/b/index.md" "a/b/index.md"         # the T6 qmd index prefix
+expect "t6-proj/a/README.md#x" "a/README.md"         # prefix and anchor
 echo "t6-resolver: $n cases ok"

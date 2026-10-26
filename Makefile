@@ -14,6 +14,7 @@ t2-tests:
 t6-tests:
 	cargo build -q -p mda-cli
 	scripts/eval/tests/t6-resolver.sh
+	scripts/eval/tests/t6-helpers.sh
 	scripts/eval/tests/own-private-schema.sh
 	scripts/eval/tests/t6-smoke.sh target/debug/mda
 

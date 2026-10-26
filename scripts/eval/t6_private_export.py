@@ -123,10 +123,15 @@ MANIFEST = {"project": "enum:private", "model": "model", "runs": "int", "arms": 
                                                "?grep": {"with_git": "bool", "mcp_server": ("enum:mcp_server", "null"), "system_prompt_sha256": ("hex64", "null")},
                                                "?qmd": {"with_git": "bool", "mcp_server": ("enum:mcp_server", "null"), "system_prompt_sha256": ("hex64", "null")},
                                                "?graphify": {"with_git": "bool", "mcp_server": ("enum:mcp_server", "null"), "system_prompt_sha256": ("hex64", "null")}}}
+# The resolution policies the harness implements (panel.sh regrade); the calibration record names one by id,
+# never by prose, so the declared rule is the executed rule (pass 3 F12).
+POLICIES = ["either-member-differs-by-more-than-one-point-then-panel-mean"]
+RESOLVED = re.compile(r"^(claude|gpt)-[a-z0-9]+(-[a-z0-9]+)*$")   # a resolved model id, never an alias (pass 3 F13)
+CALIBRATION_NOTE = "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"
 CALIBRATION = {"at": "iso", "corpora": {"?golden": PILOT, "?docs": PILOT, "?private": PILOT},
-               "resolved_models": {"answering": ["model"], "grader": ["model"], "grounding": ["model"], "panel_fable": ["model"], "panel_astra": ["model"]},
-               "resolution_rule": "text", "estimates": {"runs_per_hour": NUM, "cost_per_run_usd": NUM, "grade_seconds_per_run": NUM, "acceptance_rate": NUM}, "note": "text"}
-ENUMS = {"corpus": ["golden", "docs", "private"], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
+               "resolved_models": {"answering": ["resolved"], "grader": ["resolved"], "grounding": ["resolved"], "panel_fable": ["resolved"], "panel_astra": ["resolved"]},
+               "resolution_rule": "enum:policy", "estimates": {"runs_per_hour": NUM, "cost_per_run_usd": NUM, "grade_seconds_per_run": NUM, "acceptance_rate": NUM}, "note": "enum:calibration_note"}
+ENUMS = {"corpus": ["golden", "docs", "private"], "policy": POLICIES, "calibration_note": [CALIBRATION_NOTE], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
          "T6": ["T6"], "private": ["private"], "status": ["completed", "in progress"], "check_name": CHECK_NAMES, "check_status": CHECK_STATUS,
          "embedding_model": ["bge-small-en-v1.5-q", "local-small"], "own": ["own"], "single-section": ["single-section"], "refusal": REFUSALS,
          "reason": REASON_CODES, "reject_key": REJECT_KEYS, "role": ["counted", "pilot"], "mcp_server": ["markdownattractor", "qmd", "graphify"]}
@@ -149,8 +154,8 @@ def type_ok(v, t):
     if t == "arm": return v in ARMS
     if t == "tool": return v in TOOLS
     if t == "model": return v in MODELS
-    if t == "frozen": return isinstance(v, str) and re.match(r"^[0-9a-f]{64}\n?$", v) is not None
-    if t == "text": return isinstance(v, str) and 0 < len(v) <= 600 and "\n" not in v   # the declared rule and the note: prose the owner wrote, public
+    if t == "frozen": return isinstance(v, str) and re.fullmatch(r"[0-9a-f]{64}\n?", v) is not None
+    if t == "resolved": return isinstance(v, str) and v in MODELS and RESOLVED.match(v) is not None
     if t.startswith("enum:"): return v in ENUMS[t[5:]]
     if t in RX: return isinstance(v, str) and RX[t].match(v) is not None
     raise ValueError(f"unknown type {t}")
@@ -198,15 +203,21 @@ def read_rows(path):
 
 
 def every_file(root):
-    """Every file under root, dotfiles and dot-directories included (glob would skip them)."""
-    for d, dirs, files in os.walk(root):
+    """Every entry under root, dotfiles and dot-directories included (glob would skip them); a
+    symlink anywhere or a traversal error is refused (an export holds plain files only)."""
+    def onerror(e): raise e
+    for d, dirs, files in os.walk(root, onerror=onerror, followlinks=False):
         dirs.sort()
+        for x in dirs + files:
+            if os.path.islink(os.path.join(d, x)): raise RuntimeError(f"symlink in the export: {os.path.relpath(os.path.join(d, x), root)}")
         for f in sorted(files): yield os.path.join(d, f)
 
 
 def check(committed):
     errors, n = [], 0
-    for path in every_file(committed):
+    try: paths = list(every_file(committed))
+    except (RuntimeError, OSError) as e: return 0, [str(e)]
+    for path in paths:
         rel = os.path.relpath(path, committed)
         if rel not in KINDS: errors.append(f"{rel}: file not allowed in a private export"); continue
         try: rows = read_rows(path)
@@ -273,7 +284,14 @@ def export(run_dir, committed):
     def rows(*p):
         f = opt(*p)
         return read_rows(f) if os.path.isfile(f) else None
-    stage = tempfile.mkdtemp(prefix="mda-t6-priv-stage.")
+    parent = os.path.dirname(os.path.abspath(committed.rstrip("/"))) or "."
+    os.makedirs(parent, exist_ok=True)
+    bak = committed.rstrip("/") + ".replaced"
+    # an interrupted earlier replacement: the backup is the only copy → restore it; both present → refuse (pass 3 F6)
+    if os.path.isdir(bak):
+        if os.path.isdir(committed): sys.exit(f"export: both {committed} and {bak} exist after an interrupted replacement: resolve by hand before exporting")
+        os.rename(bak, committed)
+    stage = tempfile.mkdtemp(prefix=".mda-t6-priv-stage.", dir=parent)   # same filesystem: renames, never copies
     out = {}
     q = rows("questions.full.jsonl")
     if q is not None: out["questions.jsonl"] = digest_questions(opt("questions.full.jsonl"))
@@ -432,13 +450,17 @@ def export(run_dir, committed):
         shutil.rmtree(stage)
         sys.exit(f"export: {len(errors)} schema violation(s) in the staging export: nothing published")
     old_q = os.path.join(committed, "questions.jsonl"); new_q = os.path.join(stage, "questions.jsonl")
+    if os.path.isfile(old_q) and not os.path.isfile(new_q):
+        shutil.rmtree(stage)
+        sys.exit("export: the committed private question digests exist but the run has no questions.full.jsonl: refusing to publish an export without them")
     if os.path.isfile(old_q) and os.path.isfile(new_q) and open(old_q, "rb").read() != open(new_q, "rb").read():
         shutil.rmtree(stage)
         sys.exit("export: the private question digests differ from the committed ones: the committed question file is frozen; nothing published")
-    bak = committed.rstrip("/") + ".replaced"
-    if os.path.isdir(bak): shutil.rmtree(bak)
     if os.path.isdir(committed): os.rename(committed, bak)
-    shutil.move(stage, committed)
+    try: os.rename(stage, committed)
+    except OSError:
+        if os.path.isdir(bak) and not os.path.isdir(committed): os.rename(bak, committed)
+        raise
     if os.path.isdir(bak): shutil.rmtree(bak)
     print(f"export: {n} private file(s) published under {committed} after the schema check")
 
@@ -459,7 +481,13 @@ def main():
         # <kind> <file>: validate one file against a kind's schema (calibration, pilot.json, …)
         kind = sys.argv[2]; spec = CALIBRATION if kind == "calibration" else KINDS[kind]
         errors = []
-        for i, r in enumerate(read_rows(sys.argv[3])): validate(r, spec, f"{os.path.basename(sys.argv[3])}[{i}]", errors)
+        for i, r in enumerate(read_rows(sys.argv[3])):
+            validate(r, spec, f"{os.path.basename(sys.argv[3])}[{i}]", errors)
+            if kind == "calibration":
+                # every model role the pilot exercised has at least one resolved id (pass 3 F13)
+                for role in ("answering", "grader", "grounding", "panel_fable", "panel_astra"):
+                    if not (r.get("resolved_models") or {}).get(role): errors.append(f"calibration: no resolved id for {role}")
+                if not any((c.get("runs") or {}).get("n", 0) > 0 for c in (r.get("corpora") or {}).values()): errors.append("calibration: no corpus has pilot runs")
         for e in errors: print(e, file=sys.stderr)
         if errors: sys.exit(f"check-file: {len(errors)} violation(s)")
         print(f"check-file: {sys.argv[3]} conforms to {kind}")

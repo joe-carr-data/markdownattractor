@@ -224,9 +224,9 @@ runtime() {
 # freeze instead of printing an empty field.
 # `val` runs inside command substitutions, where `die` ends only the subshell (review 2 F1): every
 # failure is also recorded in $VAL_FAILED, which the caller checks before writing anything.
-VAL_FAILED="$(mktemp -t mda-freeze-failed.XXXXXX)"
+VAL_FAILED=""   # set once $tmp exists (below), so a failure before vals_ok leaves nothing behind
 val() { local v; if ! v="$("$@" 2>/dev/null)"; then printf 'cannot compute: %s\n' "$*" >> "$VAL_FAILED"; die "freeze: cannot compute: $*"; fi; if [ -z "$v" ] || [ "$v" = null ]; then printf 'empty or null value from: %s\n' "$*" >> "$VAL_FAILED"; die "freeze: empty value from: $*"; fi; printf '%s' "$v"; }
-vals_ok() { if [ -s "$VAL_FAILED" ]; then cat "$VAL_FAILED" >&2; rm -f "$VAL_FAILED"; die "freeze: a frozen value could not be computed (above): nothing written"; fi; rm -f "$VAL_FAILED"; }
+vals_ok() { if [ -s "$VAL_FAILED" ]; then cat "$VAL_FAILED" >&2; die "freeze: a frozen value could not be computed (above): nothing written"; fi; }
 t6_common() {
   local f h ver bin own cal
   own="$REPO/evals/results/own"; cal="$own/T6/calibration.json"
@@ -235,7 +235,8 @@ t6_common() {
   echo "- version: $ver · binary sha256 $bin (the preflight rebuilds with \`cargo build --release --locked\` from the source commit and requires this hash)"
   echo "- source commit: $src_sha (the code paths that change a number: ${CODE_PATHS[*]}; a check requires them unchanged since this commit)"
   echo "- analysis: \`mda eval --analysis\` (crates/mda-core/src/eval/analysis.rs: question medians over runs with failed runs as 0, 10,000-draw paired bootstrap, seed $SEED, gates lower bound ≥ −0.25 · mda mean ≥ 4.0 · grounding ≥ 0.95)"
-  h="$(model_sha | shasum -a 256 | cut -c1-64)"; [ -n "$h" ] || die "freeze: no model files"
+  h="$(model_sha | shasum -a 256 | cut -c1-64)"; [ "${#h}" = 64 ] || die "freeze: model files could not be hashed"
+  [ "$(model_sha | grep -c .)" -gt 0 ] || die "freeze: empty model inventory"
   echo "- embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision $(val cat "$MDA_MODEL_DIR"/models--Qdrant--bge-small-en-v1.5-onnx-Q/refs/main) · model files sha256 $h (evals/results/docsqa/model.sha)"
   echo "- store configuration template: evals/results/own/T6/config.toml sha256 $(val sha256 "$own/T6/config.toml") (backend claude-cli, summariser claude-haiku-4-5, embeddings local-small; the ignore rules inside it)"
   echo
@@ -323,6 +324,7 @@ inputs_t6_private() {
 }
 
 tmp="$(mktemp -d -t mda-freeze.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
+VAL_FAILED="$tmp/failed-values"; : > "$VAL_FAILED"
 # A plain statement, so errexit applies inside `inputs` and a failed value aborts the freeze.
 case "${table:-}" in
   T6) inputs_t6 > "$tmp/inputs"; vals_ok ;;
