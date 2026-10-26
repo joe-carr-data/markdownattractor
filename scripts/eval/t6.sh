@@ -105,87 +105,99 @@ arms_for() { # corpus
 }
 
 build_denylist() { # private copy
+  # The private denylist (pre-mortem F12; reviews F2, F7, pass 3 F5, pass 5 F4): root path forms and the
+  # repository's directory names, every relative markdown path, every heading (≥ 12 chars) and 40-char
+  # excerpts (every 200 chars). Mandatory entries (paths, names, root) are always kept. Optional entries
+  # are dropped only when they are public already, at the IMMUTABLE baseline (the merge-base with main):
+  # a heading when it equals (case-insensitively) a public heading or a public JSON string value; an
+  # excerpt when it occurs in the public prose. Every optional entry is tested on its own.
   local S="$1" pub base
-# The private denylist (pre-mortem F12; reviews F2, F7, pass 5 F4), built from the private copy:
-  # the denylist (pre-mortem F12): root path forms, the repository's directory names, every
-  # relative path, every heading (≥ 12 chars) and 40-char excerpts not occurring in this
-  # repository's tree (collision filter: a string that is also public is not evidence of a leak)
-  # the public baseline text, once: every text file of the repository at the merge-base with main
   pub="$(mktemp -d -t mda-t6-pub.XXXXXX)"; base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD)"
   git -C "$REPO" archive --format=tar "$base" | tar -x -C "$pub"
-  # the baseline is the repository's PROSE at the merge-base (markdown, text, prompts, skills, README,
-  # CHANGELOG, the plans, reviews and handoffs): where a private heading or excerpt could coincide with
-  # something already public; the JSON/JSONL result artifacts carry no prose and would make the scan
-  # hours long (a 40-char excerpt test is a substring search over the whole baseline)
-  python3 -I -c '
-import os, sys
+  python3 -I - "$pub" "$pub.txt" <<'PY' || die "the public baseline could not be assembled"
+import json, os, re, sys
 root, out = sys.argv[1], sys.argv[2]
 exts = (".md", ".mdx", ".markdown", ".txt", ".toml", ".yml", ".yaml", ".sh", ".rs", ".py")
-import json, re
-strings = set()   # every public JSON string value and every public heading, lower-cased: the exact-match baseline for private headings (pass 5 F4)
+strings = set()
 def grab(v):
     if isinstance(v, dict):
-    for x in v.values(): grab(x)
+        for x in v.values(): grab(x)
     elif isinstance(v, list):
-    for x in v: grab(x)
-    elif isinstance(v, str) and 12 <= len(v) <= 400: strings.add(v.strip().lower())
+        for x in v: grab(x)
+    elif isinstance(v, str) and 12 <= len(v) <= 400:
+        strings.add(v.strip().lower())
 with open(out, "wb") as o:
     for d, _, fs in os.walk(root):
-    for f in fs:
-        p = os.path.join(d, f)
-        try: data = open(p, "rb").read()
-        except OSError as e: sys.exit("baseline: unreadable " + p + ": " + str(e))
-        if b"\0" in data: continue
-        if f.endswith((".json", ".jsonl")):
-            for line in (data.split(b"\n") if f.endswith(".jsonl") else [data]):
-                try: grab(json.loads(line))
-                except ValueError: pass
-            continue
-        if not f.endswith(exts): continue
-        o.write(data); o.write(b"\n")
-        for line in data.decode("utf-8", errors="replace").split("\n"):
-            m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
-            if m: strings.add(m.group(1).strip().lower())
+        for f in fs:
+            p = os.path.join(d, f)
+            try:
+                data = open(p, "rb").read()
+            except OSError as e:
+                sys.exit("baseline: unreadable " + p + ": " + str(e))
+            if b"\0" in data:
+                continue
+            if f.endswith((".json", ".jsonl")):
+                for line in (data.split(b"\n") if f.endswith(".jsonl") else [data]):
+                    try:
+                        grab(json.loads(line))
+                    except ValueError:
+                        pass
+                continue
+            if not f.endswith(exts):
+                continue
+            o.write(data); o.write(b"\n")
+            for line in data.decode("utf-8", errors="replace").split("\n"):
+                m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+                if m:
+                    strings.add(m.group(1).strip().lower())
 with open(out + ".strings", "w", encoding="utf-8") as o:
-    for s_ in sorted(strings): o.write(s_ + "\n")' "$pub" "$pub.txt" || die "the public baseline could not be assembled"
-  T6_SCAN="$REPO/scripts/eval/t6_scan.py" python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY'
+    for s_ in sorted(strings):
+        o.write(s_ + "\n")
+PY
+  T6_SCAN="$REPO/scripts/eval/t6_scan.py" python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY' || die "the denylist could not be built"
 import os, re, subprocess, sys
 src, root, home, pub_txt, out = sys.argv[1:6]
 items = set(); always = set(); headings = set()
-for s_ in (root, root.replace(home, "~"), os.path.basename(root)): items.add(s_); always.add(s_)
+for s_ in (root, root.replace(home, "~"), os.path.basename(root)):
+    items.add(s_); always.add(s_)
 parts = [p for p in root.split("/") if p and p not in ("Users", "home") and p != os.path.basename(home)]
-for p in parts: items.add(p); always.add(p)
+for p in parts:
+    items.add(p); always.add(p)
 for d, _, fs in os.walk(src):
-    if "/.markdownattractor" in d: continue
+    if "/.markdownattractor" in d:
+        continue
     for f in fs:
-    rel = os.path.relpath(os.path.join(d, f), src)
-    if not rel.endswith((".md", ".mdx", ".markdown")): continue
-    items.add(rel); always.add(rel)
-    try: text = open(os.path.join(d, f), encoding="utf-8", errors="replace").read()
-    except OSError: continue
-    for line in text.split("\n"):
-        m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
-        if m and len(m.group(1)) >= 12: items.add(m.group(1)); headings.add(m.group(1))
-    for i in range(0, len(text), 200):
-        ex = text[i:i + 40]
-        if len(ex) == 40 and ex.strip() and "\n" not in ex: items.add(ex)
-# the collision filter, one pass (review F2, second pass F7): an optional entry (heading, excerpt) that
-# also occurs in the IMMUTABLE public baseline is not evidence of a leak and is dropped; a mandatory
-# entry (root, directory names, relative paths) is always kept, whatever its length
+        rel = os.path.relpath(os.path.join(d, f), src)
+        if not rel.endswith((".md", ".mdx", ".markdown")):
+            continue
+        items.add(rel); always.add(rel)
+        try:
+            text = open(os.path.join(d, f), encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        for line in text.split("\n"):
+            m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+            if m and len(m.group(1)) >= 12:
+                items.add(m.group(1)); headings.add(m.group(1))
+        for i in range(0, len(text), 200):
+            ex = text[i:i + 40]
+            if len(ex) == 40 and ex.strip() and "\n" not in ex:
+                items.add(ex)
 optional = sorted(s for s in items if s not in always and len(s) >= 6 and "\n" not in s)
-# headings: exempt when they equal (case-insensitively) a public heading or a public JSON string value (pass 5 F4);
-# excerpts: exempt when they occur in the public prose (every item tested on its own; pass 3 F5)
 pub_strings = set(l.rstrip("\n") for l in open(pub_txt + ".strings", encoding="utf-8"))
 with open(out + ".items", "w", encoding="utf-8") as fh:
     for s_ in optional:
-    if s_ not in headings: fh.write(s_ + "\n")
-r = subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])) if sys.argv[0] not in ("-", "") else os.environ["T6_SCAN"], "t6_scan.py") if False else os.environ["T6_SCAN"], "collide", out + ".items", pub_txt], capture_output=True, text=True)
-if r.returncode != 0: sys.exit("collision filter failed: " + r.stderr)
+        if s_ not in headings:
+            fh.write(s_ + "\n")
+r = subprocess.run([sys.executable, "-I", os.environ["T6_SCAN"], "collide", out + ".items", pub_txt], capture_output=True, text=True)
+if r.returncode != 0:
+    sys.exit("collision filter failed: " + r.stderr)
 found = {l.lower() for l in r.stdout.split("\n") if l}
 os.remove(out + ".items")
 kept = sorted(always) + [s_ for s_ in optional if (s_.lower() not in pub_strings if s_ in headings else s_.lower() not in found)]
 with open(out, "w", encoding="utf-8") as fh:
-    for s_ in kept: fh.write(s_ + "\n")
+    for s_ in kept:
+        fh.write(s_ + "\n")
 print(f"denylist: {len(kept)} entries ({len(optional) - (len(kept) - len(always))} optional entries dropped as also public; {len(always)} mandatory)")
 PY
   rm -rf "$pub" "$pub.txt" "$pub.txt.strings"; chmod 600 "$T6/private/denylist.txt"
