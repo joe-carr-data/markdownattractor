@@ -1,7 +1,7 @@
 .PHONY: check fmt lint test cov deny audit docs build release clean t2-tests
 
 ## check: everything CI runs, in order. Run before every commit.
-check: fmt lint test deny docs t2-tests
+check: fmt lint test deny docs t2-tests t6-tests page-blocks
 
 fmt:
 	cargo fmt --all -- --check
@@ -10,6 +10,15 @@ fmt:
 t2-tests:
 	cargo build -q -p mda-cli
 	scripts/eval/tests/failure-matrix.sh target/debug/mda
+
+t6-tests:
+	cargo build -q -p mda-cli
+	scripts/eval/tests/t6-resolver.sh
+	scripts/eval/tests/own-private-schema.sh
+	scripts/eval/tests/t6-smoke.sh target/debug/mda
+
+page-blocks:
+	scripts/eval/tests/page-blocks.sh check
 
 lint:
 	cargo lint

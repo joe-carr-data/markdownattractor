@@ -24,7 +24,7 @@ cmd="${1:?run|latency|table|latency-table|target|lose|archive}"; shift
 TABLE=T1; T="$(results_dir $TABLE)"; SPLIT="test"
 HYBRID="hybrid (cards + raw + vectors)"
 ALL_ARMS="mda qmd-full qmd-no-rerank qmd-bm25 graphify graphify-haiku bm25-files"
-data="$RUN/docsqa-data"
+data="$DOCSQA_DATA"
 # One freeze check at a time on this machine (two at once contended on qmd's sqlite once).
 frozen_ok() {
   local lock="$RUN/t1-runs/.freeze-check.lock" i=0

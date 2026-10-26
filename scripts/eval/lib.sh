@@ -10,7 +10,11 @@ REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 RUN="${RUN:-$HOME/.cache/markdownattractor/bench}"
 MDA="${MDA:-$REPO/target/release/mda}"
 export MDA_MODEL_DIR="${MDA_MODEL_DIR:-$HOME/.cache/markdownattractor/models}"
-RESULTS="$REPO/evals/results/docsqa"
+# Where a table's committed observations live; T6 (our own corpora) overrides it with
+# evals/results/own. The DocsQA dataset checkout: every read of it goes through DOCSQA_DATA, so
+# a harness that must not touch the dataset (T6) can point it at an unreadable path.
+RESULTS="${RESULTS:-$REPO/evals/results/docsqa}"
+DOCSQA_DATA="${DOCSQA_DATA:-$RUN/docsqa-data}"
 # The Rust toolchain, for the recorded rustc version and the release build.
 [ ! -f "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 # shellcheck disable=SC2034  # used by the scripts that source this file
@@ -111,7 +115,7 @@ probe_ids() { jq -r '.runs[0].results[:3][].id' "$(results_dir "${2:-development
 # The text of one question of one project; exactly one row must match.
 question_text() { # project question_id
   local rows
-  rows="$(jq -c --arg p "$1" --arg id "$2" 'select(.project == $p and .question_id == $id) | .query' "$RUN/docsqa-data/data/questions.jsonl")"
+  rows="$(jq -c --arg p "$1" --arg id "$2" 'select(.project == $p and .question_id == $id) | .query' "$DOCSQA_DATA/data/questions.jsonl")"
   [ "$(printf '%s\n' "$rows" | grep -c .)" = 1 ] || die "question $2 of $1: expected exactly one row in questions.jsonl"
   jq -r . <<<"$rows"
 }

@@ -1,0 +1,20 @@
+summarization_model = "claude-haiku-4-5"
+escalation_model = "claude-sonnet-5"
+backend = "claude-cli"
+api_base_url = "https://api.anthropic.com"
+api_key_env = "ANTHROPIC_API_KEY"
+local_base_url = "http://127.0.0.1:8080/v1"
+local_model = "gpt-oss-20b"
+local_reasoning_effort = "low"
+claude_cli_policy_ack = true
+per_call_budget_usd = 0.05
+worker_timeout_secs = 90
+ignore = [
+    "node_modules/",
+    "target/",
+    ".git/",
+    "vendor/",
+    "*.min.md",
+]
+nudge = true
+embeddings = "local-small"

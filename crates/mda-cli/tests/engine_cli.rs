@@ -1305,3 +1305,60 @@ fn the_daemon_refuses_to_run_under_mda_now() {
         .failure()
         .stderr(predicate::str::contains("MDA_NOW"));
 }
+
+#[test]
+fn eval_on_an_own_root_exports_cards_and_reports_coverage_without_a_dataset() {
+    // Benchmark T6 (our own corpora): `--root` alone attaches and exports cards; no dataset.
+    let dir = root_with_docs();
+    mda().args(["index", "--no-summarize", "--root"]).arg(dir.path()).assert().success();
+    let out = tempfile::tempdir().unwrap();
+    let cards = out.path().join("cards-own.json");
+    let o = mda()
+        .args(["--json", "eval", "--root"])
+        .arg(dir.path())
+        .args(["--export-cards"])
+        .arg(&cards)
+        .args(["--project", "own"])
+        .output()
+        .unwrap();
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let v = json_of(&o.stdout);
+    assert_eq!(v["project"], "own");
+    assert_eq!(v["cards_exported"], 0, "nothing summarised: no card to export");
+    assert_eq!(v["card_coverage"]["complete"], false);
+    assert_eq!(v["card_coverage"]["sections"], v["store"]["sections"]);
+    assert!(cards.is_file());
+    let prov: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(cards.with_file_name("cards-own.json.provenance.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(prov["project"], "own");
+    assert_eq!(prov["complete"], false);
+    // attaching the (empty) export back is accepted and reports zero attached
+    mda()
+        .args(["--json", "eval", "--root"])
+        .arg(dir.path())
+        .args(["--cards"])
+        .arg(&cards)
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("\"cards_attached\":0")
+                .or(predicate::str::contains("\"cards_attached\": 0")),
+        );
+    // neither flag: refused; a golden set beside --root: refused
+    mda()
+        .args(["eval", "--root"])
+        .arg(dir.path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("--cards and/or --export-cards"));
+    mda()
+        .args(["eval", "--root"])
+        .arg(dir.path())
+        .args(["--golden", "evals/golden", "--cards"])
+        .arg(&cards)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("the golden set is --golden"));
+}

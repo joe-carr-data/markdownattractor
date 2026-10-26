@@ -27,13 +27,17 @@ set -euo pipefail
 . "$(dirname "$0")/../lib.sh"
 cmd="${1:?build|record|drive}"; project="${2:?project}"; shift 2
 ident "$project"
-dir="$(project_dir "$project")"; corpus="$RUN/$dir"
+dir="$(project_dir "$project")"; corpus="${ARM_CORPUS_OVERRIDE:-$RUN/$dir}"
 [ -d "$corpus" ] || die "no checkout at $corpus"
 model="${GRAPHIFY_MODEL:-sonnet}"
 case "$cmd" in build|record) model="${1:-sonnet}" ;; esac
 ident "$model"
 arm="graphify"; [ "$model" = sonnet ] || arm="graphify-$model"
 G="$RUN/graphify/$project"; [ "$model" = sonnet ] || G="$RUN/graphify/$project-$model"
+# T6 (our own corpora): ARM_GRAPHIFY_DIR is the build directory on the corpus copy, PAGES_FILE
+# the page inventory the coverage is measured against (in place of the dataset's corpus list).
+G="${ARM_GRAPHIFY_DIR:-$G}"
+corpus_pages() { if [ -n "${PAGES_FILE:-}" ]; then grep . "$PAGES_FILE"; else jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$DOCSQA_DATA/data/corpus.jsonl"; fi; }
 ARMS="$RESULTS/arms"; mkdir -p "$ARMS" "$ARMS/graphs"
 
 # One routine for every graph source path: the copy's absolute prefix removed, `./` removed.
@@ -67,7 +71,7 @@ record_build() { # rc wall_s
     # Coverage of the dataset corpus pages by the nodes' source_file, the field the MCP
     # renderer exposes as `src` (the same routine the driver uses).
     jq -r '[.nodes[] | .source_file // empty] | unique | .[]' "$G/graph.json" | canon_path | LC_ALL=C sort -u > "$G/node-files.txt"
-    while IFS= read -r p; do total=$((total + 1)); grep -qxF "$p" "$G/node-files.txt" && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
+    while IFS= read -r p; do total=$((total + 1)); grep -qxF "$p" "$G/node-files.txt" && present=$((present + 1)); done < <(corpus_pages)
     sha="$(sha256 "$G/graph.json")"
     jq -n --arg arm "$arm" --arg project "$project" --arg version "$(graphify --version 2>/dev/null | head -1)" --arg model "$model" --argjson res "$res" --argjson s "$wall" --argjson rc "$rc" \
       --argjson nodes "$nodes" --argjson edges "$edges" --arg sha "$sha" --argjson total "$total" --argjson present "$present" --argjson attempts "$attempts" \
