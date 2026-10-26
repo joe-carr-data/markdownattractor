@@ -30,6 +30,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-10-26 | [reviews/codex/2026-10-26-m9-premortem.md](reviews/codex/2026-10-26-m9-premortem.md) | \ |
 | 2026-10-16 | [reviews/codex/2026-10-16-t5-page.md](reviews/codex/2026-10-16-t5-page.md) | \ |
 | 2026-10-15 | [reviews/codex/2026-10-15-bench-m8-harness.md](reviews/codex/2026-10-15-bench-m8-harness.md) | \ |
 | 2026-09-27 | [reviews/codex/2026-09-27-t4-page.md](reviews/codex/2026-09-27-t4-page.md) | \ |
@@ -52,7 +53,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
-| 2026-10-16 | [handoffs/2026-10-16-2056-auto.md](handoffs/2026-10-16-2056-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-10-26 | [handoffs/2026-10-16-2056-auto.md](handoffs/2026-10-16-2056-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-10-16 | [handoffs/2026-10-16-1751-auto.md](handoffs/2026-10-16-1751-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-10-16 | [handoffs/2026-09-27-1744-auto.md](handoffs/2026-09-27-1744-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-27 | [handoffs/2026-09-27-session5-final-handoff.md](handoffs/2026-09-27-session5-final-handoff.md) | Read this first after compaction, then re-read every file in §2 before touching anything.** This… |
