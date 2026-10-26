@@ -48,8 +48,13 @@ unset_nested_session; unset_provider_keys
 # sample through unchanged.
 materialise() { # project sample.jsonl out.full.jsonl
   local project="$1" sample="$2" full="$3" data="$DOCSQA_DATA/data"
-  if jq -e 'has("q") and has("reference")' <(head -1 "$sample") >/dev/null 2>&1; then cp "$sample" "$full"; return; fi
+  if jq -e 'has("q") and has("reference")' <(head -1 "$sample") >/dev/null 2>&1; then
+    # a full sample: T6's own rows are validated like a materialised one (review 2 F15); T2's dataset rows have no evidence and pass through
+    if jq -e 'has("evidence")' <(head -1 "$sample") >/dev/null 2>&1; then validate_full "$sample" || die "materialise: the full question file is invalid"; fi
+    cp "$sample" "$full"; return
+  fi
   if [ -n "${T2_QUESTIONS_FULL:-}" ]; then
+    validate_full "$T2_QUESTIONS_FULL" || die "materialise: T2_QUESTIONS_FULL is invalid"
     # T6's private corpus: the texts live outside the repository; every row of the committed
     # sample must match a row of the full file by id and by the sha256 of both texts.
     python3 - "$sample" "$full" "$T2_QUESTIONS_FULL" <<'PY' || die "materialise: a hash does not match T2_QUESTIONS_FULL (the committed sample and the private texts disagree)"
@@ -58,18 +63,15 @@ sample, full, src = sys.argv[1:4]
 h = lambda t: hashlib.sha256(t.encode("utf-8")).hexdigest()
 rows = {}
 for l in open(src, encoding="utf-8"):
-    r = json.loads(l)
-    if r["id"] in rows: sys.exit("duplicate id in the full file: " + r["id"])
-    if not (r.get("q") and r.get("reference") and r.get("evidence") and isinstance(r.get("required_facts"), list) and r["required_facts"]): sys.exit("incomplete row " + r["id"])
-    if h(r["evidence"]) != r.get("evidence_sha256"): sys.exit("evidence hash does not match its text: " + r["id"])
-    rows[r["id"]] = r
+    r = json.loads(l); rows[r["id"]] = r
 seen = set()
 with open(full, "w", encoding="utf-8") as out:
     for l in open(sample, encoding="utf-8"):
         r = json.loads(l); f = rows.get(r["id"])
         if r["id"] in seen: sys.exit("duplicate id in the sample: " + r["id"])
         seen.add(r["id"])
-        if f is None or h(f["q"]) != r["question_sha256"] or h(f["reference"]) != r["reference_sha256"] or f["evidence_sha256"] != r.get("evidence_sha256"):
+        if f is None or h(f["q"]) != r["question_sha256"] or h(f["reference"]) != r["reference_sha256"] or f["evidence_sha256"] != r.get("evidence_sha256") \
+           or ("required_facts_n" in r and len(f["required_facts"]) != r["required_facts_n"]):
             sys.exit(1)
         out.write(json.dumps(f) + "\n")
 PY
@@ -96,6 +98,27 @@ with open(full, "w", encoding="utf-8") as out:
         out.write(json.dumps(r2) + "\n")
 PY
 }
+# One validator for every T6 question file with texts (review 2 F15): unique ids; non-empty q,
+# reference and evidence; the evidence hash recomputed from the text; required_facts a non-empty
+# list of non-empty strings; relevant a non-empty list.
+validate_full() { # full.jsonl
+  python3 -I -c '
+import hashlib, json, sys
+h = lambda t: hashlib.sha256(t.encode("utf-8")).hexdigest()
+seen = set()
+for l in open(sys.argv[1], encoding="utf-8"):
+    if not l.strip(): continue
+    r = json.loads(l); i = r.get("id")
+    if not isinstance(i, str) or i in seen: sys.exit("duplicate or missing id: %r" % (i,))
+    seen.add(i)
+    for k in ("q", "reference", "evidence"):
+        if not isinstance(r.get(k), str) or not r[k].strip(): sys.exit("row %s: %s missing or empty" % (i, k))
+    if h(r["evidence"]) != r.get("evidence_sha256"): sys.exit("row %s: evidence_sha256 does not match the text" % i)
+    f = r.get("required_facts")
+    if not isinstance(f, list) or not f or not all(isinstance(x, str) and x.strip() for x in f): sys.exit("row %s: required_facts must be a non-empty list of non-empty strings" % i)
+    if not isinstance(r.get("relevant"), list) or not r["relevant"]: sys.exit("row %s: relevant missing" % i)
+print(len(seen))' "$1" >/dev/null
+}
 hash_sample() { # full.jsonl -> the committed form on stdout (ids and hashes, no texts)
   jq -c '{id, split, category, question_sha256: (.q | @sh | "" ), reference_sha256: "", relevant} ' "$1" >/dev/null   # (shape check)
   python3 - "$1" <<'PY'
@@ -118,9 +141,10 @@ cite_paths() {
   python3 -I -c '
 import re, sys
 t = sys.stdin.read(); out = []
-for m in re.finditer(r"`([^`\n]+?\.(?:md|mdx|markdown))`", t): out.append(m.group(1).strip())
+EXT = r"\.(?:mdx|markdown|md)(?![A-Za-z0-9])"   # the whole extension, never .md out of .mdx
+for m in re.finditer(r"`([^`\n]+?" + EXT + r")(?:#[^`\n]*)?`", t): out.append(m.group(1).strip())
 rest = re.sub(r"`[^`\n]+`", " ", t)
-out += re.findall(r"[A-Za-z0-9_./-]+\.(?:md|mdx|markdown)", rest)
+out += re.findall(r"[A-Za-z0-9_./-]+" + EXT, rest)
 seen = set()
 for c in out:
     if c not in seen: seen.add(c); print(c)'
@@ -202,7 +226,7 @@ case "$cmd" in
       diff "$out/.m.a" "$out/.m.b" > "$out/.m.diff" || die "$out/manifest.json describes another configuration (see $out/.m.diff): a resume must run the same binary, rules, model, arms and questions; use a fresh directory otherwise"
       rm -f "$out/.m.a" "$out/.m.b" "$out/.m.diff"; echo "resuming $out"
     else echo "$manifest" > "$out/manifest.json"; fi
-    n_total=0; n_done=0; n_err=0
+    n_total=0; n_done=0; n_err=0; pids=""; worker_failures=0
     one() { # id q arm run
       local id="$1" q="$2" arm="$3" r="$4" key trace attempts='[]' rc t0 t1 a
       key="${id//[^A-Za-z0-9_.-]/_}-$arm-$r"; trace="$out/traces/$key.jsonl"
@@ -238,13 +262,16 @@ case "$cmd" in
         # bounded concurrency without `wait -n` (bash 3.2): poll the job count
         while [ "$(jobs -rp | wc -l | tr -d ' ')" -ge "$JOBS" ]; do sleep 1; done
         one "$id" "$q" "$arm" "$r" &
-        [ "$JOBS" -gt 1 ] || wait
+        pids="$pids $!"
+        [ "$JOBS" -gt 1 ] || { wait "$!" || worker_failures=$((worker_failures + 1)); }
       done; done
     done < <(jq -c . "$questions")
-    wait
+    for pid in $pids; do wait "$pid" 2>/dev/null || worker_failures=$((worker_failures + 1)); done
     assemble "$out"
     n_err="$(jq -s 'map(select(.error)) | length' "$out/runs.jsonl")"
-    echo "$out: $(grep -c . "$out/runs.jsonl") of $n_total rows ($n_done were present; $n_err error rows, kept as results); manifest $out/manifest.json"
+    n_rows="$(grep -c . "$out/runs.jsonl" || true)"
+    echo "$out: $n_rows of $n_total rows ($n_done were present; $n_err error rows, kept as results; $worker_failures worker exit(s) non-zero); manifest $out/manifest.json"
+    [ "$n_rows" = "$n_total" ] || { echo "run set incomplete: $n_rows of $n_total rows (rule 0.3: rerun until every observation has a row)" >&2; exit 3; }
     [ "$n_err" = 0 ] || exit 2 ;;
   status)
     out="${1:?out-dir}"; [ -f "$out/manifest.json" ] || die "no manifest in $out"

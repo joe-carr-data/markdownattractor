@@ -6,6 +6,7 @@
 # no private export exists.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"; repo="$(cd "$here/../../.." && pwd)"
-priv="$repo/evals/results/own/T6/private"
+priv="$repo/evals/results/own/T6/private"; cal="$repo/evals/results/own/T6/calibration.json"
+[ ! -f "$cal" ] || python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$cal"   # the calibration record carries the private pilot's projection too (review 2 F3)
 [ -d "$priv" ] && [ -n "$(find "$priv" -type f | head -1)" ] || { echo "own-private-schema: no private export yet"; exit 0; }
 python3 -I "$repo/scripts/eval/t6_private_export.py" check "$priv"

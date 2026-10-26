@@ -16,8 +16,9 @@ Usage:
   t6_private_export.py export <private-run-dir> <committed-dir>
   t6_private_export.py check <committed-dir>
   t6_private_export.py digest-questions <questions.full.jsonl>   # canonical rows on stdout
+  t6_private_export.py project-pilot <pilot.json> <corpus>      # the typed pilot projection (the calibration record is built from these)
+  t6_private_export.py check-file calibration <calibration.json>
 """
-import glob
 import hashlib
 import json
 import os
@@ -71,17 +72,17 @@ GRADE_ROW = {"id": "id", "arm": "arm", "run": "int", "error": "bool", "exit_code
              "turns": INT, "turns_with_usage": INT, "tool_calls": INT, "failed_calls": INT, "input_tokens": INT, "output_tokens": INT,
              "thinking_tokens": INT, "source_tokens": INT, "source_tokens_signed": INT, "source_tokens_negative_total": INT,
              "source_tokens_negative_turns": INT, "cost_usd": NUM, "cost_usd_all_attempts": NUM, "answer_sha256": "hex64", "question_sha256": "hex64",
-             "score": INT, "correctness": INT, "completeness": INT, "grounded": BOOL, "graded": "bool", "grader": ("model", "null"), "graded_at": ("iso", "null"),
+             "score": NUM, "correctness": INT, "completeness": INT, "grounded": BOOL, "graded": "bool", "grader": ("model", "null"), "graded_at": ("iso", "null"),
              "models": ["model"], "tools": ["tool"],
              "grounding": {"cited_pages_n": "int", "unresolved_n": "int", "oversized_n": "int", "batches_n": "int", "unsupported_claims_n": "int",
                            "evidence_policy": ("enum:evidence", "null")},
-             "?adjudicated": "bool", "?sonnet_score": INT, "?panel": {"fable": INT, "astra": INT, "triggered": BOOL}}
+             "?adjudicated": "bool", "?sonnet_score": NUM, "?panel": {"fable": NUM, "astra": NUM, "triggered": BOOL}}
 AGREE = {"exact": NUM, "within_one": NUM}
 REGRADE = {"agreement": {"fable_astra": AGREE, "fable_sonnet": AGREE, "astra_sonnet": AGREE}, "incomplete": "int", "mean_astra": NUM, "mean_fable": NUM,
            "mean_sonnet": NUM, "resolved_by_panel": "int", "sample": "int", "seed": "digit_str", "stamp": "iso", "trigger": "enum:trigger",
            "rows": [{"sample_id": "sid", "id": "id", "arm": "arm", "run": "int", "sonnet": NUM, "fable": NUM, "astra": NUM, "panel_mean": NUM,
                      "triggered": BOOL, "resolved": NUM, "resolution": "enum:resolution"}]}
-REGRADE_MEMBER = {"sample_id": "sid", "member": "enum:member", "score": INT, "model": ("model", "null"), "cost_usd": NUM, "complete": "bool"}
+REGRADE_MEMBER = {"sample_id": "sid", "member": "enum:member", "score": NUM, "model": ("model", "null"), "cost_usd": NUM, "complete": "bool"}
 CARDS = {"seed": "digit_str", "stamp": "iso", "cards_file": "placeholder", "sampled_from": "enum:sampled_from", "sections_missing_from_store": "int",
          "sample": "int", "values": "int", "unsupported_rate": {"fable": NUM, "astra": NUM}, "incomplete": "int", "agreement": NUM,
          "rows": [{"sample_id": "sid", "values": INT, "fable": (["bool"], "null"), "astra": (["bool"], "null")}]}
@@ -104,7 +105,7 @@ INDEX = {"seconds": "int", "retries": "int", "store_sha256": "hex64", "indexed_a
                    "by_model": {"?claude-haiku-4-5": "int", "?none": "int", "?claude-sonnet-5": "int", "?claude-sonnet-5-5": "int"},
                    "summarized_from": ("iso", "null"), "summarized_to": ("iso", "null"),
                    "usage": {"input_tokens": "int", "output_tokens": "int", "cost_usd_list_price_equivalent": "num"}}}
-PILOT = {"corpus": "enum:private", "at": "iso", "index": {"seconds": "int", "counts": INDEX["counts"]},
+PILOT = {"corpus": "enum:corpus", "at": "iso", "index": {"seconds": "int", "counts": INDEX["counts"]},
          "candidates": {"written": "int", "refused": "int", "accepted": "int", "judged": "int"},
          "runs": {"n": "int", "errors": "int", "wall_s_total": NUM, "cost_usd": NUM, "grounding_batches": INT, "retried": "int"},
          "seconds": {"runs": "int", "grade": "int", "panel": "int"},
@@ -122,7 +123,10 @@ MANIFEST = {"project": "enum:private", "model": "model", "runs": "int", "arms": 
                                                "?grep": {"with_git": "bool", "mcp_server": ("enum:mcp_server", "null"), "system_prompt_sha256": ("hex64", "null")},
                                                "?qmd": {"with_git": "bool", "mcp_server": ("enum:mcp_server", "null"), "system_prompt_sha256": ("hex64", "null")},
                                                "?graphify": {"with_git": "bool", "mcp_server": ("enum:mcp_server", "null"), "system_prompt_sha256": ("hex64", "null")}}}
-ENUMS = {"evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
+CALIBRATION = {"at": "iso", "corpora": {"?golden": PILOT, "?docs": PILOT, "?private": PILOT},
+               "resolved_models": {"answering": ["model"], "grader": ["model"], "grounding": ["model"], "panel_fable": ["model"], "panel_astra": ["model"]},
+               "resolution_rule": "text", "estimates": {"runs_per_hour": NUM, "cost_per_run_usd": NUM, "grade_seconds_per_run": NUM, "acceptance_rate": NUM}, "note": "text"}
+ENUMS = {"corpus": ["golden", "docs", "private"], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
          "T6": ["T6"], "private": ["private"], "status": ["completed", "in progress"], "check_name": CHECK_NAMES, "check_status": CHECK_STATUS,
          "embedding_model": ["bge-small-en-v1.5-q", "local-small"], "own": ["own"], "single-section": ["single-section"], "refusal": REFUSALS,
          "reason": REASON_CODES, "reject_key": REJECT_KEYS, "role": ["counted", "pilot"], "mcp_server": ["markdownattractor", "qmd", "graphify"]}
@@ -145,7 +149,8 @@ def type_ok(v, t):
     if t == "arm": return v in ARMS
     if t == "tool": return v in TOOLS
     if t == "model": return v in MODELS
-    if t == "frozen": return isinstance(v, str) and RX["hex64"].match(v.strip().split()[0]) is not None
+    if t == "frozen": return isinstance(v, str) and re.match(r"^[0-9a-f]{64}\n?$", v) is not None
+    if t == "text": return isinstance(v, str) and 0 < len(v) <= 600 and "\n" not in v   # the declared rule and the note: prose the owner wrote, public
     if t.startswith("enum:"): return v in ENUMS[t[5:]]
     if t in RX: return isinstance(v, str) and RX[t].match(v) is not None
     raise ValueError(f"unknown type {t}")
@@ -192,10 +197,16 @@ def read_rows(path):
         return [json.load(fh)]
 
 
+def every_file(root):
+    """Every file under root, dotfiles and dot-directories included (glob would skip them)."""
+    for d, dirs, files in os.walk(root):
+        dirs.sort()
+        for f in sorted(files): yield os.path.join(d, f)
+
+
 def check(committed):
     errors, n = [], 0
-    for path in sorted(glob.glob(os.path.join(committed, "**", "*"), recursive=True)):
-        if os.path.isdir(path): continue
+    for path in every_file(committed):
         rel = os.path.relpath(path, committed)
         if rel not in KINDS: errors.append(f"{rel}: file not allowed in a private export"); continue
         try: rows = read_rows(path)
@@ -242,6 +253,19 @@ def model(v):
 
 def hexv(v, n=64):
     return v if isinstance(v, str) and re.match(r"^[0-9a-f]{%d}$" % n, v) else None
+
+
+def project_pilot(p0, corpus=None):
+    """The typed projection of one corpus's pilot.json (used by `export` and by the calibration record)."""
+    ix0 = p0.get("index") or {}; cn = ix0.get("counts") or {}; pn = p0.get("panel") or {}
+    def agree(x): return {"exact": num((x or {}).get("exact")), "within_one": num((x or {}).get("within_one"))}
+    return {"corpus": corpus or (p0.get("corpus") if p0.get("corpus") in ENUMS["corpus"] else None), "at": p0.get("at"),
+            "index": {"seconds": integer(ix0.get("seconds")) or 0, "counts": {k: (num if k == "total_cost_usd" else integer)(cn.get(k)) or 0 for k in INDEX["counts"]}},
+            "candidates": {k: integer((p0.get("candidates") or {}).get(k)) or 0 for k in ("written", "refused", "accepted", "judged")},
+            "runs": {k: ((integer((p0.get("runs") or {}).get(k)) or 0) if k in ("n", "errors", "grounding_batches", "retried") else num((p0.get("runs") or {}).get(k))) for k in ("n", "errors", "wall_s_total", "cost_usd", "grounding_batches", "retried")},
+            "seconds": {k: integer((p0.get("seconds") or {}).get(k)) or 0 for k in ("runs", "grade", "panel")},
+            "panel": {"sample": integer(pn.get("sample")) or 0, "incomplete": integer(pn.get("incomplete")) or 0, "agreement": {k: agree((pn.get("agreement") or {}).get(k)) for k in ("fable_astra", "fable_sonnet", "astra_sonnet")},
+                      "resolved_by_panel": integer(pn.get("resolved_by_panel")) or 0, "mean_sonnet": num(pn.get("mean_sonnet")), "mean_fable": num(pn.get("mean_fable")), "mean_astra": num(pn.get("mean_astra"))}}
 
 
 def export(run_dir, committed):
@@ -300,7 +324,7 @@ def export(run_dir, committed):
                    "source_tokens_signed": integer(r.get("source_tokens_signed")), "source_tokens_negative_total": integer(r.get("source_tokens_negative_total")),
                    "source_tokens_negative_turns": integer(r.get("source_tokens_negative_turns")), "cost_usd": num(r.get("cost_usd")),
                    "cost_usd_all_attempts": num(r.get("cost_usd_all_attempts")), "answer_sha256": h(r.get("answer") or ""), "question_sha256": h(r.get("q") or ""),
-                   "score": integer(r.get("score")), "correctness": integer(gr.get("correctness")), "completeness": integer(gr.get("completeness")),
+                   "score": num(r.get("score")), "correctness": integer(gr.get("correctness")), "completeness": integer(gr.get("completeness")),
                    "grounded": boolean(r.get("grounded")), "graded": bool(r.get("graded")), "grader": model(r.get("grader")), "graded_at": r.get("graded_at"),
                    "models": [x for x in r.get("models", []) if x in MODELS], "tools": [t for t in r.get("tools", []) if t in TOOLS],
                    "grounding": {"cited_pages_n": len(gd.get("cited_pages") or []), "unresolved_n": len(gd.get("unresolved_citations") or []),
@@ -309,8 +333,8 @@ def export(run_dir, committed):
                                  "evidence_policy": gd.get("evidence_policy") if gd.get("evidence_policy") in EVIDENCE_POLICIES else None}}
             if "adjudicated" in r:
                 p = r.get("panel") or {}
-                row.update({"adjudicated": bool(r.get("adjudicated")), "sonnet_score": integer(r.get("sonnet_score")),
-                            "panel": {"fable": integer(p.get("fable")), "astra": integer(p.get("astra")), "triggered": boolean(p.get("triggered"))}})
+                row.update({"adjudicated": bool(r.get("adjudicated")), "sonnet_score": num(r.get("sonnet_score")),
+                            "panel": {"fable": num(p.get("fable")), "astra": num(p.get("astra")), "triggered": boolean(p.get("triggered"))}})
             rws.append(row)
         out[dst] = rws
     for src, dst in (("analysis.json", "analysis.json"), ("analysis.adjudicated.json", "analysis.adjudicated.json")):
@@ -347,7 +371,7 @@ def export(run_dir, committed):
     for member in ("fable", "astra"):
         mr = rows("runs", "panel", f"regrade-{member}.jsonl")
         if mr is not None:
-            out[f"panel/regrade-{member}.jsonl"] = [{"sample_id": x.get("sample_id"), "member": member, "score": integer(x.get("score")), "model": model(x.get("model")),
+            out[f"panel/regrade-{member}.jsonl"] = [{"sample_id": x.get("sample_id"), "member": member, "score": num(x.get("score")), "model": model(x.get("model")),
                                                      "cost_usd": num(x.get("cost_usd")), "complete": x.get("out") is not None} for x in mr]
     cd = rows("panel", "cards.json")
     if cd is not None:
@@ -391,15 +415,7 @@ def export(run_dir, committed):
                                         "summarized_from": cards.get("summarized_from"), "summarized_to": cards.get("summarized_to"),
                                         "usage": {k: (num if k.startswith("cost") else integer)((cards.get("usage") or {}).get(k)) or 0 for k in ("input_tokens", "output_tokens", "cost_usd_list_price_equivalent")}}}]
     pl = rows("pilot.json")
-    if pl is not None:
-        p0 = pl[0]; ix0 = p0.get("index") or {}; cn = ix0.get("counts") or {}; pn = p0.get("panel") or {}
-        def agree(x): return {"exact": num((x or {}).get("exact")), "within_one": num((x or {}).get("within_one"))}
-        out["pilot.json"] = [{"corpus": "private", "at": p0.get("at"), "index": {"seconds": integer(ix0.get("seconds")) or 0, "counts": {k: (num if k == "total_cost_usd" else integer)(cn.get(k)) or 0 for k in INDEX["counts"]}},
-                              "candidates": {k: integer((p0.get("candidates") or {}).get(k)) or 0 for k in ("written", "refused", "accepted", "judged")},
-                              "runs": {k: (integer if k in ("n", "errors", "grounding_batches", "retried") else num)((p0.get("runs") or {}).get(k)) for k in ("n", "errors", "wall_s_total", "cost_usd", "grounding_batches", "retried")},
-                              "seconds": {k: integer((p0.get("seconds") or {}).get(k)) or 0 for k in ("runs", "grade", "panel")},
-                              "panel": {"sample": integer(pn.get("sample")) or 0, "incomplete": integer(pn.get("incomplete")) or 0, "agreement": {k: agree((pn.get("agreement") or {}).get(k)) for k in ("fable_astra", "fable_sonnet", "astra_sonnet")},
-                                        "resolved_by_panel": integer(pn.get("resolved_by_panel")) or 0, "mean_sonnet": num(pn.get("mean_sonnet")), "mean_fable": num(pn.get("mean_fable")), "mean_astra": num(pn.get("mean_astra"))}}]
+    if pl is not None: out["pilot.json"] = [project_pilot(pl[0], "private")]
     fz = opt("FROZEN.md")
     if os.path.isfile(fz): out["FROZEN.sha256"] = [hashlib.sha256(open(fz, "rb").read()).hexdigest() + "\n"]
     # write the staging directory, validate it, then publish atomically
@@ -415,8 +431,15 @@ def export(run_dir, committed):
         for e in errors: print(e, file=sys.stderr)
         shutil.rmtree(stage)
         sys.exit(f"export: {len(errors)} schema violation(s) in the staging export: nothing published")
-    if os.path.isdir(committed): shutil.rmtree(committed)
+    old_q = os.path.join(committed, "questions.jsonl"); new_q = os.path.join(stage, "questions.jsonl")
+    if os.path.isfile(old_q) and os.path.isfile(new_q) and open(old_q, "rb").read() != open(new_q, "rb").read():
+        shutil.rmtree(stage)
+        sys.exit("export: the private question digests differ from the committed ones: the committed question file is frozen; nothing published")
+    bak = committed.rstrip("/") + ".replaced"
+    if os.path.isdir(bak): shutil.rmtree(bak)
+    if os.path.isdir(committed): os.rename(committed, bak)
     shutil.move(stage, committed)
+    if os.path.isdir(bak): shutil.rmtree(bak)
     print(f"export: {n} private file(s) published under {committed} after the schema check")
 
 
@@ -429,6 +452,17 @@ def main():
         print(f"own-private-schema: {n} file(s) conform to the typed schema")
     elif cmd == "digest-questions":
         for r in digest_questions(sys.argv[2]): print(dumps(r))
+    elif cmd == "project-pilot":
+        # <pilot.json> <corpus>: the typed projection on stdout (the calibration record is built from these)
+        print(json.dumps(project_pilot(read_rows(sys.argv[2])[0], sys.argv[3]), sort_keys=True))
+    elif cmd == "check-file":
+        # <kind> <file>: validate one file against a kind's schema (calibration, pilot.json, …)
+        kind = sys.argv[2]; spec = CALIBRATION if kind == "calibration" else KINDS[kind]
+        errors = []
+        for i, r in enumerate(read_rows(sys.argv[3])): validate(r, spec, f"{os.path.basename(sys.argv[3])}[{i}]", errors)
+        for e in errors: print(e, file=sys.stderr)
+        if errors: sys.exit(f"check-file: {len(errors)} violation(s)")
+        print(f"check-file: {sys.argv[3]} conforms to {kind}")
     elif cmd == "export":
         export(sys.argv[2], sys.argv[3])
     else:

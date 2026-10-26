@@ -222,7 +222,11 @@ runtime() {
 # corpus by its salted commitment and counts only. Nothing of DocsQA is read.
 # Every value is computed in its own checked assignment (review F14): a missing file aborts the
 # freeze instead of printing an empty field.
-val() { local v; v="$("$@")" || die "freeze: cannot compute: $*"; [ -n "$v" ] || die "freeze: empty value from: $*"; printf '%s' "$v"; }
+# `val` runs inside command substitutions, where `die` ends only the subshell (review 2 F1): every
+# failure is also recorded in $VAL_FAILED, which the caller checks before writing anything.
+VAL_FAILED="$(mktemp -t mda-freeze-failed.XXXXXX)"
+val() { local v; if ! v="$("$@" 2>/dev/null)"; then printf 'cannot compute: %s\n' "$*" >> "$VAL_FAILED"; die "freeze: cannot compute: $*"; fi; if [ -z "$v" ] || [ "$v" = null ]; then printf 'empty or null value from: %s\n' "$*" >> "$VAL_FAILED"; die "freeze: empty value from: $*"; fi; printf '%s' "$v"; }
+vals_ok() { if [ -s "$VAL_FAILED" ]; then cat "$VAL_FAILED" >&2; rm -f "$VAL_FAILED"; die "freeze: a frozen value could not be computed (above): nothing written"; fi; rm -f "$VAL_FAILED"; }
 t6_common() {
   local f h ver bin own cal
   own="$REPO/evals/results/own"; cal="$own/T6/calibration.json"
@@ -321,10 +325,12 @@ inputs_t6_private() {
 tmp="$(mktemp -d -t mda-freeze.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
 # A plain statement, so errexit applies inside `inputs` and a failed value aborts the freeze.
 case "${table:-}" in
-  T6) inputs_t6 > "$tmp/inputs" ;;
-  T6-private) inputs_t6_private > "$tmp/inputs" ;;
+  T6) inputs_t6 > "$tmp/inputs"; vals_ok ;;
+  T6-private) inputs_t6_private > "$tmp/inputs"; vals_ok ;;
   *) inputs > "$tmp/inputs" ;;
 esac
+# no frozen line may carry an empty field (a `· ` or `: ` at the end, or `sha256 ` followed by nothing)
+case "${table:-}" in T6|T6-private) ! grep -nE '(sha256|fingerprint|commitment|=|:) *( ·|$)' "$tmp/inputs" >/dev/null || { grep -nE '(sha256|fingerprint|commitment|=|:) *( ·|$)' "$tmp/inputs" >&2; die "freeze: an empty field in the Inputs"; } ;; esac
 if [ "$check" = 1 ]; then
   awk '/^## Inputs/{f=1; next} /^## Runtime/{f=0} f' "$out" | sed '/^$/d' > "$tmp/frozen"
   sed '/^$/d' "$tmp/inputs" > "$tmp/now"

@@ -6,8 +6,8 @@ Usage: t6_resolve.py <corpus-copy> <pages.txt> <project> <cited-path>
 Prints the repository-relative page a citation resolves to, or nothing. A citation resolves
 only when its canonical path (realpath) is inside the corpus copy -- no traversal, no symlink
 escape, no store or arm artifact -- AND the relative result is a member of the frozen page
-inventory (pages.txt, one page per line). A leading `<project>/` (qmd's collection prefix)
-is stripped as a second candidate. A bare suffix resolves only when exactly one inventory
+inventory (pages.txt, one page per line). A leading `<project>/` or `t6-<project>/` (qmd's
+collection prefixes) is stripped as a further candidate; a `#anchor` is dropped. A bare suffix resolves only when exactly one inventory
 page ends with it. Called by scripts/eval/t2.sh under T2_PAGES; tested by
 scripts/eval/tests/t6-resolver.sh.
 """
@@ -41,9 +41,11 @@ def main() -> None:
     c = cited.strip()
     while c.startswith("./"):
         c = c[2:]
+    c = c.split("#", 1)[0]  # an anchor names a heading, not another page
     cands = [c]
-    if c.startswith(project + "/"):
-        cands.append(c[len(project) + 1:])
+    for prefix in (project + "/", "t6-" + project + "/"):  # the qmd collection prefixes (the corpus name, the T6 index name)
+        if c.startswith(prefix):
+            cands.append(c[len(prefix):])
     for cand in cands:
         r = inside(cand)
         if r:

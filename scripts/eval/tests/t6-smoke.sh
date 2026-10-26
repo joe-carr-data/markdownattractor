@@ -60,8 +60,25 @@ if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/d
 mv "$tmp/privout/questions.jsonl.bak" "$tmp/privout/questions.jsonl"
 echo '{"id":"private-c003","leak":"x"}' >> "$tmp/privout/questions.jsonl"
 if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "an unknown key was accepted"; fi
+sed -i.bak '$d' "$tmp/privout/questions.jsonl"; rm -f "$tmp/privout/questions.jsonl.bak"
 echo '{"a":1}' > "$tmp/privout/notes.json"
 if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "an unknown file was accepted"; fi
+rm -f "$tmp/privout/notes.json"; echo '{"a":1}' > "$tmp/privout/.hidden.json"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "a hidden file was accepted"; fi
+rm -f "$tmp/privout/.hidden.json"; printf '%s  secret/path.md\n' "$(printf x | shasum -a 256 | cut -c1-64)" > "$tmp/privout/FROZEN.sha256"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "a digest file with trailing text was accepted"; fi
+printf '%s\n' "$(printf x | shasum -a 256 | cut -c1-64)" > "$tmp/privout/FROZEN.sha256"
+python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null || fail "a bare digest file was refused"
+# the committed question digests are frozen: an export whose digests differ is refused
+sed 's/"q": "What happens on line two?"/"q": "What happens on line three?"/' "$tmp/full.jsonl" > "$tmp/privrun/questions.full.jsonl"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$tmp/privout" >/dev/null 2>&1; then fail "an export with changed question digests replaced the committed ones"; fi
+[ -f "$tmp/privout/questions.jsonl" ] || fail "the committed export was lost on a refused replacement"
+# the calibration schema: a conforming record passes, a path in the rule is still prose but a wrong field is refused
+python3 -I "$repo/scripts/eval/t6_private_export.py" project-pilot <(echo '{"corpus":"golden","at":"2026-10-27T00:00:00Z","index":{"seconds":1,"counts":{"docs":1}},"candidates":{},"runs":{"n":2,"errors":0,"wall_s_total":10,"cost_usd":0.1},"seconds":{"runs":10,"grade":5,"panel":5},"panel":{"sample":2,"incomplete":0,"agreement":{},"resolved_by_panel":0}}') golden > "$tmp/pp.json" || fail "project-pilot failed"
+jq -n --slurpfile p "$tmp/pp.json" '{at: "2026-10-27T00:00:00Z", corpora: {golden: $p[0]}, resolved_models: {answering: ["claude-sonnet-5-5"], grader: ["claude-sonnet-5-5"], grounding: ["claude-sonnet-5-5"], panel_fable: ["claude-fable-5-1"], panel_astra: ["gpt-6-astra"]}, resolution_rule: "the Sonnet grade stands unless both members differ from it by more than one point", estimates: {runs_per_hour: 100, cost_per_run_usd: 0.05, grade_seconds_per_run: 20, acceptance_rate: 0.8}, note: "synthetic"}' > "$tmp/cal.json"
+python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal.json" >/dev/null || fail "a conforming calibration record was refused"
+jq '.resolved_models.answering = ["/Users/someone/secret"]' "$tmp/cal.json" > "$tmp/cal2.json"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal2.json" >/dev/null 2>&1; then fail "an unlisted model id in the calibration record was accepted"; fi
 # 8. no DocsQA read happened: the unreadable location was never created
 [ ! -e "$DOCSQA_DATA" ] || fail "something touched the DocsQA location"
-echo "t6-smoke: setup, inventory, raw index, own-root cards, resolver, completeness gate, multiline materialisation, citations, private export round trip: ok (DocsQA unreadable throughout)"
+echo "t6-smoke: setup, inventory, raw index, own-root cards, resolver, completeness gate, multiline materialisation, citations, private export round trip (hidden files, digest file, frozen digests), calibration schema: ok (DocsQA unreadable throughout)"

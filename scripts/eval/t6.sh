@@ -110,7 +110,7 @@ case "$cmd" in
     mkdir -p "$P" "$RES_PUB/T6/$c"
     if is_private "$c"; then
       root="${T6_PRIVATE_ROOT:?set T6_PRIVATE_ROOT to the private repository (recorded under \$RUN only)}"
-      [ -d "$root/.git" ] || die "the private root is not a git repository"
+      git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "the private root is not a git work tree"
       mkdir -p "$T6/private/results/arms" "$T6/private/results/preflight" "$T6/private/results/T6/private"
       ( cd "$root" && pwd -P ) > "$T6/private/root"; chmod 600 "$T6/private/root"
       [ -f "$T6/private/salt" ] || { head -c 32 /dev/urandom | shasum -a 256 | cut -c1-64 > "$T6/private/salt"; chmod 600 "$T6/private/salt"; }
@@ -138,16 +138,13 @@ case "$cmd" in
       # the denylist (pre-mortem F12): root path forms, the repository's directory names, every
       # relative path, every heading (≥ 12 chars) and 40-char excerpts not occurring in this
       # repository's tree (collision filter: a string that is also public is not evidence of a leak)
-      python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$REPO" "$T6/private/denylist.txt" <<'PY'
+      # the public baseline text, once: every text file of the repository at the merge-base with main
+      pub="$(mktemp -d -t mda-t6-pub.XXXXXX)"; base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD)"
+      git -C "$REPO" archive --format=tar "$base" | tar -x -C "$pub"
+      find "$pub" -type f -exec grep -I -q . {} \; -print0 2>/dev/null | xargs -0 cat > "$pub.txt" 2>/dev/null || true
+      python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY'
 import os, re, subprocess, sys
-src, root, home, repo, out = sys.argv[1:6]
-# the collision filter asks the IMMUTABLE public baseline (the merge-base with main, before any M9
-# artifact), never the working tree; and it applies to headings and excerpts only — a path, a
-# directory name or the root is always on the list (review F2)
-base = subprocess.run(["git", "-C", repo, "merge-base", "main", "HEAD"], capture_output=True, text=True).stdout.strip() or "HEAD"
-def public_has(s):
-    r = subprocess.run(["git", "-C", repo, "grep", "-q", "-I", "-F", "-i", "-e", s, base, "--"], capture_output=True)
-    return r.returncode == 0
+src, root, home, pub_txt, out = sys.argv[1:6]
 items = set(); always = set()
 for s_ in (root, root.replace(home, "~"), os.path.basename(root)): items.add(s_); always.add(s_)
 parts = [p for p in root.split("/") if p and p not in ("Users", "home") and p != os.path.basename(home)]
@@ -166,12 +163,21 @@ for d, _, fs in os.walk(src):
         for i in range(0, len(text), 200):
             ex = text[i:i + 40]
             if len(ex) == 40 and ex.strip() and "\n" not in ex: items.add(ex)
-kept = [s for s in sorted(items) if len(s) >= 6 and (s in always or not public_has(s))]
+# the collision filter, one pass (review F2, second pass F7): an optional entry (heading, excerpt) that
+# also occurs in the IMMUTABLE public baseline is not evidence of a leak and is dropped; a mandatory
+# entry (root, directory names, relative paths) is always kept, whatever its length
+optional = sorted(s for s in items if s not in always and len(s) >= 6)
+with open(out + ".items", "w", encoding="utf-8") as fh:
+    for s_ in optional: fh.write(s_ + "\n")
+r = subprocess.run(["grep", "-o", "-i", "-F", "-f", out + ".items", pub_txt], capture_output=True, text=True)
+found = {l.lower() for l in r.stdout.split("\n") if l}
+os.remove(out + ".items")
+kept = sorted(always) + [s_ for s_ in optional if s_.lower() not in found]
 with open(out, "w", encoding="utf-8") as fh:
-    for s in kept: fh.write(s + "\n")
-print(f"denylist: {len(kept)} entries ({len(items) - len(kept)} dropped as also public)")
+    for s_ in kept: fh.write(s_ + "\n")
+print(f"denylist: {len(kept)} entries ({len(optional) - (len(kept) - len(always))} optional entries dropped as also public; {len(always)} mandatory)")
 PY
-      chmod 600 "$T6/private/denylist.txt"
+      rm -rf "$pub" "$pub.txt"; chmod 600 "$T6/private/denylist.txt"
       jq -n --argjson files "$(grep -c . "$P/pages.txt")" --arg at "$(date -u +%FT%TZ)" '{corpus: "private", files: $files, prepared_at: $at, note: "the private corpus: a git archive of the owner'"'"'s repository at its HEAD; the path, commit and inventory stay under $RUN; the commitment is written at freeze time"}' > "$T6/private/results/T6/private/setup.json"
     fi
     echo "$c: copy at $S · $(grep -c . "$P/pages.txt") markdown files in the inventory ($P/pages.txt) · config $(sha256 "$S/.markdownattractor/config.toml" | cut -c1-12)…" ;;
@@ -263,7 +269,7 @@ PY
       n=$((n + 1))
       env="$( (cd "$scratch" && jq -r '"<section>\n" + .section + "\n</section>"' <<<"$cand" | MAX_THINKING_TOKENS=0 claude --print --model "$MODEL" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$wschema" --system-prompt "$wrubric" 2>"$scratch/err") || true)"
       w="$(jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // null), cost_usd: (.total_cost_usd // null)} else {out: null, model: (.model // null), cost_usd: (.total_cost_usd // null)} end' <<<"${env:-{\}}" 2>/dev/null || true)"; [ -n "$w" ] || w='{"out":null,"model":null,"cost_usd":null}'
-      jq -e '.out == null or ((.out.q | type) == "string" and (.out.required_facts | type) == "array")' <<<"$w" >/dev/null 2>&1 || w='{"out":null,"model":null,"cost_usd":null}'   # malformed structured output is a refusal, never a crash
+      jq -e '.out == null or ((.out | type) == "object" and (.out.q | type) == "string" and (.out.q | length) > 0 and (.out.required_facts | type) == "array" and (.out.required_facts | all(type == "object" and (.fact | type) == "string" and (.fact | length) > 0 and (.span | type) == "string" and (.span | length) > 0)))' <<<"$w" >/dev/null 2>&1 || w='{"out":null,"model":null,"cost_usd":null}'   # malformed structured output is a refusal, never a crash
       row="$(python3 -I - "$cand" "$w" <<'PY'
 import json, re, sys
 c, w = json.loads(sys.argv[1]), json.loads(sys.argv[2])
@@ -301,6 +307,7 @@ PY
     cp "$P/questions.jsonl" "$P/questions.full.jsonl"
     nc="$(grep -c . "$P/questions.full.jsonl" || true)"; np="$(grep -c . "$P/questions.pilot.jsonl" || true)"
     [ "$nc" -ge 1 ] || die "no counted question accepted: nothing to run"
+    [ "$np" -ge 1 ] || echo "no pilot question accepted for $c: its calibration rests on the other corpora (disclosed in calibration.json)"
     [ "$nc" -ge "$N_QUESTIONS" ] || echo "only $nc counted questions accepted: the corpus publishes with that count unless more candidates are generated (candidates k > $(grep -c . "$P/candidates.jsonl" || true))"
     python3 -I - "$P/candidates.summary.json" "$P/questions.candidates.jsonl" <<'PY'
 import json, sys
@@ -321,7 +328,7 @@ PY
 
   pilot)
     c="${1:?corpus}"; P="$(cdir "$c")"; corpus_env "$c"; out="$P/pilot"; arms="$(arms_for "$c")"
-    [ -s "$P/questions.pilot.jsonl" ] || die "no pilot questions"
+    [ -s "$P/questions.pilot.jsonl" ] || { echo "no pilot questions for $c: no pilot run (calibration.json records the absence)"; jq -n --arg c "$c" --arg at "$(date -u +%FT%TZ)" '{corpus: $c, at: $at, index: {seconds: 0, counts: {}}, candidates: {}, runs: {n: 0, errors: 0, wall_s_total: 0, cost_usd: 0, grounding_batches: 0, retried: 0}, seconds: {runs: 0, grade: 0, panel: 0}, panel: {sample: 0, incomplete: 0, agreement: {}, resolved_by_panel: 0, mean_sonnet: null, mean_fable: null, mean_astra: null}}' > "$P/pilot.json"; cp "$P/pilot.json" "$(t6dir "$c")/pilot.json"; exit 0; }
     export PROBE_QUESTIONS_FILE="$P/questions.pilot.jsonl"
     t0=$(date +%s)
     T2_MODEL="$MODEL" "$REPO/scripts/eval/t2.sh" run "$c" "$P/questions.pilot.jsonl" "$out" 1 "$arms" || true
@@ -339,23 +346,29 @@ PY
     jq -c . "$P/pilot.json" ;;
 
   calibration)
-    # <rule text>: the pilots of every corpus → calibration.json (review F4/F11/F22): agreement rates per
-    # corpus, the resolved model ids seen in the pilot rows (answering, grading, panel), the measured
-    # throughput and acceptance, and the resolution rule declared from them (the plan records the same text)
-    rule="${1:?the declared resolution rule, as text}"; out="$RES_PUB/T6/calibration.json"; pilots='{}'; models='{}'
+    # <rule text>: the pilots of every corpus → calibration.json (review F4/F11/F22; review 2 F3/F17): the typed
+    # projection of each pilot (t6_private_export.py project-pilot, the same projection the private export uses),
+    # the model ids the transcripts and graders actually returned (answering rows' models, grade.model,
+    # grounding.model, the panel members' model), the measured throughput and acceptance, and the
+    # resolution rule declared from them; the record is validated against its schema before it is written
+    rule="${1:?the declared resolution rule, as text}"; out="$RES_PUB/T6/calibration.json"; pilots='{}'; models='{"answering":[],"grader":[],"grounding":[],"panel_fable":[],"panel_astra":[]}'
     for c in golden docs private; do
       f="$(cdir "$c")/pilot.json"; [ -f "$f" ] || continue
-      pilots="$(jq -c --arg c "$c" --slurpfile p "$f" '. + {($c): $p[0]}' <<<"$pilots")"
-      g="$(cdir "$c")/pilot/grades.jsonl"
-      models="$(jq -c --slurpfile m <(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grader) | unique)}' "$g") --slurpfile rf <(jq -s 'map(.model) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl") --slurpfile ra <(jq -s 'map(.model) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl") \
-        '.answering = ((.answering // []) + $m[0].answering | unique) | .grader = ((.grader // []) + $m[0].grader | unique) | .panel_fable = ((.panel_fable // []) + $rf[0] | unique) | .panel_astra = ((.panel_astra // []) + $ra[0] | unique)' <<<"$models")"
+      pilots="$(jq -c --arg c "$c" --argjson p "$(python3 -I "$REPO/scripts/eval/t6_private_export.py" project-pilot "$f" "$c")" '. + {($c): $p}' <<<"$pilots")"
+      g="$(cdir "$c")/pilot/grades.jsonl"; [ -f "$g" ] || continue
+      m="$(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grade.model // empty) | unique), grounding: (map(.grounding.model // empty) | unique)}' "$g")"
+      rf="$(jq -s 'map(.model // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" 2>/dev/null || echo '[]')"; ra="$(jq -s 'map(.model // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" 2>/dev/null || echo '[]')"
+      models="$(jq -c --argjson m "$m" --argjson rf "$rf" --argjson ra "$ra" '.answering = (.answering + $m.answering | unique) | .grader = (.grader + $m.grader | unique) | .grounding = (.grounding + $m.grounding | unique) | .panel_fable = (.panel_fable + $rf | unique) | .panel_astra = (.panel_astra + $ra | unique)' <<<"$models")"
     done
     [ "$(jq 'length' <<<"$pilots")" -gt 0 ] || die "no pilot.json under $T6/<corpus>/ (run t6.sh pilot)"
+    [ "$(jq '[.[] | select(.runs.n > 0)] | length' <<<"$pilots")" -gt 0 ] || die "no pilot has runs: nothing to calibrate on"
     jq -n --argjson p "$pilots" --argjson m "$models" --arg rule "$rule" --arg at "$(date -u +%FT%TZ)" \
       '{at: $at, corpora: $p, resolved_models: $m, resolution_rule: $rule,
-        estimates: {runs_per_hour: ([$p[] | select(.runs.n > 0) | (.runs.n / (.seconds.runs / 3600))] | if length == 0 then null else (add / length) end), cost_per_run_usd: ([$p[] | select(.runs.n > 0) | (.runs.cost_usd / .runs.n)] | if length == 0 then null else (add / length) end),
+        estimates: {runs_per_hour: ([$p[] | select(.runs.n > 0 and .seconds.runs > 0) | (.runs.n / (.seconds.runs / 3600))] | if length == 0 then null else (add / length) end), cost_per_run_usd: ([$p[] | select(.runs.n > 0) | ((.runs.cost_usd // 0) / .runs.n)] | if length == 0 then null else (add / length) end),
                     grade_seconds_per_run: ([$p[] | select(.runs.n > 0) | (.seconds.grade / .runs.n)] | if length == 0 then null else (add / length) end), acceptance_rate: ([$p[] | select(.candidates.judged > 0) | (.candidates.accepted / .candidates.judged)] | if length == 0 then null else (add / length) end)},
-        note: "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"}' > "$out"
+        note: "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"}' > "$out.tmp"
+    python3 -I "$REPO/scripts/eval/t6_private_export.py" check-file calibration "$out.tmp" >/dev/null || { rm -f "$out.tmp"; die "calibration.json does not conform to its schema: not written"; }
+    mv "$out.tmp" "$out"
     jq -c '{resolved_models, estimates, resolution_rule}' "$out"; echo "→ $out" ;;
 
   freeze)
@@ -378,21 +391,27 @@ PY
     if out="$(RESULTS="$RES_PUB" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6 --check 2>&1)"; then rec frozen ok "$out"; else rec frozen FAIL "$out"; fi
     # the binary is the frozen one AND builds from the frozen source (review F12)
     fbin="$(sed -n 's/.*binary sha256 \([0-9a-f]\{64\}\).*/\1/p' "$(pub_frozen)" | head -1)"
-    if ( cd "$REPO" && cargo build --release --locked -q 2>/dev/null ) && [ "$(sha256 "$MDA")" = "$fbin" ]; then rec binary ok "cargo build --release --locked reproduces the frozen binary ($fbin)"; else rec binary FAIL "the binary differs from the frozen one or does not build --locked from this tree"; fi
+    art="$( (cd "$REPO" && cargo build --release --locked --message-format=json 2>/dev/null | jq -r 'select(.reason == "compiler-artifact" and .target.name == "mda" and .executable != null) | .executable' | tail -1) || true)"
+    if [ -n "$art" ] && [ -f "$art" ] && [ "$(sha256 "$art")" = "$fbin" ] && [ "$(sha256 "$MDA")" = "$fbin" ]; then rec binary ok "cargo's executable ($art) and \$MDA both have the frozen hash ($fbin)"; else rec binary FAIL "cargo's --locked executable ($art) or \$MDA differs from the frozen binary"; fi
     cal="$RES_PUB/T6/calibration.json"
-    if [ -f "$cal" ] && jq -e --arg c "$c" '.corpora[$c] != null' "$cal" >/dev/null; then rec calibration ok "calibration.json names $c; resolution rule: $(jq -r .resolution_rule "$cal")"; else rec calibration FAIL "no calibration record for $c (t6.sh pilot, then t6.sh calibration)"; fi
+    if [ -f "$cal" ] && python3 -I "$REPO/scripts/eval/t6_private_export.py" check-file calibration "$cal" >/dev/null 2>&1 && jq -e --arg c "$c" '.corpora[$c] != null and ([.corpora[] | select(.runs.n > 0)] | length) > 0 and (.resolved_models.answering | length) > 0 and (.resolved_models.grader | length) > 0 and (.resolution_rule | length) > 0' "$cal" >/dev/null; then rec calibration ok "calibration.json conforms, names $c, has pilot runs and resolved ids; rule: $(jq -r .resolution_rule "$cal")"; else rec calibration FAIL "no conforming, complete calibration record naming $c (t6.sh pilot, then t6.sh calibration)"; fi
     if is_private "$c"; then
       if out="$(RESULTS="$T6/private/results" T6_PRIVATE_COMMITMENT="$(commitment "$S" "$T6/private/salt")" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6-private --out "$(priv_frozen)" --check 2>&1)" && [ "$(sha256 "$(priv_frozen)")" = "$(cut -c1-64 "$RES_PUB/T6/private/FROZEN.sha256")" ]; then rec frozen-private ok "the private freeze checks and equals the published digest"; else rec frozen-private FAIL "${out:-the private freeze differs from the published digest}"; fi
     else
       # the copy is exactly the archive (pre-mortem F15): same inventory, same content per file
       tmp="$(mktemp -d -t mda-t6-arch.XXXXXX)"; git -C "$REPO" archive --format=tar "$(source_commit):$(subtree_of "$c")" | tar -x -C "$tmp"
       if diff <(content_hash "$tmp") <(content_hash "$S") >/dev/null; then rec copy ok "inventory and content identical to git archive $(source_commit | cut -c1-12):$(subtree_of "$c") ($(grep -c . "$P/pages.txt") files)"; else rec copy FAIL "the copy differs from the archive"; fi
-      # graphify's serving copy is the same archive too (review F8), apart from what graphify installs
-      G="$P/graphify/src"
-      if [ -d "$G" ]; then if diff <(content_hash "$tmp") <(cd "$G" && find . -type f \( -name '*.md' -o -name '*.mdx' -o -name '*.markdown' \) -not -path './graphify-out/*' -not -path './.claude/*' -not -name CLAUDE.md -not -path './.markdownattractor/*' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"; done) >/dev/null; then rec copy-graphify ok "graphify's serving copy equals the archive (its own .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy differs from the archive"; fi; fi
       rm -rf "$tmp"
       extra="$(cd "$S" && find . -type f -not -path './.markdownattractor/*' | sed 's|^\./||' | LC_ALL=C sort | comm -23 - <(git -C "$REPO" ls-tree -r --name-only "$(source_commit)" -- "$(subtree_of "$c")" | sed "s|^$(subtree_of "$c")/||" | LC_ALL=C sort))"
       if [ -z "$extra" ]; then rec extras ok "no file beyond the archive outside the store"; else rec extras FAIL "extra files: $(printf '%s' "$extra" | head -3 | tr '\n' ' ')"; fi
+    fi
+    # graphify's serving copy is the source copy, whole tree (review 2 F10): every file but the store and
+    # what graphify itself writes there (.claude/ at the root, the root CLAUDE.md, graphify-out/)
+    grec="$(res_of "$c")/arms/graphify-$c.json"
+    if [ -f "$grec" ] && [ "$(jq -r .build.completed "$grec")" = true ]; then
+      G="$P/graphify/src"
+      tree_hash() { ( cd "$1" && find . -type f -not -path './.markdownattractor/*' -not -path './graphify-out/*' -not -path './.claude/*' -not -path './CLAUDE.md' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"; done ); }
+      if [ -d "$G" ] && diff <(tree_hash "$S") <(tree_hash "$G") >/dev/null; then rec copy-graphify ok "graphify's serving copy equals the source copy on every file (its .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy is absent or differs from the source copy"; fi
     fi
     diff <(inventory "$S") "$P/pages.txt" >/dev/null && rec inventory ok "$(grep -c . "$P/pages.txt") pages, unchanged since setup (sha256 $(sha256 "$P/pages.txt" | cut -c1-12)…)" || rec inventory FAIL "the inventory changed since setup"
     [ "$(jq -r .store_sha256 "$P/index.json" 2>/dev/null)" = "$(store_sha "$S")" ] && rec store ok "store unchanged since indexing ($(store_sha "$S" | cut -c1-12)…)" || rec store FAIL "the store changed since indexing (or no index.json)"
@@ -405,11 +424,12 @@ PY
       q_ids="SELECT d.rel_path, s.heading_path, s.section_hash FROM sections s JOIN docs d ON d.doc_id = s.doc_id WHERE d.deleted_at IS NULL ORDER BY 1,2,3"
       q_cards="SELECT m.section_hash, m.summary FROM summaries m WHERE m.state = 'summarized' AND m.section_hash IN (SELECT section_hash FROM sections) ORDER BY 1"
       q_emb="SELECT count(DISTINCT section_hash) FROM embeddings WHERE section_hash IN (SELECT section_hash FROM sections)"
+      sq() { local v; v="$(sqlite3 "$1" "$2")" || die "sqlite query failed on $1"; printf '%s' "$v"; }   # a failed query is fatal, never an empty equal (review 2 F11)
       if "$MDA" index --no-summarize --root "$tmp" >/dev/null 2>&1 && r="$("$MDA" --json eval --root "$tmp" --cards "$cards")" && [ "$(jq -r .card_coverage.complete <<<"$r")" = true ] \
-         && diff <(sqlite3 "$S/.markdownattractor/index.sqlite" "$q_ids") <(sqlite3 "$tmp/.markdownattractor/index.sqlite" "$q_ids") >/dev/null \
-         && diff <(sqlite3 "$S/.markdownattractor/index.sqlite" "$q_cards") <(sqlite3 "$tmp/.markdownattractor/index.sqlite" "$q_cards") >/dev/null \
-         && [ "$(sqlite3 "$S/.markdownattractor/index.sqlite" "$q_emb")" = "$(sqlite3 "$S/.markdownattractor/index.sqlite" "SELECT count(DISTINCT section_hash) FROM sections")" ] \
-         && [ "$(sqlite3 "$tmp/.markdownattractor/index.sqlite" "$q_emb")" = "$(sqlite3 "$tmp/.markdownattractor/index.sqlite" "SELECT count(DISTINCT section_hash) FROM sections")" ]; then
+         && a_ids="$(sq "$S/.markdownattractor/index.sqlite" "$q_ids")" && b_ids="$(sq "$tmp/.markdownattractor/index.sqlite" "$q_ids")" && [ -n "$a_ids" ] && [ "$a_ids" = "$b_ids" ] \
+         && a_cards="$(sq "$S/.markdownattractor/index.sqlite" "$q_cards")" && b_cards="$(sq "$tmp/.markdownattractor/index.sqlite" "$q_cards")" && [ -n "$a_cards" ] && [ "$a_cards" = "$b_cards" ] \
+         && a_emb="$(sq "$S/.markdownattractor/index.sqlite" "$q_emb")" && a_sec="$(sq "$S/.markdownattractor/index.sqlite" "SELECT count(DISTINCT section_hash) FROM sections")" && [ "$a_emb" = "$a_sec" ] && [ "$a_sec" != 0 ] \
+         && b_emb="$(sq "$tmp/.markdownattractor/index.sqlite" "$q_emb")" && b_sec="$(sq "$tmp/.markdownattractor/index.sqlite" "SELECT count(DISTINCT section_hash) FROM sections")" && [ "$b_emb" = "$b_sec" ]; then
         rec reconstruction ok "a raw index of a fresh copy with $(basename "$cards") attached is complete ($(jq -r .cards_attached <<<"$r") attached, $(jq -r .vectors_embedded <<<"$r") vectors): same section identities, identical cards per section hash, every distinct section embedded in both stores (review F9)"
       else rec reconstruction FAIL "the committed cards do not reconstruct the store (identities, card texts or embedding completeness differ)"; fi
       rm -rf "$tmp"
@@ -514,17 +534,18 @@ PY
     [ ! -f "$(priv_frozen)" ] || cp "$(priv_frozen)" "$stage/FROZEN.md"
     A="$T6/private/results/arms"
     if [ -f "$A/qmd-private.json" ]; then jq -n --slurpfile q "$A/qmd-private.json" --slurpfile g "$A/graphify-private.json" '{qmd: {version: $q[0].version, build: $q[0].build, coverage: ($q[0].coverage | del(.missing_pages))}, graphify: (($g[0] // null) | if . == null then null else {version: .version, build: {completed: .build.completed, wall_s: .build.wall_s, cost_usd_list_price: .build.cost_usd_list_price, turns: .build.turns}, graph: (if .graph then {sha256: .graph.sha256, nodes: .graph.nodes, edges: .graph.edges} else null end), coverage: (.coverage // null)} end)}' > "$stage/arms.json"; fi
+    # the exporter refuses to replace committed question digests that differ (the question file is frozen),
+    # validates in staging and publishes through a recoverable replacement; the scan follows
     python3 -I "$REPO/scripts/eval/t6_private_export.py" export "$stage" "$dst"
-    # the digests written at `questions` are re-derived by the same serializer: identical bytes
-    [ ! -f "$P/questions.full.jsonl" ] || diff <(python3 -I "$REPO/scripts/eval/t6_private_export.py" digest-questions "$P/questions.full.jsonl") "$dst/questions.jsonl" >/dev/null || die "the committed private question digests differ from the canonical serializer's output"
     "$0" leak-scan ;;
 
   leak-scan)
-    # The whole proposed change against the private denylist (pre-mortem F12, review F4): the BLOBS of
-    # every file the branch changed (as committed, from HEAD), every staged file (from the index) and
-    # every untracked file (the working tree), plus their names; JSON files are also decoded to their
-    # string values (escapes undone). Binary files in the change are refused unless they are archived
-    # graphs of a public corpus. Counts only; the denylist is required once private artifacts exist.
+    # The whole proposed change against the private denylist (pre-mortem F12, review F4, review 2 F4–F6):
+    # the BLOBS of every file the branch changed (from HEAD), every staged file (from the index), every
+    # tracked-but-unstaged and every untracked file (the working tree), and their names, NUL-delimited;
+    # JSON files are decoded to their string values AND keys (escapes undone). A binary file in the change
+    # (tracked, staged or untracked) is refused unless it is an archived graph of a public corpus. A read
+    # error is fatal, never a silently dropped blob. Counts only; required once private artifacts exist.
     dl="$T6/private/denylist.txt"
     if [ ! -f "$dl" ]; then
       if [ -n "$(find "$RES_PUB/T6/private" -type f 2>/dev/null | head -1)" ]; then die "leak-scan: private artifacts are committed but no denylist exists under \$RUN: refuse"; fi
@@ -532,24 +553,33 @@ PY
     fi
     base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD~1)"
     tmp="$(mktemp -d -t mda-t6-leak.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
-    : > "$tmp/change.txt"; : > "$tmp/names.txt"
-    emit_blob() { # spec name
+    : > "$tmp/change.txt"; : > "$tmp/names.txt"; : > "$tmp/bins.txt"
+    is_binary() { ! grep -qI . "$1" 2>/dev/null && [ -s "$1" ]; }
+    decode_json() { jq -r '.. | strings' "$1" >> "$tmp/change.txt" 2>/dev/null || true; jq -r '.. | objects | keys[]' "$1" >> "$tmp/change.txt" 2>/dev/null || true; }
+    emit_blob() { # <git object spec> <name>
       printf '%s\n' "$2" >> "$tmp/names.txt"
-      git -C "$REPO" cat-file -p "$1" >> "$tmp/change.txt" 2>/dev/null || true
-      case "$2" in *.json|*.jsonl) git -C "$REPO" cat-file -p "$1" 2>/dev/null | jq -r '.. | strings' >> "$tmp/change.txt" 2>/dev/null || true ;; esac
+      git -C "$REPO" cat-file -e "$1" 2>/dev/null || return 0        # deleted in this change: nothing to scan
+      git -C "$REPO" cat-file -p "$1" > "$tmp/blob" || die "leak-scan: cannot read $1"
+      if is_binary "$tmp/blob"; then printf '%s\n' "$2" >> "$tmp/bins.txt"; fi
+      cat "$tmp/blob" >> "$tmp/change.txt"
+      case "$2" in *.json|*.jsonl) decode_json "$tmp/blob" ;; esac
     }
-    git -C "$REPO" diff --name-only "$base" HEAD | while IFS= read -r f; do [ -n "$f" ] && emit_blob "HEAD:$f" "$f"; done
-    git -C "$REPO" diff --cached --name-only | while IFS= read -r f; do [ -n "$f" ] && emit_blob ":$f" "$f"; done
-    git -C "$REPO" ls-files --others --exclude-standard -z | while IFS= read -r -d '' f; do
-      printf '%s\n' "$f" >> "$tmp/names.txt"; [ -f "$REPO/$f" ] || continue; cat "$REPO/$f" >> "$tmp/change.txt" 2>/dev/null || true
-      case "$f" in *.json|*.jsonl) jq -r '.. | strings' "$REPO/$f" >> "$tmp/change.txt" 2>/dev/null || true ;; esac
-    done
-    bins="$({ git -C "$REPO" diff --numstat "$base" HEAD; git -C "$REPO" diff --cached --numstat; } | awk '$1 == "-" {print $3}' | grep -vE '^evals/results/own/arms/graphs/graphify-(golden|docs)\.graph\.json\.gz$' || true)"
+    emit_work() { # <path in the working tree>
+      printf '%s\n' "$1" >> "$tmp/names.txt"; [ -f "$REPO/$1" ] || return 0
+      if is_binary "$REPO/$1"; then printf '%s\n' "$1" >> "$tmp/bins.txt"; fi
+      cat "$REPO/$1" >> "$tmp/change.txt" || die "leak-scan: cannot read $1"
+      case "$1" in *.json|*.jsonl) decode_json "$REPO/$1" ;; esac
+    }
+    while IFS= read -r -d '' f; do emit_blob "HEAD:$f" "$f"; done < <(git -C "$REPO" diff -z --name-only "$base" HEAD)
+    while IFS= read -r -d '' f; do emit_blob ":$f" "$f"; done < <(git -C "$REPO" diff -z --cached --name-only)
+    while IFS= read -r -d '' f; do emit_work "$f"; done < <(git -C "$REPO" diff -z --name-only)
+    while IFS= read -r -d '' f; do emit_work "$f"; done < <(git -C "$REPO" ls-files -z --others --exclude-standard)
+    bins="$(sort -u "$tmp/bins.txt" | grep -vE '^evals/results/own/arms/graphs/graphify-(golden|docs)\.graph\.json\.gz$' || true)"
     [ -z "$bins" ] || { echo "leak-scan: binary file(s) in the proposed change are refused: $(printf '%s' "$bins" | tr '\n' ' ')" >&2; exit 1; }
     cat "$tmp/names.txt" >> "$tmp/change.txt"
     hits=0; entries=0
     while IFS= read -r e; do entries=$((entries + 1)); if grep -qiF -- "$e" "$tmp/change.txt"; then hits=$((hits + 1)); fi; done < "$dl"
-    if [ "$hits" = 0 ]; then echo "leak-scan: 0 of $entries denylist entries found in the proposed change ($(wc -c < "$tmp/change.txt" | tr -d ' ') bytes of blobs, names and decoded strings scanned)"; else echo "leak-scan: $hits of $entries denylist entries FOUND in the proposed change — nothing may be committed" >&2; exit 1; fi ;;
+    if [ "$hits" = 0 ]; then echo "leak-scan: 0 of $entries denylist entries found in the proposed change ($(wc -c < "$tmp/change.txt" | tr -d ' ') bytes of blobs, names and decoded JSON scanned; $(sort -u "$tmp/names.txt" | grep -c . || true) files)"; else echo "leak-scan: $hits of $entries denylist entries FOUND in the proposed change — nothing may be committed" >&2; exit 1; fi ;;
 
   table)
     # the page tables, from the committed analyses and grades (public corpora) and the exported

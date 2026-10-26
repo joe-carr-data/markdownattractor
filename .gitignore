@@ -25,3 +25,5 @@ Thumbs.db
 lcov.info
 cov.json
 *.profraw
+__pycache__/
+*.pyc

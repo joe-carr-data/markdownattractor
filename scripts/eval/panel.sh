@@ -215,22 +215,39 @@ PY
     accepted="$(jq -s 'map(select(.decision.accepted)) | length' "$cf")"
     [ "$accepted" -le $((n_counted + n_pilot)) ] || die "$accepted already accepted: the target $((n_counted + n_pilot)) is smaller than the existing accepted set"
     [ "$(jq -s --arg r "$rubric_sha" 'map(select(.panel != null and .rubric_sha256 != $r)) | length' "$cf")" = 0 ] || die "$cf holds judgments made under another rubric or panel configuration: start in a fresh directory"
-    cand_sha() { jq -r '[.q, .section, (.required_facts | tostring)] | join("\u0000")' <<<"$1" | shasum -a 256 | cut -c1-64; }
+    # the candidate's identity binds its text, its facts and its source (page, heading, section id)
+    cand_sha() { jq -r '[.q, .section, (.required_facts | tostring), .page, .heading, .section_id] | join("\u0000")' <<<"$1" | shasum -a 256 | cut -c1-64; }
+    # Before anything (review 2 F13): every judged row must still match a candidate of the file by
+    # content hash, and the targets must be the ones the file was started with.
+    tf="$out/questions.targets.json"
+    if [ -s "$cf" ]; then
+      [ -f "$tf" ] && [ "$(jq -r '"\(.counted) \(.pilot)"' "$tf")" = "$n_counted $n_pilot" ] || die "the candidates file was started with other targets (see $tf): start in a fresh directory"
+      python3 -I - "$cands" "$cf" <<'PY' || die "a judged row no longer matches its candidate (content, facts or source changed): start in a fresh directory"
+import hashlib, json, sys
+sha = lambda c: hashlib.sha256("\u0000".join([c["q"] or "", c["section"], json.dumps(c["required_facts"], separators=(",", ":")), c["page"], c["heading"], c["section_id"]]).encode()).hexdigest()
+cands = {}
+for l in open(sys.argv[1]):
+    c = json.loads(l); cands[c["id"]] = c
+for l in open(sys.argv[2]):
+    r = json.loads(l); c = cands.get(r["id"])
+    if c is None or (r.get("candidate_sha256") and r["candidate_sha256"] != sha(c)): sys.exit(1)
+PY
+    else jq -n --argjson c "$n_counted" --argjson p "$n_pilot" '{counted: $c, pilot: $p}' > "$tf"; fi
     seen=0
     while IFS= read -r c; do
-      accepted="$(jq -s 'map(select(.decision.accepted)) | length' "$cf")"
-      [ "$accepted" -lt $((n_counted + n_pilot)) ] || break
+      n_c="$(jq -s 'map(select(.decision.accepted and .decision.role == "counted")) | length' "$cf")"; n_p="$(jq -s 'map(select(.decision.accepted and .decision.role == "pilot")) | length' "$cf")"
+      if [ "$n_c" -ge "$n_counted" ] && [ "$n_p" -ge "$n_pilot" ]; then break; fi
       id="$(jq -r .id <<<"$c")"; page="$(jq -r .page <<<"$c")"; csha="$(cand_sha "$c")"
-      prev="$(jq -c --arg id "$id" 'select(.id == $id)' "$cf" | head -1)"
-      if [ -n "$prev" ]; then
-        [ "$(jq -r '.candidate_sha256 // ""' <<<"$prev")" = "$csha" ] || [ "$(jq -r '.panel' <<<"$prev")" = null ] || die "candidate $id changed since it was judged: start in a fresh directory"
-        continue
-      fi
-      role=counted; [ "$accepted" -lt "$n_counted" ] || role=pilot
-      # one accepted COUNTED question per page (F3, F16); the pilot set is disjoint by question (every
-      # candidate is a distinct section) and may reuse a page
-      if [ "$role" = counted ] && [ -n "$(jq -c --arg p "$page" 'select(.page == $p and .decision.accepted)' "$cf")" ]; then
-        jq -c --arg at "$stamp" --arg cs "$csha" --arg rs "$rubric_sha" '. + {panel: null, candidate_sha256: $cs, rubric_sha256: $rs, decision: {accepted: false, fable_accepts: null, astra_accepts: null, reason: "skipped: the page already has an accepted counted question"}, judged_at: $at}' <<<"$c" >> "$cf"; continue
+      if [ -n "$(jq -c --arg id "$id" 'select(.id == $id)' "$cf" | head -1)" ]; then continue; fi
+      # Allocation (review 2 F12, preregistered): a candidate becomes a COUNTED question while the
+      # counted target is open and its page has no counted question yet; otherwise it becomes a PILOT
+      # question while the pilot target is open (any page; every candidate is a distinct section);
+      # otherwise it is skipped. Small corpora thus fill the pilot from pages already used.
+      page_taken="$(jq -c --arg p "$page" 'select(.page == $p and .decision.accepted and .decision.role == "counted")' "$cf")"
+      if [ "$n_c" -lt "$n_counted" ] && [ -z "$page_taken" ]; then role=counted
+      elif [ "$n_p" -lt "$n_pilot" ]; then role=pilot
+      else
+        jq -c --arg at "$stamp" --arg cs "$csha" --arg rs "$rubric_sha" '. + {panel: null, candidate_sha256: $cs, rubric_sha256: $rs, decision: {accepted: false, fable_accepts: null, astra_accepts: null, reason: "skipped: the page already has an accepted counted question and the pilot target is full"}, judged_at: $at}' <<<"$c" >> "$cf"; continue
       fi
       if [ "$(jq -r '.refused // empty' <<<"$c")" != "" ]; then
         jq -c --arg at "$stamp" --arg cs "$csha" --arg rs "$rubric_sha" '. + {panel: null, candidate_sha256: $cs, rubric_sha256: $rs, decision: {accepted: false, fable_accepts: null, astra_accepts: null, reason: ("refused before the panel: " + .refused)}, judged_at: $at}' <<<"$c" >> "$cf"; continue
@@ -240,16 +257,16 @@ PY
       verdicts='{}'
       for member in fable astra; do
         v1="$(printf '%s' "$sub1" | judge "$member" "$schema1" "$rubric1")"
-        v1="$(jq -c 'if .out == null then . + {complete: false} elif ((.out.facts_required | length) >= 1 and (.out.facts_required | all(type == "string" and length > 0))) then . + {complete: true} else . + {out: null, error: "facts_required malformed", complete: false} end' <<<"$v1")"
+        v1="$(jq -c 'if .out == null then . + {complete: false} elif ((.out | type) == "object" and (.out.facts_required | type) == "array" and (.out.facts_required | length) >= 1 and (.out.facts_required | length) <= 8 and (.out.facts_required | all(type == "string" and (gsub("\\s"; "") | length) > 0))) then . + {complete: true} else . + {out: null, error: "facts_required malformed", complete: false} end' <<<"$v1")"
         if [ "$(jq -r .complete <<<"$v1")" = true ]; then
           sub2="$(jq -r --argjson own "$(jq -c .out.facts_required <<<"$v1")" '"<submission>\nQuestion: " + .q + "\n\nYOUR FACTS (listed by you before seeing the writer):\n" + ($own | map("- " + .) | join("\n")) + "\n\nWriter facts (each with its span):\n" + ([.required_facts[] | "- " + .fact + " [span: " + .span + "]"] | join("\n")) + "\n\nSection:\n" + .section + "\n</submission>"' <<<"$c")"
           v2="$(printf '%s' "$sub2" | judge "$member" "$schema2" "$rubric2")"
-          v2="$(jq -c --argjson nf "$nf" 'if .out == null then . + {complete: false} elif ((.out.writer_facts_supported // []) | length) == $nf then . + {complete: true} else . + {out: null, error: "writer_facts_supported does not cover every writer fact once", complete: false} end' <<<"$v2")"
+          v2="$(jq -c --argjson nf "$nf" 'if .out == null then . + {complete: false} elif ((.out | type) == "object" and ([.out.corpus_specific, .out.standalone, .out.not_leading, .out.facts_stated_at_spans] | all(type == "boolean")) and (.out.writer_facts_supported | type) == "array" and (.out.writer_facts_supported | length) == $nf and (.out.writer_facts_supported | all(type == "boolean"))) then . + {complete: true} else . + {out: null, error: "judgment malformed: four booleans and one boolean per writer fact are required", complete: false} end' <<<"$v2")"
         else v2='{"out":null,"complete":false,"error":"no fact list: the second call was not made"}'; fi
         verdicts="$(jq -c --arg m "$member" --argjson f "$v1" --argjson j "$v2" '. + {($m): {facts: $f, judgment: $j}}' <<<"$verdicts")"
       done
       dec="$(jq -c '
-        def acc(v): (v.judgment.out != null) and v.judgment.out.corpus_specific and v.judgment.out.standalone and v.judgment.out.not_leading and v.judgment.out.facts_stated_at_spans and ((v.judgment.out.writer_facts_supported // []) | all);
+        def acc(v): (v.judgment.out != null) and (v.judgment.out.corpus_specific == true) and (v.judgment.out.standalone == true) and (v.judgment.out.not_leading == true) and (v.judgment.out.facts_stated_at_spans == true) and ((v.judgment.out.writer_facts_supported // []) | all(. == true));
         {accepted: (acc(.fable) and acc(.astra)), fable_accepts: acc(.fable), astra_accepts: acc(.astra),
          reason: (if (.fable.judgment.out == null or .astra.judgment.out == null) then "a member returned no complete verdict" elif (acc(.fable) and acc(.astra)) then "both members accept all four and every writer fact" else "a member rejected: " + ([(.fable, .astra) | select(acc(.) | not) | .judgment.out // {} | to_entries[] | select(.value == false or (.value | type == "array" and (all | not))) | .key] | unique | join(", ")) end)}' <<<"$verdicts")"
       jq -c --argjson v "$verdicts" --argjson d "$dec" --arg at "$stamp" --arg cs "$csha" --arg rs "$rubric_sha" --arg role "$role" '. + {panel: $v, candidate_sha256: $cs, rubric_sha256: $rs, decision: ($d + {role: (if $d.accepted then $role else null end)}), judged_at: $at}' <<<"$c" >> "$cf"
@@ -265,6 +282,6 @@ for l in sys.stdin:
     }
     emit counted > "$out/questions.jsonl"; emit pilot > "$out/questions.pilot.jsonl"
     nc="$(grep -c . "$out/questions.jsonl" || true)"; np="$(grep -c . "$out/questions.pilot.jsonl" || true)"
-    echo "panel questions: $nc counted + $np pilot accepted (targets $n_counted + $n_pilot; $seen judged this run; $(grep -c . "$cands" || true) candidates in the file) → $out/questions.jsonl · $out/questions.pilot.jsonl · $cf" ;;
+    echo "panel questions: $nc counted + $np pilot accepted (targets $n_counted + $n_pilot; $seen judged this run; $(grep -c . "$cands" || true) candidates in the file) → $out/questions.jsonl · $out/questions.pilot.jsonl · $cf · $tf" ;;
   *) die "unknown command $cmd" ;;
 esac
