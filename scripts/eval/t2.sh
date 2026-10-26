@@ -144,24 +144,26 @@ cite_paths() {
 import re, sys
 t = sys.stdin.read(); out = []
 EXT = re.compile(r"\.(?:mdx|markdown|md)$")
-def path_of(tok):   # the WHOLE token (enclosing and trailing punctuation and an anchor removed) must end with the extension
+def clean(tok, outer):   # the anchor and trailing punctuation go; enclosing brackets/quotes/emphasis only for bare tokens
     tok = tok.strip()
-    while True:
-        new = tok.strip("()[]{}<>\x27\"*_").rstrip(".,;:!?")
+    for _ in range(4):
+        new = tok.rstrip(".,;:!?")
+        if outer: new = new.strip("()[]{}<>\x27\"*")
         if new == tok: break
         tok = new
     tok = tok.split("#", 1)[0]
-    while True:
-        new = tok.strip("()[]{}<>\x27\"*_").rstrip(".,;:!?")
-        if new == tok: break
-        tok = new
     return tok if tok and EXT.search(tok) and "/" not in tok.rsplit(".", 1)[-1] else None
+# 1. markdown link destinations, verbatim; 2. backticked spans, verbatim (a filename may start with _ or *); 3. bare whitespace tokens
+for m in re.finditer(r"\]\(([^)\s]+)\)", t):
+    c = clean(m.group(1), False)
+    if c: out.append(c)
+t = re.sub(r"\]\([^)\s]+\)", "] ", t)
 for m in re.finditer(r"`([^`\n]+)`", t):
-    c = path_of(m.group(1))
+    c = clean(m.group(1), False)
     if c: out.append(c)
 rest = re.sub(r"`[^`\n]+`", " ", t)
 for tok in rest.split():
-    c = path_of(tok)
+    c = clean(tok, True)
     if c: out.append(c)
 seen = set()
 for c in out:

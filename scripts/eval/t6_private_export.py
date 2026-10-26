@@ -133,9 +133,12 @@ CALIBRATION = {"at": "iso", "corpora": {"?golden": PILOT, "?docs": PILOT, "?priv
                "resolved_models": {"answering": ["resolved"], "grader": ["resolved"], "grounding": ["resolved"], "panel_fable": ["resolved"], "panel_astra": ["resolved"]},
                "requested_models": {"answering": ["model"], "grader": ["model"], "grounding": ["model"], "panel_fable": ["model"], "panel_astra": ["model"]},
                # a role whose transcripts carry no resolved id (the Codex CLI's JSON stream names no model) is listed here explicitly, with the requested alias beside it (pass 3 F13, pass 4 F2)
-               "unresolved_roles": ["enum:model_role"],
+               # only a role whose client names no model in its output may be declared unresolved (today: the Codex CLI's panel member);
+               # the preflight requires resolved ids for every other role, so schema and preflight apply one policy (pass 5 F3)
+               "unresolved_roles": ["enum:unresolvable_role"],
                "resolution_rule": "enum:policy", "estimates": {"runs_per_hour": NUM, "cost_per_run_usd": NUM, "grade_seconds_per_run": NUM, "acceptance_rate": NUM}, "note": "enum:calibration_note"}
-ENUMS = {"corpus": ["golden", "docs", "private"], "model_role": ROLES, "policy": POLICIES, "calibration_note": [CALIBRATION_NOTE], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
+UNRESOLVABLE_ROLES = ["panel_astra"]
+ENUMS = {"corpus": ["golden", "docs", "private"], "model_role": ROLES, "unresolvable_role": UNRESOLVABLE_ROLES, "policy": POLICIES, "calibration_note": [CALIBRATION_NOTE], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
          "T6": ["T6"], "private": ["private"], "status": ["completed", "in progress"], "check_name": CHECK_NAMES, "check_status": CHECK_STATUS,
          "embedding_model": ["bge-small-en-v1.5-q", "local-small"], "own": ["own"], "single-section": ["single-section"], "refusal": REFUSALS,
          "reason": REASON_CODES, "reject_key": REJECT_KEYS, "role": ["counted", "pilot"], "mcp_server": ["markdownattractor", "qmd", "graphify"]}

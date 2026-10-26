@@ -7,6 +7,7 @@
 #
 # Usage (corpus = golden | docs | private):
 #   scripts/eval/t6.sh setup <corpus>          # copy from `git archive` at the source commit (private: the private repo's HEAD), config, inventory, denylist/salt/commitment (private)
+#   scripts/eval/t6.sh denylist                # rebuild the private denylist from the existing copy (before the freeze)
 #   scripts/eval/t6.sh index <corpus>          # the daemon on the copy until nothing is pending and nothing failed (two retry rounds), embeddings, index.json
 #   scripts/eval/t6.sh cards <corpus>          # export the cards (+ provenance); public corpora into evals/results/own/
 #   scripts/eval/t6.sh arms <corpus> [graphify-model=sonnet]   # qmd index t6-<corpus>; graphify build on a copy; arm records
@@ -28,7 +29,7 @@
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 set -euo pipefail
-cmd="${1:?setup|index|cards|arms|candidates|questions|pilot|freeze|preflight|run|status|grade|panel|analysis|archive|export-private|leak-scan|table|readme-row|teardown}"; shift
+cmd="${1:?setup|denylist|index|cards|arms|candidates|questions|pilot|calibration|freeze|preflight|run|status|grade|panel|analysis|archive|export-private|leak-scan|table|readme-row|teardown}"; shift
 unset_nested_session; unset_provider_keys
 
 # Nothing of DocsQA is read on a T6 path (pre-mortem F5): the dataset location is made unreadable.
@@ -103,6 +104,93 @@ arms_for() { # corpus
   echo "$arms"
 }
 
+build_denylist() { # private copy
+  local S="$1" pub base
+# The private denylist (pre-mortem F12; reviews F2, F7, pass 5 F4), built from the private copy:
+  # the denylist (pre-mortem F12): root path forms, the repository's directory names, every
+  # relative path, every heading (≥ 12 chars) and 40-char excerpts not occurring in this
+  # repository's tree (collision filter: a string that is also public is not evidence of a leak)
+  # the public baseline text, once: every text file of the repository at the merge-base with main
+  pub="$(mktemp -d -t mda-t6-pub.XXXXXX)"; base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD)"
+  git -C "$REPO" archive --format=tar "$base" | tar -x -C "$pub"
+  # the baseline is the repository's PROSE at the merge-base (markdown, text, prompts, skills, README,
+  # CHANGELOG, the plans, reviews and handoffs): where a private heading or excerpt could coincide with
+  # something already public; the JSON/JSONL result artifacts carry no prose and would make the scan
+  # hours long (a 40-char excerpt test is a substring search over the whole baseline)
+  python3 -I -c '
+import os, sys
+root, out = sys.argv[1], sys.argv[2]
+exts = (".md", ".mdx", ".markdown", ".txt", ".toml", ".yml", ".yaml", ".sh", ".rs", ".py")
+import json, re
+strings = set()   # every public JSON string value and every public heading, lower-cased: the exact-match baseline for private headings (pass 5 F4)
+def grab(v):
+    if isinstance(v, dict):
+    for x in v.values(): grab(x)
+    elif isinstance(v, list):
+    for x in v: grab(x)
+    elif isinstance(v, str) and 12 <= len(v) <= 400: strings.add(v.strip().lower())
+with open(out, "wb") as o:
+    for d, _, fs in os.walk(root):
+    for f in fs:
+        p = os.path.join(d, f)
+        try: data = open(p, "rb").read()
+        except OSError as e: sys.exit("baseline: unreadable " + p + ": " + str(e))
+        if b"\0" in data: continue
+        if f.endswith((".json", ".jsonl")):
+            for line in (data.split(b"\n") if f.endswith(".jsonl") else [data]):
+                try: grab(json.loads(line))
+                except ValueError: pass
+            continue
+        if not f.endswith(exts): continue
+        o.write(data); o.write(b"\n")
+        for line in data.decode("utf-8", errors="replace").split("\n"):
+            m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+            if m: strings.add(m.group(1).strip().lower())
+with open(out + ".strings", "w", encoding="utf-8") as o:
+    for s_ in sorted(strings): o.write(s_ + "\n")' "$pub" "$pub.txt" || die "the public baseline could not be assembled"
+  T6_SCAN="$REPO/scripts/eval/t6_scan.py" python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY'
+import os, re, subprocess, sys
+src, root, home, pub_txt, out = sys.argv[1:6]
+items = set(); always = set(); headings = set()
+for s_ in (root, root.replace(home, "~"), os.path.basename(root)): items.add(s_); always.add(s_)
+parts = [p for p in root.split("/") if p and p not in ("Users", "home") and p != os.path.basename(home)]
+for p in parts: items.add(p); always.add(p)
+for d, _, fs in os.walk(src):
+    if "/.markdownattractor" in d: continue
+    for f in fs:
+    rel = os.path.relpath(os.path.join(d, f), src)
+    if not rel.endswith((".md", ".mdx", ".markdown")): continue
+    items.add(rel); always.add(rel)
+    try: text = open(os.path.join(d, f), encoding="utf-8", errors="replace").read()
+    except OSError: continue
+    for line in text.split("\n"):
+        m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if m and len(m.group(1)) >= 12: items.add(m.group(1)); headings.add(m.group(1))
+    for i in range(0, len(text), 200):
+        ex = text[i:i + 40]
+        if len(ex) == 40 and ex.strip() and "\n" not in ex: items.add(ex)
+# the collision filter, one pass (review F2, second pass F7): an optional entry (heading, excerpt) that
+# also occurs in the IMMUTABLE public baseline is not evidence of a leak and is dropped; a mandatory
+# entry (root, directory names, relative paths) is always kept, whatever its length
+optional = sorted(s for s in items if s not in always and len(s) >= 6 and "\n" not in s)
+# headings: exempt when they equal (case-insensitively) a public heading or a public JSON string value (pass 5 F4);
+# excerpts: exempt when they occur in the public prose (every item tested on its own; pass 3 F5)
+pub_strings = set(l.rstrip("\n") for l in open(pub_txt + ".strings", encoding="utf-8"))
+with open(out + ".items", "w", encoding="utf-8") as fh:
+    for s_ in optional:
+    if s_ not in headings: fh.write(s_ + "\n")
+r = subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])) if sys.argv[0] not in ("-", "") else os.environ["T6_SCAN"], "t6_scan.py") if False else os.environ["T6_SCAN"], "collide", out + ".items", pub_txt], capture_output=True, text=True)
+if r.returncode != 0: sys.exit("collision filter failed: " + r.stderr)
+found = {l.lower() for l in r.stdout.split("\n") if l}
+os.remove(out + ".items")
+kept = sorted(always) + [s_ for s_ in optional if (s_.lower() not in pub_strings if s_ in headings else s_.lower() not in found)]
+with open(out, "w", encoding="utf-8") as fh:
+    for s_ in kept: fh.write(s_ + "\n")
+print(f"denylist: {len(kept)} entries ({len(optional) - (len(kept) - len(always))} optional entries dropped as also public; {len(always)} mandatory)")
+PY
+  rm -rf "$pub" "$pub.txt" "$pub.txt.strings"; chmod 600 "$T6/private/denylist.txt"
+}
+
 case "$cmd" in
   setup)
     c="${1:?corpus}"; ident "$c"; P="$(cdir "$c")"; S="$(src_of "$c")"
@@ -135,71 +223,15 @@ case "$cmd" in
     mkdir -p "$S/.markdownattractor"; cp "$RES_PUB/T6/config.toml" "$S/.markdownattractor/config.toml"
     inventory "$S" > "$P/pages.txt"
     if is_private "$c"; then
-      # the denylist (pre-mortem F12): root path forms, the repository's directory names, every
-      # relative path, every heading (≥ 12 chars) and 40-char excerpts not occurring in this
-      # repository's tree (collision filter: a string that is also public is not evidence of a leak)
-      # the public baseline text, once: every text file of the repository at the merge-base with main
-      pub="$(mktemp -d -t mda-t6-pub.XXXXXX)"; base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD)"
-      git -C "$REPO" archive --format=tar "$base" | tar -x -C "$pub"
-      # the baseline is the repository's PROSE at the merge-base (markdown, text, prompts, skills, README,
-      # CHANGELOG, the plans, reviews and handoffs): where a private heading or excerpt could coincide with
-      # something already public; the JSON/JSONL result artifacts carry no prose and would make the scan
-      # hours long (a 40-char excerpt test is a substring search over the whole baseline)
-      python3 -I -c '
-import os, sys
-root, out = sys.argv[1], sys.argv[2]
-exts = (".md", ".mdx", ".markdown", ".txt", ".toml", ".yml", ".yaml", ".sh", ".rs", ".py")
-with open(out, "wb") as o:
-    for d, _, fs in os.walk(root):
-        for f in fs:
-            if not f.endswith(exts): continue
-            p = os.path.join(d, f)
-            try: data = open(p, "rb").read()
-            except OSError as e: sys.exit("baseline: unreadable " + p + ": " + str(e))
-            if b"\0" in data: continue
-            o.write(data); o.write(b"\n")' "$pub" "$pub.txt" || die "the public baseline could not be assembled"
-      T6_SCAN="$REPO/scripts/eval/t6_scan.py" python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY'
-import os, re, subprocess, sys
-src, root, home, pub_txt, out = sys.argv[1:6]
-items = set(); always = set()
-for s_ in (root, root.replace(home, "~"), os.path.basename(root)): items.add(s_); always.add(s_)
-parts = [p for p in root.split("/") if p and p not in ("Users", "home") and p != os.path.basename(home)]
-for p in parts: items.add(p); always.add(p)
-for d, _, fs in os.walk(src):
-    if "/.markdownattractor" in d: continue
-    for f in fs:
-        rel = os.path.relpath(os.path.join(d, f), src)
-        if not rel.endswith((".md", ".mdx", ".markdown")): continue
-        items.add(rel); always.add(rel)
-        try: text = open(os.path.join(d, f), encoding="utf-8", errors="replace").read()
-        except OSError: continue
-        for line in text.split("\n"):
-            m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
-            if m and len(m.group(1)) >= 12: items.add(m.group(1))
-        for i in range(0, len(text), 200):
-            ex = text[i:i + 40]
-            if len(ex) == 40 and ex.strip() and "\n" not in ex: items.add(ex)
-# the collision filter, one pass (review F2, second pass F7): an optional entry (heading, excerpt) that
-# also occurs in the IMMUTABLE public baseline is not evidence of a leak and is dropped; a mandatory
-# entry (root, directory names, relative paths) is always kept, whatever its length
-optional = sorted(s for s in items if s not in always and len(s) >= 6 and "\n" not in s)
-with open(out + ".items", "w", encoding="utf-8") as fh:
-    for s_ in optional: fh.write(s_ + "\n")
-# every optional item is tested on its own against the lower-cased baseline (overlapping items both count; pass 3 F5)
-r = subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])) if sys.argv[0] not in ("-", "") else os.environ["T6_SCAN"], "t6_scan.py") if False else os.environ["T6_SCAN"], "collide", out + ".items", pub_txt], capture_output=True, text=True)
-if r.returncode != 0: sys.exit("collision filter failed: " + r.stderr)
-found = {l.lower() for l in r.stdout.split("\n") if l}
-os.remove(out + ".items")
-kept = sorted(always) + [s_ for s_ in optional if s_.lower() not in found]
-with open(out, "w", encoding="utf-8") as fh:
-    for s_ in kept: fh.write(s_ + "\n")
-print(f"denylist: {len(kept)} entries ({len(optional) - (len(kept) - len(always))} optional entries dropped as also public; {len(always)} mandatory)")
-PY
-      rm -rf "$pub" "$pub.txt"; chmod 600 "$T6/private/denylist.txt"
+      build_denylist "$S"
       jq -n --argjson files "$(grep -c . "$P/pages.txt")" --arg at "$(date -u +%FT%TZ)" '{corpus: "private", files: $files, prepared_at: $at, note: "the private corpus: a git archive of the owner'"'"'s repository at its HEAD; the path, commit and inventory stay under $RUN; the commitment is written at freeze time"}' > "$T6/private/results/T6/private/setup.json"
     fi
     echo "$c: copy at $S · $(grep -c . "$P/pages.txt") markdown files in the inventory ($P/pages.txt) · config $(sha256 "$S/.markdownattractor/config.toml" | cut -c1-12)…" ;;
 
+  denylist)
+    # rebuild the private denylist from the existing copy (before the freeze; the rule changed or the baseline moved)
+    S="$(src_of private)"; [ -d "$S" ] || die "no private copy"; [ -f "$T6/private/root" ] || die "no private root recorded"
+    build_denylist "$S" ;;
   index)
     c="${1:?corpus}"; P="$(cdir "$c")"; S="$(src_of "$c")"; [ -d "$S/.markdownattractor" ] || die "no copy at $S (setup)"
     [ ! -f "$P/index.json" ] || die "$P/index.json exists: the copy is indexed once"
@@ -284,7 +316,7 @@ json.dump({"headed_sections_200": len(secs), "eligible_sections": sum(len(v) for
 print(f"candidates: {len(rounds)} of {sum(len(v) for v in by_doc.values())} eligible sections in {len(docs)} documents ({len(rejected)} sections excluded; {len(secs)} headed sections ≥ 200 chars)")
 PY
     if [ "$have" -gt 0 ]; then
-      diff <(head -n "$have" "$P/candidates.pre.jsonl" | jq -r '"\(.id) \(.section_id)"') <(jq -r '"\(.id) \(.section_id)"' "$P/candidates.jsonl") >/dev/null || die "the seeded draw no longer reproduces the existing $have candidates: the store or the exclusions changed"
+      diff <(head -n "$have" "$P/candidates.pre.jsonl" | jq -c '{id, section_id, section_hash, page, heading, round, section}') <(jq -c '{id, section_id, section_hash, page, heading, round, section}' "$P/candidates.jsonl") >/dev/null || die "the seeded draw no longer reproduces the existing $have candidates (id, section id, hash, text, page, heading or round differ): the store or the exclusions changed"
       tail -n +"$((have + 1))" "$P/candidates.pre.jsonl" > "$P/candidates.pre.new.jsonl"; mv "$P/candidates.pre.new.jsonl" "$P/candidates.pre.jsonl"
       echo "top-up: $have existing candidates kept; $(grep -c . "$P/candidates.pre.jsonl" || true) new ones go through the writer"
     fi
@@ -384,8 +416,14 @@ PY
       pilots="$(jq -c --arg c "$c" --argjson p "$(python3 -I "$REPO/scripts/eval/t6_private_export.py" project-pilot "$f" "$c")" '. + {($c): $p}' <<<"$pilots")"
       g="$(cdir "$c")/pilot/grades.jsonl"; [ -f "$g" ] || continue
       m="$(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grade.model // empty) | unique), grounding: (map(.grounding.model // empty) | unique)} | map_values(map(select(test("^(claude|gpt)-"))))' "$g")"
-      rq="$(jq -s '{answering: ["sonnet"], grader: (map(.grade.model_requested // .grader // empty) | unique), grounding: (map(.grounding.model_requested // .grader // empty) | unique), panel_fable: ["claude-fable-5-1"], panel_astra: ["gpt-6-astra"]}' "$g")"
+      [ -f "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" ] && [ -f "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" ] || die "no panel member files for the $c pilot (panel.sh regrade did not run): calibration needs them"
+      # the requested aliases come from the recorded rows (the run manifest's model, the graders' model_requested, the members' model_requested), never from defaults
+      rq="$(jq -s --arg ans "$(jq -r .model "$(cdir "$c")/pilot/manifest.json")" '{answering: [$ans], grader: (map(.grade.model_requested // empty) | unique), grounding: (map(.grounding.model_requested // empty) | unique)}' "$g")"
+      rq="$(jq -c --argjson rf "$(jq -s 'map(.model_requested // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl")" --argjson ra "$(jq -s 'map(.model_requested // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl")" '. + {panel_fable: $rf, panel_astra: $ra}' <<<"$rq")"
       requested="$(jq -c --argjson r "$rq" 'to_entries | map(.key as $k | {($k): ((.value + ($r[$k] // [])) | unique)}) | add' <<<"$requested")"
+      # a role is unresolved only when its judgments COMPLETED (out != null) and carry no model id; a role with no completed judgment is a failure, not an unresolved id
+      [ "$(jq -s 'map(select(.out != null)) | length' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl")" -gt 0 ] || die "the $c pilot has no completed Astra judgment: nothing to calibrate the panel on"
+      [ "$(jq -s 'map(select(.out != null)) | length' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl")" -gt 0 ] || die "the $c pilot has no completed Fable judgment"
       rf="$(jq -s 'map(.model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" 2>/dev/null || echo '[]')"; ra="$(jq -s 'map(.model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" 2>/dev/null || echo '[]')"
       models="$(jq -c --argjson m "$m" --argjson rf "$rf" --argjson ra "$ra" '.answering = (.answering + $m.answering | unique) | .grader = (.grader + $m.grader | unique) | .grounding = (.grounding + $m.grounding | unique) | .panel_fable = (.panel_fable + $rf | unique) | .panel_astra = (.panel_astra + $ra | unique)' <<<"$models")"
     done

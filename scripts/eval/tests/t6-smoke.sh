@@ -44,8 +44,8 @@ if T2_QUESTIONS_FULL="$tmp/bad.jsonl" "$repo/scripts/eval/t2.sh" materialise pri
 cat "$tmp/full.jsonl" "$tmp/full.jsonl" > "$tmp/dup.jsonl"
 if T2_QUESTIONS_FULL="$tmp/dup.jsonl" "$repo/scripts/eval/t2.sh" materialise private "$tmp/sample.jsonl" "$tmp/x.jsonl" >/dev/null 2>&1; then fail "a duplicate id was accepted"; fi
 # 6. citation extraction (review F23): a backticked odd name yields one citation, not two; bare paths still found
-cites="$(printf 'See `c/odd name (v2).md` and docs/a.mdx, plus `x/y.md#anchor`, not docs/a.md.bak nor docs/b.md_old nor docs/c.md/child; (e/f.markdown).' | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
-[ "$cites" = "c/odd name (v2).md|docs/a.mdx|e/f.markdown|x/y.md|" ] || fail "citation extraction: got $cites"
+cites="$(printf 'See `c/odd name (v2).md` and docs/a.mdx, plus `x/y.md#anchor`, not docs/a.md.bak nor docs/b.md_old nor docs/c.md/child nor docs/d.md+backup nor docs/e.md=old; (e/f.markdown). A [guide](g/h.md) and `_notes.md` and *i/j.md*.' | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
+[ "$cites" = "_notes.md|c/odd name (v2).md|docs/a.mdx|e/f.markdown|g/h.md|i/j.md|x/y.md|" ] || fail "citation extraction: got $cites"
 # 7. the private export round trip: a synthetic private run directory exports and conforms; a hand
 #    edit of a committed file (a heading in a numeric field), an unknown key and an unknown file are
 #    each refused; the question digests are the exporter's own serialisation
