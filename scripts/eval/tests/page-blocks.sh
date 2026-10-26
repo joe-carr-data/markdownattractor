@@ -16,7 +16,7 @@
 # lines inside (b) are kept; trailing blank lines are not part of a block. The baseline is a
 # multiset: a block that appears twice must still appear twice. Headings that the restructure
 # renames on purpose are listed in page-blocks.renamed (old heading → new heading, tab-separated)
-# and checked by their new text.
+# and checked by their new text (comment lines in that file start with `;`).
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"; repo="$(cd "$here/../../.." && pwd)"
 baseline="$here/page-blocks.sha256"
@@ -24,13 +24,13 @@ cmd="${1:-check}"; shift || true
 
 blocks() { # page -> "sha256  first-line" per block
   PAGE_BLOCKS_DIR="$here" python3 - "$1" <<'PY'
-import hashlib, os, sys
+import hashlib, os, re, sys
 lines = open(sys.argv[1], encoding="utf-8").read().split("\n")
 renamed = {}
 rn = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])) if False else os.environ.get("PAGE_BLOCKS_DIR", "."), "page-blocks.renamed")
 if os.path.isfile(rn):
     for line in open(rn, encoding="utf-8"):
-        if "\t" in line and not line.startswith("#"):
+        if "\t" in line and not line.startswith(";"):
             new, old = line.rstrip("\n").split("\t")[1], line.rstrip("\n").split("\t")[0]
             renamed[new] = old
 out = []
@@ -44,8 +44,8 @@ while i < len(lines):
         b = []
         while i < len(lines) and lines[i].startswith("|"): b.append(lines[i]); i += 1
         emit(b); continue
-    if l.startswith("### What travels with the table"):
-        emit([l])
+    if re.match(r"^#{2,6} What travels with the table", l):
+        emit([renamed.get(l, l)])
         i += 1; b = []
         while i < len(lines) and not lines[i].startswith("#"): b.append(lines[i]); i += 1
         emit(b); continue
@@ -81,5 +81,12 @@ case "$cmd" in
       exit 1
     fi
     echo "page-blocks: all $(grep -c . "$baseline") baseline blocks present and unchanged across ${#pages[@]} page(s) ($(grep -c . "$tmp/now.sha") blocks now)" ;;
-  *) echo "usage: $0 check|capture <page>|blocks <page>" >&2; exit 2 ;;
+  readme)
+    # the README's numbers row is exactly the renderer's output (never retyped): the block between
+    # the benchmark-row markers equals `scripts/eval/t6.sh readme-row` on the committed artifacts
+    want="$("$repo/scripts/eval/t6.sh" readme-row)"
+    have="$(sed -n '/<!-- benchmark-row:start -->/,/<!-- benchmark-row:end -->/p' "$repo/README.md" | sed '1d;$d')"
+    [ -n "$have" ] || { echo "readme: no benchmark-row markers in README.md" >&2; exit 1; }
+    if [ "$want" = "$have" ]; then echo "readme: the numbers row equals the renderer's output ($(printf '%s\n' "$have" | grep -c '^| ' ) lines)"; else echo "readme: the numbers row differs from scripts/eval/t6.sh readme-row:" >&2; diff <(printf '%s\n' "$want") <(printf '%s\n' "$have") >&2 || true; exit 1; fi ;;
+  *) echo "usage: $0 check|capture <page>|blocks <page>|readme" >&2; exit 2 ;;
 esac

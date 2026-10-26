@@ -19,6 +19,7 @@ t6-tests:
 
 page-blocks:
 	scripts/eval/tests/page-blocks.sh check
+	scripts/eval/tests/page-blocks.sh readme
 
 lint:
 	cargo lint

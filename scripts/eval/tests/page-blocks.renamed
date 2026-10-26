@@ -1,1 +1,23 @@
-# old heading\tnew heading (tab-separated); a renamed heading is checked by its new text
+; old heading<TAB>new heading; the 2026-10-26 restructure by axis demoted every table heading one level; a renamed heading is checked by its new text
+## Retrieval — golden set (`evals/golden`, 32 docs, 117 sections, 60 queries, 16 temporal)	### Retrieval — golden set (`evals/golden`, 32 docs, 117 sections, 60 queries, 16 temporal)
+## Search latency — CLI process on `docs/` (18 files, 163 sections)	### Search latency — CLI process on `docs/` (18 files, 163 sections)
+## T1 — axis A on DocsQA-Repo, test split (final, 2026-09-24)	### T1 — axis A on DocsQA-Repo, test split (final, 2026-09-24)
+### Quality	#### Quality
+### The product target: match qmd full	#### The product target: match qmd full
+### Where we lose	#### Where we lose
+### Latency through each arm's MCP server	#### Latency through each arm's MCP server
+### Pooled labels, the second column	#### Pooled labels, the second column
+### What travels with the table	#### What travels with the table
+## T2 — axis B on DocsQA-Repo, answer quality (final, 2026-09-25)	### T2 — axis B on DocsQA-Repo, answer quality (final, 2026-09-25)
+### Runs and consumption (rule 0.7 tokens)	#### Runs and consumption (rule 0.7 tokens)
+### Quality, grounding and the gates (original grades)	#### Quality, grounding and the gates (original grades)
+### The same, on the adjudicated grades (panel-resolved scores in place, rule 0.8)	#### The same, on the adjudicated grades (panel-resolved scores in place, rule 0.8)
+### Panel calibration (30 answers per project, Fable and Astra, blind)	#### Panel calibration (30 answers per project, Fable and Astra, blind)
+### Card audit (100 cards per corpus, both members)	#### Card audit (100 cards per corpus, both members)
+### What travels with the table	#### What travels with the table
+## T4 — axis C on Prisma, how long until a change is found (final, with disclosed protocol amendments and three replacement measurements, 2026-09-27)	### T4 — axis C on Prisma, how long until a change is found (final, with disclosed protocol amendments and three replacement measurements, 2026-09-27)
+### What travels with the table	#### What travels with the table
+## Indexing and summarization (from Phase 1)	### Indexing and summarization (from Phase 1)
+## T5 — axis D, the simulated historical replay on Prisma and Tailwind CSS (final, with the freeze chronology and two accepted probe failures disclosed, 2026-10-16)	### T5 — axis D, the simulated historical replay on Prisma and Tailwind CSS (final, with the freeze chronology and two accepted probe failures disclosed, 2026-10-16)
+### What travels with the table	#### What travels with the table
+## T3 — axis E, what a first build costs (final, 2026-09-25)	### T3 — axis E, what a first build costs (final, 2026-09-25)

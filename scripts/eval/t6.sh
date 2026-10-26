@@ -506,46 +506,57 @@ PY
 
   readme-row)
     # the README rows (execution plan §7; pre-mortem F19): one line per headline claim, limited to
-    # the gates that passed; failed-gate medians never appear here
-    python3 -I - "$REPO/evals/results/docsqa" "$RES_PUB/T6" <<'PY'
-import json, os, sys
-D, T = sys.argv[1:3]
-def passing(dirpath, label):
+    # the gates that passed; failed-gate medians never appear here. Every line derives from committed
+    # artifacts: the T2/T6 analyses (gates and savings), the T4 rows (nearest-rank p50 of the mda
+    # endpoints, the page's convention), the T5 analyses (the claim column), and T1's target table
+    # rendered by `t1.sh target` from the committed results (`mda eval --compare`).
+    t1="$(MDA="$MDA" "$REPO/scripts/eval/t1.sh" target 2>/dev/null | grep -E '^\| [a-z]' || true)"
+    python3 -I - "$REPO/evals/results/docsqa" "$RES_PUB/T6" "$t1" <<'PY'
+import json, os, re, sys
+D, T, t1 = sys.argv[1:4]
+def passing(dirpath):
     out = []
     for c in sorted(os.listdir(dirpath)) if os.path.isdir(dirpath) else []:
         p = os.path.join(dirpath, c, "analysis.json")
         if not os.path.isfile(p): continue
-        a = json.load(open(p))["analysis"]
-        for pr in a["pairs"]:
+        for pr in json.load(open(p))["analysis"]["pairs"]:
             if pr["gates"]["pass"] and pr.get("savings"):
-                sv = pr["savings"]; st = sv.get("source_tokens") or sv.get("source_tokens_ratio")
-                out.append(f"{c}: mda vs {pr['comparator']} (n={pr['n']}; source tokens ×{st:.2f})" if isinstance(st, (int, float)) else f"{c}: mda vs {pr['comparator']} (n={pr['n']})")
+                st = pr["savings"].get("source_tokens")
+                out.append(f"{c}: mda vs {pr['comparator']} (n={pr['n']}" + (f"; source tokens ×{st:.2f})" if isinstance(st, (int, float)) else ")"))
     return out
-t2 = passing(os.path.join(D, "T2"), "T2"); t6 = [x for x in passing(T, "T6") if not x.startswith("private")]
-rows = []
-rows.append(("Fewer source tokens at answer parity (T2, DocsQA test split; T6, our corpora)", ("Passing pairs: " + "; ".join(t2 + t6)) if (t2 or t6) else "No comparator pair passed all three gates; no savings claimed."))
-# T4 from the committed rows
-t4 = os.path.join(D, "T4", "rows")
+t2 = passing(os.path.join(D, "T2")); t6 = [x for x in passing(T) if not x.startswith("private")]
+rows = [("Fewer source tokens at answer parity (T2, DocsQA test split; T6, our corpora)", ("Passing pairs: " + "; ".join(t2 + t6) + ".") if (t2 or t6) else "No comparator pair passed all three gates; no savings claimed.")]
 raw, card = [], []
+t4 = os.path.join(D, "T4", "rows")
 if os.path.isdir(t4):
     for f in sorted(os.listdir(t4)):
         r = json.load(open(os.path.join(t4, f)))
         if r.get("arm") == "mda":
-            if r.get("raw_s") is not None: raw.append(r["raw_s"])
-            if r.get("card_s") is not None: card.append(r["card_s"])
-def p50(xs):
+            if isinstance((r.get("raw") or {}).get("ms"), (int, float)) and not r["raw"].get("timed_out"): raw.append(r["raw"]["ms"] / 1000)
+            if isinstance((r.get("card") or {}).get("ms"), (int, float)) and not r["card"].get("timed_out"): card.append(r["card"]["ms"] / 1000)
+def p50(xs):  # the T4 renderer's nearest-rank convention: sorted, zero-based index round((n−1)·0.5)
     xs = sorted(xs); return xs[round((len(xs) - 1) * 0.5)] if xs else None
-rows.append(("Fresh within seconds (T4)", f"Prisma, 20 edits, one machine: raw-searchable p50 {p50(raw):.1f} s; card-ready p50 {p50(card):.1f} s (nearest-rank p50, as disclosed on the page)." if raw and card else "T4 rows not found."))
-# T5: the claim column of both analyses
+rows.append(("Fresh within seconds (T4)", f"Prisma, {len(card)} edits, one machine: raw-searchable p50 {p50(raw):.1f} s; card-ready p50 {p50(card):.1f} s (nearest-rank p50, as disclosed on the page)." if raw and card else "T4 rows not found."))
 claims = []
-for c in ("prisma", "tailwind-css"):
+for c in sorted(os.listdir(os.path.join(D, "T5"))) if os.path.isdir(os.path.join(D, "T5")) else []:
     p = os.path.join(D, "T5", c, "analysis.json")
     if os.path.isfile(p):
-        a = json.load(open(p)); an = a.get("analysis", a)
-        for pr in an.get("pairs", []):
-            if pr.get("claim") is True or (isinstance(pr.get("claim"), dict) and pr["claim"].get("made")): claims.append(f"{c}: mda vs {pr.get('comparator')}")
-rows.append(("Time questions correct with less effort at equal evidence (T5)", ("Pairs meeting the criterion: " + "; ".join(claims)) if claims else "No pair met the correctness-and-effort criterion."))
-rows.append(("Retrieval: match qmd full (T1)", "Hybrid point estimates met or exceeded qmd full on all four projects; all paired intervals included zero."))
+        for pr in json.load(open(p))["analysis"].get("pairs", []):
+            if pr.get("claim") is True: claims.append(f"{c}: mda vs {pr.get('comparator')}")
+rows.append(("Time questions correct with less effort at equal evidence (T5)", ("Pairs meeting the criterion: " + "; ".join(claims) + ".") if claims else "No pair met the correctness-and-effort criterion."))
+# T1: parse the target table rows: | project | n | qmd | mda | Δ [lo, hi] | w/l | verdict |
+projects, met, incl0 = 0, 0, 0
+for line in t1.splitlines():
+    cells = [c.strip() for c in line.strip().strip("|").split("|")]
+    if len(cells) < 7: continue
+    projects += 1
+    m = re.match(r"(-?[\d.]+) \[(-?[\d.]+), (-?[\d.]+)\]", cells[4])
+    if m and float(m.group(1)) >= 0: met += 1
+    if m and float(m.group(2)) <= 0 <= float(m.group(3)): incl0 += 1
+if projects == 0: t1row = "T1 target table not available."
+elif met == projects and incl0 == projects: t1row = f"Hybrid point estimates met or exceeded qmd full on all {projects} projects; all paired intervals included zero."
+else: t1row = f"Hybrid point estimate at or above qmd full on {met} of {projects} projects; {incl0} of {projects} paired intervals include zero."
+rows.append(("Retrieval: match qmd full (T1)", t1row))
 print("| Headline claim | Status, as measured (gates passed only) |\n|---|---|")
 for k, v in rows: print(f"| {k} | {v} |")
 PY
