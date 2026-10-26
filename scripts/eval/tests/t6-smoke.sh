@@ -74,7 +74,7 @@ if python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$
 # the calibration schema: a conforming record passes, a path in the rule is still prose but a wrong field is refused
 python3 -I "$repo/scripts/eval/t6_private_export.py" project-pilot <(echo '{"corpus":"golden","at":"2026-10-27T00:00:00Z","index":{"seconds":1,"counts":{"docs":1}},"candidates":{},"runs":{"n":2,"errors":0,"wall_s_total":10,"cost_usd":0.1},"seconds":{"runs":10,"grade":5,"panel":5},"panel":{"sample":2,"incomplete":0,"agreement":{},"resolved_by_panel":0}}') golden > "$tmp/pp.json" || fail "project-pilot failed"
 note="the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"
-jq -n --slurpfile p "$tmp/pp.json" --arg note "$note" '{at: "2026-10-27T00:00:00Z", corpora: {golden: $p[0]}, resolved_models: {answering: ["claude-sonnet-5-5"], grader: ["claude-sonnet-5-5"], grounding: ["claude-sonnet-5-5"], panel_fable: ["claude-fable-5-1"], panel_astra: ["gpt-6-astra"]}, resolution_rule: "either-member-differs-by-more-than-one-point-then-panel-mean", estimates: {runs_per_hour: 100, cost_per_run_usd: 0.05, grade_seconds_per_run: 20, acceptance_rate: 0.8}, note: $note}' > "$tmp/cal.json"
+jq -n --slurpfile p "$tmp/pp.json" --arg note "$note" '{at: "2026-10-27T00:00:00Z", corpora: {golden: $p[0]}, resolved_models: {answering: ["claude-sonnet-5-5"], grader: ["claude-sonnet-5-5"], grounding: ["claude-sonnet-5-5"], panel_fable: ["claude-fable-5-1"], panel_astra: []}, requested_models: {answering: ["sonnet"], grader: ["sonnet"], grounding: ["sonnet"], panel_fable: ["claude-fable-5-1"], panel_astra: ["gpt-6-astra"]}, unresolved_roles: ["panel_astra"], resolution_rule: "either-member-differs-by-more-than-one-point-then-panel-mean", estimates: {runs_per_hour: 100, cost_per_run_usd: 0.05, grade_seconds_per_run: 20, acceptance_rate: 0.8}, note: $note}' > "$tmp/cal.json"
 python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal.json" >/dev/null || fail "a conforming calibration record was refused"
 jq '.resolved_models.answering = ["/Users/someone/secret"]' "$tmp/cal.json" > "$tmp/cal2.json"
 if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal2.json" >/dev/null 2>&1; then fail "an unlisted model id in the calibration record was accepted"; fi
@@ -82,6 +82,8 @@ jq '.resolved_models.grader = ["sonnet"]' "$tmp/cal.json" > "$tmp/cal3.json"
 if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal3.json" >/dev/null 2>&1; then fail "an alias as a resolved id was accepted"; fi
 jq '.resolution_rule = "whatever the owner wrote"' "$tmp/cal.json" > "$tmp/cal4.json"
 if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal4.json" >/dev/null 2>&1; then fail "a prose resolution rule was accepted"; fi
+jq '.unresolved_roles = []' "$tmp/cal.json" > "$tmp/cal5.json"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check-file calibration "$tmp/cal5.json" >/dev/null 2>&1; then fail "an empty role not declared unresolved was accepted"; fi
 # an interrupted replacement: a lone .replaced backup is restored, then the export proceeds; both present → refused
 cp "$tmp/full.jsonl" "$tmp/privrun/questions.full.jsonl"
 mv "$tmp/privout" "$tmp/privout.replaced"

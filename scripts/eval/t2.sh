@@ -144,14 +144,23 @@ cite_paths() {
 import re, sys
 t = sys.stdin.read(); out = []
 EXT = re.compile(r"\.(?:mdx|markdown|md)$")
-def path_of(tok):   # the token without an anchor and trailing punctuation; a citation only when it ENDS with the extension
-    tok = tok.split("#", 1)[0].rstrip(".,;:)]}\x27\"")
-    return tok if EXT.search(tok) else None
+def path_of(tok):   # the WHOLE token (enclosing and trailing punctuation and an anchor removed) must end with the extension
+    tok = tok.strip()
+    while True:
+        new = tok.strip("()[]{}<>\x27\"*_").rstrip(".,;:!?")
+        if new == tok: break
+        tok = new
+    tok = tok.split("#", 1)[0]
+    while True:
+        new = tok.strip("()[]{}<>\x27\"*_").rstrip(".,;:!?")
+        if new == tok: break
+        tok = new
+    return tok if tok and EXT.search(tok) and "/" not in tok.rsplit(".", 1)[-1] else None
 for m in re.finditer(r"`([^`\n]+)`", t):
-    c = path_of(m.group(1).strip())
+    c = path_of(m.group(1))
     if c: out.append(c)
 rest = re.sub(r"`[^`\n]+`", " ", t)
-for tok in re.findall(r"[A-Za-z0-9_./#-]+", rest):
+for tok in rest.split():
     c = path_of(tok)
     if c: out.append(c)
 seen = set()
@@ -330,7 +339,8 @@ case "$cmd" in
     fi
     ask() { # schema rubric -> structured output json or empty (reads the submission on stdin)
       local env; env="$( (cd "$scratch" && MAX_THINKING_TOKENS=0 claude --print --model "$grader" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$1" --system-prompt "$2" 2>"$scratch/err") || true)"
-      jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // null), cost_usd: (.total_cost_usd // null)} else empty end' <<<"$env" 2>/dev/null | head -1
+      # the resolved model id: the envelope's modelUsage keys (its top-level .model is absent on the current CLI); the alias stays beside it (pass 4 F2)
+      jq -c --arg req "$grader" 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // ((.modelUsage // {}) | keys | first) // null), model_requested: $req, cost_usd: (.total_cost_usd // null)} else empty end' <<<"$env" 2>/dev/null | head -1
     }
     # the corpus pages of the project (repository-relative), for the suffix rule; T6 passes its
     # frozen inventory and the containment resolver applies

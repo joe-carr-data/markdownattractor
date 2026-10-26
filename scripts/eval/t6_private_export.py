@@ -128,10 +128,14 @@ MANIFEST = {"project": "enum:private", "model": "model", "runs": "int", "arms": 
 POLICIES = ["either-member-differs-by-more-than-one-point-then-panel-mean"]
 RESOLVED = re.compile(r"^(claude|gpt)-[a-z0-9]+(-[a-z0-9]+)*$")   # a resolved model id, never an alias (pass 3 F13)
 CALIBRATION_NOTE = "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"
+ROLES = ["answering", "grader", "grounding", "panel_fable", "panel_astra"]
 CALIBRATION = {"at": "iso", "corpora": {"?golden": PILOT, "?docs": PILOT, "?private": PILOT},
                "resolved_models": {"answering": ["resolved"], "grader": ["resolved"], "grounding": ["resolved"], "panel_fable": ["resolved"], "panel_astra": ["resolved"]},
+               "requested_models": {"answering": ["model"], "grader": ["model"], "grounding": ["model"], "panel_fable": ["model"], "panel_astra": ["model"]},
+               # a role whose transcripts carry no resolved id (the Codex CLI's JSON stream names no model) is listed here explicitly, with the requested alias beside it (pass 3 F13, pass 4 F2)
+               "unresolved_roles": ["enum:model_role"],
                "resolution_rule": "enum:policy", "estimates": {"runs_per_hour": NUM, "cost_per_run_usd": NUM, "grade_seconds_per_run": NUM, "acceptance_rate": NUM}, "note": "enum:calibration_note"}
-ENUMS = {"corpus": ["golden", "docs", "private"], "policy": POLICIES, "calibration_note": [CALIBRATION_NOTE], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
+ENUMS = {"corpus": ["golden", "docs", "private"], "model_role": ROLES, "policy": POLICIES, "calibration_note": [CALIBRATION_NOTE], "evidence": EVIDENCE_POLICIES, "trigger": [TRIGGER], "resolution": RESOLUTIONS, "member": ["fable", "astra"], "sampled_from": [SAMPLED_FROM],
          "T6": ["T6"], "private": ["private"], "status": ["completed", "in progress"], "check_name": CHECK_NAMES, "check_status": CHECK_STATUS,
          "embedding_model": ["bge-small-en-v1.5-q", "local-small"], "own": ["own"], "single-section": ["single-section"], "refusal": REFUSALS,
          "reason": REASON_CODES, "reject_key": REJECT_KEYS, "role": ["counted", "pilot"], "mcp_server": ["markdownattractor", "qmd", "graphify"]}
@@ -206,6 +210,7 @@ def every_file(root):
     """Every entry under root, dotfiles and dot-directories included (glob would skip them); a
     symlink anywhere or a traversal error is refused (an export holds plain files only)."""
     def onerror(e): raise e
+    if os.path.islink(root): raise RuntimeError(f"the export root is a symlink: {root}")   # (system ancestors such as /var → /private/var are not the export's business)
     for d, dirs, files in os.walk(root, onerror=onerror, followlinks=False):
         dirs.sort()
         for x in dirs + files:
@@ -287,6 +292,9 @@ def export(run_dir, committed):
     parent = os.path.dirname(os.path.abspath(committed.rstrip("/"))) or "."
     os.makedirs(parent, exist_ok=True)
     bak = committed.rstrip("/") + ".replaced"
+    for p in (committed, bak):
+        if os.path.islink(p): sys.exit(f"export: {p} is a symlink: refusing")   # pass 4 F4
+    if os.path.islink(parent): sys.exit(f"export: the destination's directory {parent} is a symlink: refusing")
     # an interrupted earlier replacement: the backup is the only copy → restore it; both present → refuse (pass 3 F6)
     if os.path.isdir(bak):
         if os.path.isdir(committed): sys.exit(f"export: both {committed} and {bak} exist after an interrupted replacement: resolve by hand before exporting")
@@ -485,8 +493,9 @@ def main():
             validate(r, spec, f"{os.path.basename(sys.argv[3])}[{i}]", errors)
             if kind == "calibration":
                 # every model role the pilot exercised has at least one resolved id (pass 3 F13)
-                for role in ("answering", "grader", "grounding", "panel_fable", "panel_astra"):
-                    if not (r.get("resolved_models") or {}).get(role): errors.append(f"calibration: no resolved id for {role}")
+                for role in ROLES:
+                    if not (r.get("resolved_models") or {}).get(role) and role not in (r.get("unresolved_roles") or []): errors.append(f"calibration: no resolved id for {role} and it is not declared unresolved")
+                    if role in (r.get("unresolved_roles") or []) and not (r.get("requested_models") or {}).get(role): errors.append(f"calibration: unresolved role {role} without its requested alias")
                 if not any((c.get("runs") or {}).get("n", 0) > 0 for c in (r.get("corpora") or {}).values()): errors.append("calibration: no corpus has pilot runs")
         for e in errors: print(e, file=sys.stderr)
         if errors: sys.exit(f"check-file: {len(errors)} violation(s)")

@@ -59,13 +59,15 @@ judge() { # member schema rubric
   case "$member" in
     fable)
       env="$( (cd "$tmpd" && MAX_THINKING_TOKENS=0 claude --print --model "$FABLE_MODEL" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$schema" --system-prompt "$rubric" 2>>"$tmpd/fable.err") || true)"
-      jq -c --arg model "$FABLE_MODEL" 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // $model), cost_usd: (.total_cost_usd // null)} else {out: null, model: $model, error: (.result // .error // "no structured output")} end' <<<"$env" 2>/dev/null || echo '{"out":null,"error":"no JSON result"}' ;;
+      # model: the id the envelope resolved (its modelUsage keys; a top-level .model when present), null when none; model_requested: the alias asked for
+      jq -c --arg model "$FABLE_MODEL" 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // ((.modelUsage // {}) | keys | first) // null), model_requested: $model, cost_usd: (.total_cost_usd // null)} else {out: null, model: null, model_requested: $model, error: (.result // .error // "no structured output")} end' <<<"$env" 2>/dev/null || echo '{"out":null,"model":null,"error":"no JSON result"}' ;;
     astra)
       printf '%s' "$schema" > "$tmpd/schema.json"
       env="$( { printf '%s\n\n' "$rubric"; cat; printf '\n\nYour ONLY output is the JSON object the schema describes.'; } | (cd "$tmpd" && codex exec --model "$ASTRA_MODEL" -s read-only --skip-git-repo-check --ephemeral --output-schema "$tmpd/schema.json" --json -C "$tmpd" - 2>>"$tmpd/astra.err") || true)"
-      jq -sc --arg model "$ASTRA_MODEL" '(map(select(.type == "turn.completed")) | length > 0) as $done | [.[] | select(.type == "item.completed" and .item.type == "agent_message") | .item.text] | last as $t
-        | if ($done | not) then {out: null, model: $model, error: "turn did not complete"} elif $t == null then {out: null, model: $model, error: "no agent message"}
-          else (try {out: ($t | fromjson), model: $model} catch {out: null, model: $model, error: "final message is not JSON"}) end' <<<"$env" 2>/dev/null || echo '{"out":null,"error":"no JSON stream"}' ;;
+      # the Codex CLI's JSON stream names no model: model is the id found in the stream when one appears, else null; the alias is model_requested (the calibration record declares the role unresolved)
+      jq -sc --arg model "$ASTRA_MODEL" '(map(select(.type == "turn.completed")) | length > 0) as $done | ([.[] | .. | objects | select(has("model")) | .model | strings] | first) as $seen | [.[] | select(.type == "item.completed" and .item.type == "agent_message") | .item.text] | last as $t
+        | if ($done | not) then {out: null, model: $seen, model_requested: $model, error: "turn did not complete"} elif $t == null then {out: null, model: $seen, model_requested: $model, error: "no agent message"}
+          else (try {out: ($t | fromjson), model: $seen, model_requested: $model} catch {out: null, model: $seen, model_requested: $model, error: "final message is not JSON"}) end' <<<"$env" 2>/dev/null || echo '{"out":null,"model":null,"error":"no JSON stream"}' ;;
     *) die "member must be fable or astra" ;;
   esac
 }
