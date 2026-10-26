@@ -11,9 +11,10 @@
 #   scripts/eval/t6.sh cards <corpus>          # export the cards (+ provenance); public corpora into evals/results/own/
 #   scripts/eval/t6.sh arms <corpus> [graphify-model=sonnet]   # qmd index t6-<corpus>; graphify build on a copy; arm records
 #   scripts/eval/t6.sh candidates <corpus> [k=70]              # seeded candidates (documents first, then sections) → the writer (Sonnet) → candidates.jsonl
-#   scripts/eval/t6.sh questions <corpus> [n=35]               # the panel (panel.sh questions): the first 25 accepted are the questions, the next 10 the pilot
+#   scripts/eval/t6.sh questions <corpus>      # the panel (panel.sh questions 25 10): the first 25 accepted, one per page, are the counted questions; the next 10 the pilot's
 #   scripts/eval/t6.sh pilot <corpus>          # development pilot: one run per arm on the pilot questions, graded, both members on every answer → pilot.json
-#   scripts/eval/t6.sh freeze                  # the public freeze (evals/results/own/T6/FROZEN.md) and the private one (under $RUN; its hash in the public one)
+#   scripts/eval/t6.sh calibration "<rule>"    # the pilots → evals/results/own/T6/calibration.json (agreement, resolved model ids, estimates, the declared resolution rule); required by the freeze
+#   scripts/eval/t6.sh freeze                  # the private freeze (under $RUN; its sha256 published as T6/private/FROZEN.sha256), then the public freeze (evals/results/own/T6/FROZEN.md)
 #   scripts/eval/t6.sh preflight <corpus>      # T6's gate (see the plan): freeze, env, copy vs archive, store, cards, inventory, question file, probes
 #   scripts/eval/t6.sh run <corpus> [runs=3] [arms]            # counted runs through t2.sh under the freeze and a passing preflight bound to the store
 #   scripts/eval/t6.sh status|grade|panel|analysis <corpus>
@@ -66,9 +67,18 @@ private_root() { [ -f "$T6/private/root" ] || die "no private root recorded (set
 inventory() { ( cd "$1" && find . -type f \( -name '*.md' -o -name '*.mdx' -o -name '*.markdown' \) -not -path './.markdownattractor/*' -not -path './graphify-out/*' -not -path './.claude/*' -not -path './.git/*' | sed 's|^\./||' | LC_ALL=C sort ); }
 # The private commitment (pre-mortem F13): sha256(salt ‖ serialisation), the serialisation being
 # `rel_path NUL blake3(content) LF` in byte order over the inventory; salt under $RUN only.
-commitment() { # copy salt-file
-  local f
-  { cat "$2"; inventory "$1" | while IFS= read -r f; do printf '%s\0%s\n' "$f" "$("$MDA" --json parse "$1/$f" 2>/dev/null | jq -r '.hash // empty' || true)"; done; } | shasum -a 256 | cut -c1-64
+commitment() { # copy salt-file -> sha256(salt ‖ rel_path NUL sha256(file bytes) LF …) in inventory (byte) order; any unreadable file is fatal
+  inventory "$1" | python3 -I -c '
+import hashlib, sys
+root, salt = sys.argv[1], open(sys.argv[2], "rb").read()
+h = hashlib.sha256(salt)
+for line in sys.stdin:
+    rel = line.rstrip("\n")
+    if not rel: continue
+    try: data = open(root + "/" + rel, "rb").read()
+    except OSError as e: sys.exit("commitment: unreadable " + rel + ": " + str(e))
+    h.update(rel.encode("utf-8") + b"\0" + hashlib.sha256(data).hexdigest().encode() + b"\n")
+print(h.hexdigest())' "$1" "$2" || die "commitment failed"
 }
 content_hash() { # copy -> "sha256  path" per inventory file (public corpora: compared with the archive)
   local f; inventory "$1" | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$1/$f" | cut -c1-64)" "$f"; done
@@ -131,20 +141,23 @@ case "$cmd" in
       python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$REPO" "$T6/private/denylist.txt" <<'PY'
 import os, re, subprocess, sys
 src, root, home, repo, out = sys.argv[1:6]
-public = subprocess.run(["git", "-C", repo, "grep", "-I", "-l", ""], capture_output=True, text=True).stdout  # just to warm; we test with git grep -q below
+# the collision filter asks the IMMUTABLE public baseline (the merge-base with main, before any M9
+# artifact), never the working tree; and it applies to headings and excerpts only — a path, a
+# directory name or the root is always on the list (review F2)
+base = subprocess.run(["git", "-C", repo, "merge-base", "main", "HEAD"], capture_output=True, text=True).stdout.strip() or "HEAD"
 def public_has(s):
-    r = subprocess.run(["git", "-C", repo, "grep", "-q", "-I", "-F", "-i", "--", s], capture_output=True)
+    r = subprocess.run(["git", "-C", repo, "grep", "-q", "-I", "-F", "-i", "-e", s, base, "--"], capture_output=True)
     return r.returncode == 0
-items = set()
-items.add(root); items.add(root.replace(home, "~")); items.add(os.path.basename(root))
+items = set(); always = set()
+for s_ in (root, root.replace(home, "~"), os.path.basename(root)): items.add(s_); always.add(s_)
 parts = [p for p in root.split("/") if p and p not in ("Users", "home") and p != os.path.basename(home)]
-for p in parts: items.add(p)
+for p in parts: items.add(p); always.add(p)
 for d, _, fs in os.walk(src):
     if "/.markdownattractor" in d: continue
     for f in fs:
         rel = os.path.relpath(os.path.join(d, f), src)
         if not rel.endswith((".md", ".mdx", ".markdown")): continue
-        items.add(rel)
+        items.add(rel); always.add(rel)
         try: text = open(os.path.join(d, f), encoding="utf-8", errors="replace").read()
         except OSError: continue
         for line in text.split("\n"):
@@ -153,7 +166,7 @@ for d, _, fs in os.walk(src):
         for i in range(0, len(text), 200):
             ex = text[i:i + 40]
             if len(ex) == 40 and ex.strip() and "\n" not in ex: items.add(ex)
-kept = [s for s in sorted(items) if len(s) >= 6 and not public_has(s)]
+kept = [s for s in sorted(items) if len(s) >= 6 and (s in always or not public_has(s))]
 with open(out, "w", encoding="utf-8") as fh:
     for s in kept: fh.write(s + "\n")
 print(f"denylist: {len(kept)} entries ({len(items) - len(kept)} dropped as also public)")
@@ -184,7 +197,7 @@ PY
     "$MDA" rebuild --embeddings --root "$S" > "$P/embeddings.log" 2>&1 || die "rebuild --embeddings failed"
     t1=$(date +%s)
     jq -n --argjson secs "$((t1 - t0))" --argjson retries "$retries" --argjson st "$("$MDA" --json status --root "$S")" --arg store "$(store_sha "$S")" --arg at "$(date -u +%FT%TZ)" \
-      '{seconds: $secs, retries: $retries, counts: $st.counts, embeddings: ($st.embeddings // null), store_sha256: $store, indexed_at: $at}' > "$P/index.json"
+      '{seconds: $secs, retries: $retries, counts: $st.counts, embeddings: {embedded: ($st.embeddings.counts.embedded // null), model: ($st.embeddings.check.model // null)}, store_sha256: $store, indexed_at: $at}' > "$P/index.json"
     cp "$P/index.json" "$(t6dir "$c")/index.json" 2>/dev/null || true
     jq -r '"indexed: \(.counts.docs) docs · \(.counts.sections) sections · \(.counts.summarized) summarized · \(.counts.failed) failed · \(.seconds) s · $\(.counts.total_cost_usd) · store \(.store_sha256[:12])…"' "$P/index.json" ;;
 
@@ -193,6 +206,7 @@ PY
     out="$(res_of "$c")/cards-${ver#mda }-$c.json"
     "$MDA" --json eval --root "$S" --project "$c" --export-cards "$out" | jq -c '{cards_exported, card_coverage}'
     [ "$(jq -r .complete "$out.provenance.json")" = true ] || die "card coverage incomplete: a carded row is never published below 100% (plan)"
+    [ ! -f "$P/index.json" ] || { jq --slurpfile pr "$out.provenance.json" '. + {cards: ($pr[0] | {cards, sections, sections_carded, complete, truncated, by_model, summarized_from, summarized_to, usage})}' "$P/index.json" > "$P/index.json.tmp" && mv "$P/index.json.tmp" "$P/index.json"; cp "$P/index.json" "$(t6dir "$c")/index.json"; }
     echo "cards: $out ($(sha256 "$out" | cut -c1-12)…) · provenance $(jq -c '{cards, sections, by_model, truncated}' "$out.provenance.json")" ;;
 
   arms)
@@ -212,11 +226,11 @@ key = lambda s: hashlib.sha256((seed + "\0" + s).encode()).hexdigest()
 HEX = re.compile(r"\b[0-9a-f]{40,64}\b")
 def excluded(s):
     p = s["page"]
-    if corpus == "docs" and (p == "index.md" or p.startswith("handoffs/")): return "frozen-exclusion: generated index or handoff"
+    if corpus == "docs" and (p == "index.md" or p.startswith("handoffs/")): return "frozen-exclusion"
     lines = [l for l in s["text"].split("\n") if l.strip()]
     if not lines: return "empty"
     noisy = sum(1 for l in lines if l.lstrip().startswith("|") or re.match(r"^\s*([-*+]|\d+\.)\s", l) or HEX.search(l))
-    if noisy / len(lines) >= 0.5: return "table, list or hash listing"
+    if noisy / len(lines) >= 0.9: return "table-list-or-listing"
     return None
 by_doc = {}
 rejected = []
@@ -236,6 +250,9 @@ with open(out, "w") as fh:
     for c_ in rounds: fh.write(json.dumps(c_) + "\n")
 with open(rej, "w") as fh:
     for x in rejected: fh.write(json.dumps(x) + "\n")
+import collections
+excl = collections.Counter(x["reason"] for x in rejected)
+json.dump({"headed_sections_200": len(secs), "eligible_sections": sum(len(v) for v in by_doc.values()), "documents": len(docs), "excluded": {k: excl.get(k, 0) for k in ("frozen-exclusion", "table-list-or-listing", "empty")}, "candidates_drawn": len(rounds)}, open(rej.replace("candidates.rejected.jsonl", "candidates.summary.json"), "w"), indent=1)
 print(f"candidates: {len(rounds)} of {sum(len(v) for v in by_doc.values())} eligible sections in {len(docs)} documents ({len(rejected)} sections excluded; {len(secs)} headed sections ≥ 200 chars)")
 PY
     # the writer: Sonnet through the owner's login writes {q, required_facts} from the section alone
@@ -245,7 +262,8 @@ PY
     while IFS= read -r cand; do
       n=$((n + 1))
       env="$( (cd "$scratch" && jq -r '"<section>\n" + .section + "\n</section>"' <<<"$cand" | MAX_THINKING_TOKENS=0 claude --print --model "$MODEL" --setting-sources "" --strict-mcp-config --tools "" --no-session-persistence --max-turns 2 --output-format json --json-schema "$wschema" --system-prompt "$wrubric" 2>"$scratch/err") || true)"
-      w="$(jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // null), cost_usd: (.total_cost_usd // null)} else {out: null, model: (.model // null), cost_usd: (.total_cost_usd // null)} end' <<<"$env" 2>/dev/null || echo '{"out":null}')"
+      w="$(jq -c 'if ((.is_error // false) | not) and ((.structured_output? // null) != null) then {out: .structured_output, model: (.model // null), cost_usd: (.total_cost_usd // null)} else {out: null, model: (.model // null), cost_usd: (.total_cost_usd // null)} end' <<<"${env:-{\}}" 2>/dev/null || true)"; [ -n "$w" ] || w='{"out":null,"model":null,"cost_usd":null}'
+      jq -e '.out == null or ((.out.q | type) == "string" and (.out.required_facts | type) == "array")' <<<"$w" >/dev/null 2>&1 || w='{"out":null,"model":null,"cost_usd":null}'   # malformed structured output is a refusal, never a crash
       row="$(python3 -I - "$cand" "$w" <<'PY'
 import json, re, sys
 c, w = json.loads(sys.argv[1]), json.loads(sys.argv[2])
@@ -266,27 +284,40 @@ PY
       [ "$(jq -r '.refused // empty' <<<"$row")" = "" ] || refused=$((refused + 1))
       printf '%s: %s\n' "$(jq -r .id <<<"$row")" "$(jq -r '.refused // "written"' <<<"$row")"
     done < "$P/candidates.pre.jsonl"
-    echo "candidates: $n written, $refused refused before the panel → $P/candidates.jsonl (rejected sections: $P/candidates.rejected.jsonl)" ;;
+    python3 -I - "$P/candidates.summary.json" "$P/candidates.jsonl" <<'PY'
+import collections, json, sys
+summ = json.load(open(sys.argv[1])); refs = collections.Counter()
+for l in open(sys.argv[2]):
+    r = json.loads(l)
+    if r.get("refused"): refs[r["refused"]] += 1
+summ.update({"written": sum(1 for _ in open(sys.argv[2])), "refused": {k: refs.get(k, 0) for k in ("path-in-question", "title-in-question", "span-not-in-section", "writer-no-output", "too-few-facts")}})
+json.dump(summ, open(sys.argv[1], "w"), indent=1)
+PY
+    echo "candidates: $n written, $refused refused before the panel → $P/candidates.jsonl (rejected sections: $P/candidates.rejected.jsonl; denominators: $P/candidates.summary.json)" ;;
 
   questions)
-    c="${1:?corpus}"; n="${2:-$((N_QUESTIONS + N_PILOT))}"; P="$(cdir "$c")"; [ -f "$P/candidates.jsonl" ] || die "no candidates (run candidates)"
-    "$REPO/scripts/eval/panel.sh" questions "$P/candidates.jsonl" "$P" "$n"
-    acc="$(grep -c . "$P/questions.jsonl")"
-    [ "$acc" -ge "$N_QUESTIONS" ] || { echo "only $acc accepted: the corpus publishes with that count unless more candidates are generated (candidates k > $(grep -c . "$P/candidates.jsonl"))"; }
-    head -n "$N_QUESTIONS" "$P/questions.jsonl" > "$P/questions.full.jsonl"
-    tail -n +"$((N_QUESTIONS + 1))" "$P/questions.jsonl" | head -n "$N_PILOT" > "$P/questions.pilot.jsonl"
+    c="${1:?corpus}"; P="$(cdir "$c")"; [ -f "$P/candidates.jsonl" ] || die "no candidates (run candidates)"
+    "$REPO/scripts/eval/panel.sh" questions "$P/candidates.jsonl" "$P" "$N_QUESTIONS" "$N_PILOT"
+    cp "$P/questions.jsonl" "$P/questions.full.jsonl"
+    nc="$(grep -c . "$P/questions.full.jsonl" || true)"; np="$(grep -c . "$P/questions.pilot.jsonl" || true)"
+    [ "$nc" -ge 1 ] || die "no counted question accepted: nothing to run"
+    [ "$nc" -ge "$N_QUESTIONS" ] || echo "only $nc counted questions accepted: the corpus publishes with that count unless more candidates are generated (candidates k > $(grep -c . "$P/candidates.jsonl" || true))"
+    python3 -I - "$P/candidates.summary.json" "$P/questions.candidates.jsonl" <<'PY'
+import json, sys
+summ = json.load(open(sys.argv[1])); rows = [json.loads(l) for l in open(sys.argv[2])]
+summ.update({"judged": sum(1 for r in rows if r.get("panel") is not None), "accepted_counted": sum(1 for r in rows if (r.get("decision") or {}).get("role") == "counted"), "accepted_pilot": sum(1 for r in rows if (r.get("decision") or {}).get("role") == "pilot")})
+json.dump(summ, open(sys.argv[1], "w"), indent=1)
+PY
     T="$(t6dir "$c")"; mkdir -p "$T"
     if is_private "$c"; then
-      # the committed form: ids and digests only (no paths, no texts)
-      python3 -I -c 'import hashlib, json, sys
-h = lambda t: hashlib.sha256(t.encode("utf-8")).hexdigest()
-for l in open(sys.argv[1], encoding="utf-8"):
-    r = json.loads(l); print(json.dumps({"id": r["id"], "split": "own", "category": "single-section", "question_sha256": h(r["q"]), "reference_sha256": h(r["reference"]), "evidence_sha256": r["evidence_sha256"], "required_facts_n": len(r["required_facts"])}))' "$P/questions.full.jsonl" > "$RES_PUB/T6/private/questions.jsonl"
-      cp "$P/questions.full.jsonl" "$T/questions.jsonl"; cp "$P/questions.candidates.jsonl" "$T/questions.candidates.jsonl"
+      # the committed form: ids and digests only, by the one canonical serializer (review F5)
+      mkdir -p "$RES_PUB/T6/private"; python3 -I "$REPO/scripts/eval/t6_private_export.py" digest-questions "$P/questions.full.jsonl" > "$RES_PUB/T6/private/questions.jsonl"
+      cp "$P/questions.full.jsonl" "$T/questions.jsonl"; cp "$P/questions.pilot.jsonl" "$T/questions.pilot.jsonl"; cp "$P/questions.candidates.jsonl" "$T/questions.candidates.jsonl"; cp "$P/candidates.summary.json" "$T/candidates.summary.json"
     else
       cp "$P/questions.full.jsonl" "$T/questions.jsonl"; cp "$P/questions.pilot.jsonl" "$T/questions.pilot.jsonl"; cp "$P/questions.candidates.jsonl" "$T/questions.candidates.jsonl"
+      cp "$P/candidates.rejected.jsonl" "$T/questions.rejected.jsonl"; cp "$P/candidates.summary.json" "$T/candidates.summary.json"; cp "$P/pages.txt" "$T/pages.txt"
     fi
-    echo "questions: $(grep -c . "$P/questions.full.jsonl") counted + $(grep -c . "$P/questions.pilot.jsonl") pilot of $acc accepted ($(jq -s 'map(select(.decision.accepted | not)) | length' "$P/questions.candidates.jsonl") not accepted) → $T" ;;
+    echo "questions: $nc counted + $np pilot ($(jq -s 'map(select(.decision.accepted | not)) | length' "$P/questions.candidates.jsonl") candidates not accepted) → $T" ;;
 
   pilot)
     c="${1:?corpus}"; P="$(cdir "$c")"; corpus_env "$c"; out="$P/pilot"; arms="$(arms_for "$c")"
@@ -307,6 +338,26 @@ for l in open(sys.argv[1], encoding="utf-8"):
     cp "$P/pilot.json" "$(t6dir "$c")/pilot.json"
     jq -c . "$P/pilot.json" ;;
 
+  calibration)
+    # <rule text>: the pilots of every corpus → calibration.json (review F4/F11/F22): agreement rates per
+    # corpus, the resolved model ids seen in the pilot rows (answering, grading, panel), the measured
+    # throughput and acceptance, and the resolution rule declared from them (the plan records the same text)
+    rule="${1:?the declared resolution rule, as text}"; out="$RES_PUB/T6/calibration.json"; pilots='{}'; models='{}'
+    for c in golden docs private; do
+      f="$(cdir "$c")/pilot.json"; [ -f "$f" ] || continue
+      pilots="$(jq -c --arg c "$c" --slurpfile p "$f" '. + {($c): $p[0]}' <<<"$pilots")"
+      g="$(cdir "$c")/pilot/grades.jsonl"
+      models="$(jq -c --slurpfile m <(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grader) | unique)}' "$g") --slurpfile rf <(jq -s 'map(.model) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl") --slurpfile ra <(jq -s 'map(.model) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl") \
+        '.answering = ((.answering // []) + $m[0].answering | unique) | .grader = ((.grader // []) + $m[0].grader | unique) | .panel_fable = ((.panel_fable // []) + $rf[0] | unique) | .panel_astra = ((.panel_astra // []) + $ra[0] | unique)' <<<"$models")"
+    done
+    [ "$(jq 'length' <<<"$pilots")" -gt 0 ] || die "no pilot.json under $T6/<corpus>/ (run t6.sh pilot)"
+    jq -n --argjson p "$pilots" --argjson m "$models" --arg rule "$rule" --arg at "$(date -u +%FT%TZ)" \
+      '{at: $at, corpora: $p, resolved_models: $m, resolution_rule: $rule,
+        estimates: {runs_per_hour: ([$p[] | select(.runs.n > 0) | (.runs.n / (.seconds.runs / 3600))] | if length == 0 then null else (add / length) end), cost_per_run_usd: ([$p[] | select(.runs.n > 0) | (.runs.cost_usd / .runs.n)] | if length == 0 then null else (add / length) end),
+                    grade_seconds_per_run: ([$p[] | select(.runs.n > 0) | (.seconds.grade / .runs.n)] | if length == 0 then null else (add / length) end), acceptance_rate: ([$p[] | select(.candidates.judged > 0) | (.candidates.accepted / .candidates.judged)] | if length == 0 then null else (add / length) end)},
+        note: "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"}' > "$out"
+    jq -c '{resolved_models, estimates, resolution_rule}' "$out"; echo "→ $out" ;;
+
   freeze)
     # the public freeze (both public corpora) and the private one under $RUN; the private
     # freeze's hash is an input of the public one, so a change there fails the public check
@@ -314,8 +365,9 @@ for l in open(sys.argv[1], encoding="utf-8"):
       T6_PRIVATE_COMMITMENT="$(commitment "$(src_of private)" "$T6/private/salt")"; export T6_PRIVATE_COMMITMENT
       RESULTS="$T6/private/results" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6-private --out "$(priv_frozen)"; chmod 600 "$(priv_frozen)"
     fi
-    RESULTS="$RES_PUB" T6_PRIVATE_FROZEN_SHA="$([ -f "$(priv_frozen)" ] && sha256 "$(priv_frozen)" || echo none)" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6
-    echo "frozen: $(pub_frozen) ($(frozen_sha | cut -c1-12)…)$([ -f "$(priv_frozen)" ] && echo " · private freeze $(sha256 "$(priv_frozen)" | cut -c1-12)… under \$RUN")" ;;
+    if [ -f "$(priv_frozen)" ]; then mkdir -p "$RES_PUB/T6/private"; sha256 "$(priv_frozen)" > "$RES_PUB/T6/private/FROZEN.sha256"; fi
+    RESULTS="$RES_PUB" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6
+    echo "frozen: $(pub_frozen) ($(frozen_sha | cut -c1-12)…)$([ -f "$(priv_frozen)" ] && echo " · private freeze $(sha256 "$(priv_frozen)" | cut -c1-12)… under \$RUN, digest published")" ;;
 
   preflight)
     c="${1:?corpus}"; P="$(cdir "$c")"; S="$(src_of "$c")"; corpus_env "$c"; T="$(t6dir "$c")"
@@ -323,15 +375,23 @@ for l in open(sys.argv[1], encoding="utf-8"):
     rec() { checks="$(jq -c --arg n "$1" --arg s "$2" --arg d "$3" '. + [{name: $n, status: $s, detail: $d}]' <<<"$checks")"; [ "$2" != FAIL ] || failed=$((failed + 1)); echo "$2 $1: $3"; }
     jq -n --arg p "$c" --arg at "$(date -u +%FT%TZ)" '{table: "T6", project: $p, run_at: $at, status: "in progress", passed: false}' > "$report"
     if env | grep -qE '^[A-Z_]*_API_KEY='; then rec env FAIL "a provider key is exported"; else rec env ok "no provider key · claude $(claude --version 2>/dev/null | head -1) · codex $(codex --version 2>/dev/null | head -1)"; fi
-    if out="$(RESULTS="$RES_PUB" T6_PRIVATE_FROZEN_SHA="$([ -f "$(priv_frozen)" ] && sha256 "$(priv_frozen)" || echo none)" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6 --check 2>&1)"; then rec frozen ok "$out"; else rec frozen FAIL "$out"; fi
+    if out="$(RESULTS="$RES_PUB" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6 --check 2>&1)"; then rec frozen ok "$out"; else rec frozen FAIL "$out"; fi
+    # the binary is the frozen one AND builds from the frozen source (review F12)
+    fbin="$(sed -n 's/.*binary sha256 \([0-9a-f]\{64\}\).*/\1/p' "$(pub_frozen)" | head -1)"
+    if ( cd "$REPO" && cargo build --release --locked -q 2>/dev/null ) && [ "$(sha256 "$MDA")" = "$fbin" ]; then rec binary ok "cargo build --release --locked reproduces the frozen binary ($fbin)"; else rec binary FAIL "the binary differs from the frozen one or does not build --locked from this tree"; fi
+    cal="$RES_PUB/T6/calibration.json"
+    if [ -f "$cal" ] && jq -e --arg c "$c" '.corpora[$c] != null' "$cal" >/dev/null; then rec calibration ok "calibration.json names $c; resolution rule: $(jq -r .resolution_rule "$cal")"; else rec calibration FAIL "no calibration record for $c (t6.sh pilot, then t6.sh calibration)"; fi
     if is_private "$c"; then
-      if out="$(RESULTS="$T6/private/results" T6_PRIVATE_COMMITMENT="$(commitment "$S" "$T6/private/salt")" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6-private --out "$(priv_frozen)" --check 2>&1)"; then rec frozen-private ok "the private freeze checks (its hash is in the public freeze)"; else rec frozen-private FAIL "$out"; fi
+      if out="$(RESULTS="$T6/private/results" T6_PRIVATE_COMMITMENT="$(commitment "$S" "$T6/private/salt")" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6-private --out "$(priv_frozen)" --check 2>&1)" && [ "$(sha256 "$(priv_frozen)")" = "$(cut -c1-64 "$RES_PUB/T6/private/FROZEN.sha256")" ]; then rec frozen-private ok "the private freeze checks and equals the published digest"; else rec frozen-private FAIL "${out:-the private freeze differs from the published digest}"; fi
     else
       # the copy is exactly the archive (pre-mortem F15): same inventory, same content per file
       tmp="$(mktemp -d -t mda-t6-arch.XXXXXX)"; git -C "$REPO" archive --format=tar "$(source_commit):$(subtree_of "$c")" | tar -x -C "$tmp"
       if diff <(content_hash "$tmp") <(content_hash "$S") >/dev/null; then rec copy ok "inventory and content identical to git archive $(source_commit | cut -c1-12):$(subtree_of "$c") ($(grep -c . "$P/pages.txt") files)"; else rec copy FAIL "the copy differs from the archive"; fi
+      # graphify's serving copy is the same archive too (review F8), apart from what graphify installs
+      G="$P/graphify/src"
+      if [ -d "$G" ]; then if diff <(content_hash "$tmp") <(cd "$G" && find . -type f \( -name '*.md' -o -name '*.mdx' -o -name '*.markdown' \) -not -path './graphify-out/*' -not -path './.claude/*' -not -name CLAUDE.md -not -path './.markdownattractor/*' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"; done) >/dev/null; then rec copy-graphify ok "graphify's serving copy equals the archive (its own .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy differs from the archive"; fi; fi
       rm -rf "$tmp"
-      extra="$(cd "$S" && find . -type f -not -path './.markdownattractor/*' -not -path './graphify-out/*' | sed 's|^\./||' | LC_ALL=C sort | comm -23 - <(git -C "$REPO" ls-tree -r --name-only "$(source_commit)" -- "$(subtree_of "$c")" | sed "s|^$(subtree_of "$c")/||" | LC_ALL=C sort))"
+      extra="$(cd "$S" && find . -type f -not -path './.markdownattractor/*' | sed 's|^\./||' | LC_ALL=C sort | comm -23 - <(git -C "$REPO" ls-tree -r --name-only "$(source_commit)" -- "$(subtree_of "$c")" | sed "s|^$(subtree_of "$c")/||" | LC_ALL=C sort))"
       if [ -z "$extra" ]; then rec extras ok "no file beyond the archive outside the store"; else rec extras FAIL "extra files: $(printf '%s' "$extra" | head -3 | tr '\n' ' ')"; fi
     fi
     diff <(inventory "$S") "$P/pages.txt" >/dev/null && rec inventory ok "$(grep -c . "$P/pages.txt") pages, unchanged since setup (sha256 $(sha256 "$P/pages.txt" | cut -c1-12)…)" || rec inventory FAIL "the inventory changed since setup"
@@ -342,10 +402,16 @@ for l in open(sys.argv[1], encoding="utf-8"):
     if [ -f "$cards" ] && [ "$(jq -r .complete "$cards.provenance.json")" = true ]; then
       # reconstruction (F15): a fresh raw index of the copy with the exported cards attached is complete, with the same section identities
       tmp="$(mktemp -d -t mda-t6-recon.XXXXXX)"; rsync -a --exclude .markdownattractor --exclude graphify-out --exclude .claude "$S/" "$tmp/" && mkdir -p "$tmp/.markdownattractor" && cp "$S/.markdownattractor/config.toml" "$tmp/.markdownattractor/"
+      q_ids="SELECT d.rel_path, s.heading_path, s.section_hash FROM sections s JOIN docs d ON d.doc_id = s.doc_id WHERE d.deleted_at IS NULL ORDER BY 1,2,3"
+      q_cards="SELECT m.section_hash, m.summary FROM summaries m WHERE m.state = 'summarized' AND m.section_hash IN (SELECT section_hash FROM sections) ORDER BY 1"
+      q_emb="SELECT count(DISTINCT section_hash) FROM embeddings WHERE section_hash IN (SELECT section_hash FROM sections)"
       if "$MDA" index --no-summarize --root "$tmp" >/dev/null 2>&1 && r="$("$MDA" --json eval --root "$tmp" --cards "$cards")" && [ "$(jq -r .card_coverage.complete <<<"$r")" = true ] \
-         && diff <(sqlite3 "$S/.markdownattractor/index.sqlite" "SELECT d.rel_path, s.heading_path, s.section_hash FROM sections s JOIN docs d ON d.doc_id = s.doc_id WHERE d.deleted_at IS NULL ORDER BY 1,2,3") <(sqlite3 "$tmp/.markdownattractor/index.sqlite" "SELECT d.rel_path, s.heading_path, s.section_hash FROM sections s JOIN docs d ON d.doc_id = s.doc_id WHERE d.deleted_at IS NULL ORDER BY 1,2,3") >/dev/null; then
-        rec reconstruction ok "a raw index of a fresh copy with $(basename "$cards") attached is complete ($(jq -r .cards_attached <<<"$r") attached, $(jq -r .vectors_embedded <<<"$r") vectors) with the same section identities"
-      else rec reconstruction FAIL "the committed cards do not reconstruct the store completely"; fi
+         && diff <(sqlite3 "$S/.markdownattractor/index.sqlite" "$q_ids") <(sqlite3 "$tmp/.markdownattractor/index.sqlite" "$q_ids") >/dev/null \
+         && diff <(sqlite3 "$S/.markdownattractor/index.sqlite" "$q_cards") <(sqlite3 "$tmp/.markdownattractor/index.sqlite" "$q_cards") >/dev/null \
+         && [ "$(sqlite3 "$S/.markdownattractor/index.sqlite" "$q_emb")" = "$(sqlite3 "$S/.markdownattractor/index.sqlite" "SELECT count(DISTINCT section_hash) FROM sections")" ] \
+         && [ "$(sqlite3 "$tmp/.markdownattractor/index.sqlite" "$q_emb")" = "$(sqlite3 "$tmp/.markdownattractor/index.sqlite" "SELECT count(DISTINCT section_hash) FROM sections")" ]; then
+        rec reconstruction ok "a raw index of a fresh copy with $(basename "$cards") attached is complete ($(jq -r .cards_attached <<<"$r") attached, $(jq -r .vectors_embedded <<<"$r") vectors): same section identities, identical cards per section hash, every distinct section embedded in both stores (review F9)"
+      else rec reconstruction FAIL "the committed cards do not reconstruct the store (identities, card texts or embedding completeness differ)"; fi
       rm -rf "$tmp"
     else rec cards FAIL "no complete cards export at $cards"; fi
     # the question file: public = texts committed; private = the committed digests match the private texts
@@ -384,17 +450,25 @@ for l in open(sys.argv[1]):
       # nothing of the private corpus in the proposed change (pre-mortem F12)
       if out="$("$0" leak-scan 2>&1)"; then rec leak-scan ok "$out"; else rec leak-scan FAIL "$out"; fi
     fi
-    jq -n --arg p "$c" --arg at "$(date -u +%FT%TZ)" --argjson checks "$checks" --argjson failed "$failed" --argjson probes "$probes" --arg store "$(store_sha "$S")" --arg fz "$(frozen_sha)" --arg pfz "$([ -f "$(priv_frozen)" ] && sha256 "$(priv_frozen)" || echo none)" --arg inv "$(sha256 "$P/pages.txt")" --arg sha "$(git -C "$REPO" rev-parse HEAD)" \
-      '{table: "T6", project: $p, run_at: $at, status: "completed", passed: ($failed == 0), checks: $checks, probes: $probes, store_sha256: $store, inventory_sha256: $inv, frozen_sha256: $fz, private_frozen_sha256: $pfz, source_commit: $sha}' > "$report"
+    jq -n --arg p "$c" --arg at "$(date -u +%FT%TZ)" --argjson checks "$checks" --argjson failed "$failed" --argjson probes "$probes" --arg store "$(store_sha "$S")" --arg fz "$(frozen_sha)" --arg pfz "$([ -f "$RES_PUB/T6/private/FROZEN.sha256" ] && cut -c1-64 "$RES_PUB/T6/private/FROZEN.sha256" || printf '%064d' 0)" --arg inv "$(sha256 "$P/pages.txt")" --arg sha "$(git -C "$REPO" rev-parse HEAD)" --arg arms "$arms" \
+      '{table: "T6", project: $p, run_at: $at, status: "completed", passed: ($failed == 0), checks: $checks, probes: $probes, arms: ($arms | split(",")), store_sha256: $store, inventory_sha256: $inv, frozen_sha256: $fz, private_frozen_sha256: $pfz, source_commit: $sha}' > "$report"
     echo "report: $report · passed=$([ "$failed" = 0 ] && echo true || echo false) failed=$failed"; [ "$failed" = 0 ] ;;
 
   run)
     c="${1:?corpus}"; runs="${2:-$RUNS_DEFAULT}"; P="$(cdir "$c")"; S="$(src_of "$c")"; corpus_env "$c"; out="$(runs_of "$c")"; arms="${3:-$(arms_for "$c")}"
     questions="$P/questions.full.jsonl"; [ -s "$questions" ] || die "no counted questions (run questions)"
     if [ -z "${T6_SMOKE:-}" ]; then
+      # every effective override of the runner is rejected for a counted run (review F10)
+      for v in T2_MODEL T2_JOBS T2_MAX_TURNS T2_TIMEOUT T2_RETRIES ARM_WITH_GIT; do [ -z "${!v:-}" ] || die "$v is set: a counted T6 run uses the declared parameters only"; done
       [ "$runs" = "$RUNS_DEFAULT" ] || die "a counted run makes $RUNS_DEFAULT runs per question and arm"
-      RESULTS="$RES_PUB" T6_PRIVATE_FROZEN_SHA="$([ -f "$(priv_frozen)" ] && sha256 "$(priv_frozen)" || echo none)" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6 --check >/dev/null || die "the T6 freeze does not check clean: counted runs need the freeze"
+      RESULTS="$RES_PUB" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6 --check >/dev/null || die "the T6 freeze does not check clean: counted runs need the freeze"
       pf="$(res_of "$c")/preflight/T6-$c.json"; [ "$(jq -r .passed "$pf" 2>/dev/null)" = true ] || die "no passing preflight at $pf"
+      [ -z "${3:-}" ] || die "the arm set is the one the preflight certified; it is not an argument of a counted run"
+      arms="$(jq -r '.arms | join(",")' "$pf")"
+      if is_private "$c"; then
+        RESULTS="$T6/private/results" T6_PRIVATE_COMMITMENT="$(commitment "$S" "$T6/private/salt")" "$REPO/scripts/eval/freeze.sh" --protocol final --table T6-private --out "$(priv_frozen)" --check >/dev/null || die "the private freeze does not check clean (inputs changed)"
+        [ "$(sha256 "$(priv_frozen)")" = "$(cut -c1-64 "$RES_PUB/T6/private/FROZEN.sha256")" ] || die "the private freeze differs from the published digest"
+      fi
       [ "$(jq -r .store_sha256 "$pf")" = "$(store_sha "$S")" ] || die "the preflight certified another store"
       [ "$(jq -r .inventory_sha256 "$pf")" = "$(sha256 "$P/pages.txt")" ] || die "the inventory changed since the preflight"
       [ "$(jq -r .frozen_sha256 "$pf")" = "$(frozen_sha)" ] || die "the preflight certified another freeze"
@@ -413,10 +487,6 @@ for l in open(sys.argv[1]):
   archive)
     c="${1:?corpus}"; is_private "$c" && die "the private corpus is exported by export-private, never archived"; P="$(cdir "$c")"; out="$(runs_of "$c")"; T="$(t6dir "$c")"; mkdir -p "$T/panel"
     jq -c 'del(.questions_full) | .questions_file |= sub("^'"$HOME"'"; "~") | .launches |= map_values(.cwd |= sub("^'"$HOME"'"; "~") | .claude_flags |= map(sub("^'"$HOME"'"; "~")) | (.mcp.env.MDA_ROOT? // empty) |= sub("^'"$HOME"'"; "~"))' "$out/manifest.json" > "$T/manifest.json"
-    for g in grades.jsonl panel/grades.adjudicated.jsonl; do [ -f "$out/$g" ] || continue; jq -c 'del(.answer) + {answer_sha256: (.answer | @sh | "")}' "$out/$g" | python3 -I -c 'import hashlib, json, sys
-rows = [json.loads(l) for l in open(sys.argv[1])]
-for l in sys.stdin:
-    r = json.loads(l); print(json.dumps(r))' /dev/null > /dev/null; done
     python3 -I - "$out" "$T" <<'PY'
 import hashlib, json, os, sys
 out, T = sys.argv[1:3]
@@ -433,35 +503,53 @@ PY
     echo "archived: $T ($(find "$T" -type f | wc -l | tr -d ' ') files)" ;;
 
   export-private)
-    P="$(cdir private)"; dst="$RES_PUB/T6/private"; mkdir -p "$dst"
-    # the allowed literals come from the public corpora's committed files only
-    python3 -I "$REPO/scripts/eval/t6_private_export.py" build-schema "$RES_PUB/T6/golden" "$RES_PUB/T6/docs" "$RES_PUB/preflight" > "$dst/schema.json"
+    P="$(cdir private)"; dst="$RES_PUB/T6/private"
     stage="$(mktemp -d -t mda-t6-priv.XXXXXX)"; trap 'rm -rf "$stage"' EXIT
     mkdir -p "$stage/runs/panel" "$stage/panel"
-    cp "$P/questions.full.jsonl" "$stage/questions.jsonl"; cp "$P/questions.candidates.jsonl" "$stage/questions.candidates.jsonl" 2>/dev/null || true
+    for f in questions.full.jsonl questions.candidates.jsonl candidates.summary.json index.json pilot.json; do [ ! -f "$P/$f" ] || cp "$P/$f" "$stage/$f"; done
     out="$(runs_of private)"; for f in manifest.json grades.jsonl analysis.json analysis.adjudicated.json; do [ ! -f "$out/$f" ] || cp "$out/$f" "$stage/runs/$f"; done
     for f in grades.adjudicated.jsonl regrade.json regrade-fable.jsonl regrade-astra.jsonl; do [ ! -f "$out/panel/$f" ] || cp "$out/panel/$f" "$stage/runs/panel/$f"; done
     [ ! -f "$P/panel/cards.json" ] || cp "$P/panel/cards.json" "$stage/panel/cards.json"
     [ ! -f "$T6/private/results/preflight/T6-private.json" ] || cp "$T6/private/results/preflight/T6-private.json" "$stage/preflight.json"
-    [ ! -f "$P/index.json" ] || cp "$P/index.json" "$stage/index.json"; [ ! -f "$P/pilot.json" ] || cp "$P/pilot.json" "$stage/pilot.json"; [ ! -f "$(priv_frozen)" ] || cp "$(priv_frozen)" "$stage/FROZEN.md"
+    [ ! -f "$(priv_frozen)" ] || cp "$(priv_frozen)" "$stage/FROZEN.md"
     A="$T6/private/results/arms"
-    if [ -f "$A/qmd-private.json" ]; then jq -n --slurpfile q "$A/qmd-private.json" --slurpfile g "$A/graphify-private.json" '{qmd: {version: $q[0].version, build: $q[0].build, coverage: ($q[0].coverage | del(.missing_pages)), index_fingerprint: null}, graphify: (($g[0] // null) | if . == null then null else {version: .version, build: {completed: .build.completed, wall_s: .build.wall_s, cost_usd_list_price: .build.cost_usd_list_price, turns: .build.turns}, graph: (if .graph then {sha256: .graph.sha256, nodes: .graph.nodes, edges: .graph.edges} else null end), coverage: (.coverage // null)} end)}' > "$stage/arms.json"; fi
-    python3 -I "$REPO/scripts/eval/t6_private_export.py" export "$stage" "$dst" "$dst/schema.json"
-    # the committed private question file written at `questions` is re-derived here too (same bytes)
+    if [ -f "$A/qmd-private.json" ]; then jq -n --slurpfile q "$A/qmd-private.json" --slurpfile g "$A/graphify-private.json" '{qmd: {version: $q[0].version, build: $q[0].build, coverage: ($q[0].coverage | del(.missing_pages))}, graphify: (($g[0] // null) | if . == null then null else {version: .version, build: {completed: .build.completed, wall_s: .build.wall_s, cost_usd_list_price: .build.cost_usd_list_price, turns: .build.turns}, graph: (if .graph then {sha256: .graph.sha256, nodes: .graph.nodes, edges: .graph.edges} else null end), coverage: (.coverage // null)} end)}' > "$stage/arms.json"; fi
+    python3 -I "$REPO/scripts/eval/t6_private_export.py" export "$stage" "$dst"
+    # the digests written at `questions` are re-derived by the same serializer: identical bytes
+    [ ! -f "$P/questions.full.jsonl" ] || diff <(python3 -I "$REPO/scripts/eval/t6_private_export.py" digest-questions "$P/questions.full.jsonl") "$dst/questions.jsonl" >/dev/null || die "the committed private question digests differ from the canonical serializer's output"
     "$0" leak-scan ;;
 
   leak-scan)
-    # The whole proposed change against the private denylist (pre-mortem F12): file names and
-    # contents of every changed, staged and untracked file, JSON string values decoded; counts only.
-    dl="$T6/private/denylist.txt"; [ -f "$dl" ] || { echo "leak-scan: no private denylist (no private corpus set up): nothing to scan against"; exit 0; }
+    # The whole proposed change against the private denylist (pre-mortem F12, review F4): the BLOBS of
+    # every file the branch changed (as committed, from HEAD), every staged file (from the index) and
+    # every untracked file (the working tree), plus their names; JSON files are also decoded to their
+    # string values (escapes undone). Binary files in the change are refused unless they are archived
+    # graphs of a public corpus. Counts only; the denylist is required once private artifacts exist.
+    dl="$T6/private/denylist.txt"
+    if [ ! -f "$dl" ]; then
+      if [ -n "$(find "$RES_PUB/T6/private" -type f 2>/dev/null | head -1)" ]; then die "leak-scan: private artifacts are committed but no denylist exists under \$RUN: refuse"; fi
+      echo "leak-scan: no private denylist (no private corpus set up): nothing to scan against"; exit 0
+    fi
     base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || git -C "$REPO" rev-parse HEAD~1)"
     tmp="$(mktemp -d -t mda-t6-leak.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
-    { git -C "$REPO" diff "$base" -- . ':!*.sqlite'; git -C "$REPO" diff --cached; git -C "$REPO" ls-files --others --exclude-standard; git -C "$REPO" diff --name-only "$base"; } > "$tmp/change.txt"
-    git -C "$REPO" ls-files --others --exclude-standard -z | while IFS= read -r -d '' f; do [ -f "$REPO/$f" ] && cat "$REPO/$f" >> "$tmp/change.txt" 2>/dev/null || true; done
-    { git -C "$REPO" diff --name-only "$base"; git -C "$REPO" ls-files --others --exclude-standard; } | grep -E '\.jsonl?$' | while IFS= read -r f; do [ -f "$REPO/$f" ] && jq -r '.. | strings' "$REPO/$f" >> "$tmp/change.txt" 2>/dev/null || true; done
+    : > "$tmp/change.txt"; : > "$tmp/names.txt"
+    emit_blob() { # spec name
+      printf '%s\n' "$2" >> "$tmp/names.txt"
+      git -C "$REPO" cat-file -p "$1" >> "$tmp/change.txt" 2>/dev/null || true
+      case "$2" in *.json|*.jsonl) git -C "$REPO" cat-file -p "$1" 2>/dev/null | jq -r '.. | strings' >> "$tmp/change.txt" 2>/dev/null || true ;; esac
+    }
+    git -C "$REPO" diff --name-only "$base" HEAD | while IFS= read -r f; do [ -n "$f" ] && emit_blob "HEAD:$f" "$f"; done
+    git -C "$REPO" diff --cached --name-only | while IFS= read -r f; do [ -n "$f" ] && emit_blob ":$f" "$f"; done
+    git -C "$REPO" ls-files --others --exclude-standard -z | while IFS= read -r -d '' f; do
+      printf '%s\n' "$f" >> "$tmp/names.txt"; [ -f "$REPO/$f" ] || continue; cat "$REPO/$f" >> "$tmp/change.txt" 2>/dev/null || true
+      case "$f" in *.json|*.jsonl) jq -r '.. | strings' "$REPO/$f" >> "$tmp/change.txt" 2>/dev/null || true ;; esac
+    done
+    bins="$({ git -C "$REPO" diff --numstat "$base" HEAD; git -C "$REPO" diff --cached --numstat; } | awk '$1 == "-" {print $3}' | grep -vE '^evals/results/own/arms/graphs/graphify-(golden|docs)\.graph\.json\.gz$' || true)"
+    [ -z "$bins" ] || { echo "leak-scan: binary file(s) in the proposed change are refused: $(printf '%s' "$bins" | tr '\n' ' ')" >&2; exit 1; }
+    cat "$tmp/names.txt" >> "$tmp/change.txt"
     hits=0; entries=0
     while IFS= read -r e; do entries=$((entries + 1)); if grep -qiF -- "$e" "$tmp/change.txt"; then hits=$((hits + 1)); fi; done < "$dl"
-    if [ "$hits" = 0 ]; then echo "leak-scan: 0 of $entries denylist entries found in the proposed change ($(wc -c < "$tmp/change.txt" | tr -d ' ') bytes scanned)"; else echo "leak-scan: $hits of $entries denylist entries FOUND in the proposed change — nothing may be committed" >&2; exit 1; fi ;;
+    if [ "$hits" = 0 ]; then echo "leak-scan: 0 of $entries denylist entries found in the proposed change ($(wc -c < "$tmp/change.txt" | tr -d ' ') bytes of blobs, names and decoded strings scanned)"; else echo "leak-scan: $hits of $entries denylist entries FOUND in the proposed change — nothing may be committed" >&2; exit 1; fi ;;
 
   table)
     # the page tables, from the committed analyses and grades (public corpora) and the exported
@@ -494,7 +582,7 @@ def section(corpora, title):
         print("| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |\n|---|---|---|---|---|---|---|---|---|")
         for p in an["pairs"]:
             g = p["gates"]; sv = p.get("savings")
-            sav = "none claimed" if not sv else " · ".join(f"{k} {v:.2f}×" for k, v in sv.items() if isinstance(v, (int, float)))
+            sav = "none claimed" if not sv else " · ".join(f"{k} ×{sv[k]['median_ratio']:.2f} over {sv[k]['questions']} q" for k in ("source_tokens", "tool_calls", "cost_usd") if isinstance((sv.get(k) or {}).get("median_ratio"), (int, float))) + f" (base {sv.get('questions')} questions completed on both sides)"
             print(f"| mda vs {p['comparator']} | {p['n']} | {p['mean_delta']:+.2f} | [{p['ci95'][0]:+.2f}, {p['ci95'][1]:+.2f}] | {p['wins']}/{p['losses']}/{p['ties']} | {'pass' if g['lower_bound_ok'] else 'FAIL'} | {'pass' if g['mean_ok'] else 'FAIL'} | {'pass' if g['grounding_ok'] else 'FAIL'} | {sav} |")
         print()
 section(["golden", "docs"], "T6, public corpora")
@@ -521,8 +609,8 @@ def passing(dirpath):
         if not os.path.isfile(p): continue
         for pr in json.load(open(p))["analysis"]["pairs"]:
             if pr["gates"]["pass"] and pr.get("savings"):
-                st = pr["savings"].get("source_tokens")
-                out.append(f"{c}: mda vs {pr['comparator']} (n={pr['n']}" + (f"; source tokens ×{st:.2f})" if isinstance(st, (int, float)) else ")"))
+                st = (pr["savings"].get("source_tokens") or {})
+                out.append(f"{c}: mda vs {pr['comparator']} (n={pr['n']}" + (f"; source tokens ×{st['median_ratio']:.2f} over {st['questions']} questions)" if isinstance(st.get("median_ratio"), (int, float)) else ")"))
     return out
 t2 = passing(os.path.join(D, "T2")); t6 = [x for x in passing(T) if not x.startswith("private")]
 rows = [("Fewer source tokens at answer parity (T2, DocsQA test split; T6, our corpora)", ("Passing pairs: " + "; ".join(t2 + t6) + ".") if (t2 or t6) else "No comparator pair passed all three gates; no savings claimed.")]

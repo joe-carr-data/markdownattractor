@@ -1,0 +1,31 @@
+{
+  "by_backend": {
+    "claude-cli": 97,
+    "deterministic": 20
+  },
+  "by_model": {
+    "claude-haiku-4-5": 97,
+    "none": 20
+  },
+  "by_prompt_version": {
+    "deterministic": 20,
+    "section.v2": 97
+  },
+  "by_schema_version": {
+    "1": 117
+  },
+  "cards": 117,
+  "complete": true,
+  "mda_version": "0.1.1",
+  "project": "golden",
+  "sections": 117,
+  "sections_carded": 117,
+  "summarized_from": "2026-10-26T19:31:18.502064Z",
+  "summarized_to": "2026-10-26T19:32:46.914572Z",
+  "truncated": 0,
+  "usage": {
+    "cost_usd_list_price_equivalent": 0.46153,
+    "input_tokens": 258015,
+    "output_tokens": 40703
+  }
+}

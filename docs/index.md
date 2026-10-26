@@ -31,6 +31,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
 | 2026-10-26 | [reviews/codex/2026-10-26-m9-premortem.md](reviews/codex/2026-10-26-m9-premortem.md) | \ |
+| 2026-10-26 | [reviews/codex/2026-10-26-m9-harness.md](reviews/codex/2026-10-26-m9-harness.md) | \ |
 | 2026-10-16 | [reviews/codex/2026-10-16-t5-page.md](reviews/codex/2026-10-16-t5-page.md) | \ |
 | 2026-10-15 | [reviews/codex/2026-10-15-bench-m8-harness.md](reviews/codex/2026-10-15-bench-m8-harness.md) | \ |
 | 2026-09-27 | [reviews/codex/2026-09-27-t4-page.md](reviews/codex/2026-09-27-t4-page.md) | \ |
@@ -58,7 +59,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-10-16 | [handoffs/2026-09-27-1744-auto.md](handoffs/2026-09-27-1744-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-09-27 | [handoffs/2026-09-27-session5-final-handoff.md](handoffs/2026-09-27-session5-final-handoff.md) | Read this first after compaction, then re-read every file in §2 before touching anything.** This… |
 | 2026-09-27 | [handoffs/2026-09-23-session5-m1-handoff.md](handoffs/2026-09-23-session5-m1-handoff.md) | Written by Claude (Fable 5.1) during the fifth build session, for the next session after compacti… |
-| 2026-10-16 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
+| 2026-10-26 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 | 2026-09-22 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |

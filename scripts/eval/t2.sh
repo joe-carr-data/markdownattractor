@@ -37,7 +37,7 @@
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 set -euo pipefail
-cmd="${1:?run|status|grade|analysis|hash-sample|preflight}"; shift
+cmd="${1:?run|status|grade|analysis|hash-sample|preflight|cite|materialise}"; shift
 MODEL="${T2_MODEL:-sonnet}"; JOBS="${T2_JOBS:-1}"; MAX_TURNS="${T2_MAX_TURNS:-12}"; TIMEOUT="${T2_TIMEOUT:-600}"; RETRIES="${T2_RETRIES:-1}"
 PREAMBLE="Answer from the documents in the current directory. Be concise (at most 6 lines). Cite the file and section you used."
 unset_nested_session; unset_provider_keys
@@ -58,11 +58,18 @@ sample, full, src = sys.argv[1:4]
 h = lambda t: hashlib.sha256(t.encode("utf-8")).hexdigest()
 rows = {}
 for l in open(src, encoding="utf-8"):
-    r = json.loads(l); rows[r["id"]] = r
+    r = json.loads(l)
+    if r["id"] in rows: sys.exit("duplicate id in the full file: " + r["id"])
+    if not (r.get("q") and r.get("reference") and r.get("evidence") and isinstance(r.get("required_facts"), list) and r["required_facts"]): sys.exit("incomplete row " + r["id"])
+    if h(r["evidence"]) != r.get("evidence_sha256"): sys.exit("evidence hash does not match its text: " + r["id"])
+    rows[r["id"]] = r
+seen = set()
 with open(full, "w", encoding="utf-8") as out:
     for l in open(sample, encoding="utf-8"):
         r = json.loads(l); f = rows.get(r["id"])
-        if f is None or h(f["q"]) != r["question_sha256"] or h(f["reference"]) != r["reference_sha256"]:
+        if r["id"] in seen: sys.exit("duplicate id in the sample: " + r["id"])
+        seen.add(r["id"])
+        if f is None or h(f["q"]) != r["question_sha256"] or h(f["reference"]) != r["reference_sha256"] or f["evidence_sha256"] != r.get("evidence_sha256"):
             sys.exit(1)
         out.write(json.dumps(f) + "\n")
 PY
@@ -103,6 +110,21 @@ PY
 # The T6 resolver (M9 plan, pre-mortem F6) lives in scripts/eval/t6_resolve.py: canonical
 # containment in the copy AND inventory membership; a bare suffix resolves only when unique.
 resolve_t6() { python3 -I "$REPO/scripts/eval/t6_resolve.py" "$1" "$2" "$3" "$4"; } # corpus pages.txt project cited
+
+# The citations of an answer, one per line, unique (pre-mortem review F23): backticked spans
+# ending in a markdown extension first (they may hold spaces and punctuation), then the bare
+# path regex over the text with those spans removed, so one citation never yields two.
+cite_paths() {
+  python3 -I -c '
+import re, sys
+t = sys.stdin.read(); out = []
+for m in re.finditer(r"`([^`\n]+?\.(?:md|mdx|markdown))`", t): out.append(m.group(1).strip())
+rest = re.sub(r"`[^`\n]+`", " ", t)
+out += re.findall(r"[A-Za-z0-9_./-]+\.(?:md|mdx|markdown)", rest)
+seen = set()
+for c in out:
+    if c not in seen: seen.add(c); print(c)'
+}
 
 assemble() { # out -> runs.jsonl from rows/
   local out="$1"; : > "$out/runs.jsonl"
@@ -161,7 +183,7 @@ case "$cmd" in
     common=(--print --no-session-persistence --model "$MODEL" --max-turns "$MAX_TURNS" --output-format stream-json --verbose
             --include-partial-messages --permission-mode dontAsk --strict-mcp-config)
     # the manifest first (rule 0.3); an existing one must describe the same run set (resume)
-    launches='{}'; trap '[ "${#ARM_TMP[@]:-0}" = 0 ] || rm -f "${ARM_TMP[@]}"' EXIT
+    launches='{}'; ARM_TMP=(); trap '[ "${#ARM_TMP[@]}" = 0 ] || rm -f "${ARM_TMP[@]}"' EXIT
     for arm in $arms; do arm_launch "$arm" "$project" "$MODEL"; launches="$(jq -c --arg a "$arm" --argjson l "$ARM_LAUNCH" '. + {($a): $l}' <<<"$launches")"; done
     manifest="$(jq -n --arg project "$project" --arg model "$MODEL" --argjson runs "$runs" --arg arms "$arms" --arg qf "$committed_sample" --arg qsha "$(sha256 "$committed_sample")" --arg qfull "$questions" \
       --argjson ids "$(jq -c '[.id]' "$questions" | jq -s 'add')" --argjson launches "$launches" --arg mda "$("$MDA" --version)" --arg sha "$(git -C "$REPO" rev-parse HEAD)" \
@@ -197,7 +219,14 @@ case "$cmd" in
       done
       t1=$(date +%s)
       [ -s "$trace.err" ] || rm -f "$trace.err"
-      row_of "$id" "$arm" "$r" "$q" "$trace" "$attempts" "$((t1 - t0))" > "$out/rows/$key.json.tmp" && mv "$out/rows/$key.json.tmp" "$out/rows/$key.json"
+      if ! row_of "$id" "$arm" "$r" "$q" "$trace" "$attempts" "$((t1 - t0))" > "$out/rows/$key.json.tmp" 2>"$out/rows/$key.json.err"; then
+        # a malformed or empty trace is still an observation: an error row (rule 0.3), never a gap
+        jq -n --arg id "$id" --arg arm "$arm" --argjson run "$r" --arg q "$q" --arg trace "$(basename "$trace")" --argjson attempts "$attempts" --argjson wall "$((t1 - t0))" --arg why "$(tail -c 200 "$out/rows/$key.json.err" | tr '\n' ' ')" \
+          '{id: $id, arm: $arm, run: $run, q: $q, trace: $trace, attempts: $attempts, exit_code: (($attempts | last).exit_code // 1), wall_s: $wall, answer: "", turns: null, turns_with_usage: 0, input_tokens: null, output_tokens: null, thinking_tokens: null,
+            source_tokens: 0, source_tokens_signed: 0, source_tokens_negative_total: 0, source_tokens_negative_turns: 0, source_tokens_note: "trace unparsable", turn_usage: [], tool_calls: 0, tools: [], failed_calls: 0,
+            cost_usd: null, cost_usd_all_attempts: ($attempts | map(.cost_usd // 0) | add), attempts_made: ($attempts | length), models: [], error: true, stderr: ("trace unparsable: " + $why)}' > "$out/rows/$key.json.tmp"
+      fi
+      rm -f "$out/rows/$key.json.err"; mv "$out/rows/$key.json.tmp" "$out/rows/$key.json"
       [ "${#ARM_TMP[@]}" = 0 ] || rm -f "${ARM_TMP[@]}"
       if [ "$(jq -r .error "$out/rows/$key.json")" = true ]; then echo "$id $arm run $r: ERROR (exit $(jq -r .exit_code "$out/rows/$key.json"))"; else echo "$id $arm run $r: $(jq -r '"\(.tool_calls) calls · \(.source_tokens) source tokens · \(.wall_s) s"' "$out/rows/$key.json")"; fi
     }
@@ -290,7 +319,7 @@ case "$cmd" in
         t="$(python3 -c 'import sys, json; t = open(sys.argv[1], encoding="utf-8", errors="replace").read(); print(json.dumps({"text": t if len(t) <= 120000 else "", "chars": len(t), "oversized": len(t) > 120000}))' "$corpus/$p")"
         if [ "$(jq -r .oversized <<<"$t")" = true ]; then oversized="$(jq -c --arg p "$p" '. + [$p]' <<<"$oversized")"; continue; fi
         pages="$(jq -c --arg p "$p" --arg c "$cited" --argjson t "$t" '. + [{page: $p, cited_as: $c, chars: $t.chars, text: $t.text}]' <<<"$pages")"
-      done < <({ grep -oE '[A-Za-z0-9_./-]+\.(md|mdx|markdown)' <<<"$ans"; grep -oE '`[^`]+\.(md|mdx|markdown)`' <<<"$ans" | tr -d '`'; } | sort -u)
+      done < <(cite_paths <<<"$ans")
       jq -n --argjson p "$pages" --argjson u "$unresolved" --argjson o "$oversized" '{pages: $p, unresolved: $u, oversized: $o}'
     }
     # versioned (Codex M5 F10): written to grades.<stamp>.jsonl, then copied over grades.jsonl
@@ -298,13 +327,13 @@ case "$cmd" in
     stamp="$(date -u +%Y%m%dT%H%M%SZ)"; gfile="$out/grades.$stamp.jsonl"; : > "$gfile"; i=0
     while IFS= read -r run; do
       i=$((i + 1)); id="$(jq -r .id <<<"$run")"
-      ref="$(jq -r --arg id "$id" 'select(.id == $id) | .reference' "$questions" | head -1)"
+      qrow="$(jq -c --arg id "$id" 'select(.id == $id)' "$questions" | head -1)"; ref="$(jq -r '.reference // ""' <<<"${qrow:-{\}}")"
       if [ "$(jq -r '.error // false' <<<"$run")" = true ] || [ -z "$(jq -r '.answer // ""' <<<"$run")" ]; then
         g='{"grade": null, "grounding": null, "score": null, "grounded": null, "graded": false, "why": "run failed or produced no answer; not graded (rule 0.3)"}'
       else
         q="$(jq -r .q <<<"$run")"; ans="$(jq -r .answer <<<"$run")"
         if [ "${T2_RUBRIC:-}" = t6 ]; then
-          ev="$(jq -r --arg id "$id" 'select(.id == $id) | .evidence // ""' "$questions" | head -1)"
+          ev="$(jq -r '.evidence // ""' <<<"${qrow:-{\}}")"
           gr="$(jq -n --arg q "$q" --arg ref "$ref" --arg ev "$ev" --arg ans "$ans" -r '"<submission>\nQuestion: " + $q + "\n\nRequired facts: " + $ref + "\n\nEvidence (the section the question was written from):\n" + $ev + "\n\nAnswer: " + $ans + "\n</submission>"' | ask "$gschema" "$grubric" || true)"
         else
           gr="$(jq -n --arg q "$q" --arg ref "$ref" --arg ans "$ans" -r '"<submission>\nQuestion: " + $q + "\n\nReference: " + $ref + "\n\nAnswer: " + $ans + "\n</submission>"' | ask "$gschema" "$grubric" || true)"
@@ -349,6 +378,12 @@ case "$cmd" in
     "$MDA" "$@" eval --analysis "$g" --manifest "$out/manifest.json" --comparators "$(jq -r '[.arms[] | select(. != "mda")] | join(",")' "$out/manifest.json")" ;;
   hash-sample)
     hash_sample "${1:?full.jsonl}" ;;
+  cite)
+    # the citations the grader would extract from an answer text on stdin (tested by t6-smoke.sh)
+    cite_paths ;;
+  materialise)
+    # <project> <sample.jsonl> <out.full.jsonl>: the texts of a hashed sample (tested by t6-smoke.sh)
+    materialise "${1:?project}" "${2:?sample}" "${3:?out}" ;;
   preflight)
     project="${1:?project}"; sample="${2:?sample.jsonl}"; arms="${3:-grep,mda,qmd,graphify}"; ident "$project"
     report="$RESULTS/preflight/T2-$project.json"; safe_target "$report"; checks='[]'; failed=0

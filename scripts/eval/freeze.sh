@@ -220,84 +220,102 @@ runtime() {
 # hashes, the committed cards and question files, the harness, rubrics, prompts, models, arms and
 # run parameters, plus the private freeze's hash; the private freeze (under $RUN) names the private
 # corpus by its salted commitment and counts only. Nothing of DocsQA is read.
+# Every value is computed in its own checked assignment (review F14): a missing file aborts the
+# freeze instead of printing an empty field.
+val() { local v; v="$("$@")" || die "freeze: cannot compute: $*"; [ -n "$v" ] || die "freeze: empty value from: $*"; printf '%s' "$v"; }
 t6_common() {
-  local f h ver
+  local f h ver bin own cal
+  own="$REPO/evals/results/own"; cal="$own/T6/calibration.json"
   echo "### mda"
-  ver="$("$MDA" --version)"
-  echo "- version: $ver · binary sha256 $(sha256 "$MDA")"
+  ver="$(val "$MDA" --version)"; bin="$(val sha256 "$MDA")"
+  echo "- version: $ver · binary sha256 $bin (the preflight rebuilds with \`cargo build --release --locked\` from the source commit and requires this hash)"
   echo "- source commit: $src_sha (the code paths that change a number: ${CODE_PATHS[*]}; a check requires them unchanged since this commit)"
   echo "- analysis: \`mda eval --analysis\` (crates/mda-core/src/eval/analysis.rs: question medians over runs with failed runs as 0, 10,000-draw paired bootstrap, seed $SEED, gates lower bound ≥ −0.25 · mda mean ≥ 4.0 · grounding ≥ 0.95)"
-  h="$(model_sha | shasum -a 256 | cut -c1-64)"
-  echo "- embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision $(cat "$MDA_MODEL_DIR"/models--Qdrant--bge-small-en-v1.5-onnx-Q/refs/main) · model files sha256 $h (evals/results/docsqa/model.sha)"
-  echo "- store configuration: evals/results/own/T6/config.toml sha256 $(sha256 "$REPO/evals/results/own/T6/config.toml") (backend claude-cli, summariser claude-haiku-4-5, embeddings local-small; the ignore rules inside it)"
+  h="$(model_sha | shasum -a 256 | cut -c1-64)"; [ -n "$h" ] || die "freeze: no model files"
+  echo "- embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision $(val cat "$MDA_MODEL_DIR"/models--Qdrant--bge-small-en-v1.5-onnx-Q/refs/main) · model files sha256 $h (evals/results/docsqa/model.sha)"
+  echo "- store configuration template: evals/results/own/T6/config.toml sha256 $(val sha256 "$own/T6/config.toml") (backend claude-cli, summariser claude-haiku-4-5, embeddings local-small; the ignore rules inside it)"
+  echo
+  echo "### Calibration (the development pilot; required before the freeze, review F4/F11/F22)"
+  [ -f "$cal" ] || die "freeze: no $cal (run t6.sh pilot for every corpus, then t6.sh calibration)"
+  echo "- calibration.json sha256 $(val sha256 "$cal") · resolved model ids: $(val jq -r '.resolved_models | to_entries | map("\(.key) \(.value | join("/"))") | join(" · ")' "$cal") · declared resolution rule: $(val jq -r .resolution_rule "$cal")"
   echo
   echo "### Prompts, rubrics, harness"
   for f in prompts/section.v2.txt prompts/section.schema.v1.json skills/search-first/SKILL.md scripts/eval/t2.sh scripts/eval/t6.sh scripts/eval/t6_resolve.py scripts/eval/t6_private_export.py scripts/eval/panel.sh scripts/eval/probe.sh scripts/eval/freeze.sh scripts/eval/lib.sh scripts/eval/arms/qmd.sh scripts/eval/arms/graphify.sh; do
-    echo "- $f sha256: $(sha256 "$REPO/$f")"
+    echo "- $f sha256: $(val sha256 "$REPO/$f")"
   done
-  echo "- rubrics: the T6 adaptation (T2_RUBRIC=t6 in t2.sh and panel.sh: required facts + evidence section; factual claims about the corpus's subject matter); the question writer and the panel's question rubric (t6.sh candidates, panel.sh questions) — all inside the hashed files above"
+  echo "- rubrics: the T6 adaptation (T2_RUBRIC=t6 in t2.sh and panel.sh: required facts + evidence section; factual claims about the corpus's subject matter); the question writer (t6.sh candidates) and the panel's two-call question rubric (panel.sh questions) — all inside the hashed files above"
   echo
   echo "### Run and analysis parameters"
-  echo "- answering model requested: sonnet (resolved ids in the run rows) · grader: sonnet · panel: claude-fable-5-1 through the owner's Claude Code login, gpt-6-astra through the owner's Codex login · question writer: sonnet"
-  echo "- 25 questions per corpus (single-section lookup; synthetic, panel-validated; the development pilot's 10 are disjoint and never counted), 3 runs per question and arm, max 12 turns, 600 s per run, one declared retry, every MCP server cold (rule 0.9 as amended)"
-  echo "- arms: grep (Read/Grep/Glob) · mda (\`mda mcp\` + search-first rules) · qmd 2.8.3 (its MCP server on index t6-<corpus>, its skill) · graphify 0.9.66 (its MCP server on a Sonnet-built graph of a copy; where the build did not complete the arm is absent and the record says so)"
-  echo "- arm versions: qmd $(qmd --version 2>/dev/null | head -1) · graphify $(graphify --version 2>/dev/null | head -1) · claude $(claude --version 2>/dev/null | head -1) · codex $(codex --version 2>/dev/null | head -1)"
+  echo "- answering model requested: sonnet · grader: sonnet · panel: claude-fable-5-1 through the owner's Claude Code login, gpt-6-astra through the owner's Codex login · question writer: sonnet (resolved ids per the calibration record above and the run rows)"
+  echo "- 25 counted questions per corpus (single-section lookup; synthetic, panel-validated, one per page; a corpus that reached fewer publishes with its count) and up to 10 disjoint pilot questions (never counted), 3 runs per question and arm, max 12 turns, 600 s per run, one declared retry, every MCP server cold (rule 0.9 as amended); the arm set certified by the preflight"
+  echo "- arms: grep (Read/Grep/Glob) · mda (\`mda mcp\` + search-first rules) · qmd (its MCP server on index t6-<corpus>, its skill) · graphify (its MCP server on a Sonnet-built graph of a copy; where the build did not complete the arm is absent and the record says so)"
+  echo "- arm versions: qmd $(val qmd --version) · graphify $(val graphify --version) · claude $(val claude --version) · codex $(val codex --version)"
+}
+# the live artifacts an arm serves from (review F8): the graph, graphify's skill and hook settings
+# as installed in the serving copy, qmd's collection file
+t6_arm_lines() { # corpus results-dir run-dir
+  local c="$1" R="$2" P="$3" f
+  f="$R/arms/qmd-$c.json"; [ -f "$f" ] || die "no arm record $f"
+  echo "- qmd-$c: record sha256 $(val sha256 "$f") · index t6-$c fingerprint $(val qmd_fingerprint "t6-$c") · collection file sha256 $(val sha256 "$HOME/.config/qmd/t6-$c.yml")"
+  f="$R/arms/graphify-$c.json"; [ -f "$f" ] || die "no arm record $f"
+  if [ "$(jq -r .build.completed "$f")" = true ]; then
+    echo "- graphify-$c: record sha256 $(val sha256 "$f") · served graph sha256 $(val sha256 "$P/graphify/graph.json") · skill sha256 $(val sha256 "$P/graphify/src/.claude/skills/graphify/SKILL.md") · hook settings sha256 $(val sha256 "$P/graphify/src/.claude/settings.json")"
+  else echo "- graphify-$c: record sha256 $(val sha256 "$f") · did not complete (the arm is absent)"; fi
 }
 inputs_t6() {
-  local c sub tree src n ver cards arm f
-  src="$(jq -r .source_commit "$REPO/evals/results/own/T6/sources.json")"
+  local c sub tree src n ver cards f own srcf
+  own="$REPO/evals/results/own"; srcf="$own/T6/sources.json"; [ -f "$srcf" ] || die "no $srcf (t6.sh setup)"
+  src="$(val jq -r .source_commit "$srcf")"
   echo "### Corpora (public: \`git archive <commit>:<subtree>\` of this repository; a reader rebuilds them from the published commit)"
   for c in golden docs; do
-    sub="$(jq -r --arg c "$c" '.corpora[$c].subtree' "$REPO/evals/results/own/T6/sources.json")"; tree="$(jq -r --arg c "$c" '.corpora[$c].tree' "$REPO/evals/results/own/T6/sources.json")"
+    sub="$(val jq -r --arg c "$c" '.corpora[$c].subtree' "$srcf")"; tree="$(val jq -r --arg c "$c" '.corpora[$c].tree' "$srcf")"
     [ "$(git -C "$REPO" rev-parse "$src:$sub")" = "$tree" ] || die "$c: the subtree $sub at $src does not have tree $tree"
-    n="$(git -C "$REPO" ls-tree -r --name-only "$src" -- "$sub" | grep -cE '\.(md|mdx|markdown)$')"
-    echo "- $c: $src:$sub · tree $tree · $n markdown files · page inventory sha256 $(sha256 "$RUN/t6/$c/pages.txt")"
+    n="$(git -C "$REPO" ls-tree -r --name-only "$src" -- "$sub" | grep -cE '\.(md|mdx|markdown)$' || true)"
+    echo "- $c: $src:$sub · tree $tree · $n markdown files · page inventory sha256 $(val sha256 "$own/T6/$c/pages.txt") (committed as T6/$c/pages.txt) · store sha256 $(val sha256 "$RUN/t6/$c/src/.markdownattractor/index.sqlite") · effective config.toml sha256 $(val sha256 "$RUN/t6/$c/src/.markdownattractor/config.toml")"
   done
-  echo "- private: the owner's trading-research repository, supporting evidence only; named by its salted commitment in the private freeze (sha256 ${T6_PRIVATE_FROZEN_SHA:-none}, kept under \$RUN); exempt from independent reproduction"
+  # the private corpus is named by the PUBLISHED digest of its freeze (review F13): public
+  # verification needs nothing from the owner's machine
+  f="$own/T6/private/FROZEN.sha256"
+  if [ -f "$f" ]; then echo "- private: the owner's trading-research repository, supporting evidence only; its freeze (kept under \$RUN) has sha256 $(val cut -c1-64 "$f") (committed as T6/private/FROZEN.sha256); exempt from independent reproduction"; else echo "- private: not frozen"; fi
   echo
   echo "### Cards (committed, rule 0.9)"
-  ver="$("$MDA" --version)"
+  ver="$(val "$MDA" --version)"
   for c in golden docs; do
-    cards="$REPO/evals/results/own/cards-${ver#mda }-$c.json"
-    echo "- $(basename "$cards"): sha256 $(sha256 "$cards") · $(jq -r '"\(.cards) cards for \(.sections_carded) of \(.sections) sections (complete: \(.complete)) · model \(.by_model | keys | join(",")) · prompt \(.by_prompt_version | keys | join(","))"' "$cards.provenance.json") · provenance sha256 $(sha256 "$cards.provenance.json")"
+    cards="$own/cards-${ver#mda }-$c.json"; [ -f "$cards" ] && [ -f "$cards.provenance.json" ] || die "no cards export $cards"
+    echo "- $(basename "$cards"): sha256 $(val sha256 "$cards") · $(val jq -r '"\(.cards) cards for \(.sections_carded) of \(.sections) sections (complete: \(.complete)) · model \(.by_model | keys | join(",")) · prompt \(.by_prompt_version | keys | join(","))"' "$cards.provenance.json") · provenance sha256 $(val sha256 "$cards.provenance.json")"
   done
   echo
   echo "### Questions (generated from the corpus, panel-validated; texts committed for the public corpora)"
   for c in golden docs; do
-    f="$REPO/evals/results/own/T6/$c/questions.jsonl"
-    echo "- $c: questions.jsonl sha256 $(sha256 "$f") ($(grep -c . "$f") questions) · candidates sha256 $(sha256 "$REPO/evals/results/own/T6/$c/questions.candidates.jsonl") · pilot sha256 $(sha256 "$REPO/evals/results/own/T6/$c/questions.pilot.jsonl")"
+    f="$own/T6/$c/questions.jsonl"; [ -f "$f" ] || die "no $f"
+    echo "- $c: questions.jsonl sha256 $(val sha256 "$f") ($(grep -c . "$f" || true) counted) · pilot sha256 $(val sha256 "$own/T6/$c/questions.pilot.jsonl") ($(grep -c . "$own/T6/$c/questions.pilot.jsonl" || true) pilot) · candidates sha256 $(val sha256 "$own/T6/$c/questions.candidates.jsonl") · rejected sections sha256 $(val sha256 "$own/T6/$c/questions.rejected.jsonl") · summary sha256 $(val sha256 "$own/T6/$c/candidates.summary.json")"
   done
-  echo "- private: questions.jsonl (ids and digests) sha256 $(sha256 "$REPO/evals/results/own/T6/private/questions.jsonl")"
+  f="$own/T6/private/questions.jsonl"; [ -f "$f" ] && echo "- private: questions.jsonl (ids and digests) sha256 $(val sha256 "$f") ($(grep -c . "$f" || true) counted)" || echo "- private: no committed digests"
   echo
   t6_common
   echo
-  echo "### Arms (records under evals/results/own/arms/)"
-  for arm in qmd graphify; do for c in golden docs; do
-    f="$REPO/evals/results/own/arms/$arm-$c.json"; [ -f "$f" ] || die "no arm record $f: every arm is recorded on every public corpus"
-    case "$arm" in
-      qmd) echo "- $arm-$c: record sha256 $(sha256 "$f") · index fingerprint $(qmd_fingerprint "t6-$c")" ;;
-      graphify) echo "- $arm-$c: record sha256 $(sha256 "$f") · $(jq -r 'if .build.completed then "graph sha256 \(.graph.sha256) · \(.graph.nodes) nodes" else "did not complete" end' "$f")" ;;
-    esac
-  done; done
+  echo "### Arms (records under evals/results/own/arms/; the live artifacts they serve from)"
+  for c in golden docs; do t6_arm_lines "$c" "$own" "$RUN/t6/$c"; done
 }
 inputs_t6_private() {
-  local f
+  local f own
+  own="$REPO/evals/results/own"
   [ -n "${T6_PRIVATE_COMMITMENT:-}" ] || die "T6_PRIVATE_COMMITMENT is required for the private freeze (t6.sh freeze computes it)"
   echo "### Corpus (private; nothing content-bearing leaves this machine)"
-  echo "- commitment: sha256(salt ‖ rel_path NUL blake3(content) LF in byte order over the inventory) = $T6_PRIVATE_COMMITMENT · salt under \$RUN/t6/private/salt"
-  echo "- inventory: $(grep -c . "$RUN/t6/private/pages.txt") markdown files · inventory sha256 $(sha256 "$RUN/t6/private/pages.txt") · store sections $(sqlite3 "$RUN/t6/private/src/.markdownattractor/index.sqlite" 'select count(*) from sections' 2>/dev/null || echo n/a)"
+  echo "- commitment: sha256(salt ‖ rel_path NUL sha256(file bytes) LF, in byte order over the inventory) = $T6_PRIVATE_COMMITMENT · salt under \$RUN/t6/private/salt"
+  echo "- inventory: $(grep -c . "$RUN/t6/private/pages.txt" || true) markdown files · inventory sha256 $(val sha256 "$RUN/t6/private/pages.txt") · store sha256 $(val sha256 "$RUN/t6/private/src/.markdownattractor/index.sqlite") · effective config.toml sha256 $(val sha256 "$RUN/t6/private/src/.markdownattractor/config.toml") · store sections $(val sqlite3 "$RUN/t6/private/src/.markdownattractor/index.sqlite" 'select count(*) from sections')"
   echo
   echo "### Cards (not committed)"
-  f="$RUN/t6/private/results/cards-$("$MDA" --version | sed 's/^mda //')-private.json"
-  [ -f "$f" ] && echo "- cards sha256 $(sha256 "$f") · $(jq -r '"\(.cards) cards for \(.sections_carded) of \(.sections) sections (complete: \(.complete)) · model \(.by_model | keys | join(","))"' "$f.provenance.json")" || echo "- cards: none yet"
+  f="$RUN/t6/private/results/cards-$("$MDA" --version | sed 's/^mda //')-private.json"; [ -f "$f" ] || die "no private cards export $f"
+  echo "- cards sha256 $(val sha256 "$f") · $(val jq -r '"\(.cards) cards for \(.sections_carded) of \(.sections) sections (complete: \(.complete)) · model \(.by_model | keys | join(","))"' "$f.provenance.json")"
   echo
   echo "### Questions (texts under \$RUN; the committed file carries ids and digests)"
-  echo "- questions.full.jsonl sha256 $(sha256 "$RUN/t6/private/questions.full.jsonl") ($(grep -c . "$RUN/t6/private/questions.full.jsonl") questions) · candidates sha256 $(sha256 "$RUN/t6/private/questions.candidates.jsonl") · committed digests sha256 $(sha256 "$REPO/evals/results/own/T6/private/questions.jsonl")"
+  echo "- questions.full.jsonl sha256 $(val sha256 "$RUN/t6/private/questions.full.jsonl") ($(grep -c . "$RUN/t6/private/questions.full.jsonl" || true) counted) · pilot sha256 $(val sha256 "$RUN/t6/private/questions.pilot.jsonl") · candidates sha256 $(val sha256 "$RUN/t6/private/questions.candidates.jsonl") · committed digests sha256 $(val sha256 "$own/T6/private/questions.jsonl")"
   echo
   t6_common
   echo
-  echo "### Arms (records under \$RUN/t6/private/results/arms/)"
-  for f in "$RUN"/t6/private/results/arms/*.json; do [ -f "$f" ] && echo "- $(basename "$f" .json): record sha256 $(sha256 "$f")$(case "$(basename "$f")" in qmd-*) echo " · index fingerprint $(qmd_fingerprint t6-private)" ;; esac)"; done
+  echo "### Arms (records under \$RUN/t6/private/results/arms/; the live artifacts they serve from)"
+  t6_arm_lines private "$RUN/t6/private/results" "$RUN/t6/private"
 }
 
 tmp="$(mktemp -d -t mda-freeze.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT

@@ -35,6 +35,17 @@ The verdict on the first draft was "do not start"; these amendments are what M9 
 - **Logins (F21).** Claude through the owner's Claude Code login, Astra through the owner's Codex login; provider keys unset on every subprocess; the model panel replaces human review (no human gate).
 - **Estimates (F22).** Rewritten from the development pilot before the freeze; failed-build costs retained; the owed independent reruns and the unmet strategy exits stay open in §9 of the execution plan.
 
+## Amendments after the Codex harness review (2026-10-26, before the freeze; `docs/reviews/codex/2026-10-26-m9-harness.md`, 29 findings, all applied)
+
+- **Question allocation (F16).** One accepted *counted* question per page, 25 per corpus or the count reached (the golden set has 32 pages; the page says the count); the development pilot's 10 questions are the next accepted candidates — distinct sections, any page — and are never counted. `panel.sh questions 25 10` enforces and labels the allocation.
+- **Two blind panel calls (F17).** Each member first lists, from the question and the section alone, the facts a correct answer must give; only then, with its own list fixed in front of it, does it judge the four criteria and each writer fact. Acceptance is unchanged: both members accept all four and every writer fact.
+- **Exclusions, exactly (F18).** A section is excluded when at least 90% of its non-empty lines are table rows, list items or hash-like strings (the preregistered "only a table, list or listing"), when it is under 200 characters or unheaded, or, for the docs corpus, when it is `docs/index.md` or under `docs/handoffs/`. Denominators and every rejection are committed (`candidates.summary.json`, `questions.rejected.jsonl`; counts only for the private corpus).
+- **Bound resume (F19).** A judged candidate carries its content hash and the rubric/model hash; a change refuses to resume.
+- **Calibration record (F11).** `evals/results/own/T6/calibration.json` (from the pilots: agreement per corpus, the resolved model ids, throughput, cost, acceptance, the declared resolution rule) is a frozen input; the freeze prints the resolved ids.
+- **The commitment (F15)** is `sha256(salt ‖ rel_path NUL sha256(file bytes) LF …)` over the inventory in byte order, salt under `$RUN`; the earlier "blake3(content)" wording is superseded.
+- **Exports and the scan (F1–F6).** The private export schema is field-specific and fixed in code (no learned literals, no schema file); `digest-questions` is the one serializer of the committed private question file; `leak-scan` reads the proposed commit's blobs and refuses binary files; the collision filter uses the merge-base with `main` and never exempts a path or a name.
+- **Bindings (F7–F10, F12–F14).** Counted runs refuse every runner override and take the preflight's certified arm set; the preflight rebuilds the binary `--locked` and requires the frozen hash, compares graphify's serving copy with the archive, checks card equality and embedding completeness on the reconstruction, and re-checks the private freeze against its published digest; the freeze hashes the live graph, skill, hook settings and qmd collection file, each store and its config, every value computed under a failing check.
+
 ## Tasks
 
 - [x] **P0** This plan; Codex pre-mortem (`docs/reviews/codex/2026-10-26-m9-premortem.md`, 22 findings, all accepted); the amendments below recorded before code (2026-10-26).

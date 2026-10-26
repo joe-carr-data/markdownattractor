@@ -33,14 +33,35 @@ out="$tmp/runs"; mkdir -p "$out/rows"
 jq -n '{project: "golden", model: "none", runs: 1, arms: ["mda"], question_ids: ["golden-c001"], questions_file: "none", questions_sha256: "none"}' > "$out/manifest.json"
 if T2_CORPUS="$RUN/t6/golden/src" T2_PAGES="$RUN/t6/golden/pages.txt" T2_RUBRIC=t6 T2_REQUIRE_COMPLETE=1 "$repo/scripts/eval/t2.sh" grade golden "$out" >/dev/null 2>"$tmp/grade.err"; then fail "grade accepted an incomplete manifest"; fi
 grep -q "incomplete" "$tmp/grade.err" || fail "grade did not name the gap: $(cat "$tmp/grade.err")"
-# 5. a synthetic private export conforms; a leaked string does not
-mkdir -p "$tmp/priv/panel"; echo '{"literals": ["every cited page checked whole, in batches of four"]}' > "$tmp/priv/schema.json"
-echo '{"id":"private-c001","split":"own","category":"single-section","question_sha256":"'"$(printf x | shasum -a 256 | cut -c1-64)"'","reference_sha256":"'"$(printf y | shasum -a 256 | cut -c1-64)"'","evidence_sha256":"'"$(printf z | shasum -a 256 | cut -c1-64)"'","required_facts_n":3}' > "$tmp/priv/questions.jsonl"
-python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/priv" "$tmp/priv/schema.json" >/dev/null || fail "a conforming private export was rejected"
-echo '{"id":"private-c002","split":"own","category":"single-section","question_sha256":"not a digest: Some Secret Heading","reference_sha256":"x","evidence_sha256":"y","required_facts_n":2}' >> "$tmp/priv/questions.jsonl"
-if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/priv" "$tmp/priv/schema.json" >/dev/null 2>&1; then fail "a leaking private export was accepted"; fi
-echo '{"id":"private-c003","leak":"x"}' > "$tmp/priv/questions.jsonl"
-if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/priv" "$tmp/priv/schema.json" >/dev/null 2>&1; then fail "an unknown key was accepted"; fi
-# 6. no DocsQA read happened: the unreadable location was never created
+# 5. materialisation of a hashed sample with MULTILINE evidence (review F21/F22): the full record
+#    comes back whole; a tampered evidence hash and a duplicate id are refused
+ev="$(printf 'Line one of the section.\n\nLine two, with a date 2026-03-01 and a `code` span.\nLine three.')"
+python3 -I "$here/t6-smoke-fixture.py" "$tmp/full.jsonl" "$tmp/sample.jsonl" "$ev"
+T2_QUESTIONS_FULL="$tmp/full.jsonl" "$repo/scripts/eval/t2.sh" materialise private "$tmp/sample.jsonl" "$tmp/out.full.jsonl" || fail "materialise refused a valid hashed sample"
+[ "$(jq -r .evidence "$tmp/out.full.jsonl" | wc -l | tr -d ' ')" = 4 ] || fail "multiline evidence was not materialised whole"
+sed 's/"evidence_sha256": "[0-9a-f]*"/"evidence_sha256": "0000000000000000000000000000000000000000000000000000000000000000"/' "$tmp/full.jsonl" > "$tmp/bad.jsonl"
+if T2_QUESTIONS_FULL="$tmp/bad.jsonl" "$repo/scripts/eval/t2.sh" materialise private "$tmp/sample.jsonl" "$tmp/x.jsonl" >/dev/null 2>&1; then fail "a tampered evidence hash was accepted"; fi
+cat "$tmp/full.jsonl" "$tmp/full.jsonl" > "$tmp/dup.jsonl"
+if T2_QUESTIONS_FULL="$tmp/dup.jsonl" "$repo/scripts/eval/t2.sh" materialise private "$tmp/sample.jsonl" "$tmp/x.jsonl" >/dev/null 2>&1; then fail "a duplicate id was accepted"; fi
+# 6. citation extraction (review F23): a backticked odd name yields one citation, not two; bare paths still found
+cites="$(printf 'See `c/odd name (v2).md` and docs/a.md, plus `x/y.mdx`.' | "$repo/scripts/eval/t2.sh" cite)"
+[ "$(printf '%s\n' "$cites" | grep -c .)" = 3 ] || fail "citation extraction: expected 3, got: $cites"
+printf '%s\n' "$cites" | grep -qxF 'c/odd name (v2).md' || fail "the backticked odd name was not extracted whole"
+if printf '%s\n' "$cites" | grep -qx 'name (v2).md'; then fail "the odd name was also extracted as a fragment"; fi
+# 7. the private export round trip: a synthetic private run directory exports and conforms; a hand
+#    edit of a committed file (a heading in a numeric field), an unknown key and an unknown file are
+#    each refused; the question digests are the exporter's own serialisation
+mkdir -p "$tmp/privrun/runs/panel"; cp "$tmp/full.jsonl" "$tmp/privrun/questions.full.jsonl"
+python3 -I "$repo/scripts/eval/t6_private_export.py" export "$tmp/privrun" "$tmp/privout" >/dev/null || fail "a valid private export was refused"
+python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null || fail "the exported files do not conform"
+diff <(python3 -I "$repo/scripts/eval/t6_private_export.py" digest-questions "$tmp/privrun/questions.full.jsonl") "$tmp/privout/questions.jsonl" >/dev/null || fail "digest-questions is not the exporter's serializer"
+sed -i.bak 's/"required_facts_n": 2/"required_facts_n": "Some Secret Heading"/' "$tmp/privout/questions.jsonl"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "a string in a numeric field was accepted"; fi
+mv "$tmp/privout/questions.jsonl.bak" "$tmp/privout/questions.jsonl"
+echo '{"id":"private-c003","leak":"x"}' >> "$tmp/privout/questions.jsonl"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "an unknown key was accepted"; fi
+echo '{"a":1}' > "$tmp/privout/notes.json"
+if python3 -I "$repo/scripts/eval/t6_private_export.py" check "$tmp/privout" >/dev/null 2>&1; then fail "an unknown file was accepted"; fi
+# 8. no DocsQA read happened: the unreadable location was never created
 [ ! -e "$DOCSQA_DATA" ] || fail "something touched the DocsQA location"
-echo "t6-smoke: setup, inventory, raw index, own-root cards, resolver, completeness gate, private schema: ok (DocsQA unreadable throughout)"
+echo "t6-smoke: setup, inventory, raw index, own-root cards, resolver, completeness gate, multiline materialisation, citations, private export round trip: ok (DocsQA unreadable throughout)"
