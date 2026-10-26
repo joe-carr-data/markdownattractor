@@ -153,11 +153,14 @@ def clean(tok, outer):   # the anchor and trailing punctuation go; enclosing bra
         tok = new
     tok = tok.split("#", 1)[0]
     return tok if tok and EXT.search(tok) and "/" not in tok.rsplit(".", 1)[-1] else None
-# 1. markdown link destinations, verbatim; 2. backticked spans, verbatim (a filename may start with _ or *); 3. bare whitespace tokens
-for m in re.finditer(r"\]\(([^)\s]+)\)", t):
-    c = clean(m.group(1), False)
+# 1. markdown links, consumed WHOLE (text, destination, optional title): the destination is the citation, verbatim
+#    (an <angle> destination may hold spaces; one level of balanced parentheses is allowed); 2. backticked spans,
+#    verbatim (a filename may start with _ or *); 3. bare whitespace tokens
+LINK = re.compile(r"\[[^\]\n]*\]\((?:<([^>\n]*)>|((?:[^()\s]|\([^()\s]*\))+))(?:\s+\"[^\"\n]*\")?\)")
+for m in LINK.finditer(t):
+    c = clean(m.group(1) if m.group(1) is not None else m.group(2), False)
     if c: out.append(c)
-t = re.sub(r"\]\([^)\s]+\)", "] ", t)
+t = LINK.sub(" ", t)
 for m in re.finditer(r"`([^`\n]+)`", t):
     c = clean(m.group(1), False)
     if c: out.append(c)
@@ -402,7 +405,7 @@ case "$cmd" in
             if $all == null then null else
               {out: {grounded: (($u | length) == 0 and ($o | length) == 0 and (($all | length) > 0) and (($all | map(.out.grounded)) | all)),
                      unsupported_claims: ($all | map(.out.unsupported_claims) | add), note: ($all | map(.out.note) | join(" / "))},
-               batches: $vs, model: ($all[0].model), cost_usd: ($all | map(.cost_usd // 0) | add), cited_pages: $p, unresolved_citations: $u, oversized_pages: $o,
+               batches: $vs, model: ($all[0].model), model_requested: ($all[0].model_requested // null), cost_usd: ($all | map(.cost_usd // 0) | add), cited_pages: $p, unresolved_citations: $u, oversized_pages: $o,
                evidence_policy: (if ($u | length) > 0 then "ungrounded: a cited path does not exist in the checkout" elif ($o | length) > 0 then "ungrounded: a cited page exceeds 120,000 characters" else "every cited page checked whole, in batches of four" end)} end')"
           [ "$hr" != null ] || hr=""
         fi

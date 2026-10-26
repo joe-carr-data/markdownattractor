@@ -152,7 +152,7 @@ with open(out, "wb") as o:
                     strings.add(m.group(1).strip().lower())
 with open(out + ".strings", "w", encoding="utf-8") as o:
     for s_ in sorted(strings):
-        o.write(s_ + "\n")
+        o.write(json.dumps(s_, ensure_ascii=False) + "\n")
 PY
   T6_SCAN="$REPO/scripts/eval/t6_scan.py" python3 -I - "$S" "$(cat "$T6/private/root")" "$HOME" "$pub.txt" "$T6/private/denylist.txt" <<'PY' || die "the denylist could not be built"
 import os, re, subprocess, sys
@@ -184,7 +184,8 @@ for d, _, fs in os.walk(src):
             if len(ex) == 40 and ex.strip() and "\n" not in ex:
                 items.add(ex)
 optional = sorted(s for s in items if s not in always and len(s) >= 6 and "\n" not in s)
-pub_strings = set(l.rstrip("\n") for l in open(pub_txt + ".strings", encoding="utf-8"))
+import json
+pub_strings = set(json.loads(l) for l in open(pub_txt + ".strings", encoding="utf-8") if l.strip())
 with open(out + ".items", "w", encoding="utf-8") as fh:
     for s_ in optional:
         if s_ not in headings:
@@ -430,13 +431,14 @@ PY
       m="$(jq -s '{answering: (map(.models[]?) | unique), grader: (map(.grade.model // empty) | unique), grounding: (map(.grounding.model // empty) | unique)} | map_values(map(select(test("^(claude|gpt)-"))))' "$g")"
       [ -f "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" ] && [ -f "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" ] || die "no panel member files for the $c pilot (panel.sh regrade did not run): calibration needs them"
       # the requested aliases come from the recorded rows (the run manifest's model, the graders' model_requested, the members' model_requested), never from defaults
-      rq="$(jq -s --arg ans "$(jq -r .model "$(cdir "$c")/pilot/manifest.json")" '{answering: [$ans], grader: (map(.grade.model_requested // empty) | unique), grounding: (map(.grounding.model_requested // empty) | unique)}' "$g")"
-      rq="$(jq -c --argjson rf "$(jq -s 'map(.model_requested // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl")" --argjson ra "$(jq -s 'map(.model_requested // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl")" '. + {panel_fable: $rf, panel_astra: $ra}' <<<"$rq")"
+      rq="$(jq -s --arg ans "$(jq -r .model "$(cdir "$c")/pilot/manifest.json")" '{answering: [$ans], grader: (map(.grade.model_requested // empty) | unique), grounding: (map(.grounding.model_requested // (.grounding.batches // [] | map(.verdict.model_requested // empty) | first) // empty) | unique)}' "$g")"
+      [ "$(jq -s 'map(select(.grounding.batches != null and (.grounding.batches | length) > 0)) | length' "$g")" = 0 ] || [ "$(jq -r '.grounding | length' <<<"$rq")" -gt 0 ] || die "the $c pilot exercised the grounding grader but no requested alias was recorded"
+      rq="$(jq -c --argjson rf "$(jq -s 'map(select(.score != null) | .model_requested // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl")" --argjson ra "$(jq -s 'map(select(.score != null) | .model_requested // empty) | unique' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl")" '. + {panel_fable: $rf, panel_astra: $ra}' <<<"$rq")"
       requested="$(jq -c --argjson r "$rq" 'to_entries | map(.key as $k | {($k): ((.value + ($r[$k] // [])) | unique)}) | add' <<<"$requested")"
       # a role is unresolved only when its judgments COMPLETED (out != null) and carry no model id; a role with no completed judgment is a failure, not an unresolved id
-      [ "$(jq -s 'map(select(.out != null)) | length' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl")" -gt 0 ] || die "the $c pilot has no completed Astra judgment: nothing to calibrate the panel on"
-      [ "$(jq -s 'map(select(.out != null)) | length' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl")" -gt 0 ] || die "the $c pilot has no completed Fable judgment"
-      rf="$(jq -s 'map(.model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" 2>/dev/null || echo '[]')"; ra="$(jq -s 'map(.model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" 2>/dev/null || echo '[]')"
+      [ "$(jq -s 'map(select(.score != null)) | length' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl")" -gt 0 ] || die "the $c pilot has no valid scored Astra judgment: nothing to calibrate the panel on"
+      [ "$(jq -s 'map(select(.score != null)) | length' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl")" -gt 0 ] || die "the $c pilot has no valid scored Fable judgment"
+      rf="$(jq -s 'map(select(.score != null) | .model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-fable.jsonl" 2>/dev/null || echo '[]')"; ra="$(jq -s 'map(select(.score != null) | .model // empty) | unique | map(select(test("^(claude|gpt)-")))' "$(cdir "$c")/pilot/panel/regrade-astra.jsonl" 2>/dev/null || echo '[]')"
       models="$(jq -c --argjson m "$m" --argjson rf "$rf" --argjson ra "$ra" '.answering = (.answering + $m.answering | unique) | .grader = (.grader + $m.grader | unique) | .grounding = (.grounding + $m.grounding | unique) | .panel_fable = (.panel_fable + $rf | unique) | .panel_astra = (.panel_astra + $ra | unique)' <<<"$models")"
     done
     [ "$(jq 'length' <<<"$pilots")" -gt 0 ] || die "no pilot.json under $T6/<corpus>/ (run t6.sh pilot)"
