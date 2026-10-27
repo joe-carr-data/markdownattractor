@@ -46,6 +46,16 @@ The verdict on the first draft was "do not start"; these amendments are what M9 
 - **Exports and the scan (F1–F6).** The private export schema is field-specific and fixed in code (no learned literals, no schema file); `digest-questions` is the one serializer of the committed private question file; `leak-scan` reads the proposed commit's blobs and refuses binary files; the collision filter uses the merge-base with `main` and never exempts a path or a name.
 - **Bindings (F7–F10, F12–F14; second pass F1, F9–F11).** The freeze refuses to write when any value failed or is empty; the preflight requires cargo's own `--locked` executable to carry the frozen hash; every arm's serving copy is compared whole-tree with its source; SQL comparisons run through checked variables. Counted runs refuse every runner override and take the preflight's certified arm set; the preflight rebuilds the binary `--locked` and requires the frozen hash, compares graphify's serving copy with the archive, checks card equality and embedding completeness on the reconstruction, and re-checks the private freeze against its published digest; the freeze hashes the live graph, skill, hook settings and qmd collection file, each store and its config, every value computed under a failing check.
 
+## Questions drawn (2026-10-26/27, before the freeze)
+
+| Corpus | Eligible headed sections ≥ 200 chars (documents) | Candidates drawn through the writer | Refused before the panel | Judged | Counted accepted (one per page) | Pilot accepted |
+|---|---|---|---|---|---|---|
+| golden | 27 (19) | 27 | 4 | 23 | **16** | 4 |
+| docs | 342 (52) | 100 (70, then a top-up of 30) | 17 | 94 | **25** | 10 |
+| private | 5,988 (563) | 130 (70, then a top-up of 60) | 10 | 123 | **25** | 10 |
+
+The golden set exhausts its candidates at 16 counted questions and publishes with that count. The two top-ups followed the resumable rule recorded above (the seeded prefix is verified field by field; the panel resumes bound to its content and rubric hashes). A first private panel run was discarded before any of it was used: a chain that had been interrupted left panel processes writing beside a resumed run (111 rows for 70 candidates); the clean rerun and the top-up are what count (`$RUN/t6/private/superseded-race/` keeps the discarded files, outside the repository).
+
 ## Tasks
 
 - [x] **P0** This plan; Codex pre-mortem (`docs/reviews/codex/2026-10-26-m9-premortem.md`, 22 findings, all accepted); the amendments below recorded before code (2026-10-26).

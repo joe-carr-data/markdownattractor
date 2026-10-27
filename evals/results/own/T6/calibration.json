@@ -1,0 +1,225 @@
+{
+  "at": "2026-10-27T01:21:56Z",
+  "corpora": {
+    "golden": {
+      "at": "2026-10-26T21:27:03Z",
+      "candidates": {
+        "accepted": 20,
+        "judged": 23,
+        "refused": 4,
+        "written": 27
+      },
+      "corpus": "golden",
+      "index": {
+        "counts": {
+          "docs": 32,
+          "failed": 0,
+          "pending": 0,
+          "sections": 117,
+          "summarized": 117,
+          "tombstoned": 0,
+          "total_cost_usd": 0.46153,
+          "total_input_tokens": 258015,
+          "total_output_tokens": 40703
+        },
+        "seconds": 96
+      },
+      "panel": {
+        "agreement": {
+          "astra_sonnet": {
+            "exact": 0.25,
+            "within_one": 0.8125
+          },
+          "fable_astra": {
+            "exact": 0.1875,
+            "within_one": 0.5625
+          },
+          "fable_sonnet": {
+            "exact": 0.6875,
+            "within_one": 1
+          }
+        },
+        "incomplete": 0,
+        "mean_astra": 4.6875,
+        "mean_fable": 5.9375,
+        "mean_sonnet": 5.625,
+        "resolved_by_panel": 3,
+        "sample": 16
+      },
+      "runs": {
+        "cost_usd": 0.43624050000000003,
+        "errors": 0,
+        "grounding_batches": 16,
+        "n": 16,
+        "retried": 0,
+        "wall_s_total": 208
+      },
+      "seconds": {
+        "grade": 196,
+        "panel": 274,
+        "runs": 212
+      }
+    },
+    "docs": {
+      "at": "2026-10-26T22:08:38Z",
+      "candidates": {
+        "accepted": 35,
+        "judged": 79,
+        "refused": 15,
+        "written": 94
+      },
+      "corpus": "docs",
+      "index": {
+        "counts": {
+          "docs": 73,
+          "failed": 0,
+          "pending": 0,
+          "sections": 514,
+          "summarized": 506,
+          "tombstoned": 0,
+          "total_cost_usd": 3.3220399,
+          "total_input_tokens": 1446193,
+          "total_output_tokens": 319375
+        },
+        "seconds": 396
+      },
+      "panel": {
+        "agreement": {
+          "astra_sonnet": {
+            "exact": 0.625,
+            "within_one": 0.875
+          },
+          "fable_astra": {
+            "exact": 0.575,
+            "within_one": 0.875
+          },
+          "fable_sonnet": {
+            "exact": 0.725,
+            "within_one": 0.975
+          }
+        },
+        "incomplete": 0,
+        "mean_astra": 4.55,
+        "mean_fable": 5.1,
+        "mean_sonnet": 4.9,
+        "resolved_by_panel": 5,
+        "sample": 40
+      },
+      "runs": {
+        "cost_usd": 1.5721974000000003,
+        "errors": 0,
+        "grounding_batches": 41,
+        "n": 40,
+        "retried": 0,
+        "wall_s_total": 828
+      },
+      "seconds": {
+        "grade": 534,
+        "panel": 666,
+        "runs": 833
+      }
+    },
+    "private": {
+      "at": "2026-10-27T01:21:05Z",
+      "candidates": {
+        "accepted": 35,
+        "judged": 113,
+        "refused": 10,
+        "written": 123
+      },
+      "corpus": "private",
+      "index": {
+        "counts": {
+          "docs": 595,
+          "failed": 0,
+          "pending": 0,
+          "sections": 7484,
+          "summarized": 7169,
+          "tombstoned": 0,
+          "total_cost_usd": 40.2106229,
+          "total_input_tokens": 18880211,
+          "total_output_tokens": 3860347
+        },
+        "seconds": 4175
+      },
+      "panel": {
+        "agreement": {
+          "astra_sonnet": {
+            "exact": 0.5,
+            "within_one": 0.825
+          },
+          "fable_astra": {
+            "exact": 0.425,
+            "within_one": 0.775
+          },
+          "fable_sonnet": {
+            "exact": 0.775,
+            "within_one": 0.95
+          }
+        },
+        "incomplete": 0,
+        "mean_astra": 4.575,
+        "mean_fable": 5.375,
+        "mean_sonnet": 5.15,
+        "resolved_by_panel": 9,
+        "sample": 40
+      },
+      "runs": {
+        "cost_usd": 2.2936930999999996,
+        "errors": 0,
+        "grounding_batches": 43,
+        "n": 40,
+        "retried": 1,
+        "wall_s_total": 730
+      },
+      "seconds": {
+        "grade": 530,
+        "panel": 713,
+        "runs": 734
+      }
+    }
+  },
+  "resolved_models": {
+    "answering": [
+      "claude-sonnet-5-5"
+    ],
+    "grader": [
+      "claude-sonnet-5-5"
+    ],
+    "grounding": [
+      "claude-sonnet-5-5"
+    ],
+    "panel_fable": [
+      "claude-fable-5-1"
+    ],
+    "panel_astra": []
+  },
+  "requested_models": {
+    "answering": [
+      "sonnet"
+    ],
+    "grader": [
+      "sonnet"
+    ],
+    "grounding": [
+      "sonnet"
+    ],
+    "panel_fable": [
+      "claude-fable-5-1"
+    ],
+    "panel_astra": [
+      "gpt-6-astra"
+    ]
+  },
+  "unresolved_roles": [
+    "panel_astra"
+  ],
+  "resolution_rule": "either-member-differs-by-more-than-one-point-then-panel-mean",
+  "estimates": {
+    "runs_per_hour": 213.58418232338434,
+    "cost_per_run_usd": 0.041304097916666664,
+    "grade_seconds_per_run": 12.950000000000001,
+    "acceptance_rate": 0.540779235116395
+  },
+  "note": "the development pilot: disjoint questions, one run per arm, both panel members on every answer; nothing here is a published number"
+}

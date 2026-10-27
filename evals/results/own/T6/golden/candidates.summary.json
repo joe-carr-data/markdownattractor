@@ -1,0 +1,22 @@
+{
+ "headed_sections_200": 27,
+ "eligible_sections": 27,
+ "documents": 19,
+ "excluded": {
+  "frozen-exclusion": 0,
+  "table-list-or-listing": 0,
+  "empty": 0
+ },
+ "candidates_drawn": 27,
+ "written": 27,
+ "refused": {
+  "path-in-question": 3,
+  "title-in-question": 1,
+  "span-not-in-section": 0,
+  "writer-no-output": 0,
+  "too-few-facts": 0
+ },
+ "judged": 23,
+ "accepted_counted": 16,
+ "accepted_pilot": 4
+}
