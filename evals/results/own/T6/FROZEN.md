@@ -7,7 +7,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 ### Corpora (public: `git archive <commit>:<subtree>` of this repository; a reader rebuilds them from the published commit)
 - golden: d061f8c12948ee306fb39425e4b2bbc5320c923c:evals/golden/docs · tree c14771261e476c779ee816cd6166f60f11273738 · 32 markdown files · page inventory sha256 c11bafacf197e876b0c1bd8fa91d545e89c7351d44e1876e271a12c4d83a95f4 (committed as T6/golden/pages.txt) · store sha256 1387cd0748c4a5673e1292269954bf68bc6001e886a087a4c51785b99136ccce · effective config.toml sha256 808738cc33c8e91fec330fc497141694d2fb79b5fbb49140200cdc67b5b9155f
 - docs: d061f8c12948ee306fb39425e4b2bbc5320c923c:docs · tree dfb1ffd23282201c8edf69888716a76c93980812 · 73 markdown files · page inventory sha256 a45828b6dd36bf05e45e20e12f67539e9f53a6457e32a32760cfef97c1ee4e66 (committed as T6/docs/pages.txt) · store sha256 ac47b5174f740b922fc78e6761f6c69b1eebbb13eb66e8e370d2ae68be03ace7 · effective config.toml sha256 808738cc33c8e91fec330fc497141694d2fb79b5fbb49140200cdc67b5b9155f
-- private: the owner's trading-research repository, supporting evidence only; its freeze (kept under $RUN) has sha256 c2bed74ae48737947802b535fa22f4a2c2f3382f4790dae9003d00b629d7e6a6 (committed as T6/private/FROZEN.sha256); exempt from independent reproduction
+- private: the owner's trading-research repository, supporting evidence only; its freeze (kept under $RUN) has sha256 25a53dd581106e9c18f7b0e1f033f8339e1977012687e8d978566e5ee62fc985 (committed as T6/private/FROZEN.sha256); exempt from independent reproduction
 
 ### Cards (committed, rule 0.9)
 - cards-0.1.1-golden.json: sha256 e35768b9b8f7f641629e46ae93e9f0ef946446c791c18119217dedf99311a737 · 117 cards for 117 of 117 sections (complete: true) · model claude-haiku-4-5,none · prompt deterministic,section.v2 · provenance sha256 c3a4fff9001f07564df69a9e216bc88cce3881c5b7b9f8defd36a3efab81fe64
@@ -20,7 +20,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ### mda
 - version: mda 0.1.1 · binary sha256 432bac9166c9cb2a8bcaaa98e7da780100eb39a6aa55247fd848cb0ef2106346 (the preflight rebuilds with `cargo build --release --locked` from the source commit and requires this hash)
-- source commit: 9f675482d7804db8c22285001fd51e5bd030edad (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit)
+- source commit: 4451a7a6e6fbadfda94659cb260f6dc00507a63f (the code paths that change a number: crates prompts skills scripts/eval Cargo.lock Cargo.toml rust-toolchain.toml .cargo; a check requires them unchanged since this commit)
 - analysis: `mda eval --analysis` (crates/mda-core/src/eval/analysis.rs: question medians over runs with failed runs as 0, 10,000-draw paired bootstrap, seed 20260922, gates lower bound ≥ −0.25 · mda mean ≥ 4.0 · grounding ≥ 0.95)
 - embeddings: local-small · model bge-small-en-v1.5-q (Qdrant/bge-small-en-v1.5-onnx-Q) · revision 52398278842ec682c6f32300af41344b1c0b0bb2 · model files sha256 57ea5d7e9f6ec8f153d64a65e4c30e33e85b704cf8997144289cfe83354fb2fc (evals/results/docsqa/model.sha)
 - store configuration template: evals/results/own/T6/config.toml sha256 808738cc33c8e91fec330fc497141694d2fb79b5fbb49140200cdc67b5b9155f (backend claude-cli, summariser claude-haiku-4-5, embeddings local-small; the ignore rules inside it)
@@ -33,7 +33,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 - prompts/section.schema.v1.json sha256: c6fe125b437c94ee1612211bab0d9a585f58d1d1fddbf3e794149989b37c4bcf
 - skills/search-first/SKILL.md sha256: d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732
 - scripts/eval/t2.sh sha256: 2b200c533d4574feb4cc823adc73cc9f8e4c3afba43bf5194e455bf687d00947
-- scripts/eval/t6.sh sha256: 432402a2ad1605a36e1e444a1847aa5875ab345f6ffb9576f139228e59920c8a
+- scripts/eval/t6.sh sha256: f1e2422e96179951867f40a10a11f8e7eac6a1d56141b743de9d37b737697630
 - scripts/eval/t6_resolve.py sha256: 46bf0066714ac457ee8711d09835faa9cadf891b599d4cced1c861c6f0249ae4
 - scripts/eval/t6_private_export.py sha256: 61cc4e76875b11d1f0be2bbe5062bed3c1a12718c10144432a6eca380b008257
 - scripts/eval/panel.sh sha256: 7489c1ef88e4dbf4508fbe49c80e1cb2842da1470ad40dc83552598920ca1e73
@@ -58,7 +58,7 @@ Written by `scripts/eval/freeze.sh` (execution plan §2.0). The **Inputs** secti
 
 ## Runtime
 
-- frozen_at: 2026-10-27T01:55:49Z
+- frozen_at: 2026-10-27T02:16:48Z
 - hardware: Apple M3 · 24 GB · macOS 15.2
 - toolchain: rustc 1.98.1 (48a229cea 2026-09-01)
 - claude: 2.1.302 (Claude Code) (the answering, grading and probe model ids are resolved per run and read from the run logs, never from an alias)
