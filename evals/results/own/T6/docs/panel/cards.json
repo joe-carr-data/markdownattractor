@@ -1,0 +1,2609 @@
+{
+  "seed": "20260922",
+  "stamp": "20261027T050419Z",
+  "cards_file": "cards-0.1.1-docs.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 100,
+  "values": 894,
+  "unsupported_rate": {
+    "fable": 0.014943960149439602,
+    "astra": 0.0136986301369863
+  },
+  "incomplete": 7,
+  "agreement": 0.9912826899128269,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "design/ingestion.md",
+      "heading": "[\"Design — ingestion (what becomes a section, what becomes text, what is dropped)\",\"What stays as text\"]",
+      "values": 8,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c002",
+      "page": "reviews/codex/2026-09-22-lean-payload.md",
+      "heading": "[\"Codex review — lean mda_search payload and the eval scripts (PR #19, benchmark plan B0b)\",\"1. Packet\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "handoffs/2026-09-24-0247-auto.md",
+      "heading": "[\"Auto handoff 2026-09-24 02:47 (pre-compact)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "index.md",
+      "heading": "[\"docs/ — index\",\"Not yet written\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c005",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"10. Repository layout\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "reviews/codex/2026-09-21-pre-mortem.md",
+      "heading": "[\"Codex review — pre-mortem on the project plan\",\"2. Raw findings (Codex, verbatim apart from link formatting)\",\"F11 — Scope and maintenance demands crowded out adoption work. — Medium\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c007",
+      "page": "reviews/codex/2026-09-22-phase2.md",
+      "heading": "[\"Codex review — Phase 2 search layer\",\"5. Follow-ups\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"15. References for Claude\",\"Rust engine crates\"]",
+      "values": 21,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"2. Protocol, common to every table\",\"2.0 Freeze lifecycle and the preflight (rules 0.1, 0.5, 0.9)\"]",
+      "values": 14,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c010",
+      "page": "reviews/codex/2026-09-22-crates.md",
+      "heading": "[\"Codex review — crates/ after the Phase 1 engine\",\"1. Packet\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"6. Command UX — /markdownattractor\",\"Maintenance & meta\"]",
+      "values": 12,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"17. SDLC documentation — keeping Claude oriented across sessions and compactions\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c013",
+      "page": "reviews/codex/2026-09-22-phase2.md",
+      "heading": "[\"Codex review — Phase 2 search layer\",\"4. Patterns → rules\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "design/mcp.md",
+      "heading": "[\"Design — MCP server\",\"Tested\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "reviews/codex/2026-09-21-pre-mortem.md",
+      "heading": "[\"Codex review — pre-mortem on the project plan\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"2. Landscape (what exists, what we do differently)\",\"2.3 Head-to-head\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "design/mcp.md",
+      "heading": "[\"Design — MCP server\",\"Shape\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "reviews/codex/2026-09-22-benchmark-plan.md",
+      "heading": "[\"Codex review — benchmark plan (pre-mortem as a sceptical reader)\",\"7. Follow-ups\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "plans/2026-09-phase1-engine.md",
+      "heading": "[\"Phase 1 — Summarization engine\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "handoffs/2026-09-22-phase2-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22 session 2 (CI fix, Phase 1 daemon, Windows hotfix, Phase 2 search layer)\",\"6. Recipes that worked\"]",
+      "values": 25,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c021",
+      "page": "reviews/codex/2026-09-22-benchmark-plan.md",
+      "heading": "[\"Codex review — benchmark plan (pre-mortem as a sceptical reader)\",\"3. Triage\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c022",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c023",
+      "page": "reviews/codex/2026-09-26-t2-t3-page.md",
+      "heading": "[\"Codex publication check — the T2 and T3 page sections and runbook §7.2–7.3 (feat/bench-m6)\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c024",
+      "page": "handoffs/2026-09-22-0259-auto.md",
+      "heading": "[\"Auto handoff 2026-09-22 02:59 (pre-compact)\",\"Files touched (git status --short)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c025",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"1. Goals and non-goals\",\"Non-goals (v1)\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c026",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"8. Roadmap\",\"Phase 4 — Polish & launch\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c027",
+      "page": "plans/2026-09-m7-t4-harness.md",
+      "heading": "[\"Plan — M7: T4, the update-latency table (2026-09-27)\",\"Decisions carried in\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c028",
+      "page": "adr/0004-phase2-vectors-embeddings-mcp.md",
+      "heading": "[\"ADR-0004 — Phase 2 stack: vectors in plain SQLite scanned from Rust, fastembed for embeddings, MCP as mda mcp on rmcp\",\"Decision\"]",
+      "values": 18,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c029",
+      "page": "adr/0004-phase2-vectors-embeddings-mcp.md",
+      "heading": "[\"ADR-0004 — Phase 2 stack: vectors in plain SQLite scanned from Rust, fastembed for embeddings, MCP as mda mcp on rmcp\",\"Consequences\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c030",
+      "page": "benchmarks.md",
+      "heading": "[\"Benchmarks\",\"T1 — axis A on DocsQA-Repo, test split (final, 2026-09-24)\",\"Quality\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c031",
+      "page": "handoffs/2026-09-27-session5-final-handoff.md",
+      "heading": "[\"Session 5 final handoff — benchmarks M1–M7 done, M8 (T5) next (2026-09-27)\",\"4. Codex (GPT) conversation ids\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c032",
+      "page": "design/mcp.md",
+      "heading": "[\"Design — MCP server\",\"What it never does\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c033",
+      "page": "design/commands.md",
+      "heading": "[\"Design — the command surface\",\"Lifecycle\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c034",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"2. Landscape (what exists, what we do differently)\",\"2.4 What we take from them\"]",
+      "values": 11,
+      "fable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c035",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"2. Protocol, common to every table\",\"2.6 Runner (rule 0.3, resumable)\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c036",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"2. Protocol, common to every table\",\"2.2 Scoring external arms\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c037",
+      "page": "handoffs/2026-09-22-1209-auto.md",
+      "heading": "[\"Auto handoff 2026-09-22 12:09 (pre-compact)\",\"Files touched (git status --short)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c038",
+      "page": "plans/2026-09-phase0-spike.md",
+      "heading": "[\"Phase 0 — Spike\",\"Results\",\"Exit criteria\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c039",
+      "page": "adr/0001-worker-backend-claude-cli.md",
+      "heading": "[\"ADR-0001 — Summarization workers spawn claude -p with thinking disabled and structured output\",\"Decision\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c040",
+      "page": "handoffs/2026-09-27-session5-final-handoff.md",
+      "heading": "[\"Session 5 final handoff — benchmarks M1–M7 done, M8 (T5) next (2026-09-27)\",\"3. What was done this session, milestone by milestone (PR numbers)\",\"Headline results (all on the page; regenerate, never retype)\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c041",
+      "page": "handoffs/2026-09-22-1956-auto.md",
+      "heading": "[\"Auto handoff 2026-09-22 19:56 (session-end)\",\"Files touched (git status --short)\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c042",
+      "page": "handoffs/2026-09-22-session4-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22, session 4 (benchmark plan B0a, B0b, DocsQA adapter, ingestion gate)\",\"6. Next steps, in order\"]",
+      "values": 23,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c043",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"5. Milestones (ordered; publication depends on completion and verification, not on a session number)\"]",
+      "values": 13,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c044",
+      "page": "reviews/codex/2026-09-21-pre-mortem.md",
+      "heading": "[\"Codex review — pre-mortem on the project plan\",\"3. Triage\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c045",
+      "page": "handoffs/2026-09-22-session4-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22, session 4 (benchmark plan B0a, B0b, DocsQA adapter, ingestion gate)\",\"4. Recipes that worked this session\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c046",
+      "page": "benchmarks.md",
+      "heading": "[\"Benchmarks\",\"T2 — axis B on DocsQA-Repo, answer quality (final, 2026-09-25)\"]",
+      "values": 12,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c047",
+      "page": "reviews/codex/2026-09-22-crates.md",
+      "heading": "[\"Codex review — crates/ after the Phase 1 engine\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c048",
+      "page": "adr/0006-mda-now-clock-override-for-the-historical-replay.md",
+      "heading": "[\"ADR 0006: MDA_NOW clock override for the historical replay\",\"Context\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c049",
+      "page": "reviews/codex/2026-09-23-bench-m2.md",
+      "heading": "[\"Codex review — benchmark M2: competitor arms (qmd, graphify, graphify-haiku, BM25-over-files), drivers, probes, freeze\",\"4. Follow-ups\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c050",
+      "page": "reviews/codex/2026-09-24-bench-m4.md",
+      "heading": "[\"Codex review — benchmark M4: the scorer, the drivers and the freeze before T1 (feat/bench-m4)\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c051",
+      "page": "reviews/codex/2026-09-22-crates.md",
+      "heading": "[\"Codex review — crates/ after the Phase 1 engine\",\"4. Patterns → rules\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c052",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"7. Deliverables\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c053",
+      "page": "reviews/codex/2026-09-22-first-run.md",
+      "heading": "[\"Codex review — Phase 4 first-run UX (PR #7)\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c054",
+      "page": "reviews/codex/2026-09-22-first-run.md",
+      "heading": "[\"Codex review — Phase 4 first-run UX (PR #7)\",\"2. Findings (Codex, condensed; file:line against 72a72ca)\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c055",
+      "page": "design/search.md",
+      "heading": "[\"Design — search\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c056",
+      "page": "reviews/codex/2026-09-22-mdx-ingestion.md",
+      "heading": "[\"Codex review — .mdx ingestion (PR #18, benchmark plan B0a)\",\"3. Triage\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c057",
+      "page": "plans/2026-09-benchmarks.md",
+      "heading": "[\"Benchmark plan — public datasets, competitors, and where we can shine\",\"7. Resolved questions (from the reviews)\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c058",
+      "page": "adr/0002-backends-and-login-policy.md",
+      "heading": "[\"ADR-0002 — Summarization backends: API key by default, local model second, CLI spawn opt-in only\",\"Consequences\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c059",
+      "page": "adr/0001-worker-backend-claude-cli.md",
+      "heading": "[\"ADR-0001 — Summarization workers spawn claude -p with thinking disabled and structured output\",\"Context\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c060",
+      "page": "plans/2026-09-phase0-spike.md",
+      "heading": "[\"Phase 0 — Spike\"]",
+      "values": 8,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c061",
+      "page": "reviews/codex/2026-09-27-t4-page.md",
+      "heading": "[\"Codex publication check — the T4 page section and runbook §7.4 (feat/bench-m7)\"]",
+      "values": 12,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c062",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"2. Protocol, common to every table\",\"2.5 Analysis (rule 0.4, implemented in mda eval --analysis <grades.jsonl>, in mda_core::eval, unit-tested)\"]",
+      "values": 6,
+      "fable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c063",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"2. Landscape (what exists, what we do differently)\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c064",
+      "page": "handoffs/2026-09-22-session-handoff.md",
+      "heading": "[\"Handoff — 2026-09-21/22 session (project bootstrap through Phase 1 engine)\",\"8. Next steps, in order\"]",
+      "values": 23,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c065",
+      "page": "adr/0005-release-pipeline.md",
+      "heading": "[\"ADR-0005 — Release pipeline: a plain GitHub Actions matrix, archives named for bootstrap.sh, conditional notarisation\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c066",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"5. Search layer — where semantic search happens\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c067",
+      "page": "reviews/codex/2026-09-22-docsqa-adapter.md",
+      "heading": "[\"Codex review — DocsQA-Repo adapter, coverage report, seeded split (PR #20, benchmark plan B0/B2)\",\"3. Triage\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c068",
+      "page": "reviews/codex/2026-09-23-bench-m2.md",
+      "heading": "[\"Codex review — benchmark M2: competitor arms (qmd, graphify, graphify-haiku, BM25-over-files), drivers, probes, freeze\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c069",
+      "page": "adr/0005-release-pipeline.md",
+      "heading": "[\"ADR-0005 — Release pipeline: a plain GitHub Actions matrix, archives named for bootstrap.sh, conditional notarisation\",\"Decision\"]",
+      "values": 12,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c070",
+      "page": "handoffs/2026-09-22-phase2-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22 session 2 (CI fix, Phase 1 daemon, Windows hotfix, Phase 2 search layer)\",\"7. Caveats and gotchas (all sessions, deduplicated)\"]",
+      "values": 19,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c071",
+      "page": "benchmarks.md",
+      "heading": "[\"Benchmarks\",\"T2 — axis B on DocsQA-Repo, answer quality (final, 2026-09-25)\",\"The same, on the adjudicated grades (panel-resolved scores in place, rule 0.8)\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c072",
+      "page": "plans/2026-09-m8-t5-replay.md",
+      "heading": "[\"Plan — M8: T5, the simulated historical replay (drafted 2026-09-27, starts on \\\"go M8\\\")\",\"Tasks\"]",
+      "values": 16,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c073",
+      "page": "reviews/codex/2026-09-22-daemon.md",
+      "heading": "[\"Codex review — daemon step (Phase 1 row 13)\",\"2. Findings (Codex, condensed; file:line against f7c1d77)\"]",
+      "values": 9,
+      "fable": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c074",
+      "page": "design/mcp.md",
+      "heading": "[\"Design — MCP server\",\"Watched live in Claude Code (2026-09-22)\"]",
+      "values": 13,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c075",
+      "page": "reviews/codex/2026-09-22-first-run.md",
+      "heading": "[\"Codex review — Phase 4 first-run UX (PR #7)\",\"5. Follow-ups\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c076",
+      "page": "STATUS.md",
+      "heading": "[\"STATUS (updated 2026-10-16 by Claude)\"]",
+      "values": 16,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c077",
+      "page": "reviews/codex/2026-09-22-lean-payload.md",
+      "heading": "[\"Codex review — lean mda_search payload and the eval scripts (PR #19, benchmark plan B0b)\",\"2. Findings (Codex, condensed)\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c078",
+      "page": "reviews/codex/2026-09-23-execution-plan.md",
+      "heading": "[\"Codex review — benchmark execution plan (pre-mortem, PR #21)\",\"5. Follow-ups\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c079",
+      "page": "handoffs/2026-09-22-session4-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22, session 4 (benchmark plan B0a, B0b, DocsQA adapter, ingestion gate)\",\"1. Repo, branches, PRs, threads\"]",
+      "values": 13,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c080",
+      "page": "plans/2026-10-m9-t6-page-readme.md",
+      "heading": "[\"Plan — M9: T6 on our own corpora, the page by axis, the README numbers row (drafted 2026-10-26, started on \\\"go M9\\\")\",\"Amendments after the Codex pre-mortem (2026-10-26, before any harness code; docs/reviews/codex/2026-10-26-m9-premortem.md, 22 findings, all accepted)\"]",
+      "values": 15,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c081",
+      "page": "reviews/codex/2026-09-22-daemon.md",
+      "heading": "[\"Codex review — daemon step (Phase 1 row 13)\",\"5. Follow-ups\"]",
+      "values": 6,
+      "fable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c082",
+      "page": "handoffs/2026-09-22-2226-auto.md",
+      "heading": "[\"Auto handoff 2026-09-22 22:26 (pre-compact)\",\"Files touched (git status --short)\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c083",
+      "page": "handoffs/2026-09-23-session5-m1-handoff.md",
+      "heading": "[\"Handoff — 2026-09-23, session 5 (benchmark M1: card export, freeze, preflight, arm scorer; first carded rows)\",\"5f. M5 — the T2 harness (branch feat/bench-m5, 2026-09-25)\"]",
+      "values": 22,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c084",
+      "page": "handoffs/2026-09-22-phase2-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22 session 2 (CI fix, Phase 1 daemon, Windows hotfix, Phase 2 search layer)\",\"3. Files to re-read, in order (T0 → T2)\"]",
+      "values": 10,
+      "fable": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c085",
+      "page": "adr/0001-worker-backend-claude-cli.md",
+      "heading": "[\"ADR-0001 — Summarization workers spawn claude -p with thinking disabled and structured output\",\"Consequences\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c086",
+      "page": "design/daemon.md",
+      "heading": "[\"Design — daemon and watcher\",\"Shutdown\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c087",
+      "page": "plans/2026-09-benchmark-execution.md",
+      "heading": "[\"Benchmark execution plan — how we run it, and how we beat them credibly\",\"8. Tasks\"]",
+      "values": 13,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c088",
+      "page": "reviews/codex/2026-09-23-bench-m1.md",
+      "heading": "[\"Codex review — benchmark M1: card export, external-arm scorer, freeze, preflight, probes (PR feat/bench-m1)\",\"5. Follow-ups\"]",
+      "values": 4,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c089",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"6. Command UX — /markdownattractor\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c090",
+      "page": "design/daemon.md",
+      "heading": "[\"Design — daemon and watcher\",\"Measured (this repo's docs/, 18 files, 163 sections, Apple M3, api backend with Haiku 4.5)\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c091",
+      "page": "design/ingestion.md",
+      "heading": "[\"Design — ingestion (what becomes a section, what becomes text, what is dropped)\",\"What is excluded from sections\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c092",
+      "page": "handoffs/2026-09-22-phase4-handoff.md",
+      "heading": "[\"Handoff — 2026-09-22 session 3 (Phase 4: plugin watched live, first-run UX, release pipeline, A/B parity)\",\"0. One-paragraph state\"]",
+      "values": 17,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c093",
+      "page": "plans/2026-09-phase4-launch.md",
+      "heading": "[\"Phase 4 — Launch: plugin verified live, first-run UX, release pipeline, parity protocol\",\"Exit criteria\"]",
+      "values": 19,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c094",
+      "page": "design/summarization.md",
+      "heading": "[\"Design — summarization\",\"The worker call\",\"Budget and pacing\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c095",
+      "page": "reviews/codex/2026-09-22-lean-payload.md",
+      "heading": "[\"Codex review — lean mda_search payload and the eval scripts (PR #19, benchmark plan B0b)\",\"3. Triage\"]",
+      "values": 7,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c096",
+      "page": "reviews/codex/2026-09-23-bench-m3-tuning.md",
+      "heading": "[\"Codex review — benchmark M3: the tuning knobs and the greedy loop (feat/bench-m3)\",\"4. Follow-ups\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c097",
+      "page": "handoffs/2026-09-23-session5-m1-handoff.md",
+      "heading": "[\"Handoff — 2026-09-23, session 5 (benchmark M1: card export, freeze, preflight, arm scorer; first carded rows)\",\"5d. Post-stop exploration (branch feat/bench-post-stop, 2026-09-24)\"]",
+      "values": 18,
+      "fable": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c098",
+      "page": "reviews/codex/2026-09-23-execution-plan.md",
+      "heading": "[\"Codex review — benchmark execution plan (pre-mortem, PR #21)\"]",
+      "values": 9,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c099",
+      "page": "handoffs/2026-09-23-session4-final-handoff.md",
+      "heading": "[\"Handoff — 2026-09-23, end of session 4 (benchmark B0a/B0b, DocsQA adapter and gate, all four corpora carded, execution plan v3.1 + runbook)\",\"0. One-paragraph state\"]",
+      "values": 11,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c100",
+      "page": "project-plan.md",
+      "heading": "[\"markdownattractor — Project Plan\",\"16. Rust stack — current state (checked September 2026)\",\"16.1 Things that changed and affect the plan\"]",
+      "values": 19,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ]
+}
