@@ -1,0 +1,134 @@
+{
+  "table": "T6",
+  "project": "golden",
+  "run_at": "2026-10-27T01:58:18Z",
+  "status": "completed",
+  "passed": false,
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.302 (Claude Code) · codex codex-cli 0.155.1"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/own/T6/FROZEN.md (source commit 9f675482d7804db8c22285001fd51e5bd030edad, HEAD e88e2bad3160f3c8bb067f7e76992b8c278ba385)"
+    },
+    {
+      "name": "binary",
+      "status": "ok",
+      "detail": "the --locked build completed; cargo's executable (/Users/jcarr/markdownattractor/target/release/mda) and $MDA both have the frozen hash (432bac9166c9cb2a8bcaaa98e7da780100eb39a6aa55247fd848cb0ef2106346)"
+    },
+    {
+      "name": "calibration",
+      "status": "ok",
+      "detail": "calibration.json conforms, names golden, has pilot runs and resolved ids; rule: either-member-differs-by-more-than-one-point-then-panel-mean"
+    },
+    {
+      "name": "copy",
+      "status": "ok",
+      "detail": "inventory and content identical to git archive d061f8c12948:evals/golden/docs (32 files)"
+    },
+    {
+      "name": "extras",
+      "status": "ok",
+      "detail": "no file beyond the archive outside the store"
+    },
+    {
+      "name": "copy-graphify",
+      "status": "ok",
+      "detail": "graphify's serving copy equals the source copy on every entry (32 files, 0 symlinks the source has too; its .claude/, CLAUDE.md and graphify-out/ aside)"
+    },
+    {
+      "name": "inventory",
+      "status": "ok",
+      "detail": "32 pages, unchanged since setup (sha256 c11bafacf197…)"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "store unchanged since indexing (1387cd0748c4…)"
+    },
+    {
+      "name": "complete",
+      "status": "ok",
+      "detail": "{\"docs\":32,\"sections\":117,\"summarized\":117} · no daemon"
+    },
+    {
+      "name": "reconstruction",
+      "status": "ok",
+      "detail": "a raw index of a fresh copy with cards-0.1.1-golden.json attached is complete (117 attached, 117 vectors): same section identities, identical cards per section hash, every distinct section embedded in both stores (review F9)"
+    },
+    {
+      "name": "questions",
+      "status": "ok",
+      "detail": "16 questions committed (sha256 5af4e8df421c…)"
+    },
+    {
+      "name": "question-shape",
+      "status": "ok",
+      "detail": "every row has q, reference, evidence, relevant"
+    },
+    {
+      "name": "qmd",
+      "status": "ok",
+      "detail": "index t6-golden fingerprint 3e863b4f86a6…"
+    },
+    {
+      "name": "graphify",
+      "status": "ok",
+      "detail": "served graph equals the recorded build (f94ef06394f3…)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "FAIL",
+      "detail": "2 of 3 probes activated (see /Users/jcarr/.cache/markdownattractor/bench/t6/golden/probes.err)"
+    }
+  ],
+  "probes": {
+    "grep": {
+      "activated": 3,
+      "of": 3
+    },
+    "mda": {
+      "activated": 3,
+      "of": 3
+    },
+    "qmd": {
+      "activated": 3,
+      "of": 3
+    },
+    "graphify": {
+      "activated": 2,
+      "of": 3
+    }
+  },
+  "accepted_probe_failures": [],
+  "arms": [
+    "grep",
+    "mda",
+    "qmd",
+    "graphify"
+  ],
+  "store_sha256": "1387cd0748c4a5673e1292269954bf68bc6001e886a087a4c51785b99136ccce",
+  "inventory_sha256": "c11bafacf197e876b0c1bd8fa91d545e89c7351d44e1876e271a12c4d83a95f4",
+  "frozen_sha256": "75b56901e7a6f945d25892753271eee0c6de44e55801a928f007b34b35f2c8f8",
+  "private_frozen_sha256": "c2bed74ae48737947802b535fa22f4a2c2f3382f4790dae9003d00b629d7e6a6",
+  "source_commit": "e88e2bad3160f3c8bb067f7e76992b8c278ba385"
+}

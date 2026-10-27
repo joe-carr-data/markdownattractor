@@ -49,7 +49,7 @@ else
   for v in T5_MODEL T5_ARMS T5_JOBS T5_MAX_TURNS T5_TIMEOUT T5_RETRIES; do [ -z "${!v:-}" ] || die "$v is set: the run parameters of a counted T5 run are fixed (override only under T5_SMOKE)"; done
   MODEL=sonnet; ARMS="git mda mda-index qmd graphify"; JOBS=1; MAX_TURNS=12; TIMEOUT=600; RETRIES=1
 fi
-SOURCES="$RUN/docsqa-data/sources.json"
+SOURCES="$DOCSQA_DATA/sources.json"
 PREAMBLE="The current directory is a git checkout of a documentation site; you may run git. Dates are the UTC calendar days on which changes landed on the main branch. Answer through the structured output only: pages as repository-relative paths, sections as heading paths joined by ' › ', date as YYYY-MM-DD; leave the fields the question does not need empty."
 SCHEMA='{"type":"object","properties":{"pages":{"type":"array","items":{"type":"string"}},"sections":{"type":"array","items":{"type":"string"}},"date":{"type":"string"},"evidence":{"type":"string"}},"required":["pages","sections","date","evidence"],"additionalProperties":false}'
 GIT_PROBE_Q="Which markdown file of this documentation was changed most recently on the main branch, and on what UTC day? Use the repository's history."

@@ -52,7 +52,8 @@ pub struct Args {
     /// The project inside the dataset (`github-docs`, `prisma`, `supabase`, `tailwind-css`).
     #[arg(long)]
     pub project: Option<String>,
-    /// The indexed checkout of that project's repository at the pinned commit.
+    /// The indexed checkout of that project's repository at the pinned commit; or, without
+    /// `--dataset`, an indexed root of our own (benchmark T6) for `--cards` and `--export-cards`.
     #[arg(long)]
     pub root: Option<PathBuf>,
     /// Which split to score: `dev`, `test`, `holdout`, or `all` (plan rule 0.2). The sealed
@@ -224,6 +225,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     if args.dataset.as_deref() == Some("docsqa") {
         return run_docsqa(args, json);
     }
+    if args.root.is_some() {
+        return run_own_root(args, json);
+    }
     let golden_arg = args.golden.clone().unwrap_or_else(|| PathBuf::from("evals/golden"));
     let golden = golden_arg
         .canonicalize()
@@ -315,6 +319,85 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             st.dim("note:")
         );
     }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// `--root` without a dataset (benchmark T6, our own corpora): attach recorded cards
+/// (`--cards`), export the store's cards with their provenance (`--export-cards`), and report
+/// the store's counts and card coverage. Nothing is scored here: the answer-quality harness
+/// scores its own rows. Refuses a golden set or `--record` at the same time, a root that is
+/// not indexed yet, and a call that would neither attach nor export.
+fn run_own_root(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
+    anyhow::ensure!(
+        args.golden.is_none() && !args.record,
+        "--root without --dataset takes --cards and/or --export-cards only (the golden set is --golden)"
+    );
+    anyhow::ensure!(
+        args.cards.is_some() || args.export_cards.is_some(),
+        "--root without --dataset needs --cards and/or --export-cards"
+    );
+    let Some(root) = &args.root else { unreachable!("checked by the caller") };
+    let root = root.canonicalize().with_context(|| format!("root {}", root.display()))?;
+    anyhow::ensure!(
+        root.join(mda_core::config::STATE_DIR).join("index.sqlite").is_file(),
+        "{} is not indexed yet: run `mda index --no-summarize {}` first",
+        root.display(),
+        root.display()
+    );
+    let mut engine = Engine::open(&root)?;
+    let (mut attached, mut vectors) = (0usize, 0usize);
+    if let Some(cards) = &args.cards {
+        let text = std::fs::read_to_string(cards).with_context(|| cards.display().to_string())?;
+        let cards: HashMap<String, SectionSummary> =
+            serde_json::from_str(&text).context("cards")?;
+        attached = attach_cards(engine.store_mut(), &cards)?;
+        if let Some(e) = super::embedder_for(engine.config()).filter(|e| e.ready()) {
+            vectors = engine.embed_pending(&*e, usize::MAX)?.embedded;
+        }
+    }
+    let project = args
+        .project
+        .clone()
+        .or_else(|| root.file_name().map(|n| n.to_string_lossy().into_owned()))
+        .unwrap_or_else(|| "root".to_owned());
+    let exported = args
+        .export_cards
+        .as_deref()
+        .map(|f| export_cards(engine.store(), f, &root, &project))
+        .transpose()?;
+    let counts = engine.store().counts()?;
+    let sections_carded = engine.store().sections_carded()?;
+    let complete = sections_carded == counts.sections;
+    if json {
+        output::json(&serde_json::json!({
+            "root": portable(&root),
+            "project": project,
+            "mda_version": mda_core::VERSION,
+            "store": counts,
+            "card_coverage": {
+                "sections": counts.sections,
+                "sections_carded": sections_carded,
+                "complete": complete,
+            },
+            "cards_attached": attached,
+            "vectors_embedded": vectors,
+            "cards_exported": exported,
+        }));
+        return Ok(ExitCode::SUCCESS);
+    }
+    let st = Style::auto();
+    println!(
+        "{} {} · {} docs · {} sections · {} carded (complete: {}) · {} cards attached · {} vectors · {} exported",
+        st.bold("eval"),
+        st.dim(&portable(&root)),
+        counts.docs,
+        counts.sections,
+        sections_carded,
+        complete,
+        attached,
+        vectors,
+        exported.map_or_else(|| "none".to_owned(), |n| n.to_string())
+    );
     Ok(ExitCode::SUCCESS)
 }
 

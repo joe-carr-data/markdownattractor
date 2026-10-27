@@ -60,7 +60,7 @@ run_all() { # name fetch -> $T/<name>/<project>/… and the summary json; requir
   for p in $PROJECTS; do
     dir="$(project_dir "$p")"; out="$T/$name/$p"; rm -rf "$out"; mkdir -p "$out"
     t0=$(date +%s)
-    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$p" --root "$RUN/$dir" --split dev ${args[@]+"${args[@]}"} --out "$out" > "$out/report.json" 2>"$out/err.log" || die "eval failed on $p (see $out/err.log)"
+    "$MDA" --json eval --dataset docsqa --data "$DOCSQA_DATA" --project "$p" --root "$RUN/$dir" --split dev ${args[@]+"${args[@]}"} --out "$out" > "$out/report.json" 2>"$out/err.log" || die "eval failed on $p (see $out/err.log)"
     t1=$(date +%s); echo "$((t1 - t0))" > "$out/elapsed_s"
     jq -e --arg h "$HYBRID" '.runs[] | select(.run == $h) | select(.metrics.questions > 0)' "$out/results.json" >/dev/null || die "no hybrid row on $p: embeddings off or model missing (see $out/report.json)"
     [ "$(jq -r '.card_coverage.complete' "$out/results.json")" = true ] || die "$p: card coverage incomplete"

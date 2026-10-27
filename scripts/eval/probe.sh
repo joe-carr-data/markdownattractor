@@ -16,10 +16,16 @@ set -euo pipefail
 arm="${1:?arm (mda|grep)}"; project="${2:?project}"; qid="${3:?question_id}"; trace="${4:?trace.jsonl}"
 model="${5:-sonnet}"
 ident "$arm"; ident "$project"
-corpus="$RUN/$(project_dir "$project")"
+corpus="${ARM_CORPUS_OVERRIDE:-$RUN/$(project_dir "$project")}"
 [ -d "$corpus" ] || die "no checkout at $corpus"
-[ "$(question_split "$project" "$qid")" != holdout ] || die "question $qid is in the sealed holdout (rule 0.2)"
-q="$(question_text "$project" "$qid")"
+# T6 (our own corpora): PROBE_QUESTIONS_FILE is a question file ({id, q} rows) read instead of
+# the dataset; such questions have no split (nothing of DocsQA is read on that path).
+if [ -n "${PROBE_QUESTIONS_FILE:-}" ]; then
+  q="$(jq -r --arg id "$qid" 'select(.id == $id) | .q' "$PROBE_QUESTIONS_FILE" | head -1)"
+else
+  [ "$(question_split "$project" "$qid")" != holdout ] || die "question $qid is in the sealed holdout (rule 0.2)"
+  q="$(question_text "$project" "$qid")"
+fi
 [ -n "$q" ] || die "question $qid of $project has no text"
 safe_target "$trace"; safe_target "$trace.err"
 trace="$(cd "$(dirname "$trace")" && pwd)/$(basename "$trace")"

@@ -534,6 +534,135 @@ The harness hash in `T5/FROZEN.md` (`13cf0363…`) is `scripts/eval/t5.sh` at so
 
 **Regeneration (exact).** No clone, store or model call is needed: `scripts/eval/t5.sh table` reads the committed `evals/results/docsqa/T5/<p>/{range,replay,validation,manifest}.json`, `grades.jsonl` and `analysis*.json` and reproduces the published tables byte for byte (hash above); `scripts/eval/t5.sh analysis <p> --json` is, from the repository root, `mda --json eval --replay-analysis evals/results/docsqa/T5/<p>/grades.jsonl --manifest evals/results/docsqa/T5/<p>/manifest.json --mda-arm mda --comparators git,qmd,graphify` (and the same with `--mda-arm mda-index` for `analysis.mda-index.json`); both reproduce the archived files byte for byte once the two provenance paths are normalised (as in §7.2); `scripts/eval/t5.sh grade <p>` re-derives `grades.jsonl` from the run rows, which need the run directory (the rows, every attempt's trace and the arms' copies stay there, not in the repository). **Independent rerun.** The preregistered rerun is a new replay followed by new answer runs on the same frozen step lists and questions. `setup` clones only when `$RUN/t5/<p>/src/.git` is absent and `replay`/`run` resume existing records, so run it in a disposable checkout of the repository with a fresh runtime directory (`RUN`) that holds only the prerequisites — the pinned stores and the archived graph builds — and verify that both `$RUN/t5/<p>/` directories are absent before `setup`; `setup` and `questions` rewrite `T5/<p>/{range.json,steps.jsonl,questions.jsonl}`, which must come out byte-identical to the frozen ones (compare before replaying). Its long pole is Prisma's inline first build (26.6 h, $57.72 list here). Publish the new artifacts beside the originals with the paired differences, never in place of them.
 
+### 7.6 T6 — our own corpora, the T2 method (M9, published 2026-10-27)
+
+**What it is.** The T2 method (plan §2.4–2.7; the gates of rule 0.4) on the three corpora the strategy plan fixed as *ours*: `golden` (`evals/golden/docs`), `docs` (this repository's `docs/`) and the owner's private trading-research repository (supporting evidence only). The questions are synthetic — written by Sonnet from one section each, validated by the Fable + Astra panel in two blind calls (the member's own fact list first, then the four criteria and each writer fact against it), one counted question per page (25, or the count a corpus reaches: the golden set has 27 eligible sections in 19 documents and published with 16), single-section lookup only, plus up to 10 disjoint pilot questions per corpus that are never counted — and the rubric is the **T6 adaptation of T2** (`T2_RUBRIC=t6`: the grader scores against the panel-validated required facts with the source section as evidence; a factual claim is about the corpus's subject matter). The plan with its amendments after the Codex pre-mortem and the six harness passes: `docs/plans/2026-10-m9-t6-page-readme.md`; the reviews: `docs/reviews/codex/2026-10-26-m9-premortem.md`, `docs/reviews/codex/2026-10-26-m9-harness.md`; the publication check: `docs/reviews/codex/2026-10-27-t6-page.md`.
+
+**Nothing of DocsQA is read on a T6 path**: `t6.sh` points `DOCSQA_DATA` at an unreadable location; `scripts/eval/tests/t6-smoke.sh` (in `make check`) proves the model-free steps work that way. **Nothing content-bearing from the private corpus enters the repository**: every private phase runs under `$RUN/t6/private/`; the committed files under `evals/results/own/T6/private/` are built by `scripts/eval/t6_private_export.py` from explicit scalar projections into a field-specific typed schema (opaque ids, digests, numbers, fixed names, closed enums), validated in staging and checked again by `scripts/eval/tests/own-private-schema.sh`; `t6.sh leak-scan` checks the blobs of the whole proposed change against a private denylist before every commit; the private freeze stays under `$RUN` and only its sha256 is published (`T6/private/FROZEN.sha256`), which the public freeze reads.
+
+```bash
+cd "$REPO"; export MDA="$REPO/target/release/mda"; cargo build --release --locked
+for c in golden docs; do scripts/eval/t6.sh setup "$c"; scripts/eval/t6.sh index "$c"; scripts/eval/t6.sh cards "$c"; scripts/eval/t6.sh arms "$c"; done
+T6_PRIVATE_ROOT=<the private repository> scripts/eval/t6.sh setup private; scripts/eval/t6.sh index private; scripts/eval/t6.sh cards private; scripts/eval/t6.sh arms private
+# candidates: a seeded draw over documents then sections, the writer; questions: the panel, 25 counted + 10 pilot; the top-ups are resumable
+# (the seeded prefix is verified field by field, the panel resumes bound to its content and rubric hashes). As run: golden 27 (every eligible
+# section), docs 70 then 30, private 70 then 60.
+for c in golden docs private; do scripts/eval/t6.sh candidates "$c" 70; scripts/eval/t6.sh questions "$c"; done
+scripts/eval/t6.sh candidates docs 100; scripts/eval/t6.sh questions docs; scripts/eval/t6.sh candidates private 130; scripts/eval/t6.sh questions private
+for c in golden docs private; do scripts/eval/t6.sh pilot "$c"; done                    # one run per arm on the pilot questions, both members on every answer → pilot.json
+scripts/eval/t6.sh calibration either-member-differs-by-more-than-one-point-then-panel-mean   # evals/results/own/T6/calibration.json: a frozen input
+scripts/eval/t6.sh freeze                                                                # the private freeze (under $RUN; digest published), then evals/results/own/T6/FROZEN.md; commit both before any counted row
+for c in golden docs private; do scripts/eval/t6.sh preflight "$c"; done                # a failed probe is accepted only by declaration, disclosed: T6_ACCEPT_PROBE_FAIL=graphify T6_ACCEPT_REASON="…" (declared for the public corpora under the third freeze; did not fire)
+for c in golden docs private; do scripts/eval/t6.sh run "$c"; scripts/eval/t6.sh status "$c"; done
+for c in golden docs private; do scripts/eval/t6.sh grade "$c"; scripts/eval/t6.sh panel "$c"; scripts/eval/t6.sh analysis "$c"; done
+for c in golden docs; do scripts/eval/t6.sh archive "$c"; done; scripts/eval/t6.sh export-private; scripts/eval/t6.sh leak-scan
+scripts/eval/t6.sh table; scripts/eval/t6_report.py; scripts/eval/t6.sh readme-row       # the page tables and the README rows, never retyped
+```
+
+A counted run (`run`) refuses to start unless the public freeze checks, the corpus's preflight passed and is bound to the live store, inventory and freeze, the binary rebuilt `--locked` equals the frozen one, no runner override is set, and (private) the private freeze re-checks against its published digest; it takes the arm set the preflight certified. **The preflight** also compares each copy — and graphify's serving copy — with `git archive` of the source commit, reconstructs the store from the committed cards (same section identities, identical card texts, every section embedded), checks the committed question file (texts, or digests against the private texts), the calibration record, and runs three activation probes per arm; every attempt is kept (`preflight/T6-<corpus>.attempt-N.json` and its probe traces).
+
+**Committed** (`evals/results/own/`): `T6/config.toml` (the store configuration), `T6/sources.json` (the public corpora as `git archive <commit>:<subtree>` with tree hashes), `cards-0.1.1-{golden,docs}.json` + provenance, `T6/{golden,docs}/{pages.txt,questions.jsonl,questions.pilot.jsonl,questions.candidates.jsonl,questions.rejected.jsonl,candidates.summary.json,index.json,pilot.json,manifest.json,grades.jsonl,grades.adjudicated.jsonl,analysis.json,analysis.adjudicated.json}` and `panel/{regrade.json,regrade-fable.jsonl,regrade-astra.jsonl,cards-sample.jsonl,cards-fable.jsonl,cards-astra.jsonl,cards.json}` (texts: generated, no third-party text; answers as `answer_sha256`; the panel writes each member's card verdicts twice, stamped and unstamped, and the stamped copies were removed after `cmp` showed them identical); `T6/calibration.json`; `T6/FROZEN.md`; `arms/{qmd,graphify}-{golden,docs}.json` and the archived graphs; `preflight/T6-{golden,docs}*.json` with probe traces (and `preflight/T6-golden.attempt-1.log`, the first attempt's log excerpt: its report was overwritten before attempt-keeping existed); `T6/private/` the allowlisted exports only: `questions.jsonl` (ids, digests, fact counts), `questions.candidates.jsonl`, `candidates.summary.json`, `index.json`, `pilot.json`, `manifest.json`, `grades.jsonl`, `grades.adjudicated.jsonl`, `analysis.json`, `analysis.adjudicated.json`, `panel/{regrade.json,regrade-fable.jsonl,regrade-astra.jsonl,cards.json}`, `preflight.json`, `arms.json`, `FROZEN.sha256`.
+
+**Expected artifacts and hashes (sha256), as published on 2026-10-27:**
+
+```
+16e2c4c3baf841302f53cfc44ad96e7b80c4eb71b09c0464abeb4ff6be43e00c  evals/results/own/T6/FROZEN.md
+e2ca0e48421ce2956586f6c545e48695b07ce16d86a3397db6b6c5b2e30a41ad  evals/results/own/T6/calibration.json
+808738cc33c8e91fec330fc497141694d2fb79b5fbb49140200cdc67b5b9155f  evals/results/own/T6/config.toml
+eee64259993d7cd1868eac7f925de7c53c2b41c1bdad7a0b0402f6e27d746818  evals/results/own/T6/docs/analysis.adjudicated.json
+013b41a37b15f1add2714a313ce5683609247d78a3bc86b67e44f25190d6d04a  evals/results/own/T6/docs/analysis.json
+64d552257af79379fc39343b60b2e8d91c6a18afed5e02a708b9ec6b9190f080  evals/results/own/T6/docs/candidates.summary.json
+0d19586d2576dd16788603353b8b642a8a687fa866562439bc9b9b04cb4ce9a2  evals/results/own/T6/docs/grades.adjudicated.jsonl
+60007cfd391cf0a0fb96f0fe85e2e2b6c250f625661c9d95ed539dcc54796752  evals/results/own/T6/docs/grades.jsonl
+2bd638f0aaba1c3d74789550198ca4af64c782933b979716f4e6ed77bfdca342  evals/results/own/T6/docs/index.json
+183f8c8de9d6905cf4a9909463f34a59d61e0aa5ae6f450fdad0c257ccdefeec  evals/results/own/T6/docs/manifest.json
+a45828b6dd36bf05e45e20e12f67539e9f53a6457e32a32760cfef97c1ee4e66  evals/results/own/T6/docs/pages.txt
+f3e74c1ec9613de937727b3e1e15fbe7ccc810cc959702e20e4bd2ccd1f2b3e5  evals/results/own/T6/docs/panel/cards-astra.jsonl
+2ca62caffe20e75559d9d43cf46e10852147495b236e13c294ae1872271b6168  evals/results/own/T6/docs/panel/cards-fable.jsonl
+c20c1d49e40f23bc03f960c388d911a747eda0f33b43471132f30f3d34ab90f4  evals/results/own/T6/docs/panel/cards-sample.jsonl
+891981fcabc98e27d68e6c7d40625ed4abe59e999e733a2e12bf50fb2890b6e7  evals/results/own/T6/docs/panel/cards.json
+e7eb9511dfb192755d5d12bc79d2447e5bb786272a8cc950c7482e70f5c8ab79  evals/results/own/T6/docs/panel/regrade-astra.jsonl
+fb4774fcc24682a68c241c19a1c9f6676cfd805105e0f0528a6244a66d9992e4  evals/results/own/T6/docs/panel/regrade-fable.jsonl
+fd49bdd68e32befc4e6ace3774de6ae535a77e448157fd620d217b9d2dbb6129  evals/results/own/T6/docs/panel/regrade.json
+cf433aaee6743f3f0d4904f088c83e4d126bb45f83a014ccc0f4ab8bb94e2b9a  evals/results/own/T6/docs/pilot.json
+11c06dc5be06db8eb5264518dee58eb66ade7494f0751ff79273aee236b693e9  evals/results/own/T6/docs/questions.candidates.jsonl
+9a3e02d3e5fd6a530bc1967937ec20a17a6251541c23ed05020a5e7b2214258c  evals/results/own/T6/docs/questions.jsonl
+e63c2f9ea4678056453e6e485792115974f9f3cbc25fd410ae3b335ec0407c63  evals/results/own/T6/docs/questions.pilot.jsonl
+a4ba911a2ec65c8de2cb9fb54dc138113e641c5f77a4f3920e5cf33d079952c6  evals/results/own/T6/docs/questions.rejected.jsonl
+6c7029c884daaafcb0576af61c61a9b38ebf42f637e1e90f2b274c4a8f6c3746  evals/results/own/T6/golden/analysis.adjudicated.json
+743f59c3a48c21dcfcd5db4a44cd0208d176f5afbe25d66cb10e4a3a58f592c5  evals/results/own/T6/golden/analysis.json
+e42ef5a040475fb1c2ce813d2ce643174fd3e3ed8f851392073bb914a75c620a  evals/results/own/T6/golden/candidates.summary.json
+5caba3d645d81395ff9a9ff07a77603f97e933a4fc68ec7789258bf23fd86336  evals/results/own/T6/golden/grades.adjudicated.jsonl
+76cf05a665e9ce2680ba5ecd5f2cbc185d1d78a0091fc4f892207ee3d01f5d78  evals/results/own/T6/golden/grades.jsonl
+56f99180eea5add202c8449f5e55a253ea02849f2cade628d1bb2320165c4b51  evals/results/own/T6/golden/index.json
+661beb6485d38ee4d12ac72e4507feaaad4dd7f3ade35443872d07965d500616  evals/results/own/T6/golden/manifest.json
+c11bafacf197e876b0c1bd8fa91d545e89c7351d44e1876e271a12c4d83a95f4  evals/results/own/T6/golden/pages.txt
+933b53770b118e6c850a9ae5c84e4311fbb6f2453d630a0f7b9b7d2ce119bdbc  evals/results/own/T6/golden/panel/cards-astra.jsonl
+61e251952e731d1aed273e810c6baae7315494327c79f1ef915776734cdf7446  evals/results/own/T6/golden/panel/cards-fable.jsonl
+fd67d7226ad81312800c174fb3fe487ba5f340abd678aa0bb1662419b297f163  evals/results/own/T6/golden/panel/cards-sample.jsonl
+c9f510d658d844c5b460115138d04cff532797c969e4aa7a814470f1f2bbc2f6  evals/results/own/T6/golden/panel/cards.json
+1ab2ad4dabdea80436b58adaf817d132146c51d95d80b7040a5d5f3279373e8e  evals/results/own/T6/golden/panel/regrade-astra.jsonl
+ee0fb7089965fb280502d4835e3cf2ddbf2d20de218c09477b145362da100121  evals/results/own/T6/golden/panel/regrade-fable.jsonl
+015337e89d37914163685b3b5c194db1ca0d72abf194b626ec44872d6e7c55f0  evals/results/own/T6/golden/panel/regrade.json
+5eec4f4edde328e7fb1cd6595dd610e7ec79aaddad49c4eea22d0ff92afc63e6  evals/results/own/T6/golden/pilot.json
+1373828337e1084556a5ada9250219c17486fc6a5a910bee422f7cdc63c14ea5  evals/results/own/T6/golden/questions.candidates.jsonl
+5af4e8df421ca41e7ba1b07b95d138b94f7e0936d5ab370a3a02aad9621c6b1f  evals/results/own/T6/golden/questions.jsonl
+d67968cb4ac2797cd28f528983aed582f270831aaafb16ec120db3e24c50cb18  evals/results/own/T6/golden/questions.pilot.jsonl
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  evals/results/own/T6/golden/questions.rejected.jsonl
+8fd70c2975d5a5d2fc3d47b5de5835c13475dce9aa6aafeb6f3d99603b23cd10  evals/results/own/T6/private/FROZEN.sha256
+24d20ed6c9f15ffb72c1026bfeeb6d3c7800117a0127ee7be5d25117360a860e  evals/results/own/T6/private/analysis.adjudicated.json
+f17701224cd358b5745a9874aebb56d0b06e3821c3e741b7c23bab9e410d0fa7  evals/results/own/T6/private/analysis.json
+ff0596373277eea39ced65753f9379ea452e807989ff206779dc23c3dbe40a4c  evals/results/own/T6/private/arms.json
+4f21abb690e700937aa38db23d412e67848848a94549bbbe2788ef05628de90d  evals/results/own/T6/private/candidates.summary.json
+92a41394b5b819cc34adf6fb03f9df7af96370b2f3038fc30c8d6c1ebf1d53b0  evals/results/own/T6/private/grades.adjudicated.jsonl
+3c8b60235c050558cfe2c3f5cd763f25348d8e77d6b960d342e23a86c83208cb  evals/results/own/T6/private/grades.jsonl
+2c5fcf3e7965d100557e5eeb8e3f888f3a1c1de86793c776c313043ba5b10d7d  evals/results/own/T6/private/index.json
+20b3c66ce33d92437724078537853d9dcb653c915f7b907b2a9a0c8f7cf69328  evals/results/own/T6/private/manifest.json
+84e805a66024ca0132becd5e941997178fe6147f52995412de2d09a9442c7544  evals/results/own/T6/private/panel/cards.json
+f0936f8b0956d56454fc8bb4f8ab87928c68e49054c97cf0de37cb1ee385db2d  evals/results/own/T6/private/panel/regrade-astra.jsonl
+095027c91cb70d06cd4da676ea404acf5d32b5a3f16b86cfa87002c2f8eaa94b  evals/results/own/T6/private/panel/regrade-fable.jsonl
+618c8ad37291c023fc704da6bdc7222e132bb04b0bff559680e75db55355fc4a  evals/results/own/T6/private/panel/regrade.json
+3d5e6f306705bc5ae871cface3b99d4626f2b09fcb98710feb0d340f2573afde  evals/results/own/T6/private/pilot.json
+e12cd879ea06a824faed0a2e5a756bc2f311be6ab22b383d69a4a881edb347e5  evals/results/own/T6/private/preflight.json
+88bc8c8117fd72568a5bb10567e52bf5ba827b46f8702c356e3b4b40785c3733  evals/results/own/T6/private/questions.candidates.jsonl
+92952d5d7cc13e75fb38d705a01bcf202108b8a86963a98257cd0c76a5e84102  evals/results/own/T6/private/questions.jsonl
+bf1001a5659b0f1c2e624d675ccd88f583cc8dfcaea9d47ac5df38af3bd2b2d4  evals/results/own/T6/sources.json
+4ee9e9a1b6df2afe833e329667ef65827b3b9f1f0b53a6a4389cbabfa8859087  evals/results/own/arms/graphify-docs.json
+6dea193fe80f97ebf1651173c27f6daa72967b0aeae6fad364c06ef8f8d4555d  evals/results/own/arms/graphify-golden.json
+8c636f3d7f84c96efac92ccdb943529dadb3f7715d0681faec321ecb8b190d39  evals/results/own/arms/qmd-docs.json
+d95dec4c9cedf667bb2d63d6d41949e6473726395aa825fcf0e7f79132fe340e  evals/results/own/arms/qmd-golden.json
+ace9eac3feedea7adf3db9d20f612b42a0f3b08f8e9e45cd36daa7c67b03255f  evals/results/own/cards-0.1.1-docs.json
+742ac8d4e9bf80cc4e4510b094633f45f50e8a0ec2f9fe471f9e9e31453dbd4f  evals/results/own/cards-0.1.1-docs.json.provenance.json
+e35768b9b8f7f641629e46ae93e9f0ef946446c791c18119217dedf99311a737  evals/results/own/cards-0.1.1-golden.json
+c3a4fff9001f07564df69a9e216bc88cce3881c5b7b9f8defd36a3efab81fe64  evals/results/own/cards-0.1.1-golden.json.provenance.json
+6854ce5259f799a9ddee01b89bb09eb756cb68b6dbe532a2b6ecce98e33f20e9  evals/results/own/preflight/T6-docs.attempt-1.json
+9ec84bee23c784f670ea2c47b5bb8cf888640d1b4c6bef598aa058a55cc18abc  evals/results/own/preflight/T6-docs.json
+fc9d49d326e5aa477b77be9f0d07526cf0c9c9ec329c259bd9daef083feae64f  evals/results/own/preflight/T6-golden.attempt-1.log
+3a10798911aa580e1d22799d74cbfc1c081117ab707c803b9dd506dabf7507b3  evals/results/own/preflight/T6-golden.attempt-2.json
+8a7b2971a1ee43dd9087a7a524dfd87aa33b9c4e208d501253d762d8ed0e9197  evals/results/own/preflight/T6-golden.json
+1541db63e13f4ffd3d0547150c5f4f32e92f9918e0e97bd7b7be8b40171cb7bb  scripts/eval/t6.sh table (the rendered tables and caption)
+345149ec15ed06375dcce9368dfa102d1523dbeb96a42cb55aa45609c35d3fbc  scripts/eval/t6_report.py (the rendered companion tables and caption)
+057f71bfa32309d304a543492818136c0a5edbc235b69c00b7a10be8ed8b60ab  scripts/eval/t6.sh readme-row (the README rows)
+```
+
+**The freeze, three versions, every rewrite harness-only, every counted row after the third** (`git log -- evals/results/own/T6/FROZEN.md`):
+
+```
+c15cdd9  2026-10-27T01:34:11Z  first version                                   file sha256 204919281ea0af0b75cbfac4da3ba3182ad2aa66d0b08437ecc84ad417cc1894  source commit c0b43483ebee65ce247930278c4b251a5515ea85  private digest e0c73f95d0a9c7dabbfc9b137c65c71b38fa228135dce28209a2d5b7d2d01731
+e88e2ba  2026-10-27T01:56:04Z  the accepted-probe-failure exception; the       file sha256 75b56901e7a6f945d25892753271eee0c6de44e55801a928f007b34b35f2c8f8  source commit 9f675482d7804db8c22285001fd51e5bd030edad  private digest c2bed74ae48737947802b535fa22f4a2c2f3382f4790dae9003d00b629d7e6a6
+                               serving-copy comparison as whole-manifest equality
+08cefe8  2026-10-27T02:17:02Z  attempt-keeping in the preflight (every row     file sha256 16e2c4c3baf841302f53cfc44ad96e7b80c4eb71b09c0464abeb4ff6be43e00c  source commit 4451a7a6e6fbadfda94659cb260f6dc00507a63f  private digest 25a53dd581106e9c18f7b0e1f033f8339e1977012687e8d978566e5ee62fc985
+                               after this one; binary sha256 432bac9166c9… in all three)
+```
+
+`freeze.sh --check --protocol final --table T6` passes on the frozen files at the third version's source commit (`4451a7a6…`); on today's tree it reports `scripts/eval` as changed, because `scripts/eval/t6_report.py` (a renderer that reads only committed files) was added after the runs — the T5 precedent; `t6.sh`, `t2.sh`, `panel.sh`, `t6_resolve.py`, `t6_private_export.py` and every other hashed file are unchanged since the freeze (`git diff 4451a7a6 -- scripts/eval` shows the one added file). The analyses carry the grades and manifest paths of the machine that wrote them (`~/.cache/markdownattractor/bench/t6/<corpus>/runs/…`) as their only machine-specific bytes.
+
+**Regeneration (exact).** No copy, store or model call is needed: `scripts/eval/t6.sh table` and `scripts/eval/t6_report.py` read the committed files and reproduce the published tables byte for byte (hashes above); `scripts/eval/t6.sh analysis <c>` is, on the run directory, `mda --json eval --analysis <runs>/grades.jsonl --manifest <runs>/manifest.json --comparators grep,qmd,graphify` (and `--analysis <runs>/panel/grades.adjudicated.jsonl` for the adjudicated file); from the repository root, `mda --json eval --analysis evals/results/own/T6/<c>/grades.jsonl --manifest evals/results/own/T6/<c>/manifest.json --comparators grep,qmd,graphify | jq -S 'del(.grades,.manifest)'` equals `jq -S 'del(.grades,.manifest)' evals/results/own/T6/<c>/analysis.json` for golden and docs (verified before publication; the same with `grades.adjudicated.jsonl` and `analysis.adjudicated.json`), the two deleted keys being the provenance paths. The public corpora, their stores and questions rebuild from this repository alone: `t6.sh setup` restores each copy by `git archive` of `T6/sources.json`'s commit, the preflight's reconstruction rebuilds the store from the committed cards and requires the frozen store hash, and `questions.jsonl` is the frozen text. `t6.sh grade <c>` re-derives `grades.jsonl` from the run rows, which need the run directory (the rows, every attempt's trace and the arms' copies stay there).
+
+**Independent rerun.** The runs and grades are model outputs; a fresh `t6.sh run` directory (new `$RUN`) under the same freeze is an independent rerun, published beside the original with its own `archive`. The private corpus cannot be rerun by anyone but the owner (its path, salt and texts live under `$RUN`); its rerun needs the same repository checkout at the frozen content fingerprint (the private freeze), the salt file and `T6_PRIVATE_ROOT`.
+
+**Disclosed about the private corpus's coverage.** Its inventory has 821 pages; mda indexed 595 documents and qmd 600: both skip the 221 pages under dot-directories (hidden entries are excluded by both walkers), and mda's git-aware walker also skips 5 tracked files that a `.gitignore` pattern in the repository matches (qmd indexes them); graphify's graph has a node for 762. Candidates are drawn from the store's sections, so no question targets a page outside mda's index; the resolver accepts citations to any inventory page.
+
 ## 8. Report
 
 Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, `mda --version` and SHA, `claude --version`, the model file hashes, the checksums of §2, every attempt (timestamp, step, outcome) including failed ones, the tables of §3–§5 with your numbers next to the expected ones marked *regeneration* (exact match: yes/no) or *rerun* (paired difference), and every deviation. A regeneration that does not match is the most valuable outcome this file can produce: open an issue with the report.

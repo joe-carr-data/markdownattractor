@@ -1,0 +1,23 @@
+# T6 golden preflight, attempt 1 (2026-10-27T01:34:11Z, under the first T6 freeze, commit c15cdd9): the chain's log excerpt. The report file was overwritten by attempt 2 before the harness kept attempts; every check passed, graphify's probes 3 of 3.
+== preflight golden 2026-10-27T01:34:11Z
+ok env: no provider key · claude 2.1.302 (Claude Code) · codex codex-cli 0.155.1
+ok frozen: frozen inputs match <path> (source commit c0b43483ebee65ce247930278c4b251a5515ea85, HEAD c15cdd9a1f63f118450d163d307420eda9a046eb)
+ok binary: the --locked build completed; cargo's executable (<path> and $MDA both have the frozen hash (432bac9166c9cb2a8bcaaa98e7da780100eb39a6aa55247fd848cb0ef2106346)
+ok calibration: calibration.json conforms, names golden, has pilot runs and resolved ids; rule: either-member-differs-by-more-than-one-point-then-panel-mean
+ok copy: inventory and content identical to git archive d061f8c12948:evals/golden/docs (32 files)
+ok extras: no file beyond the archive outside the store
+ok copy-graphify: graphify's serving copy equals the source copy on every file and holds no symlink (its .claude/, CLAUDE.md and graphify-out/ aside)
+ok inventory: 32 pages, unchanged since setup (sha256 c11bafacf197…)
+ok store: store unchanged since indexing (1387cd0748c4…)
+ok complete: {"docs":32,"sections":117,"summarized":117} · no daemon
+ok reconstruction: a raw index of a fresh copy with cards-0.1.1-golden.json attached is complete (117 attached, 117 vectors): same section identities, identical cards per section hash, every distinct section embedded in both stores (review F9)
+ok questions: 16 questions committed (sha256 5af4e8df421c…)
+ok question-shape: every row has q, reference, evidence, relevant
+ok qmd: index t6-golden fingerprint 3e863b4f86a6…
+ok graphify: served graph equals the recorded build (f94ef06394f3…)
+ok probes-grep: 3 of 3 probes made a successful call of the arm's tool
+ok probes-mda: 3 of 3 probes made a successful call of the arm's tool
+ok probes-qmd: 3 of 3 probes made a successful call of the arm's tool
+ok probes-graphify: 3 of 3 probes made a successful call of the arm's tool
+report: <path> · passed=true failed=0
+rc=0

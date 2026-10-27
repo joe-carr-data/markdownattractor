@@ -36,7 +36,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -f "$frozen" ] || die "no frozen file $frozen"
-dir="$(project_dir "$project")"; corpus="$RUN/$dir"; data="$RUN/docsqa-data"
+dir="$(project_dir "$project")"; corpus="$RUN/$dir"; data="$DOCSQA_DATA"
 committed="$(results_dir "$table")/$project"
 [ -d "$committed" ] || die "no committed rows for $table/$project at $committed"
 arms="$(sed -n '/^### Arms/,/^$/p' "$frozen" | sed -n 's/^- \([A-Za-z0-9._-]*\):.*/\1/p' | tr '\n' ' ')"

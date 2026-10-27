@@ -1,0 +1,39 @@
+{
+  "seconds": 96,
+  "retries": 0,
+  "counts": {
+    "docs": 32,
+    "failed": 0,
+    "pending": 0,
+    "sections": 117,
+    "summarized": 117,
+    "tombstoned": 0,
+    "total_cost_usd": 0.46153,
+    "total_input_tokens": 258015,
+    "total_output_tokens": 40703
+  },
+  "embeddings": {
+    "embedded": 117,
+    "model": "bge-small-en-v1.5-q"
+  },
+  "store_sha256": "1387cd0748c4a5673e1292269954bf68bc6001e886a087a4c51785b99136ccce",
+  "indexed_at": "2026-10-26T19:32:53Z",
+  "cards": {
+    "cards": 117,
+    "sections": 117,
+    "sections_carded": 117,
+    "complete": true,
+    "truncated": 0,
+    "by_model": {
+      "claude-haiku-4-5": 97,
+      "none": 20
+    },
+    "summarized_from": "2026-10-26T19:31:18.502064Z",
+    "summarized_to": "2026-10-26T19:32:46.914572Z",
+    "usage": {
+      "cost_usd_list_price_equivalent": 0.46153,
+      "input_tokens": 258015,
+      "output_tokens": 40703
+    }
+  }
+}

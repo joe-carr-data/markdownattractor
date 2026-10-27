@@ -1,0 +1,59 @@
+{
+  "corpus": "docs",
+  "at": "2026-10-26T22:08:38Z",
+  "index": {
+    "seconds": 396,
+    "counts": {
+      "docs": 73,
+      "failed": 0,
+      "pending": 0,
+      "sections": 514,
+      "summarized": 506,
+      "tombstoned": 0,
+      "total_cost_usd": 3.3220399,
+      "total_input_tokens": 1446193,
+      "total_output_tokens": 319375
+    }
+  },
+  "candidates": {
+    "written": 94,
+    "refused": 15,
+    "accepted": 35,
+    "judged": 79
+  },
+  "runs": {
+    "n": 40,
+    "errors": 0,
+    "wall_s_total": 828,
+    "cost_usd": 1.5721974000000003,
+    "grounding_batches": 41,
+    "retried": 0
+  },
+  "seconds": {
+    "runs": 833,
+    "grade": 534,
+    "panel": 666
+  },
+  "panel": {
+    "sample": 40,
+    "incomplete": 0,
+    "agreement": {
+      "fable_astra": {
+        "exact": 0.575,
+        "within_one": 0.875
+      },
+      "fable_sonnet": {
+        "exact": 0.725,
+        "within_one": 0.975
+      },
+      "astra_sonnet": {
+        "exact": 0.625,
+        "within_one": 0.875
+      }
+    },
+    "resolved_by_panel": 5,
+    "mean_sonnet": 4.9,
+    "mean_fable": 5.1,
+    "mean_astra": 4.55
+  }
+}

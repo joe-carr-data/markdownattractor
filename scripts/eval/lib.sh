@@ -10,7 +10,11 @@ REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 RUN="${RUN:-$HOME/.cache/markdownattractor/bench}"
 MDA="${MDA:-$REPO/target/release/mda}"
 export MDA_MODEL_DIR="${MDA_MODEL_DIR:-$HOME/.cache/markdownattractor/models}"
-RESULTS="$REPO/evals/results/docsqa"
+# Where a table's committed observations live; T6 (our own corpora) overrides it with
+# evals/results/own. The DocsQA dataset checkout: every read of it goes through DOCSQA_DATA, so
+# a harness that must not touch the dataset (T6) can point it at an unreadable path.
+RESULTS="${RESULTS:-$REPO/evals/results/docsqa}"
+DOCSQA_DATA="${DOCSQA_DATA:-$RUN/docsqa-data}"
 # The Rust toolchain, for the recorded rustc version and the release build.
 [ ! -f "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 # shellcheck disable=SC2034  # used by the scripts that source this file
@@ -51,19 +55,27 @@ project_dir() { case "$1" in tailwind-css) echo tailwindcss ;; *) echo "$1" ;; e
 # opens) with the sha256 of the file it resolves to and its target, which must stay inside
 # the cache. A broken or outward link is fatal. This is evals/results/docsqa/model.sha.
 model_sha() {
-  local f target resolved
+  local f target resolved h n=0 list
+  list="$(mktemp -t mda-model-sha.XXXXXX)" || die "model_sha: no temp file"
   ( cd "$MDA_MODEL_DIR" || exit 1
-    find . \( -type f -o -type l \) ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do
+    trap 'rm -f "$list"' EXIT
+    find . \( -type f -o -type l \) ! -name '*.lock' | sed 's|^\./||' | LC_ALL=C sort > "$list" || exit 1
+    [ -s "$list" ] || die "model_sha: no model files under $MDA_MODEL_DIR"
+    while IFS= read -r f; do
+      n=$((n + 1))
       if [ -L "$f" ]; then
         target="$(readlink "$f")"
         resolved="$(cd "$(dirname "$f")" && cd "$(dirname "$target")" 2>/dev/null && pwd -P)/$(basename "$target")"
         [ -f "$resolved" ] || die "model link $f -> $target does not resolve to a file"
         case "$resolved" in "$(pwd -P)"/*) ;; *) die "model link $f -> $target leaves the cache" ;; esac
-        printf '%s  %s -> %s\n' "$(shasum -a 256 "$resolved" | cut -c1-64)" "$f" "$target"
+        # every hash is a checked assignment (a failed shasum is fatal, never an empty digest)
+        h="$(shasum -a 256 "$resolved" | cut -c1-64)" && [ "${#h}" = 64 ] || die "model_sha: cannot hash $resolved"
+        printf '%s  %s -> %s\n' "$h" "$f" "$target"
       else
-        printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -c1-64)" "$f"
+        h="$(shasum -a 256 "$f" | cut -c1-64)" && [ "${#h}" = 64 ] || die "model_sha: cannot hash $f"
+        printf '%s  %s\n' "$h" "$f"
       fi
-    done )
+    done < "$list" )
 }
 
 # No arm may reach a model through a provider key (plan §0a.3: every model call goes through
@@ -111,7 +123,7 @@ probe_ids() { jq -r '.runs[0].results[:3][].id' "$(results_dir "${2:-development
 # The text of one question of one project; exactly one row must match.
 question_text() { # project question_id
   local rows
-  rows="$(jq -c --arg p "$1" --arg id "$2" 'select(.project == $p and .question_id == $id) | .query' "$RUN/docsqa-data/data/questions.jsonl")"
+  rows="$(jq -c --arg p "$1" --arg id "$2" 'select(.project == $p and .question_id == $id) | .query' "$DOCSQA_DATA/data/questions.jsonl")"
   [ "$(printf '%s\n' "$rows" | grep -c .)" = 1 ] || die "question $2 of $1: expected exactly one row in questions.jsonl"
   jq -r . <<<"$rows"
 }

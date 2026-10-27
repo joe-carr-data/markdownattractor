@@ -46,7 +46,7 @@ PY
 )"
     t1=$(date +%s)
     total=0; present=0
-    while IFS= read -r p; do total=$((total + 1)); [ -f "$corpus/$p" ] && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
+    while IFS= read -r p; do total=$((total + 1)); [ -f "$corpus/$p" ] && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$DOCSQA_DATA/data/corpus.jsonl")
     jq -n --arg project "$project" --argjson n "$n" --argjson s "$((t1 - t0))" --arg sqlite "$(python3 -c 'import sqlite3; print(sqlite3.sqlite_version)')" --argjson total "$total" --argjson present "$present" --arg db "${db/#$HOME/\~}" \
       '{arm: "bm25-files", project: $project, version: ("python3 sqlite3 " + $sqlite + " FTS5"), config: {tokenize: "unicode61 remove_diacritics 2", unit: "whole page", query: "every term double-quoted, AND; OR fallback when AND matches nothing", rank: "bm25()"}, build: {index_s: $s}, coverage: {files_indexed: $n, corpus_pages: $total, corpus_pages_indexed: $present, coverage: (if $total == 0 then 0 else $present / $total end)}, db: $db, latency: "none (quality only, plan §2.1)"}' > "$ARMS/bm25-files-$project.json"
     echo "built $db: $n pages in $((t1 - t0)) s · $present of $total corpus pages on disk · $ARMS/bm25-files-$project.json"
@@ -56,7 +56,7 @@ PY
     [ -f "$db" ] || die "no $db"
     n="$(sqlite3 "$db" 'SELECT count(*) FROM pages')"
     total=0; present=0
-    while IFS= read -r p; do total=$((total + 1)); [ -f "$corpus/$p" ] && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl")
+    while IFS= read -r p; do total=$((total + 1)); [ -f "$corpus/$p" ] && present=$((present + 1)); done < <(jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$DOCSQA_DATA/data/corpus.jsonl")
     prev="{}"; [ ! -f "$ARMS/bm25-files-$project.json" ] || prev="$(cat "$ARMS/bm25-files-$project.json")"
     jq -n --argjson prev "$prev" --arg project "$project" --argjson n "$n" --arg sqlite "$(python3 -c 'import sqlite3; print(sqlite3.sqlite_version)')" --argjson total "$total" --argjson present "$present" --arg db "${db/#$HOME/\~}" --arg fp "$(bm25_fingerprint "$project")" --arg note "$note" --arg at "$(date -u +%FT%TZ)" \
       '$prev + {arm: "bm25-files", project: $project, version: ("python3 sqlite3 " + $sqlite + " FTS5"), config: {tokenize: "unicode61 remove_diacritics 2", unit: "whole page", query: "every term double-quoted, AND; OR fallback when AND matches nothing", rank: "bm25(), ties by path"}, build: (($prev.build // {}) + {completed: true}), coverage: {files_indexed: $n, corpus_pages: $total, corpus_pages_indexed: $present, coverage: (if $total == 0 then 0 else $present / $total end)}, db: $db, table_fingerprint: $fp, latency: "none (quality only, plan §2.1)", record: {written_at: $at, note: $note}}' > "$ARMS/bm25-files-$project.json"
@@ -69,7 +69,7 @@ PY
     [ "$split" != holdout ] || die "the holdout is sealed (rule 0.2)"
     jq -r --arg s "$split" '.questions[] | select(.split == $s) | .id' "$RESULTS/$project/split.json" > "$out.ids"
     [ -s "$out.ids" ] || die "no questions in split $split for $project"
-    python3 - "$db" "$RUN/docsqa-data/data/questions.jsonl" "$project" "$out.ids" "$out" <<'PY'
+    python3 - "$db" "$DOCSQA_DATA/data/questions.jsonl" "$project" "$out.ids" "$out" <<'PY'
 import json, sqlite3, sys, time
 db, qfile, project, idfile, out = sys.argv[1:6]
 ids = [l.strip() for l in open(idfile) if l.strip()]

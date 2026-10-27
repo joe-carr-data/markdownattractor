@@ -1,0 +1,16 @@
+{
+  "source_commit": "d061f8c12948ee306fb39425e4b2bbc5320c923c",
+  "note": "the public corpora are `git archive <source_commit>:<subtree>` of this repository; a reader rebuilds them from the published commit",
+  "corpora": {
+    "golden": {
+      "subtree": "evals/golden/docs",
+      "tree": "c14771261e476c779ee816cd6166f60f11273738",
+      "files": 32
+    },
+    "docs": {
+      "subtree": "docs",
+      "tree": "dfb1ffd23282201c8edf69888716a76c93980812",
+      "files": 73
+    }
+  }
+}

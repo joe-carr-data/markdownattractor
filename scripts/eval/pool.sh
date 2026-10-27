@@ -108,7 +108,7 @@ if [ "$cmd" = column ]; then
   score() { # rows.jsonl name label(original|pooled) slug -> metrics json (results kept under $cdir)
     local extra=() d="$cdir/$4.$3"; mkdir -p "$d"
     [ "$3" = original ] || extra=(--extra-labels "$pooled")
-    "$MDA" --json eval --dataset docsqa --data "$RUN/docsqa-data" --project "$project" --root "$corpus" --split "$split" --arm-output "$1" --arm-name "$2" --only-questions "$judged" ${extra[@]+"${extra[@]}"} --out "$d" 2>"$tmp/err" > "$tmp/report.json" || die "scoring $2 ($3) failed: $(tail -c 300 "$tmp/err")"
+    "$MDA" --json eval --dataset docsqa --data "$DOCSQA_DATA" --project "$project" --root "$corpus" --split "$split" --arm-output "$1" --arm-name "$2" --only-questions "$judged" ${extra[@]+"${extra[@]}"} --out "$d" 2>"$tmp/err" > "$tmp/report.json" || die "scoring $2 ($3) failed: $(tail -c 300 "$tmp/err")"
     mv "$d/results.json" "$cdir/$4.$3.results.json"; rm -rf "$d"
     "$MDA" --json eval --interval "$cdir/$4.$3.results.json" --draws 5000 --seed "$seed" | jq -c --slurpfile r "$tmp/report.json" '.files[0].runs[0] | {questions: .n, success_at_5, success_ci95, mrr_at_5, mrr_ci95, ndcg_at_10, ndcg_ci95, labels_added: ($r[0].extra_labels.added // 0)}'
   }
@@ -146,11 +146,11 @@ tmp="$(mktemp -d -t mda-pool.XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
 # 2. Unlabelled pairs per arm (a page not among the question's labels), keyed for the seeded order.
 # Only pages of the dataset corpus can be labelled (a label is a corpus page): an arm that
 # returns a file outside it (graphify returns code files) contributes no candidate there.
-jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$RUN/docsqa-data/data/corpus.jsonl" | sort -u > "$tmp/corpus-pages.txt"
+jq -r --arg pr "$project" 'select(.project == $pr) | .repository_source_path' "$DOCSQA_DATA/data/corpus.jsonl" | sort -u > "$tmp/corpus-pages.txt"
 jq -c --arg seed "$seed" --rawfile cp "$tmp/corpus-pages.txt" '($cp | split("\n") | map(select(. != "")) | map({(.): true}) | add) as $corpus | . as $r | .pages[] | . as $pg | select(($r.relevant | index([$pg])) == null and $corpus[$pg] == true) | {arm: $r.arm, question_id: $r.question_id, page: $pg}' "$tmp/rows.jsonl" \
   | while IFS= read -r line; do key="$(printf '%s\x00%s\x00%s' "$seed" "$(jq -r .question_id <<<"$line")" "$(jq -r .page <<<"$line")" | shasum -a 256 | cut -c1-16)"; jq -c --arg k "$key" '. + {key: $k}' <<<"$line"; done > "$tmp/pairs.jsonl"
 # 3. Round-robin across arms in key order until n distinct (question, page) pairs.
-python3 - "$tmp/pairs.jsonl" "$n" "$RUN/docsqa-data/data/questions.jsonl" "$project" "$corpus" "$out" <<'PY'
+python3 - "$tmp/pairs.jsonl" "$n" "$DOCSQA_DATA/data/questions.jsonl" "$project" "$corpus" "$out" <<'PY'
 import json, sys, collections, os
 pairs_f, n, qfile, project, corpus, out = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
 by_arm = collections.defaultdict(list)

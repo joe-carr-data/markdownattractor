@@ -1,0 +1,134 @@
+{
+  "table": "T6",
+  "project": "docs",
+  "run_at": "2026-10-27T02:24:15Z",
+  "status": "completed",
+  "passed": true,
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.302 (Claude Code) · codex codex-cli 0.155.1"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/own/T6/FROZEN.md (source commit 4451a7a6e6fbadfda94659cb260f6dc00507a63f, HEAD 08cefe84898ce57566504d60e3042a3a155b5ad0)"
+    },
+    {
+      "name": "binary",
+      "status": "ok",
+      "detail": "the --locked build completed; cargo's executable (/Users/jcarr/markdownattractor/target/release/mda) and $MDA both have the frozen hash (432bac9166c9cb2a8bcaaa98e7da780100eb39a6aa55247fd848cb0ef2106346)"
+    },
+    {
+      "name": "calibration",
+      "status": "ok",
+      "detail": "calibration.json conforms, names docs, has pilot runs and resolved ids; rule: either-member-differs-by-more-than-one-point-then-panel-mean"
+    },
+    {
+      "name": "copy",
+      "status": "ok",
+      "detail": "inventory and content identical to git archive d061f8c12948:docs (73 files)"
+    },
+    {
+      "name": "extras",
+      "status": "ok",
+      "detail": "no file beyond the archive outside the store"
+    },
+    {
+      "name": "copy-graphify",
+      "status": "ok",
+      "detail": "graphify's serving copy equals the source copy on every entry (73 files, 0 symlinks the source has too; its .claude/, CLAUDE.md and graphify-out/ aside)"
+    },
+    {
+      "name": "inventory",
+      "status": "ok",
+      "detail": "73 pages, unchanged since setup (sha256 a45828b6dd36…)"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "store unchanged since indexing (ac47b5174f74…)"
+    },
+    {
+      "name": "complete",
+      "status": "ok",
+      "detail": "{\"docs\":73,\"sections\":514,\"summarized\":506} · no daemon"
+    },
+    {
+      "name": "reconstruction",
+      "status": "ok",
+      "detail": "a raw index of a fresh copy with cards-0.1.1-docs.json attached is complete (506 attached, 506 vectors): same section identities, identical cards per section hash, every distinct section embedded in both stores (review F9)"
+    },
+    {
+      "name": "questions",
+      "status": "ok",
+      "detail": "25 questions committed (sha256 9a3e02d3e5fd…)"
+    },
+    {
+      "name": "question-shape",
+      "status": "ok",
+      "detail": "every row has q, reference, evidence, relevant"
+    },
+    {
+      "name": "qmd",
+      "status": "ok",
+      "detail": "index t6-docs fingerprint f74386635a1f…"
+    },
+    {
+      "name": "graphify",
+      "status": "ok",
+      "detail": "served graph equals the recorded build (89055aac1e8d…)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    }
+  ],
+  "probes": {
+    "grep": {
+      "activated": 3,
+      "of": 3
+    },
+    "mda": {
+      "activated": 3,
+      "of": 3
+    },
+    "qmd": {
+      "activated": 3,
+      "of": 3
+    },
+    "graphify": {
+      "activated": 3,
+      "of": 3
+    }
+  },
+  "accepted_probe_failures": [],
+  "arms": [
+    "grep",
+    "mda",
+    "qmd",
+    "graphify"
+  ],
+  "store_sha256": "ac47b5174f740b922fc78e6761f6c69b1eebbb13eb66e8e370d2ae68be03ace7",
+  "inventory_sha256": "a45828b6dd36bf05e45e20e12f67539e9f53a6457e32a32760cfef97c1ee4e66",
+  "frozen_sha256": "16e2c4c3baf841302f53cfc44ad96e7b80c4eb71b09c0464abeb4ff6be43e00c",
+  "private_frozen_sha256": "25a53dd581106e9c18f7b0e1f033f8339e1977012687e8d978566e5ee62fc985",
+  "source_commit": "08cefe84898ce57566504d60e3042a3a155b5ad0"
+}
