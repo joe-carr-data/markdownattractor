@@ -1,0 +1,109 @@
+{
+ "accepted_probe_failures": [],
+ "checks": [
+  {
+   "name": "env",
+   "status": "ok"
+  },
+  {
+   "name": "frozen",
+   "status": "ok"
+  },
+  {
+   "name": "binary",
+   "status": "ok"
+  },
+  {
+   "name": "calibration",
+   "status": "ok"
+  },
+  {
+   "name": "frozen-private",
+   "status": "ok"
+  },
+  {
+   "name": "env",
+   "status": "ok"
+  },
+  {
+   "name": "inventory",
+   "status": "ok"
+  },
+  {
+   "name": "store",
+   "status": "ok"
+  },
+  {
+   "name": "complete",
+   "status": "ok"
+  },
+  {
+   "name": "reconstruction",
+   "status": "ok"
+  },
+  {
+   "name": "questions",
+   "status": "ok"
+  },
+  {
+   "name": "question-shape",
+   "status": "ok"
+  },
+  {
+   "name": "qmd",
+   "status": "ok"
+  },
+  {
+   "name": "graphify",
+   "status": "ok"
+  },
+  {
+   "name": "probes-grep",
+   "status": "ok"
+  },
+  {
+   "name": "probes-mda",
+   "status": "ok"
+  },
+  {
+   "name": "probes-qmd",
+   "status": "ok"
+  },
+  {
+   "name": "probes-graphify",
+   "status": "ok"
+  },
+  {
+   "name": "leak-scan",
+   "status": "ok"
+  }
+ ],
+ "frozen_sha256": "16e2c4c3baf841302f53cfc44ad96e7b80c4eb71b09c0464abeb4ff6be43e00c",
+ "inventory_sha256": "366a473a98f2daa8958086fa33b9377641f0b22ae29e2f7e8e073f3fa922c5f4",
+ "passed": true,
+ "private_frozen_sha256": "25a53dd581106e9c18f7b0e1f033f8339e1977012687e8d978566e5ee62fc985",
+ "probes": {
+  "graphify": {
+   "activated": 3,
+   "of": 3
+  },
+  "grep": {
+   "activated": 3,
+   "of": 3
+  },
+  "mda": {
+   "activated": 3,
+   "of": 3
+  },
+  "qmd": {
+   "activated": 3,
+   "of": 3
+  }
+ },
+ "project": "private",
+ "run_at": "2026-10-27T02:37:14Z",
+ "source_commit": "08cefe84898ce57566504d60e3042a3a155b5ad0",
+ "status": "completed",
+ "store_sha256": "45b6c17a5d8f67e2e7c75f63a0de82cd3c51b31b8d41d42d26c65c044de0d412",
+ "table": "T6"
+}

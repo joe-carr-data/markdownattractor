@@ -1,0 +1,37 @@
+{
+ "graphify": {
+  "build": {
+   "completed": true,
+   "cost_usd_list_price": 18.289382600000003,
+   "turns": 103,
+   "wall_s": 592
+  },
+  "coverage": {
+   "corpus_pages": 821,
+   "corpus_pages_with_a_node": 762,
+   "coverage": 0.928136419001218
+  },
+  "graph": {
+   "edges": 64039,
+   "nodes": 33595,
+   "sha256": "94600e14d7a9177048807d915edf0cc0aaf132b77816e11142924bc5b2da0eb7"
+  },
+  "version": "graphify 0.9.66"
+ },
+ "qmd": {
+  "build": {
+   "collection_add_s": 4,
+   "embed_s": 605,
+   "total_s": 609,
+   "update_s": 0
+  },
+  "coverage": {
+   "corpus_pages": 821,
+   "corpus_pages_indexed": 600,
+   "coverage": 0.730816077953715,
+   "files_indexed": 600,
+   "markdown_files_on_disk": 827
+  },
+  "version": "qmd 2.8.3 (facd35e)"
+ }
+}

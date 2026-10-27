@@ -1,0 +1,69 @@
+{
+ "arms": [
+  "grep",
+  "mda",
+  "qmd",
+  "graphify"
+ ],
+ "launches": {
+  "graphify": {
+   "mcp_server": "graphify",
+   "system_prompt_sha256": null,
+   "with_git": false
+  },
+  "grep": {
+   "mcp_server": null,
+   "system_prompt_sha256": null,
+   "with_git": false
+  },
+  "mda": {
+   "mcp_server": "markdownattractor",
+   "system_prompt_sha256": "d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732",
+   "with_git": false
+  },
+  "qmd": {
+   "mcp_server": "qmd",
+   "system_prompt_sha256": "27da79e46aeafa5fb40d01c20040b3b1c9c2acdb40eef17af347f3778cd877da",
+   "with_git": false
+  }
+ },
+ "max_turns": 12,
+ "mda": "mda 0.1.1",
+ "mda_sha256": "432bac9166c9cb2a8bcaaa98e7da780100eb39a6aa55247fd848cb0ef2106346",
+ "model": "sonnet",
+ "project": "private",
+ "question_ids": [
+  "private-c002",
+  "private-c010",
+  "private-c012",
+  "private-c013",
+  "private-c014",
+  "private-c016",
+  "private-c027",
+  "private-c028",
+  "private-c029",
+  "private-c038",
+  "private-c042",
+  "private-c043",
+  "private-c050",
+  "private-c061",
+  "private-c062",
+  "private-c067",
+  "private-c071",
+  "private-c072",
+  "private-c075",
+  "private-c077",
+  "private-c081",
+  "private-c082",
+  "private-c086",
+  "private-c089",
+  "private-c095"
+ ],
+ "questions_sha256": "92952d5d7cc13e75fb38d705a01bcf202108b8a86963a98257cd0c76a5e84102",
+ "recorded_at": "2026-10-27T02:37:57Z",
+ "retries": 1,
+ "runs": 3,
+ "search_first_sha256": "d16e83f1be3667e1e121235660246dee086a5cd6c6daaf5d742e4940c4dfb732",
+ "source_commit": "75f3df8519bb4f32e9bc9544f128fe8343e11772",
+ "timeout_s": 600
+}

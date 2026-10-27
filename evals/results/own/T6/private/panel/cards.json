@@ -1,0 +1,1909 @@
+{
+ "agreement": 0.9908759124087592,
+ "cards_file": "<private>",
+ "incomplete": 2,
+ "rows": [
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c001",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c002",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c003",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c004",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c005",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c006",
+   "values": 10
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c007",
+   "values": 2
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c008",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c009",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    false,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c010",
+   "values": 3
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c011",
+   "values": 1
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c012",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c013",
+   "values": 2
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c014",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c015",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c016",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c017",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c018",
+   "values": 4
+  },
+  {
+   "astra": [
+    false,
+    true
+   ],
+   "fable": [
+    false,
+    true
+   ],
+   "sample_id": "c019",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c020",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c021",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c022",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c023",
+   "values": 15
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c024",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c025",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c026",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c027",
+   "values": 7
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c028",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c029",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c030",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c031",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c032",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c033",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c034",
+   "values": 5
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c035",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c036",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c037",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c038",
+   "values": 8
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c039",
+   "values": 5
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c040",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c041",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c042",
+   "values": 2
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c043",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c044",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c045",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c046",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c047",
+   "values": 6
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c048",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c049",
+   "values": 8
+  },
+  {
+   "astra": [
+    true,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    false,
+    true,
+    false,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c050",
+   "values": 7
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c051",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c052",
+   "values": 21
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c053",
+   "values": 10
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c054",
+   "values": 2
+  },
+  {
+   "astra": [
+    false,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c055",
+   "values": 5
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c056",
+   "values": 11
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c057",
+   "values": 12
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c058",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c059",
+   "values": 9
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c060",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c061",
+   "values": 11
+  },
+  {
+   "astra": null,
+   "fable": null,
+   "sample_id": "c062",
+   "values": 5
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c063",
+   "values": 6
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c064",
+   "values": 2
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c065",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c066",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c067",
+   "values": 11
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c068",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c069",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c070",
+   "values": 13
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c071",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c072",
+   "values": 16
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c073",
+   "values": 12
+  },
+  {
+   "astra": null,
+   "fable": null,
+   "sample_id": "c074",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c075",
+   "values": 5
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c076",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c077",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c078",
+   "values": 10
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c079",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c080",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c081",
+   "values": 14
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c082",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c083",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c084",
+   "values": 9
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c085",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c086",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c087",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c088",
+   "values": 6
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    false
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c089",
+   "values": 4
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c090",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c091",
+   "values": 13
+  },
+  {
+   "astra": [
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true
+   ],
+   "sample_id": "c092",
+   "values": 2
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c093",
+   "values": 12
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c094",
+   "values": 3
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c095",
+   "values": 7
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c096",
+   "values": 9
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c097",
+   "values": 1
+  },
+  {
+   "astra": [
+    true
+   ],
+   "fable": [
+    true
+   ],
+   "sample_id": "c098",
+   "values": 1
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c099",
+   "values": 12
+  },
+  {
+   "astra": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "fable": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "sample_id": "c100",
+   "values": 4
+  }
+ ],
+ "sample": 100,
+ "sampled_from": "cards with at least one date or entity, seeded order",
+ "sections_missing_from_store": 0,
+ "seed": "20260922",
+ "stamp": "20261027T053322Z",
+ "unsupported_rate": {
+  "astra": 0.012773722627737226,
+  "fable": 0.0072992700729927005
+ },
+ "values": 557
+}
