@@ -170,36 +170,55 @@ for d, _, fs in os.walk(src):
         rel = os.path.relpath(os.path.join(d, f), src)
         if not rel.endswith((".md", ".mdx", ".markdown")):
             continue
-        items.add(rel); always.add(rel)
+        # a path is evidence of this corpus only through its directory structure: a bare top-level file name
+        # and a conventional basename (README, CHANGELOG, LICENSE, CONTRIBUTING, index, CLAUDE, AGENTS, GEMINI)
+        # at any depth are not listed (first real scan, 2026-10-27)
+        base = os.path.basename(rel).lower().rsplit(".", 1)[0]
+        if "/" in rel and base not in ("readme", "changelog", "license", "contributing", "index", "claude", "agents", "gemini"):
+            items.add(rel); always.add(rel)
         try:
             text = open(os.path.join(d, f), encoding="utf-8", errors="replace").read()
         except OSError:
             continue
         for line in text.split("\n"):
             m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
-            if m and len(m.group(1)) >= 12:
+            # a heading is listed when it is distinctive enough to be evidence: at least 32 characters and five
+            # words (shorter headings — "Key findings", "Risk register", "Current status" — are project-document
+            # boilerplate that any prose contains; first real scan, 2026-10-27)
+            if m and len(m.group(1)) >= 32 and len(m.group(1).split()) >= 5:
                 items.add(m.group(1)); headings.add(m.group(1))
         for i in range(0, len(text), 200):
             ex = text[i:i + 40]
             if len(ex) == 40 and ex.strip() and "\n" not in ex:
                 items.add(ex)
-optional = sorted(s for s in items if s not in always and len(s) >= 6 and "\n" not in s)
+# The rule (pre-mortem F12; review F2 refined after the first real scan, 2026-10-27): an entry is evidence
+# of a leak only when it is NOT already public. Every entry — path, name, heading, excerpt — is tested
+# against the public baseline at the merge-base (substring in the public prose, case-insensitive; a
+# heading also by exact match against public headings and JSON string values) and dropped when found
+# there: `README.md`, `docs/README.md`, `CHANGELOG.md`, a directory named `refactor`, a heading
+# "Current status" are public strings of this repository and cannot leak anything. The private
+# repository's own name and its distinctive paths never occur in the public baseline and stay listed;
+# the root path forms are never tested (they cannot be public).
 import json
 pub_strings = set(json.loads(l) for l in open(pub_txt + ".strings", encoding="utf-8") if l.strip())
+never = {root, root.replace(home, "~")}
+candidates = sorted(s for s in items if s not in never and "\n" not in s and (len(s) >= 6 or s in always))
 with open(out + ".items", "w", encoding="utf-8") as fh:
-    for s_ in optional:
-        if s_ not in headings:
-            fh.write(s_ + "\n")
+    for s_ in candidates:
+        fh.write(s_ + "\n")
 r = subprocess.run([sys.executable, "-I", os.environ["T6_SCAN"], "collide", out + ".items", pub_txt], capture_output=True, text=True)
 if r.returncode != 0:
     sys.exit("collision filter failed: " + r.stderr)
 found = {l.lower() for l in r.stdout.split("\n") if l}
 os.remove(out + ".items")
-kept = sorted(always) + [s_ for s_ in optional if (s_.lower() not in pub_strings if s_ in headings else s_.lower() not in found)]
+def public(s_):
+    return s_.lower() in found or (s_ in headings and s_.lower() in pub_strings)
+kept = sorted(never) + [s_ for s_ in candidates if not public(s_)]
+dropped_mandatory = sum(1 for s_ in candidates if s_ in always and public(s_))
 with open(out, "w", encoding="utf-8") as fh:
     for s_ in kept:
         fh.write(s_ + "\n")
-print(f"denylist: {len(kept)} entries ({len(optional) - (len(kept) - len(always))} optional entries dropped as also public; {len(always)} mandatory)")
+print(f"denylist: {len(kept)} entries ({len(candidates) - (len(kept) - len(never))} dropped as already public, {dropped_mandatory} of them paths or names; {len(always) + len(never) - dropped_mandatory} paths, names and root forms kept)")
 PY
   rm -rf "$pub" "$pub.txt" "$pub.txt.strings"; chmod 600 "$T6/private/denylist.txt"
 }
@@ -672,9 +691,9 @@ PY
     bins="$(sort -u "$tmp/bins.txt" | grep -vE '^evals/results/own/arms/graphs/graphify-(golden|docs)\.graph\.json\.gz$' || true)"
     [ -z "$bins" ] || { echo "leak-scan: binary file(s) in the proposed change are refused: $(printf '%s' "$bins" | tr '\n' ' ')" >&2; exit 1; }
     cat "$tmp/names.txt" >> "$tmp/change.txt"
-    hits=0; entries=0
-    while IFS= read -r e; do entries=$((entries + 1)); if grep -qiF -- "$e" "$tmp/change.txt"; then hits=$((hits + 1)); fi; done < "$dl"
-    if [ "$hits" = 0 ]; then echo "leak-scan: 0 of $entries denylist entries found in the proposed change ($(wc -c < "$tmp/change.txt" | tr -d ' ') bytes of blobs, names and decoded JSON scanned; $(sort -u "$tmp/names.txt" | grep -c . || true) files)"; else echo "leak-scan: $hits of $entries denylist entries FOUND in the proposed change — nothing may be committed" >&2; exit 1; fi ;;
+    entries="$(grep -c . "$dl" || true)"
+    hits="$(python3 -I "$REPO/scripts/eval/t6_scan.py" scan "$dl" "$tmp/change.txt")" || die "leak-scan: the scan failed"
+    if [ "$hits" = 0 ]; then echo "leak-scan: 0 of $entries denylist entries found in the proposed change ($(wc -c < "$tmp/change.txt" | tr -d ' ') bytes of blobs, names and decoded JSON scanned in one pass; $(sort -u "$tmp/names.txt" | grep -c . || true) files)"; else echo "leak-scan: $hits of $entries denylist entries FOUND in the proposed change — nothing may be committed" >&2; exit 1; fi ;;
 
   table)
     # the page tables, from the committed analyses and grades (public corpora) and the exported
