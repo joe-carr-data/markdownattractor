@@ -1,0 +1,1227 @@
+{
+  "seed": "20260922",
+  "stamp": "20261027T035901Z",
+  "cards_file": "cards-0.1.1-golden.json",
+  "sampled_from": "cards with at least one date or entity, seeded order",
+  "sections_missing_from_store": 0,
+  "sample": 85,
+  "values": 207,
+  "unsupported_rate": {
+    "fable": 0.026881720430107527,
+    "astra": 0.03225806451612903
+  },
+  "incomplete": 6,
+  "agreement": 0.9946236559139785,
+  "rows": [
+    {
+      "sample_id": "c001",
+      "page": "adr/0003-drop-redis-sessions.md",
+      "heading": "[\"ADR 0003: Move sessions from Redis to signed cookies\",\"Context\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c002",
+      "page": "runbooks/secrets-rotation.md",
+      "heading": "[\"Secrets rotation\",\"Schedule\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c003",
+      "page": "runbooks/deploy.md",
+      "heading": "[\"Deploy runbook\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c004",
+      "page": "adr/0001-postgres-over-mysql.md",
+      "heading": "[\"ADR 0001: Use PostgreSQL as the primary datastore\"]",
+      "values": 3,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c005",
+      "page": "postmortems/2025-05-30-redis-failover.md",
+      "heading": "[\"Postmortem — Redis failover logged everyone out (2025-05-30)\",\"Impact\"]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c006",
+      "page": "runbooks/certificate-renewal.md",
+      "heading": "[\"TLS certificate renewal\",\"Manual renewal\"]",
+      "values": 7,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c007",
+      "page": "runbooks/secrets-rotation.md",
+      "heading": "[\"Secrets rotation\",\"Rotating a database password\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c008",
+      "page": "runbooks/database-failover.md",
+      "heading": "[\"Database failover\",\"After the failover\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c009",
+      "page": "meetings/2025-10-07-quarterly-planning.md",
+      "heading": "[\"Quarterly planning — 2025-10-07\",\"Deferred\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c010",
+      "page": "meetings/2024-11-12-failover-postmortem.md",
+      "heading": "[\"Failover postmortem — 2024-11-12\",\"Timeline\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c011",
+      "page": "onboarding/faq.md",
+      "heading": "[\"FAQ\",\"Who do I page?\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c012",
+      "page": "adr/0002-blue-green-deploys.md",
+      "heading": "[\"ADR 0002: Blue-green deployments for the API tier\",\"Context\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c013",
+      "page": "meetings/2025-10-07-quarterly-planning.md",
+      "heading": "[\"Quarterly planning — 2025-10-07\",\"Q4 2025 commitments\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c014",
+      "page": "meetings/2026-03-03-security-review.md",
+      "heading": "[\"Security review — 2026-03-03\",\"Open\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c015",
+      "page": "runbooks/secrets-rotation.md",
+      "heading": "[\"Secrets rotation\",\"Emergency rotation\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c016",
+      "page": "specs/search-index-rewrite.md",
+      "heading": "[\"Search index rewrite — proposal\",\"Risks\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c017",
+      "page": "postmortems/2025-01-14-worker-nack-loop.md",
+      "heading": "[\"Postmortem — worker nack loop (2025-01-14)\",\"Follow-up\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c018",
+      "page": "specs/search-index-rewrite.md",
+      "heading": "[\"Search index rewrite — proposal\",\"Problem\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c019",
+      "page": "adr/0005-feature-flags.md",
+      "heading": "[\"ADR 0005: Feature flags through the config service, not environment variables\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c020",
+      "page": "changelog/2026.md",
+      "heading": "[\"Changelog 2026\",\"2026-05-02\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c021",
+      "page": "adr/0001-postgres-over-mysql.md",
+      "heading": "[\"ADR 0001: Use PostgreSQL as the primary datastore\",\"Consequences\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c022",
+      "page": "adr/0002-blue-green-deploys.md",
+      "heading": "[\"ADR 0002: Blue-green deployments for the API tier\",\"Decision\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c023",
+      "page": "changelog/2024.md",
+      "heading": "[\"Changelog 2024\",\"2024-12-01\"]",
+      "values": 5,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c024",
+      "page": "adr/0003-drop-redis-sessions.md",
+      "heading": "[\"ADR 0003: Move sessions from Redis to signed cookies\",\"Decision\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c025",
+      "page": "changelog/2025.md",
+      "heading": "[\"Changelog 2025\",\"2025-11-05\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c026",
+      "page": "adr/0004-monorepo.md",
+      "heading": "[\"ADR 0004: One repository for the web, API and workers\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c027",
+      "page": "runbooks/certificate-renewal.md",
+      "heading": "[\"TLS certificate renewal\",\"Symptoms\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c028",
+      "page": "runbooks/queue-backlog.md",
+      "heading": "[\"Queue backlog\",\"Mitigation\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c029",
+      "page": "README.md",
+      "heading": "[\"Acme platform docs\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c030",
+      "page": "onboarding/faq.md",
+      "heading": "[\"FAQ\",\"How do I get a database password?\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c031",
+      "page": "meetings/2024-11-12-failover-postmortem.md",
+      "heading": "[\"Failover postmortem — 2024-11-12\",\"Summary\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c032",
+      "page": "postmortems/2025-05-30-redis-failover.md",
+      "heading": "[\"Postmortem — Redis failover logged everyone out (2025-05-30)\",\"Cause\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c033",
+      "page": "runbooks/queue-backlog.md",
+      "heading": "[\"Queue backlog\",\"Symptoms\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c034",
+      "page": "adr/0003-drop-redis-sessions.md",
+      "heading": "[\"ADR 0003: Move sessions from Redis to signed cookies\",\"Consequences\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c035",
+      "page": "meetings/2026-03-03-security-review.md",
+      "heading": "[\"Security review — 2026-03-03\",\"Findings\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c036",
+      "page": "meetings/2026-06-16-incident-review.md",
+      "heading": "[\"Incident review — 2026-06-16\",\"Actions\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c037",
+      "page": "runbooks/certificate-renewal.md",
+      "heading": "[\"TLS certificate renewal\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c038",
+      "page": "changelog/2026.md",
+      "heading": "[\"Changelog 2026\",\"2026-08-14\"]",
+      "values": 5,
+      "fable": [
+        true,
+        false,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        false,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c039",
+      "page": "specs/selective-ci.md",
+      "heading": "[\"Selective CI builds\",\"Rollout\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c040",
+      "page": "adr/0009-split-workers-repo.md",
+      "heading": "[\"ADR 0009: Move the background workers back into their own repository\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c041",
+      "page": "meetings/2026-08-04-platform-sync.md",
+      "heading": "[\"Platform sync — 2026-08-04\",\"Decisions\"]",
+      "values": 4,
+      "fable": [
+        false,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        false,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c042",
+      "page": "runbooks/database-failover.md",
+      "heading": "[\"Database failover\",\"Procedure\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c043",
+      "page": "runbooks/deploy.md",
+      "heading": "[\"Deploy runbook\",\"Rollback\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c044",
+      "page": "adr/0005-feature-flags.md",
+      "heading": "[\"ADR 0005: Feature flags through the config service, not environment variables\",\"Consequences\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c045",
+      "page": "runbooks/on-call.md",
+      "heading": "[\"On-call runbook\",\"Handover\"]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c046",
+      "page": "onboarding/first-week.md",
+      "heading": "[\"Your first week\",\"Day 5\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c047",
+      "page": "specs/order-api-v2.md",
+      "heading": "[\"Order API v2\",\"Deprecation of v1\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c048",
+      "page": "changelog/2026.md",
+      "heading": "[\"Changelog 2026\",\"2026-01-20\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c049",
+      "page": "changelog/2024.md",
+      "heading": "[\"Changelog 2024\",\"2024-09-23\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c050",
+      "page": "adr/0004-monorepo.md",
+      "heading": "[\"ADR 0004: One repository for the web, API and workers\",\"Decision\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c051",
+      "page": "adr/0002-blue-green-deploys.md",
+      "heading": "[\"ADR 0002: Blue-green deployments for the API tier\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c052",
+      "page": "onboarding/first-week.md",
+      "heading": "[\"Your first week\",\"Day 1\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c053",
+      "page": "adr/0009-split-workers-repo.md",
+      "heading": "[\"ADR 0009: Move the background workers back into their own repository\",\"Decision\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c054",
+      "page": "meetings/2024-11-12-failover-postmortem.md",
+      "heading": "[\"Failover postmortem — 2024-11-12\",\"Actions\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c055",
+      "page": "specs/rate-limiting.md",
+      "heading": "[\"Rate limiting\",\"Where\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c056",
+      "page": "specs/payments-sepa.md",
+      "heading": "[\"SEPA payments\",\"Flow\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c057",
+      "page": "adr/0001-postgres-over-mysql.md",
+      "heading": "[\"ADR 0001: Use PostgreSQL as the primary datastore\",\"Context\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c058",
+      "page": "adr/0003-drop-redis-sessions.md",
+      "heading": "[\"ADR 0003: Move sessions from Redis to signed cookies\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c059",
+      "page": "meetings/2026-08-04-platform-sync.md",
+      "heading": "[\"Platform sync — 2026-08-04\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c060",
+      "page": "meetings/2026-09-01-platform-sync.md",
+      "heading": "[\"Platform sync — 2026-09-01\",\"Status\"]",
+      "values": 5,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c061",
+      "page": "onboarding/faq.md",
+      "heading": "[\"FAQ\",\"How do I turn a feature off quickly?\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c062",
+      "page": "specs/search-index-rewrite.md",
+      "heading": "[\"Search index rewrite — proposal\",\"Proposal\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c063",
+      "page": "onboarding/first-week.md",
+      "heading": "[\"Your first week\",\"Day 2 and 3\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c064",
+      "page": "specs/search-index-rewrite.md",
+      "heading": "[\"Search index rewrite — proposal\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c065",
+      "page": "postmortems/2025-05-30-redis-failover.md",
+      "heading": "[\"Postmortem — Redis failover logged everyone out (2025-05-30)\",\"Follow-up\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c066",
+      "page": "adr/0001-postgres-over-mysql.md",
+      "heading": "[\"ADR 0001: Use PostgreSQL as the primary datastore\",\"Decision\"]",
+      "values": 6,
+      "fable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c067",
+      "page": "runbooks/queue-backlog.md",
+      "heading": "[\"Queue backlog\",\"Causes seen so far\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c068",
+      "page": "adr/0005-feature-flags.md",
+      "heading": "[\"ADR 0005: Feature flags through the config service, not environment variables\",\"Context\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c069",
+      "page": "runbooks/deploy.md",
+      "heading": "[\"Deploy runbook\",\"Database migrations\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c070",
+      "page": "meetings/2026-09-01-platform-sync.md",
+      "heading": "[\"Platform sync — 2026-09-01\",\"Decisions\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c071",
+      "page": "runbooks/deploy.md",
+      "heading": "[\"Deploy runbook\",\"Release\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c072",
+      "page": "meetings/2026-08-04-platform-sync.md",
+      "heading": "[\"Platform sync — 2026-08-04\",\"Action items\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c073",
+      "page": "adr/0009-split-workers-repo.md",
+      "heading": "[\"ADR 0009: Move the background workers back into their own repository\",\"Context\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c074",
+      "page": "runbooks/on-call.md",
+      "heading": "[\"On-call runbook\",\"Paging\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c075",
+      "page": "changelog/2025.md",
+      "heading": "[\"Changelog 2025\",\"2025-03-04\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c076",
+      "page": "onboarding/first-week.md",
+      "heading": "[\"Your first week\",\"Day 4\"]",
+      "values": 1,
+      "fable": [
+        false
+      ],
+      "astra": [
+        false
+      ]
+    },
+    {
+      "sample_id": "c077",
+      "page": "specs/order-api-v2.md",
+      "heading": "[\"Order API v2\",\"Rate limits\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c078",
+      "page": "specs/payments-sepa.md",
+      "heading": "[\"SEPA payments\",\"Feature flag\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c079",
+      "page": "adr/0004-monorepo.md",
+      "heading": "[\"ADR 0004: One repository for the web, API and workers\",\"Context\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c080",
+      "page": "onboarding/glossary.md",
+      "heading": "[\"Glossary\"]",
+      "values": 4,
+      "fable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c081",
+      "page": "changelog/2024.md",
+      "heading": "[\"Changelog 2024\",\"2024-03-11\"]",
+      "values": 2,
+      "fable": null,
+      "astra": null
+    },
+    {
+      "sample_id": "c082",
+      "page": "specs/selective-ci.md",
+      "heading": "[\"Selective CI builds\",\"Design\"]",
+      "values": 2,
+      "fable": [
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c083",
+      "page": "specs/selective-ci.md",
+      "heading": "[\"Selective CI builds\",\"Goal\"]",
+      "values": 1,
+      "fable": [
+        true
+      ],
+      "astra": [
+        true
+      ]
+    },
+    {
+      "sample_id": "c084",
+      "page": "meetings/2026-06-16-incident-review.md",
+      "heading": "[\"Incident review — 2026-06-16\",\"What happened\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "sample_id": "c085",
+      "page": "meetings/2026-06-16-incident-review.md",
+      "heading": "[\"Incident review — 2026-06-16\",\"Root cause\"]",
+      "values": 3,
+      "fable": [
+        true,
+        true,
+        true
+      ],
+      "astra": [
+        true,
+        true,
+        true
+      ]
+    }
+  ]
+}
