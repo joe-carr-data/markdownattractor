@@ -486,6 +486,12 @@ PY
   preflight)
     c="${1:?corpus}"; P="$(cdir "$c")"; S="$(src_of "$c")"; corpus_env "$c"; T="$(t6dir "$c")"
     report="$(res_of "$c")/preflight/T6-$c.json"; safe_target "$report"; checks='[]'; failed=0; probes='{}'
+    # every attempt is kept (T5 practice): an existing report and its probe traces move aside as attempt-N before this run writes
+    if [ -f "$report" ]; then
+      n=1; while [ -f "$(res_of "$c")/preflight/T6-$c.attempt-$n.json" ]; do n=$((n + 1)); done
+      mv "$report" "$(res_of "$c")/preflight/T6-$c.attempt-$n.json"; [ ! -d "$(res_of "$c")/preflight/T6-$c" ] || mv "$(res_of "$c")/preflight/T6-$c" "$(res_of "$c")/preflight/T6-$c.attempt-$n"
+      echo "previous preflight kept as T6-$c.attempt-$n"
+    fi
     rec() { checks="$(jq -c --arg n "$1" --arg s "$2" --arg d "$3" '. + [{name: $n, status: $s, detail: $d}]' <<<"$checks")"; [ "$2" != FAIL ] || failed=$((failed + 1)); echo "$2 $1: $3"; }
     jq -n --arg p "$c" --arg at "$(date -u +%FT%TZ)" '{table: "T6", project: $p, run_at: $at, status: "in progress", passed: false}' > "$report"
     if env | grep -qE '^[A-Z_]*_API_KEY='; then rec env FAIL "a provider key is exported"; else rec env ok "no provider key · claude $(claude --version 2>/dev/null | head -1) · codex $(codex --version 2>/dev/null | head -1)"; fi
