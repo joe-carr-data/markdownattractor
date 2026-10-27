@@ -514,7 +514,7 @@ PY
     grec="$(res_of "$c")/arms/graphify-$c.json"
     if [ -f "$grec" ] && [ "$(jq -r .build.completed "$grec")" = true ]; then
       G="$P/graphify/src"; ma=""; mb=""
-      if [ -d "$G" ] && ma="$(python3 -I "$REPO/scripts/eval/t6_scan.py" tree-manifest "$S" .markdownattractor graphify-out .claude CLAUDE.md)" && mb="$(python3 -I "$REPO/scripts/eval/t6_scan.py" tree-manifest "$G" .markdownattractor graphify-out .claude CLAUDE.md)" && [ -n "$ma" ] && [ "$ma" = "$mb" ] && ! grep -q '^link	' <<<"$mb"; then rec copy-graphify ok "graphify's serving copy equals the source copy on every file and holds no symlink (its .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy is absent, differs from the source copy, holds a symlink, or could not be listed"; fi
+      if [ -d "$G" ] && ma="$(python3 -I "$REPO/scripts/eval/t6_scan.py" tree-manifest "$S" .markdownattractor graphify-out .claude CLAUDE.md)" && mb="$(python3 -I "$REPO/scripts/eval/t6_scan.py" tree-manifest "$G" .markdownattractor graphify-out .claude CLAUDE.md)" && [ -n "$ma" ] && [ "$ma" = "$mb" ]; then rec copy-graphify ok "graphify's serving copy equals the source copy on every entry ($(grep -c '^file	' <<<"$mb") files, $(grep -c '^link	' <<<"$mb" || true) symlinks the source has too; its .claude/, CLAUDE.md and graphify-out/ aside)"; else rec copy-graphify FAIL "graphify's serving copy is absent, differs from the source copy (files or links), or could not be listed"; fi
     fi
     diff <(inventory "$S") "$P/pages.txt" >/dev/null && rec inventory ok "$(grep -c . "$P/pages.txt") pages, unchanged since setup (sha256 $(sha256 "$P/pages.txt" | cut -c1-12)…)" || rec inventory FAIL "the inventory changed since setup"
     [ "$(jq -r .store_sha256 "$P/index.json" 2>/dev/null)" = "$(store_sha "$S")" ] && rec store ok "store unchanged since indexing ($(store_sha "$S" | cut -c1-12)…)" || rec store FAIL "the store changed since indexing (or no index.json)"
@@ -559,7 +559,7 @@ for l in open(sys.argv[1]):
       if [ "$(jq -r .build.completed "$grec")" = true ]; then [ "$(sha256 "$P/graphify/graph.json")" = "$(jq -r .graph.sha256 "$grec")" ] && rec graphify ok "served graph equals the recorded build ($(jq -r '.graph.sha256[:12]' "$grec")…)" || rec graphify FAIL "the served graph differs from the record"; else rec graphify ok "did not complete on $c (recorded; the arm is not run)"; fi
     else rec graphify FAIL "no graphify record"; fi
     # activation probes: three per arm on the first counted questions, on the copy
-    arms="$(arms_for "$c")"; pd="$(res_of "$c")/preflight/T6-$c/probes"; mkdir -p "$pd"; : > "$pd/summary.jsonl"
+    arms="$(arms_for "$c")"; pd="$(res_of "$c")/preflight/T6-$c/probes"; mkdir -p "$pd"; : > "$pd/summary.jsonl"; accepted='[]'
     for a in ${arms//,/ }; do
       n_ok=0
       for qid in $(head -3 "$P/questions.full.jsonl" | jq -r .id); do
@@ -567,14 +567,23 @@ for l in open(sys.argv[1]):
         [ -z "$line" ] || echo "$line" >> "$pd/summary.jsonl"; [ "$rc" = 0 ] && n_ok=$((n_ok + 1))
       done
       probes="$(jq -c --arg a "$a" --argjson n "$n_ok" '. + {($a): {activated: $n, of: 3}}' <<<"$probes")"
-      if [ "$n_ok" = 3 ]; then rec "probes-$a" ok "3 of 3 probes made a successful call of the arm's tool"; else rec "probes-$a" FAIL "$n_ok of 3 probes activated (see $P/probes.err)"; fi
+      if [ "$n_ok" = 3 ]; then rec "probes-$a" ok "3 of 3 probes made a successful call of the arm's tool"
+      elif [[ " ${T6_ACCEPT_PROBE_FAIL:-} " == *" $a "* ]]; then
+        # A declared exception (T1 Supabase graphify-haiku 2/3 and T5 graphify 1/3 precedents): with the corpus's files
+        # readable directly, an agent may answer from Read/Grep rather than its index; the arm is published with the probe
+        # result disclosed, the reason travels in the report, and the table reports the arm's actual tool use per row.
+        [ -n "${T6_ACCEPT_REASON:-}" ] || die "T6_ACCEPT_PROBE_FAIL needs T6_ACCEPT_REASON"
+        accepted="$(jq -c --arg a "$a" --argjson n "$n_ok" --arg why "$T6_ACCEPT_REASON" '. + [{arm: $a, probes_activated: $n, of: 3, reason: $why}]' <<<"$accepted")"
+        rec "probes-$a" ACCEPTED-FAIL "$n_ok of 3 probes activated; accepted and disclosed: $T6_ACCEPT_REASON"
+      else rec "probes-$a" FAIL "$n_ok of 3 probes activated (see $P/probes.err)"; fi
     done
     if is_private "$c"; then
       # nothing of the private corpus in the proposed change (pre-mortem F12)
       if out="$("$0" leak-scan 2>&1)"; then rec leak-scan ok "$out"; else rec leak-scan FAIL "$out"; fi
     fi
     jq -n --arg p "$c" --arg at "$(date -u +%FT%TZ)" --argjson checks "$checks" --argjson failed "$failed" --argjson probes "$probes" --arg store "$(store_sha "$S")" --arg fz "$(frozen_sha)" --arg pfz "$([ -f "$RES_PUB/T6/private/FROZEN.sha256" ] && cut -c1-64 "$RES_PUB/T6/private/FROZEN.sha256" || printf '%064d' 0)" --arg inv "$(sha256 "$P/pages.txt")" --arg sha "$(git -C "$REPO" rev-parse HEAD)" --arg arms "$arms" \
-      '{table: "T6", project: $p, run_at: $at, status: "completed", passed: ($failed == 0), checks: $checks, probes: $probes, arms: ($arms | split(",")), store_sha256: $store, inventory_sha256: $inv, frozen_sha256: $fz, private_frozen_sha256: $pfz, source_commit: $sha}' > "$report"
+      --argjson accepted "$accepted" \
+      '{table: "T6", project: $p, run_at: $at, status: "completed", passed: ($failed == 0), checks: $checks, probes: $probes, accepted_probe_failures: $accepted, arms: ($arms | split(",")), store_sha256: $store, inventory_sha256: $inv, frozen_sha256: $fz, private_frozen_sha256: $pfz, source_commit: $sha}' > "$report"
     echo "report: $report · passed=$([ "$failed" = 0 ] && echo true || echo false) failed=$failed"; [ "$failed" = 0 ] ;;
 
   run)
@@ -711,12 +720,15 @@ def fmt(x, d=2):
     return "—" if x is None else (f"{x:.{d}f}" if isinstance(x, float) else str(x))
 def section(corpora, title):
     print(f"**{title}** — runs and consumption (rule 0.7 tokens; medians over the completed rows of each arm; cost is the list-price equivalent of calls through the owner's logins)\n")
-    print("| corpus | arm | rows | failed | wall s (median) | source tokens (median) | input tokens (median) | tool calls (median) | cost $ (median) | turns (median) |\n|---|---|---|---|---|---|---|---|---|---|")
+    OWN = {"mda": "mcp__markdownattractor__", "qmd": "mcp__qmd__query", "graphify": "mcp__graphify__", "grep": None}
+    print("| corpus | arm | rows | failed | arm's own tool used (rows) | wall s (median) | source tokens (median) | input tokens (median) | tool calls (median) | cost $ (median) | turns (median) |\n|---|---|---|---|---|---|---|---|---|---|---|")
     for c in corpora:
         g = rows(os.path.join(T, c, "grades.jsonl"))
         for arm in sorted({r["arm"] for r in g}):
             rs = [r for r in g if r["arm"] == arm]; ok = [r for r in rs if not r.get("error")]
-            print(f"| {c} | {arm} | {len(rs)} | {len(rs) - len(ok)} | {fmt(med([r['wall_s'] for r in ok]), 1)} | {fmt(med([r['source_tokens'] for r in ok]), 0)} | {fmt(med([r['input_tokens'] for r in ok]), 0)} | {fmt(med([r['tool_calls'] for r in ok]), 1)} | {fmt(med([r['cost_usd'] for r in ok]), 3)} | {fmt(med([r['turns'] for r in ok]), 1)} |")
+            want = OWN.get(arm)
+            used = "n/a" if want is None else str(sum(1 for r in rs if any(str(t).startswith(want) for t in (r.get("tools") or []))))
+            print(f"| {c} | {arm} | {len(rs)} | {len(rs) - len(ok)} | {used} | {fmt(med([r['wall_s'] for r in ok]), 1)} | {fmt(med([r['source_tokens'] for r in ok]), 0)} | {fmt(med([r['input_tokens'] for r in ok]), 0)} | {fmt(med([r['tool_calls'] for r in ok]), 1)} | {fmt(med([r['cost_usd'] for r in ok]), 3)} | {fmt(med([r['turns'] for r in ok]), 1)} |")
     print(f"\n**{title}** — quality, grounding and the gates (original grades; `mda eval --analysis`: question medians over three runs with failed runs as 0, a 10,000-draw paired bootstrap per pair, seed 20260922; savings only where a pair passes all three gates)\n")
     for c in corpora:
         a = json.load(open(os.path.join(T, c, "analysis.json"))) if os.path.isfile(os.path.join(T, c, "analysis.json")) else None

@@ -47,7 +47,7 @@ TRIGGER = "either panel member differs from the Sonnet grade by more than one po
 SAMPLED_FROM = "cards with at least one date or entity, seeded order"
 EVIDENCE_POLICIES = ["every cited page checked whole, in batches of four", "ungrounded: a cited path does not exist in the checkout",
                      "ungrounded: a cited page exceeds 120,000 characters", "unresolved or oversized citation → ungrounded"]
-CHECK_STATUS = ["ok", "FAIL", "skipped", "ACCEPTED-FAIL"]
+CHECK_STATUS = ["ok", "FAIL", "skipped", "ACCEPTED-FAIL"]   # ACCEPTED-FAIL: a declared, disclosed probe exception (T1/T5 precedent)
 
 # ---- the typed schema -------------------------------------------------------------------------
 # A spec is: a type name (str), a dict (object with named keys; "?key" marks an optional key),
@@ -89,6 +89,7 @@ CARDS = {"seed": "digit_str", "stamp": "iso", "cards_file": "placeholder", "samp
 PREFLIGHT = {"table": "enum:T6", "project": "enum:private", "run_at": "iso", "status": "enum:status", "passed": "bool",
              "checks": [{"name": "enum:check_name", "status": "enum:check_status"}],
              "probes": {"?mda": {"activated": "int", "of": "int"}, "?grep": {"activated": "int", "of": "int"}, "?qmd": {"activated": "int", "of": "int"}, "?graphify": {"activated": "int", "of": "int"}},
+             "accepted_probe_failures": [{"arm": "arm", "probes_activated": "int", "of": "int"}],
              "store_sha256": "hex64", "inventory_sha256": "hex64", "frozen_sha256": "hex64", "private_frozen_sha256": "hex64", "source_commit": "hex40"}
 CHECK_NAMES = ["env", "frozen", "frozen-private", "copy", "extras", "inventory", "store", "complete", "cards", "reconstruction", "questions",
                "question-shape", "qmd", "graphify", "probes-mda", "probes-grep", "probes-qmd", "probes-graphify", "leak-scan", "binary", "calibration"]
@@ -419,6 +420,7 @@ def export(run_dir, committed):
                                   "passed": bool(p0.get("passed")),
                                   "checks": [{"name": c.get("name") if c.get("name") in CHECK_NAMES else "env", "status": c.get("status") if c.get("status") in CHECK_STATUS else "FAIL"} for c in p0.get("checks", [])],
                                   "probes": {a: {"activated": integer(v.get("activated")) or 0, "of": integer(v.get("of")) or 0} for a, v in (p0.get("probes") or {}).items() if a in ("mda", "grep", "qmd", "graphify")},
+                                  "accepted_probe_failures": [{"arm": x.get("arm"), "probes_activated": integer(x.get("probes_activated")) or 0, "of": integer(x.get("of")) or 0} for x in (p0.get("accepted_probe_failures") or []) if x.get("arm") in ARMS],
                                   "store_sha256": hexv(p0.get("store_sha256")), "inventory_sha256": hexv(p0.get("inventory_sha256")), "frozen_sha256": hexv(p0.get("frozen_sha256")),
                                   "private_frozen_sha256": hexv(p0.get("private_frozen_sha256")), "source_commit": hexv(p0.get("source_commit"), 40)}]
     ar = rows("arms.json")

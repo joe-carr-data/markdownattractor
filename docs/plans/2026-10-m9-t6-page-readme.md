@@ -56,6 +56,13 @@ The verdict on the first draft was "do not start"; these amendments are what M9 
 
 The golden set exhausts its candidates at 16 counted questions and publishes with that count. The two top-ups followed the resumable rule recorded above (the seeded prefix is verified field by field; the panel resumes bound to its content and rubric hashes). A first private panel run was discarded before any of it was used: a chain that had been interrupted left panel processes writing beside a resumed run (111 rows for 70 candidates); the clean rerun and the top-up are what count (`$RUN/t6/private/superseded-race/` keeps the discarded files, outside the repository).
 
+## Amendments after the first preflights (2026-10-27, before any counted row)
+
+- **Golden passed** every check under the first T6 freeze (commit `c15cdd9`).
+- **Docs failed only graphify's activation probes, 1 of 3**: with the corpus's files readable directly, the agent answered two probes from Grep and Read and never called its graph tool (the third probe did). This is the T1 (Supabase graphify-haiku, 2 of 3) and T5 (graphify, 1 of 3 on both projects) pattern. The harness gains the same declared exception: `T6_ACCEPT_PROBE_FAIL=<arm>` with a mandatory `T6_ACCEPT_REASON`, recorded in the preflight report as `accepted_probe_failures` and exported for the private corpus without the reason text; the table reports every arm's own tool use per row, which is the disclosure the exception needs. Reason declared for docs: the equal-access condition — every arm reads the same files; an index arm that answers without its index is reported as such, never dropped.
+- **Private failed only the graphify serving-copy comparison**, because the check refused any symlink while the private repository itself tracks two; the copies were identical on every entry (2,733, the two links included). The check now requires equality of the whole manifests, links compared as entries.
+- Both changes are harness-only; the freeze is rewritten once (second version) before any counted row and all three preflights are rerun under it; the first version stays in git.
+
 ## Tasks
 
 - [x] **P0** This plan; Codex pre-mortem (`docs/reviews/codex/2026-10-26-m9-premortem.md`, 22 findings, all accepted); the amendments below recorded before code (2026-10-26).
