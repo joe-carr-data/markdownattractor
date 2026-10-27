@@ -185,7 +185,7 @@ T1 reuses the M2 artifacts (the committed cards, the qmd indexes, the BM25-over-
 
 ## Axis B — answer quality and token economy
 
-The published table is T2 (the DocsQA-Repo test split; no savings claim passed its gates). T6 reruns the T2 method on our own corpora (M9, `docs/plans/2026-10-m9-t6-page-readme.md`) and is added here when its runs complete. The golden-corpus A/B runs of 2026-09-22 and the T2 harness pilot are in the archive.
+Two published tables: T2 (the DocsQA-Repo test split) and T6 (the T2 method on our own corpora: the golden set, this repository's `docs/`, and a private corpus as supporting evidence). No savings claim passed its gates on either: on DocsQA the non-inferiority gate fails for most pairs and the grounding gate for every arm; on our public corpora the two quality gates pass for every pair and the grounding gate alone fails (on the private corpus one pair also fails the non-inferiority gate). The golden-corpus A/B runs of 2026-09-22 and the T2 harness pilot are in the archive.
 
 ### T2 — axis B on DocsQA-Repo, answer quality (final, 2026-09-25)
 
@@ -334,6 +334,204 @@ Reading: 0.4–3.8% of the sampled dates and entities are judged unsupported by 
 
 Every model call went through the owner's logins; provider keys were unset by the scripts. The freeze `T2/FROZEN.md` was committed before any run and re-written once during the preflights, with identical inputs, because the T3 table renderer (`scripts/eval/t3.sh`, no T2 input) was added under it; both versions are in git history and the four preflights were rerun under the second (all passed: freeze check, sample hashes, three activation probes per arm with traces under `preflight/T2-<project>/`). The runs: 1,002 answers, none failed; 6 first attempts (4 graphify, 2 grep) hit the 12-turn cap and the declared single retry succeeded — the rows carry the final attempt's metrics and `cost_usd_all_attempts`. Grading: Sonnet through `claude -p`, one row without a grounding verdict (Prisma) is a failed grounding. The grounding rubric is the amended one (plan §2.4): factual claims about the product; the failure indicators overlap: at least one cited-page batch was explicitly judged ungrounded in 75 mda, 86 qmd, 53 grep and 39 graphify answers; unresolved citations were recorded in 28, 38, 24 and 1 answers; oversized cited pages in 11, 1, 5 and 3; no resolvable citation at all in 1 mda and 5 grep answers; the denominators are 288 answers for mda, qmd and grep and 138 for graphify, and one mda answer on Prisma has no grounding verdict (a failed grounding). Citations must identify `.md/.mdx/.markdown` paths: an exact repository-relative path, or a unique corpus-page suffix after stripping a leading project prefix; ambiguous file names and headings alone do not resolve; every cited page is checked whole, in batches of four, and any unresolved citation or page over 120,000 characters makes the answer ungrounded. The panel's Astra member grades the 0–6 rubric 1.9–3.3 points below Sonnet and 2.0–3.8 below Fable on every project; the declared trigger therefore fired on 18–28 of 30 answers per project and the adjudicated analysis is shown beside the original, not in its place. Committed under `evals/results/docsqa/T2/<project>/`: the frozen sample, the manifest (home paths abbreviated), `grades.jsonl` and `grades.adjudicated.jsonl` with the answer text replaced by its sha256 (answers quote page text; they stay under the run directory), both analyses, the panel's per-answer scores and the card verdicts (rationales removed); the analysis regenerates byte-identically from the committed grades and manifest. T2's latency is not a table: every run started every arm's MCP server cold (rule 0.9 as amended) and the wall-clock medians above are that configuration's. T1 published this table's arms' retrieval quality; T2 does not reopen tuning.
 
+### T6 — axis B (and the small end of axis E) on our own corpora, the T2 method (final, 2026-10-27)
+
+The fifth measured table (execution plan §4 T6; plan `docs/plans/2026-10-m9-t6-page-readme.md` with its amendments after the Codex pre-mortem and six harness passes). The T2 method — answers through headless `claude -p` for grep, mda, qmd and graphify, three runs per question and arm, Sonnet grades with a grounding check, the three gates of rule 0.4, savings only where a pair passes them — on the three corpora the strategy plan fixed as *ours* before any number existed: the **golden set** (`evals/golden/docs`, 32 files, 117 sections; fictional platform-team notes written for this repository), this repository's **`docs/`** (73 files at commit `d061f8c`, 514 sections) and the owner's **private trading-research repository** (821 pages; supporting evidence only, separately headed below; nothing content-bearing from it is in the repository). Everything ran under the third version of `evals/results/own/T6/FROZEN.md`, committed before any counted row. Two things differ from T2 and are named here. The questions are **synthetic**: Sonnet wrote each from one section (a seeded draw over documents, then sections; `docs/index.md`, `docs/handoffs/`, listings and sections under 200 characters excluded), the writer refused questions that named the file or its title or whose facts were not in the section, and the Fable + Astra panel validated every candidate in two blind calls per member — the member first lists the facts a correct answer must give, then judges four criteria and each writer fact against its own list; a question is accepted only when both members accept everything. One counted question per page, single-section lookup only, 25 per corpus or the count a corpus reaches: **the golden set exhausted its 27 eligible sections at 16** and is published with 16; docs and the private corpus reached 25; up to 10 disjoint pilot questions per corpus were used for calibration and never counted. The rubric is the **T6 adaptation**: the grader scores against the panel-validated required facts with the source section as evidence, and a factual claim is one about the corpus's subject matter; the citation rule is T2's with the inventory as the universe (a markdown link, a backticked path or a bare token ending in `.md`/`.mdx`/`.markdown` must resolve, by exact relative path or unique suffix, to a page of the frozen inventory). The writer, the answering model and the grader are Claude models; the panel adds a second family. Every arm ran on a copy made by `git archive` of the published commit; the public corpora, their cards and their questions rebuild from this repository alone. Reproduction: runbook §7.6.
+
+#### The corpora as built
+
+**T6 — the corpora as built, public corpora** (the inventory the resolver uses; mda's store from `index.json`, cards counted per distinct section hash, so identical sections share one; the writer's candidates and the panel's acceptance from `candidates.summary.json`; the arms' coverage from their build records)
+
+| corpus | pages (inventory) | documents indexed by mda | sections | cards | index wall s | index cost $ (Haiku, list price) | eligible sections (documents) | candidates written / writer refusals / panel-judged | accepted counted + pilot | qmd pages indexed | graphify build |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| golden | 32 | 32 | 117 | 117 (complete) | 96 | 0.46 | 27 (19) | 27 / 4 / 23 | 16 + 4 | 32 of 32 | completed, 98 s, $0.52, 85 nodes / 144 edges, 32 of 32 pages with a node |
+| docs | 73 | 73 | 514 | 506 (complete) | 396 | 3.32 | 342 (52) | 100 / 17 / 79 | 25 + 10 | 73 of 73 | completed, 471 s, $4.02, 477 nodes / 579 edges, 73 of 73 pages with a node |
+
+**T6 — the corpora as built — the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** (the inventory the resolver uses; mda's store from `index.json`, cards counted per distinct section hash, so identical sections share one; the writer's candidates and the panel's acceptance from `candidates.summary.json`; the arms' coverage from their build records)
+
+| corpus | pages (inventory) | documents indexed by mda | sections | cards | index wall s | index cost $ (Haiku, list price) | eligible sections (documents) | candidates written / writer refusals / panel-judged | accepted counted + pilot | qmd pages indexed | graphify build |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| private | 821 | 595 | 7484 | 7169 (complete) | 4175 | 40.21 | 5988 (563) | 130 / 10 / 113 | 25 + 10 | 600 of 821 | completed, 592 s, $18.29, 33595 nodes / 64039 edges, 762 of 821 pages with a node |
+
+Reading: the golden set has 27 headed sections of 200 characters or more in 19 of its 32 documents, so after the writer's 4 refusals (3 named the file, 1 the title) and the panel's judgement 16 counted and 4 pilot questions were all it could give; docs needed a top-up (70 candidates, then 30) to reach 25 + 10, with 17 writer refusals and 79 panel verdicts; the private corpus needed 130 (70, then 60) for 25 + 10. Index costs are Haiku list-price equivalents through the owner's login: $0.46 and $3.32 for the public corpora, $40.21 for the private one (7,484 sections, 70 minutes). The arms' coverage is complete on the public corpora. On the private corpus mda indexed 595 of 821 inventory pages and qmd 600: both skip the 221 pages under dot-directories, and mda's git-aware walker also skips 5 tracked files that a `.gitignore` pattern in the repository matches (qmd indexes them); graphify's graph has a node for 762. No question targets a page outside mda's store (candidates are drawn from it); the resolver accepts citations to any inventory page.
+
+#### Runs and consumption (rule 0.7 tokens)
+
+**T6, public corpora** — runs and consumption (rule 0.7 tokens; medians over the completed rows of each arm; cost is the list-price equivalent of calls through the owner's logins)
+
+| corpus | arm | rows | failed | arm's own tool used (rows) | wall s (median) | source tokens (median) | input tokens (median) | tool calls (median) | cost $ (median) | turns (median) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| golden | graphify | 48 | 0 | 39 | 10.5 | 4867 | 32869 | 3.0 | 0.031 | 4.0 |
+| golden | grep | 48 | 0 | n/a | 8.0 | 672 | 17182 | 2.0 | 0.010 | 3.0 |
+| golden | mda | 48 | 0 | 48 | 8.0 | 1240 | 28014 | 3.0 | 0.011 | 4.0 |
+| golden | qmd | 48 | 0 | 48 | 18.0 | 1828 | 46360 | 2.0 | 0.018 | 3.0 |
+| docs | graphify | 75 | 0 | 55 | 12 | 4867 | 35388 | 3 | 0.035 | 4 |
+| docs | grep | 75 | 0 | n/a | 10 | 3259 | 23551 | 2 | 0.021 | 3 |
+| docs | mda | 75 | 0 | 75 | 9 | 1948 | 29046 | 2 | 0.015 | 3 |
+| docs | qmd | 75 | 0 | 75 | 32 | 3988 | 50665 | 2 | 0.032 | 3 |
+
+**T6 — run totals, public corpora** (from the committed grade rows; a retried row carries its final attempt's metrics and every attempt's cost; the private rows carry no timestamps)
+
+| corpus | rows | failed | retried | cost $ (final attempts) | cost $ (all attempts) | wall s (sum of rows) | first → last attempt (UTC) |
+|---|---|---|---|---|---|---|---|
+| golden | 192 | 0 | 0 | 3.36 | 3.36 | 2409 | 2026-10-27T02:38:01Z → 2026-10-27T03:18:25Z |
+| docs | 300 | 0 | 0 | 8.43 | 8.43 | 5294 | 2026-10-27T02:38:04Z → 2026-10-27T04:06:33Z |
+
+Reading: 492 counted answers on the public corpora, none failed, none retried; the three corpora's counted runs ran concurrently (one job each, 02:38 → 04:06 UTC for the public two), so the wall-clock medians are under that load and T2's one-job figures are not comparable with them. mda's median run reads the fewest source tokens on docs (1,948 against grep 3,259, qmd 3,988, graphify 4,867) and on the golden set reads more than grep (1,240 against 672; qmd 1,828, graphify 4,867) — the golden set is small enough that one grep and one read answer a single-section question, which the archive's first A/B run already showed. mda's runs cost the least on docs ($0.015 median against grep $0.021, qmd $0.032, graphify $0.035) and a tenth of a cent more than grep's on the golden set ($0.011 against $0.010; qmd $0.018, graphify $0.031), and are among the fastest (8–9 s median wall against grep's 8–10 s; qmd 18–32 s, its reranker per query). Tool use from the traces: every mda and qmd run called its own tool; graphify's runs began with Grep in 46 of 48 golden and 75 of 75 docs rows and used its graph tool in 39 and 55 of them.
+
+#### Quality, grounding and the gates (original grades)
+
+**T6, public corpora** — quality, grounding and the gates (original grades; `mda eval --analysis`: question medians over three runs with failed runs as 0, a 10,000-draw paired bootstrap per pair, seed 20260922; savings only where a pair passes all three gates)
+
+*golden* — per arm: graphify mean 5.81, grounding 0.98, median source tokens 5961 · grep mean 5.75, grounding 0.98, median source tokens 654 · mda mean 5.81, grounding 0.90, median source tokens 1240 · qmd mean 5.69, grounding 0.98, median source tokens 1814
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 16 | +0.06 | [-0.12, +0.25] | 2/1/13 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 16 | +0.12 | [-0.12, +0.38] | 3/1/12 | pass | pass | FAIL | none claimed |
+| mda vs graphify | 16 | +0.00 | [+0.00, +0.00] | 0/0/16 | pass | pass | FAIL | none claimed |
+
+*docs* — per arm: graphify mean 5.68, grounding 0.83, median source tokens 4799 · grep mean 5.44, grounding 0.79, median source tokens 3243 · mda mean 5.72, grounding 0.83, median source tokens 1948 · qmd mean 5.64, grounding 0.80, median source tokens 3991
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | +0.28 | [+0.04, +0.56] | 6/1/18 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 25 | +0.08 | [-0.12, +0.28] | 4/2/19 | pass | pass | FAIL | none claimed |
+| mda vs graphify | 25 | +0.04 | [-0.12, +0.20] | 3/2/20 | pass | pass | FAIL | none claimed |
+
+Reading: on the 0–6 scale every arm scores high on both corpora (5.44–5.81), and mda's mean is the highest or tied highest on each (5.81 on the golden set, tied with graphify; 5.72 on docs). Against grep, mda is +0.06 on the golden set (interval [−0.12, +0.25], 13 of 16 questions tied) and **+0.28 on docs with an interval that excludes zero** ([+0.04, +0.56], 6 wins, 1 loss, 18 ties); against qmd +0.12 and +0.08, against graphify 0.00 and +0.04, every one of those intervals including zero. Gate (a), the lower bound ≥ −0.25, passes for every pair on both public corpora — the first axis-B table where it does — and gate (b) passes everywhere. **Gate (c) fails for every pair, so no savings are claimed**: on the golden set mda's grounding is 0.90 while the three comparators are at 0.98; on docs every arm is between 0.79 and 0.83. The next table says why.
+
+#### Grounding verdicts by recorded cause
+
+**T6 — grounding verdicts by recorded cause, public corpora** (one row per arm; U, C and N are exclusive and sum to the ungrounded rows; U is split only where the unresolved tokens are committed)
+
+| corpus | arm | rows | grounded | grounding | U: unresolved citation(s) only | U split: bare extension / bare file name / other | C: unsupported claim(s) | N: no resolvable citation | grounding if U were grounded (descriptive, not the gate) |
+|---|---|---|---|---|---|---|---|---|---|
+| golden | grep | 48 | 47 | 97.9% | 0 | 0 / 0 / 0 | 1 | 0 | 97.9% |
+| golden | mda | 48 | 43 | 89.6% | 0 | 0 / 0 / 0 | 5 | 0 | 89.6% |
+| golden | qmd | 48 | 47 | 97.9% | 0 | 0 / 0 / 0 | 1 | 0 | 97.9% |
+| golden | graphify | 48 | 47 | 97.9% | 0 | 0 / 0 / 0 | 1 | 0 | 97.9% |
+| docs | grep | 75 | 59 | 78.7% | 9 | 3 / 6 / 0 | 6 | 1 | 90.7% |
+| docs | mda | 75 | 62 | 82.7% | 9 | 3 / 6 / 0 | 4 | 0 | 94.7% |
+| docs | qmd | 75 | 60 | 80.0% | 10 | 3 / 7 / 0 | 4 | 1 | 93.3% |
+| docs | graphify | 75 | 62 | 82.7% | 10 | 3 / 7 / 0 | 3 | 0 | 96.0% |
+
+Reading: the grounding failures have different causes on the two corpora, and the split is published because the gate counts them all. On the **golden set** mda's five ungrounded rows (three of them one question, `golden-c018`) are claims the grader judged to go beyond the cited page — the answer presenting a runbook's one stated condition as "the usual cause", a last-updated date the page does not carry, an ADR's reasons ranked where the page does not rank them; each comparator has one such row. mda's answers, written from a card and the opened section, embellish more often than grep-and-read's on this corpus; that is the finding, and it is mda's to fix. On **docs**, 9–10 of each arm's 13–16 ungrounded rows are the U category: unresolved citations and nothing else. Three questions produce them for every arm alike (`docs-c018`, `docs-c056`, `docs-c071`, three runs each): the answers mention `.md` and `.mdx` as file extensions (a question about the ingestion design) or name `FROZEN.md`, `CLAUDE.md` or `TUNING.md` — files this repository has outside `docs/` — and the T6 citation rule, which treats a bare token ending in `.md` as a citation, finds no inventory page for them. That rule is the one declared before the freeze and the gate is applied as declared; the last column shows the descriptive rate with those rows counted grounded (mda 94.7%, grep 90.7%, qmd 93.3%, graphify 96.0% — still short of 95% for three of four arms, because the C rows remain). The C rows on docs (3–6 per arm) are claims the grader found unsupported by the cited pages: a name the page does not use (mda's three runs of `docs-c008` call the tool `mda_open` where the design page says `mda open`), line numbers the page cannot carry, quotations and attributions that are not on the cited page, a budget called "daily" where the page says only "budgets"; N rows (an answer with no resolvable citation at all) are 1 for grep and 1 for qmd.
+
+#### The same, on the adjudicated grades (panel-resolved scores in place, rule 0.8)
+
+**T6 — the same pairs on the adjudicated grades, public corpora** (panel-resolved scores in place for the 30 sampled answers per corpus, rule 0.8)
+
+*golden* (adjudicated) — per arm: graphify mean 5.81, grounding 0.98 · grep mean 5.69, grounding 0.98 · mda mean 5.81, grounding 0.90 · qmd mean 5.69, grounding 0.98
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 16 | +0.12 | [+0.00, +0.31] | 2/0/14 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 16 | +0.12 | [-0.12, +0.38] | 3/1/12 | pass | pass | FAIL | none claimed |
+| mda vs graphify | 16 | +0.00 | [+0.00, +0.00] | 0/0/16 | pass | pass | FAIL | none claimed |
+
+*docs* (adjudicated) — per arm: graphify mean 5.68, grounding 0.83 · grep mean 5.50, grounding 0.79 · mda mean 5.72, grounding 0.83 · qmd mean 5.64, grounding 0.80
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | +0.22 | [+0.02, +0.44] | 6/1/18 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 25 | +0.08 | [-0.12, +0.28] | 4/2/19 | pass | pass | FAIL | none claimed |
+| mda vs graphify | 25 | +0.04 | [-0.12, +0.20] | 3/2/20 | pass | pass | FAIL | none claimed |
+
+Reading: with the panel's resolved scores in place for the 30 sampled answers per corpus (2 and 3 answers changed), mda vs grep moves to +0.12 [0.00, +0.31] on the golden set and +0.22 [+0.02, +0.44] on docs; the other pairs are unchanged within 0.01; gate (c) still fails everywhere, so nothing is claimed. The original is the table of record and this its rule-0.8 companion.
+
+#### Panel calibration (30 answers per corpus, Fable and Astra, blind)
+
+**T6 — panel calibration, public corpora** (30 answers per corpus, Fable and Astra, blind; trigger: either member differs from the Sonnet grade by more than one point → the panel mean, in the adjudicated grades only)
+
+| corpus | answers | incomplete | Fable/Astra exact | within one | Fable/Sonnet exact | Astra/Sonnet exact | trigger fired | mean Sonnet / Fable / Astra |
+|---|---|---|---|---|---|---|---|---|
+| golden | 30 | 0 | 0.30 | 0.90 | 0.87 | 0.33 | 2 | 5.83 / 5.90 / 5.07 |
+| docs | 30 | 0 | 0.47 | 0.97 | 0.80 | 0.60 | 3 | 5.50 / 5.67 / 5.10 |
+
+Reading: the two members agree with each other within one point on 27 and 29 of 30 answers (exact 0.30 and 0.47); Fable tracks Sonnet (exact 0.87 and 0.80, means within 0.2), Astra scores 0.8 and 0.4 below Sonnet's mean on these high-scoring answers (5.07 and 5.10 against 5.83 and 5.50) — the same direction as on T2, with a smaller gap; the trigger fired on 2 and 3 answers. The calibration record (`T6/calibration.json`, frozen before the runs) carries the pilots' agreement, the resolved model ids for every role and the resolution rule by id; Astra's client names no model id in its output, so its role is declared unresolved there and its requested alias (`gpt-6-astra`) is recorded instead.
+
+#### Card audit (both members)
+
+**T6 — card audit, public corpora** (up to 100 cards per corpus with at least one date or entity, seeded; each value judged against the section text by both members; an incomplete verdict is counted, not scored)
+
+| corpus | cards | values | unsupported (Fable) | unsupported (Astra) | per-value agreement | incomplete verdicts | sections missing from the store |
+|---|---|---|---|---|---|---|---|
+| golden | 85 | 207 | 0.027 | 0.032 | 0.995 | 6 | 0 |
+| docs | 100 | 894 | 0.015 | 0.014 | 0.991 | 7 | 0 |
+
+Reading: 85 of the golden set's 117 cards carry a date or an entity and all were audited; 100 of docs' 506. among the values covered by valid member verdicts, 1.4–3.2% were judged unsupported by either member (the rates exclude values a member's verdict did not cover), agreement above 0.99; incomplete verdicts (a member's reply not covering every value once) 6 and 7 are counted, not scored. This is the audit of rule 0.8 on the metadata G6 promises; a sample audit does not verify every stored value.
+
+#### The private corpus (supporting evidence only)
+
+The owner's trading-research repository, 821 pages, indexed, questioned, run, graded and audited by the same harness under the same freeze (its own freeze with a salted content commitment stays under the run directory; its sha256 is committed as `T6/private/FROZEN.sha256` and the public freeze reads it). Nothing content-bearing from it is in the repository: the committed files under `T6/private/` are allowlisted exports — ids, digests, numbers, closed enumerations — written by `scripts/eval/t6_private_export.py`, checked by `scripts/eval/tests/own-private-schema.sh` in `make check`, and every commit of this branch passed `t6.sh leak-scan` (the blobs of the whole change against a 41,313-entry denylist of the repository's paths, headings and excerpts). It cannot be rerun by anyone but the owner, which is why it is supporting evidence and never a headline.
+
+**T6, the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** — runs and consumption (rule 0.7 tokens; medians over the completed rows of each arm; cost is the list-price equivalent of calls through the owner's logins)
+
+| corpus | arm | rows | failed | arm's own tool used (rows) | wall s (median) | source tokens (median) | input tokens (median) | tool calls (median) | cost $ (median) | turns (median) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| private | graphify | 75 | 0 | 63 | 17 | 11195 | 98417 | 5 | 0.075 | 6 |
+| private | grep | 75 | 0 | n/a | 14 | 8742 | 46983 | 4 | 0.048 | 5 |
+| private | mda | 75 | 0 | 75 | 9 | 2250 | 29453 | 3 | 0.016 | 4 |
+| private | qmd | 75 | 0 | 75 | 37 | 3758 | 50437 | 3 | 0.033 | 4 |
+
+**T6 — run totals — the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** (from the committed grade rows; a retried row carries its final attempt's metrics and every attempt's cost; the private rows carry no timestamps)
+
+| corpus | rows | failed | retried | cost $ (final attempts) | cost $ (all attempts) | wall s (sum of rows) | first → last attempt (UTC) |
+|---|---|---|---|---|---|---|---|
+| private | 300 | 0 | 2 | 14.72 | 14.98 | 6680 | in the run directory |
+
+**T6, the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** — quality, grounding and the gates (original grades; `mda eval --analysis`: question medians over three runs with failed runs as 0, a 10,000-draw paired bootstrap per pair, seed 20260922; savings only where a pair passes all three gates)
+
+*private* — per arm: graphify mean 5.04, grounding 0.71, median source tokens 12069 · grep mean 4.84, grounding 0.80, median source tokens 8742 · mda mean 5.44, grounding 0.87, median source tokens 2325 · qmd mean 5.44, grounding 0.93, median source tokens 3730
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings (comparator / mda, completed pairs) |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | +0.60 | [-0.08, +1.36] | 8/3/14 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 25 | +0.00 | [-0.36, +0.28] | 5/3/17 | FAIL | pass | FAIL | none claimed |
+| mda vs graphify | 25 | +0.40 | [-0.24, +1.08] | 7/3/15 | pass | pass | FAIL | none claimed |
+
+Generated by `scripts/eval/t6.sh table` from `evals/results/own/T6/<corpus>/grades.jsonl` and `analysis.json` (the private corpus: the allowlisted exports under `T6/private/`).
+
+**T6 — grounding verdicts by recorded cause — the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** (one row per arm; U, C and N are exclusive and sum to the ungrounded rows; U is split only where the unresolved tokens are committed)
+
+| corpus | arm | rows | grounded | grounding | U: unresolved citation(s) only | U split: bare extension / bare file name / other | C: unsupported claim(s) | N: no resolvable citation | grounding if U were grounded (descriptive, not the gate) |
+|---|---|---|---|---|---|---|---|---|---|
+| private | grep | 75 | 60 | 80.0% | 2 | n/a (texts not exported) | 9 | 4 | 82.7% |
+| private | mda | 75 | 65 | 86.7% | 2 | n/a (texts not exported) | 6 | 2 | 89.3% |
+| private | qmd | 75 | 70 | 93.3% | 0 | n/a (texts not exported) | 3 | 2 | 93.3% |
+| private | graphify | 75 | 53 | 70.7% | 3 | n/a (texts not exported) | 16 | 3 | 74.7% |
+
+**T6 — the same pairs on the adjudicated grades — the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** (panel-resolved scores in place for the 30 sampled answers per corpus, rule 0.8)
+
+*private* (adjudicated) — per arm: graphify mean 5.00, grounding 0.71 · grep mean 4.88, grounding 0.80 · mda mean 5.44, grounding 0.87 · qmd mean 5.44, grounding 0.93
+
+| pair | n | mean Δ | 95% paired | wins/losses/ties | gate a (lb ≥ −0.25) | gate b (mean ≥ 4.0) | gate c (grounding ≥ 95%) | savings |
+|---|---|---|---|---|---|---|---|---|
+| mda vs grep | 25 | +0.56 | [-0.08, +1.36] | 7/3/15 | pass | pass | FAIL | none claimed |
+| mda vs qmd | 25 | +0.00 | [-0.36, +0.28] | 5/3/17 | FAIL | pass | FAIL | none claimed |
+| mda vs graphify | 25 | +0.44 | [-0.20, +1.16] | 8/3/14 | pass | pass | FAIL | none claimed |
+
+**T6 — panel calibration — the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** (30 answers per corpus, Fable and Astra, blind; trigger: either member differs from the Sonnet grade by more than one point → the panel mean, in the adjudicated grades only)
+
+| corpus | answers | incomplete | Fable/Astra exact | within one | Fable/Sonnet exact | Astra/Sonnet exact | trigger fired | mean Sonnet / Fable / Astra |
+|---|---|---|---|---|---|---|---|---|
+| private | 30 | 0 | 0.17 | 0.77 | 0.50 | 0.43 | 5 | 5.13 / 5.67 / 4.57 |
+
+**T6 — card audit — the private corpus (supporting evidence only; exported fields, exempt from independent reproduction)** (up to 100 cards per corpus with at least one date or entity, seeded; each value judged against the section text by both members; an incomplete verdict is counted, not scored)
+
+| corpus | cards | values | unsupported (Fable) | unsupported (Astra) | per-value agreement | incomplete verdicts | sections missing from the store |
+|---|---|---|---|---|---|---|---|
+| private | 100 | 557 | 0.007 | 0.013 | 0.991 | 2 | 0 |
+
+Reading: this is the corpus where mda's observed per-run consumption is lowest relative to every comparator, and where grounding stays below 95% for every arm (graphify's is its lowest of the three corpora). mda's median run reads 2,250 source tokens against grep's 8,742, qmd's 3,758 and graphify's 11,195, makes 3 tool calls, finishes in 9 s (grep 14 s, graphify 17 s, qmd 37 s) and costs $0.016 against $0.048, $0.033 and $0.075. On quality mda and qmd tie at a mean of 5.44 above grep (4.84) and graphify (5.04); mda vs grep is +0.60 with an interval that just includes zero ([−0.08, +1.36], 8 wins, 3 losses, 14 ties), mda vs graphify +0.40 [−0.24, +1.08], mda vs qmd 0.00 [−0.36, +0.28] — the one pair in T6 that fails gate (a), its lower bound at −0.36. Gate (c) fails for every arm (mda 0.87, qmd 0.93, grep 0.80, graphify 0.71), and here the cause is mostly C — claims the grader found unsupported by the cited pages (16 of graphify's 22 ungrounded rows, 9 of grep's 15, 6 of mda's 10) — with a few answers that cited nothing resolvable (2–4 per arm) and two or three rows of unresolved citations for grep, mda and graphify, none for qmd (the tokens stay with the private texts). The private grader and panel saw these answers under the same rubric: the two members agree within one point on 23 of 30 answers (exact 0.17), Astra's mean is 0.6 below Sonnet's and 1.1 below Fable's (4.57 against 5.13 and 5.67), and the trigger fired 5 times; the adjudicated pairs move by at most 0.04. Card audit: 557 values on 100 cards; among those covered by valid member verdicts 0.7–1.3% were judged unsupported, agreement 0.991, 2 incomplete verdicts. The run set: 300 rows, none failed; the declared single retry fired on two rows (one grep, one graphify) and succeeded, so those rows carry their final attempt's metrics and both attempts' cost ($14.98 against $14.72). graphify's runs began with Grep or Read in every row and used its graph tool in 63 of 75. Nothing here is a headline: the corpus is one owner's notes, the questions were written from its sections by the same model family that answered them, and no one else can rerun it.
+
+Generated by `scripts/eval/t6_report.py` from `evals/results/own/T6/<corpus>/{index.json,candidates.summary.json,pages.txt,grades.jsonl,analysis.adjudicated.json,panel/regrade.json,panel/cards.json}` and `evals/results/own/arms/{qmd,graphify}-<corpus>.json` (the private corpus: the allowlisted exports under `T6/private/`, `arms.json` included).
+
+#### What travels with the table
+
+Every model call went through the owner's logins (Claude Code for the writer, the answering model, the grader and Fable; the Codex CLI for Astra); provider keys were unset by the scripts. **The freeze** was committed three times before any counted row, every rewrite harness-only and in git (`c15cdd9`: the first; `e88e2ba`: the declared accepted-probe-failure exception and the serving-copy comparison as whole-manifest equality, after the private preflight refused the repository's own two tracked symlinks; `08cefe8`: attempt-keeping in the preflight); every counted row came after the third, and the three preflights passed under it with graphify's probes 3 of 3 on every corpus, so the exception declared for the public corpora did not fire. Earlier attempts are kept: golden attempt 1 (first freeze) passed 3 of 3 and survives as the chain's log excerpt because its report was overwritten before attempt-keeping existed; golden attempt 2 (second freeze) failed on graphify 2 of 3; docs attempt 1 (second freeze) was accepted at 2 of 3 under the declared exception; private attempt 1 (second freeze) failed only the symlink check. **The runs**: 192 + 300 + 300 answers, none failed; the declared single retry fired on two private rows (one grep, one graphify; the first attempt returned no result) and succeeded; the three corpora ran concurrently (one job each; wall-clock medians are under that load). **Questions**: the golden set published with 16 counted questions, every eligible section drawn; docs and private were topped up (70 then 30; 70 then 60) under the resumable rule — the seeded prefix verified field by field, the panel resumed bound to its content and rubric hashes; a first private panel run was discarded before any of it was used (an interrupted chain had left panel processes writing beside a resumed run: 111 rows for 70 candidates), the clean rerun and the top-up are what count, and the discarded files stay under the run directory. **Pilots**: 4, 10 and 10 pilot questions, one run per arm, both members on every answer, produced the calibration record (`T6/calibration.json`) and the throughput and cost estimates; nothing from them is a published number. **The private qmd build**'s embedding step returned after one second with no vectors on the first attempt and was rerun by hand (4,583 chunks, 605 s); the record says so. **Grounding**: Sonnet, every cited page checked whole in batches of four, the T6 citation rule above; its effect on docs is split out by cause in its own table; the rule and the rubric are inside the hashed harness files. **The panel**'s stamped per-member card files were removed after `cmp` showed them identical to the unstamped ones the page reads. **After the runs** one file was added under the frozen paths — `scripts/eval/t6_report.py`, the renderer of the companion tables above, which reads only committed files — so `freeze.sh --check --table T6` reports `scripts/eval` as changed on today's tree, the T5 precedent; every other hashed file is unchanged since the freeze. Committed under `evals/results/own/`: the store configuration, the sources with tree hashes, the cards with provenance, the inventories, the questions (texts for the public corpora; ids and digests for the private one), candidates, rejections and summaries, the manifests, `grades.jsonl` and `grades.adjudicated.jsonl` with the answer text replaced by its sha256 (answers quote page text; they stay under the run directory), both analyses, the panel's per-answer scores and card verdicts, the pilot and index records, the arm records and graphs, every preflight attempt with its probe traces; the analyses regenerate byte-identically from the committed grades and manifests (runbook §7.6). T6's latency is not a table; the wall-clock medians above are those of three concurrent jobs.
+
 ## Axis C — freshness
 
 The published table is T4 (Prisma, twenty edits). The Phase 1 daemon timings are kept beneath it as the first measurement of the same endpoints.
@@ -475,7 +673,7 @@ Every model call went through the owner's login: the answering model was Sonnet 
 
 ## Axis E — cost and size
 
-The published table is T3 (first-build cost and artifact size per arm, from the committed records). T6's own-corpus rows add the small-corpus end of the size range when published.
+The published table is T3 (first-build cost and artifact size per arm, from the committed records). T6's own-corpus rows (its "corpora as built" table) add the small-corpus end of the range: the golden set (117 sections) and this repository's `docs/` (514) cost $0.46 and $3.32 of Haiku list-price to card, 96 and 396 seconds; graphify's Sonnet builds on them cost $0.52 and $4.02; qmd's are free local compute. Break-even was not measured; what follows is a descriptive consumption comparison across different corpora: on the golden set the index arm read more source tokens than grep-and-read, on `docs/` fewer (T6's consumption table).
 
 ### T3 — axis E, what a first build costs (final, 2026-09-25)
 
@@ -521,24 +719,25 @@ Each table's own reading carries the numbers; this section says where they point
 - **Axis C.** For an exact-token lookup the grep arm's answer endpoint is faster than any index arm's: the question hands the agent a unique literal. mda's save → card p50 meets the G1 threshold on one machine; its answer endpoint does not beat a direct text search on that workload.
 - **Axis D.** No pair earns the preregistered "correct with less effort at equal evidence" claim: with `.git` and `git` in Bash, every arm, mda included, opens git first; mda consults its index on top and so makes one more median tool call and reads more source tokens. Only mda vs qmd on Prisma has a correctness interval excluding zero.
 - **Axis E.** mda's first build costs money (Haiku cards per section) where qmd's is free local compute; a build-cost comparison across arms is fair only at matched models and outputs, and the table says so.
-- **Corpus size.** The small-corpus end (the golden set, this repository's `docs/`) is where grep-and-read is cheapest; T6 measures it with the same gates.
+- **Corpus size.** The small-corpus end is where grep-and-read is cheapest, and T6 shows it: on the golden set (32 files) mda's median run read 1,240 source tokens against grep's 672 and cost a tenth of a cent more; on `docs/` (73 files) it read 1,948 against 3,259 and cost less. Quality is at parity or above on both (every gate-(a) lower bound ≥ −0.25, mda vs grep on `docs/` +0.28 with an interval excluding zero), and nothing is claimed because the grounding gate fails: on the golden set mda's own embellished claims (0.90 against the comparators' 0.98); on `docs/` unresolved bare-token citations (a mentioned file extension, a file named outside the corpus) explain most failures for every arm alike, unsupported claims and answers without a resolvable citation the rest — counting every unresolved-only row as grounded would still leave three of four arms below 95%.
 
 ## What the model already knew (rule 0.6)
 
 The answering and grading models are Claude models; what they already know contributes to every arm alike and is described per corpus, never asserted absent.
 
 - **DocsQA-Repo (T1, T2, T4, T5).** Public documentation of widely used projects (GitHub, Prisma, Supabase, Tailwind CSS) at pinned commits. An agent can answer many community questions from prior knowledge without retrieval; T2's grounding check is what catches an answer that is right but unsupported by a cited page, and its failure rate (every arm, every project) is the measure of how much of the answering did not come from the pages. T5's questions ask for dates of changes inside a specific window of a repository's history; those are not in any training set at that resolution, and the traces show every arm reaching for `git`.
-- **The golden set (A; T6).** Fictional platform-team notes written for this repository. The vocabulary (runbooks, ADRs, postmortems) is ordinary; the facts are invented, so an answer must come from the pages.
-- **This repository's `docs/` (T6).** The model knows Rust, Claude Code and markdown tooling in general; this project's decisions, dates and numbers are specific to it. What of them could be known is described on the T6 table when published.
-- **The private corpus (T6, supporting evidence only).** Described on its separately headed table; nothing content-bearing is published.
+- **The golden set (A; T6).** Fictional platform-team notes written for this repository. The vocabulary (runbooks, ADRs, postmortems) is ordinary and the facts are invented; prior exposure and performance without retrieval were not measured, so the invented facts are a reason to expect retrieval mattered, not a demonstration.
+- **This repository's `docs/` (T6).** The model knows Rust, Claude Code and markdown tooling in general; this project's decisions, dates and numbers are specific to it; prior exposure and performance without retrieval were not measured. The answering model also knows this plugin's *shape* from the pages it opened in the same run and from the skill it was given (the search-first rules name the MCP tools), which is how an answer can call a tool `mda_open` where the cited design page says `mda open`: the grader counts that as an unsupported claim, and T6's grounding table shows where it happened.
+- **The private corpus (T6, supporting evidence only).** The owner's own research notes, unpublished by the owner's account; prior exposure and performance without retrieval were not measured. Nothing content-bearing is published; its separately headed tables carry counts and rates only.
 
 ## Not measured yet
 
 - The A/B protocol on design-partner repositories (T6 covers the golden set, this repository's `docs/` and one private corpus).
+- An independent rerun of T2, T4, T5 or T6 (owed; execution plan §9).
 
 ## Provenance
 
-- Freezes, each committed before its rows: `evals/results/docsqa/FROZEN.md` (development protocol), `evals/results/docsqa/T1/FROZEN.md`, `T2/FROZEN.md`, `T4/FROZEN.md`, `T5/FROZEN.md`; `evals/results/own/T6/FROZEN.md` when T6 is published. A historical freeze is verified at its frozen source revision and by its artifact hashes, never against today's tree.
+- Freezes, each committed before its rows: `evals/results/docsqa/FROZEN.md` (development protocol), `evals/results/docsqa/T1/FROZEN.md`, `T2/FROZEN.md`, `T4/FROZEN.md`, `T5/FROZEN.md`, `evals/results/own/T6/FROZEN.md` (three versions in git, every counted row after the third). A historical freeze is verified at its frozen source revision and by its artifact hashes, never against today's tree.
 - The tuning log: `evals/results/docsqa/TUNING.md` (every trial, the stop rule, the winner).
 - Preflight reports and probe traces: `evals/results/docsqa/preflight/`, `evals/results/own/preflight/`.
 - Raw results per table: `evals/results/docsqa/T1/…T5/` (manifests, grades, analyses, replay and validation records, superseded rows kept aside), `evals/results/own/T6/`.

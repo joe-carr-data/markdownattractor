@@ -51,10 +51,10 @@ The verdict on the first draft was "do not start"; these amendments are what M9 
 | Corpus | Eligible headed sections ≥ 200 chars (documents) | Candidates drawn through the writer | Refused before the panel | Judged | Counted accepted (one per page) | Pilot accepted |
 |---|---|---|---|---|---|---|
 | golden | 27 (19) | 27 | 4 | 23 | **16** | 4 |
-| docs | 342 (52) | 100 (70, then a top-up of 30) | 17 | 94 | **25** | 10 |
-| private | 5,988 (563) | 130 (70, then a top-up of 60) | 10 | 123 | **25** | 10 |
+| docs | 342 (52) | 100 (70, then a top-up of 30) | 17 | 79 | **25** | 10 |
+| private | 5,988 (563) | 130 (70, then a top-up of 60) | 10 | 113 | **25** | 10 |
 
-The golden set exhausts its candidates at 16 counted questions and publishes with that count. The two top-ups followed the resumable rule recorded above (the seeded prefix is verified field by field; the panel resumes bound to its content and rubric hashes). A first private panel run was discarded before any of it was used: a chain that had been interrupted left panel processes writing beside a resumed run (111 rows for 70 candidates); the clean rerun and the top-up are what count (`$RUN/t6/private/superseded-race/` keeps the discarded files, outside the repository).
+The golden set exhausts its candidates at 16 counted questions and publishes with that count. "Judged" is the committed `candidates.summary.json`'s count (both members returned a verdict); a candidate the writer passed whose page already had a counted question is skipped, not judged (docs 4, private 7), which is why judged + refused is below the number drawn. The two top-ups followed the resumable rule recorded above (the seeded prefix is verified field by field; the panel resumes bound to its content and rubric hashes). A first private panel run was discarded before any of it was used: a chain that had been interrupted left panel processes writing beside a resumed run (111 rows for 70 candidates); the clean rerun and the top-up are what count (`$RUN/t6/private/superseded-race/` keeps the discarded files, outside the repository).
 
 ## Amendments after the first preflights (2026-10-27, before any counted row)
 
@@ -63,25 +63,33 @@ The golden set exhausts its candidates at 16 counted questions and publishes wit
 - **Private failed only the graphify serving-copy comparison**, because the check refused any symlink while the private repository itself tracks two; the copies were identical on every entry (2,733, the two links included). The check now requires equality of the whole manifests, links compared as entries.
 - Both changes are harness-only; the freeze is rewritten once (second version) before any counted row and all three preflights are rerun under it; the first version stays in git.
 
+## Freeze and preflights (2026-10-27, before any counted row)
+
+Three committed versions of `evals/results/own/T6/FROZEN.md`, every rewrite harness-only, every counted row after the third: `c15cdd9` (the first; file sha256 `204919281ea0…`, source commit `c0b43483…`), `e88e2ba` (the accepted-probe-failure exception and the serving-copy manifest comparison; file `75b56901e7a6…`, source `9f675482…`), `08cefe8` (attempt-keeping in the preflight; file `16e2c4c3baf8…`, source `4451a7a6…`). The private freeze was rewritten alongside each version and its digest republished (`T6/private/FROZEN.sha256`). Preflights under the third: golden, docs and private all passed every check with graphify's probes 3 of 3, so the declared exception, set in the environment for the public corpora, did not fire. Earlier attempts, kept: golden attempt 1 (first freeze) passed 3 of 3 — its report was overwritten before attempt-keeping existed and survives as the chain's log excerpt — and attempt 2 (second freeze) failed on graphify 2 of 3; docs attempt 1 (second freeze) was accepted at 2 of 3 under the declared exception; private attempt 1 (second freeze) failed only the serving-copy check that refused the repository's own two symlinks.
+
 ## Tasks
 
 - [x] **P0** This plan; Codex pre-mortem (`docs/reviews/codex/2026-10-26-m9-premortem.md`, 22 findings, all accepted); the amendments below recorded before code (2026-10-26).
 - [x] **H1** (2026-10-26, before the Codex harness review) `mda eval --root <copy> --cards|--export-cards` without a dataset (the own-corpus card path); `scripts/eval/t6.sh setup|index|cards|questions|pilot|arms|freeze|preflight|run|status|grade|panel|analysis|table|readme-row|export-private|leak-scan|teardown`; the `t2.sh` seams (`T2_CORPUS`, `T2_QUESTIONS_FULL`, `T2_PAGES`, the T6 resolver and rubric); `panel.sh questions`; `lib.sh` `DOCSQA_DATA`; the T6 freeze blocks; `scripts/eval/tests/page-blocks.sh` (inventory), `own-private-schema.sh`, the resolver tests and the no-DocsQA smoke in `make check`; runbook §7.6 skeleton in the same commit.
-- [ ] **Codex** harness review before the freeze; findings applied; record in `docs/reviews/codex/`.
-- [ ] **D1** setup → index (+ cards committed) → qmd and graphify builds → questions (+ panel) → development pilot (calibration, estimates; declared here) → freezes → preflight → runs → grade → panel → analysis → table → export-private + leak-scan; the T6 page section; runbook §7.6 with hashes and the exact regeneration recipe.
-- [ ] **D2** The page by axis (`docs/benchmarks.md`, `docs/archive/benchmarks-development-2026-09.md`), block test green; the README row and its test; Codex publication check of the page and README; findings applied.
-- [ ] **Docs** STATUS, CHANGELOG, aha, index; execution plan §8 M9 ticked and §9 updated (the owed independent reruns stay open and say so); strategy plan §5 B1/B6 and §6 ticked where met.
+- [x] **Codex** harness review before the freeze: six passes (2026-10-26/27; 29 + 19 + 15 + 4 + 5 + 4 findings, all applied; `docs/reviews/codex/2026-10-26-m9-harness.md`), the last two "ready after these fixes".
+- [x] **D1** (2026-10-27) setup → index (+ cards committed) → qmd and graphify builds → questions (+ panel) → development pilot (calibration, estimates; declared here) → freezes → preflight → runs → grade → panel → analysis → table → export-private + leak-scan; the T6 page section; runbook §7.6 with hashes and the exact regeneration recipe.
+- [x] **D2** (2026-10-27) The page by axis (`docs/benchmarks.md`, `docs/archive/benchmarks-development-2026-09.md`), block test green; the README row and its test; Codex publication check of the page and README; findings applied.
+- [x] **Docs** (2026-10-27) STATUS, CHANGELOG, aha, index; execution plan §8 M9 ticked and §9 updated (the owed independent reruns stay open and say so); strategy plan §5 B1/B6 and §6 ticked where met.
 
 ## Exit criteria
 
-- [ ] T6 published for the three corpora with every comparator pair, its intervals and gates, savings only where the gates pass; the private corpus in a separately headed supporting-evidence table with no content-bearing field in the repository (the leak scan runs in `make check`).
-- [ ] The T6 freeze precedes every row in git; a passing preflight per corpus is committed; the analyses and tables regenerate byte-identically from the committed grades and manifests; the two public corpora, their cards and their questions rebuild from this repository alone.
-- [ ] `docs/benchmarks.md` is ordered by axis with "Where we lose", "What the model already knew" and "Provenance"; every generated block is byte-identical to the pre-restructure page (`page-blocks.sh` green); the development sections are in `docs/archive/` and linked.
-- [ ] The README carries the generated numbers row with one line per headline claim, limited to the gates that passed; the markers test is green.
-- [ ] The holdout split was not read (no `--open-holdout` in any committed manifest or log; T6 reads no DocsQA split).
-- [ ] Runbook §7.6 reproduces setup, builds, questions, runs and tables on a fresh machine for the public corpora and says what the private corpus's rerun needs from the owner.
+- [x] T6 published for the three corpora with every comparator pair, its intervals and gates, savings only where the gates pass; the private corpus in a separately headed supporting-evidence table with no content-bearing field in the repository (the leak scan runs in `make check`).
+- [x] The T6 freeze precedes every row in git; a passing preflight per corpus is committed; the analyses and tables regenerate byte-identically from the committed grades and manifests; the two public corpora, their cards and their questions rebuild from this repository alone.
+- [x] `docs/benchmarks.md` is ordered by axis with "Where we lose", "What the model already knew" and "Provenance"; every generated block is byte-identical to the pre-restructure page (`page-blocks.sh` green); the development sections are in `docs/archive/` and linked.
+- [x] The README carries the generated numbers row with one line per headline claim, limited to the gates that passed; the markers test is green.
+- [x] The holdout split was not read (no `--open-holdout` in any committed manifest or log; T6 reads no DocsQA split).
+- [x] Runbook §7.6 reproduces setup, builds, questions, runs and tables on a fresh machine for the public corpora and says what the private corpus's rerun needs from the owner.
 
-## Open before the freeze (decide and record here, never after)
+## Outcome (2026-10-27)
+
+Published: `docs/benchmarks.md` § T6, runbook §7.6, the README row (unchanged in wording: no pair passes the gates on any corpus). Every quality gate passed for every pair on the public corpora and the grounding gate failed for every pair on every corpus; the causes are split out on the page (golden: mda's embellished claims; docs: mostly the bare-token citation rule, every arm alike, with unsupported claims the rest — three of four arms stay below 95% even with those rows counted grounded; private: unsupported claims). The post-run harness change is one added renderer (`scripts/eval/t6_report.py`), disclosed on the page and in the runbook. Codex publication check: `docs/reviews/codex/2026-10-27-t6-page.md`.
+
+## Open before the freeze (decided and recorded before it)
 
 - Whether the graphify build completes on the private corpus (860 files); if not, the arm is "did not complete" there, as on Prisma and GitHub Docs.
 - Whether the docs corpus's generated index files (`docs/index.md`, hash listings in the runbook) yield candidates the panel accepts; a corpus whose accepted questions run short of 25 publishes with the count it reached and says so.
