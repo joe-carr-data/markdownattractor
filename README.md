@@ -100,7 +100,7 @@ Why not your Claude subscription? Anthropic's terms don't allow third-party tool
 
 ## Commands
 
-Everything is `/mda …` inside Claude Code, or `mda …` in a terminal. Every command supports `--json`. The search tools are also exposed to Claude over MCP.
+Everything is `/mda …` inside Claude Code, or `mda …` in a terminal. Every command supports `--json`. The search tools are also exposed to Claude over MCP. Other MCP clients (Codex CLI, Gemini CLI, Claude Desktop, Cursor, opencode) can use the same server: [setup guide](docs/guides/mcp-clients.md).
 
 | | |
 |---|---|
