@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- A setup guide for other MCP clients (`docs/guides/mcp-clients.md`): Codex CLI (verified end to end), Gemini CLI (connection verified), Claude Desktop, Cursor and opencode (not yet verified), with a manual install of the release binary.
+- `scripts/dev/funnel.sh`: records GitHub traffic, stars and release downloads to a local file, for reading a launch without telemetry.
+
 ## [0.2.0] — 2026-11-10
 
 The first release since the benchmark programme. For users: document and section times now come from git history where git can vouch for them, search no longer down-weights old documents, `.mdx` files are indexed, Claude gets a leaner search payload, and the plugin's MCP server is declared in the plugin manifest. The store migrates to schema v4 on first open. The benchmark harness and its six published tables (`docs/benchmarks.md`) are part of this release's history; none of them changes how the plugin behaves.
