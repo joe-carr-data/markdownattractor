@@ -1,0 +1,28 @@
+# VHS tape for demo video 1; filled in by scripts/demo/record.sh (@DEST@, @WORK@, @QUESTION@).
+Output out.mp4
+Set Shell zsh
+# The look: a large readable font, a dark theme, a framed window on a gradient backdrop.
+Set FontFamily "MesloLGS NF"
+Set FontSize 20
+Set Width 1440
+Set Height 810
+Set Padding 28
+Set Margin 56
+Set MarginFill "bg.png"
+Set BorderRadius 14
+Set WindowBar Colorful
+Set Theme "Catppuccin Mocha"
+Set TypingSpeed 45ms
+Set CursorBlink false
+# Start Claude Code off camera: provider keys unset, only the markdownattractor server, its
+# read-only tools allowed so no permission prompt interrupts the take.
+Hide
+Type "cd @DEST@ && clear && env -u CLAUDECODE -u CLAUDE_CODE_CHILD_SESSION -u CLAUDE_CODE_ENTRYPOINT -u ANTHROPIC_API_KEY -u OPENAI_API_KEY -u GEMINI_API_KEY claude --strict-mcp-config --mcp-config @WORK@/mcp.json --allowedTools 'mcp__markdownattractor__*'"
+Enter
+Sleep 8s
+Show
+Sleep 1s
+Type "@QUESTION@"
+Sleep 800ms
+Enter
+Sleep 32s
