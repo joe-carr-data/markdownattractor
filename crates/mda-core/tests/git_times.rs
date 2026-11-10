@@ -434,8 +434,10 @@ fn a_stale_result_is_discarded_when_the_document_changed_meanwhile() {
     // Another writer re-indexes the file between the computation and the write.
     write(&dir, "a.md", "# A\n\nOne.\n\n## New\n\nMore.\n");
     engine.index_root().unwrap();
-    let applied =
-        engine.store_mut().apply_git_dates(&d.doc_id, &d.content_hash, &keys, &dates).unwrap();
+    let applied = engine
+        .store_mut()
+        .apply_git_dates(&d.doc_id, &d.content_hash, d.file_mtime, &keys, &dates)
+        .unwrap();
     assert!(!applied, "the hash moved on: nothing is written");
     assert_eq!(doc(&engine, "a.md").updated_source, TimeSource::Filesystem);
 
@@ -443,9 +445,17 @@ fn a_stale_result_is_discarded_when_the_document_changed_meanwhile() {
     let d = doc(&engine, "a.md");
     let keys = engine.store().section_keys(&d.doc_id).unwrap();
     let dates = mda_core::store::GitDates { section_updated_at: vec![ts(T1); keys.len()], ..dates };
-    assert!(engine.store_mut().apply_git_dates(&d.doc_id, &d.content_hash, &keys, &dates).unwrap());
     assert!(
-        !engine.store_mut().apply_git_dates(&d.doc_id, &d.content_hash, &keys, &dates).unwrap()
+        engine
+            .store_mut()
+            .apply_git_dates(&d.doc_id, &d.content_hash, d.file_mtime, &keys, &dates)
+            .unwrap()
+    );
+    assert!(
+        !engine
+            .store_mut()
+            .apply_git_dates(&d.doc_id, &d.content_hash, d.file_mtime, &keys, &dates)
+            .unwrap()
     );
 }
 
@@ -579,4 +589,40 @@ fn a_byte_only_change_makes_the_document_eligible_again() {
     // Seen again with the same time: nothing is requeued.
     engine.index_root().unwrap();
     assert_eq!(doc(&engine, "a.md").git_state, GitState::Git);
+}
+
+#[test]
+fn a_dating_result_is_discarded_when_the_file_was_seen_with_other_bytes_meanwhile() {
+    let (_tmp, dir) = repo();
+    write(&dir, "a.md", "# A\n\nText.\n");
+    commit_at(&dir, T1, "lf");
+    write(&dir, "a.md", "# A\r\n\r\nText.\r\n");
+    let mut engine = index(&dir);
+    // A pass has read the CRLF bytes and is about to record "not eligible"…
+    let seen = doc(&engine, "a.md");
+    // …when the indexer sees the file saved back as LF: same content hash, another time.
+    write(&dir, "a.md", "# A\n\nText.\n");
+    let later = std::time::SystemTime::now() + std::time::Duration::from_secs(5);
+    std::fs::File::options()
+        .write(true)
+        .open(dir.join("a.md"))
+        .unwrap()
+        .set_modified(later)
+        .unwrap();
+    engine.index_root().unwrap();
+    // The old verdict no longer applies and is refused; so would old dates be.
+    let refused = engine
+        .store_mut()
+        .set_git_state(
+            &seen.doc_id,
+            &seen.content_hash,
+            seen.file_mtime,
+            GitState::Filesystem,
+            None,
+            None,
+        )
+        .unwrap();
+    assert!(!refused, "the file was seen again since");
+    assert_eq!(doc(&engine, "a.md").git_state, GitState::Needs);
+    assert_eq!(date(&mut engine).dated, 1, "the waiting document is dated from the LF bytes");
 }

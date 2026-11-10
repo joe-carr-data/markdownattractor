@@ -26,3 +26,18 @@ Also applied: the new fields on the serialisable store structs carry `#[serde(de
 ## Verified by the reviewer as correct
 
 Stale checks use `file_mtime`; the other consumers of `updated_at` (recent, search filters, timeline events, the hot set) behave as intended; dating writes are conditional `IMMEDIATE` transactions; marking and advancing the validated commit are atomic; a mismatch-only slice does not spin; stdin and both outputs are served concurrently; the git commands behave as assumed (empty prefix, `--literal-pathspecs` with `--follow`, subtree `ls-tree`, NUL-delimited paths, `--name-only` with `--diff-merges=separate`); line mapping, zero sections and front matter; the migration keeps tombstones; no dating on open, search, status, card or MCP; `MDA_NOW` and filesystem mode guard every git entry point. Not exercised: Windows discovery output and path forms (CI runs the suite on Windows).
+
+## Verification pass on the fixes (same day, a fresh Codex thread on `d15724e`)
+
+**Verdict:** "Not ready: the invalidation and retry-loss defects need correction before merge." Of the eight findings: 2, 3, 6, 7, 8 fixed; 1, 4, 5 partially. Six further points:
+
+| # | Sev | Finding | Triage |
+|---|---|---|---|
+| V1 | Medium | A dating result can overwrite a newer sighting of the file: `note_file_seen` requeues the same content hash, and an in-flight verdict (or dates) computed from the old bytes is then written. | **Fixed.** Dating writes also require the stored `file_mtime` the pass read (`still_waiting`), in `apply_git_dates` and `set_git_state`. Test: a verdict read before a CRLF-to-LF save is refused and the document is dated from the new bytes. |
+| V2 | Medium | A git-dated document saved with other bytes but the same parsed content (LF to CRLF) keeps its git times and labels while its state becomes `filesystem`. | **Rejected, by design.** Text that did not change keeps the date it was given: the same rule that lets untouched sections keep their git time after an ordinary uncommitted edit (ADR-0008). The state says git cannot vouch for the file *now*; the times are from the last proof and still describe when that text was authored. Stated in the ADR. |
+| V3 | Medium | A sweep that fails part-way was recorded as a completed look at the commit, so polls at the same commit never resumed it. | **Fixed.** A failed sweep records no commit; the next poll runs it again. |
+| V4 | Medium | Notifications arriving while git is unusable were dropped, and recovery at the same commit skipped the sweep. | **Fixed.** Becoming unusable forgets the seen commit, so the first poll after recovery sweeps. |
+| V5 | Medium | The timeout bounds the caller but not the detached pipe threads: a wrapper whose descendant holds a pipe leaves a thread and its buffer until the pipe closes. | **Accepted as a documented limit.** Stock git does not leave descendants on these read-only commands; a document whose call times out is marked failed and is not retried until the commit changes or an explicit index, which bounds the accumulation. Killing the process group needs platform code (and a crate) and is deferred; noted in the ADR's follow-ups. |
+| V6 | Medium | Stores already migrated by the earlier commit of this branch keep NULL `file_mtime`. | **Rejected: not applicable.** Schema v4 has not shipped; no such store exists outside this branch's scratch runs. |
+
+Not re-reviewed after these three fixes; `make check` (369 tests) is the evidence for them.

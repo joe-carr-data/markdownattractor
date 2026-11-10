@@ -1283,13 +1283,15 @@ impl Store {
 
     /// Store git times for a document, if it is still the document they were computed for.
     ///
-    /// Inside one transaction the document must still be live, still wait for a date, and
-    /// still have `content_hash` and exactly the sections in `expect`; otherwise nothing is
-    /// written and `false` is returned (the document stays `needs` and the next pass retries).
+    /// Inside one transaction the document must still be live, still wait for a date, still
+    /// have `content_hash`, the stored `file_mtime` the caller read, and exactly the sections
+    /// in `expect`; otherwise nothing is written and `false` is returned (the document stays
+    /// `needs` and the next pass retries).
     pub fn apply_git_dates(
         &mut self,
         doc_id: &str,
         content_hash: &str,
+        file_mtime: Option<Timestamp>,
         expect: &[SectionKey],
         dates: &GitDates,
     ) -> Result<bool> {
@@ -1297,7 +1299,9 @@ impl Store {
             return Ok(false);
         }
         let tx = self.write_tx()?;
-        if !still_waiting(&tx, doc_id, content_hash)? || section_keys(&tx, doc_id)? != expect {
+        if !still_waiting(&tx, doc_id, content_hash, file_mtime)?
+            || section_keys(&tx, doc_id)? != expect
+        {
             return Ok(false);
         }
         tx.execute(
@@ -1327,17 +1331,19 @@ impl Store {
 
     /// Record the outcome of examining a document that was not dated: `Filesystem` (proven
     /// not eligible at `commit` with `blob`) or `Failed`. Written only if the document is
-    /// still live, still waiting and still has `content_hash`. Times are not touched.
+    /// still live, still waiting, and still has `content_hash` and the `file_mtime` the caller
+    /// read. Times are not touched: text that did not change keeps the date it was given.
     pub fn set_git_state(
         &mut self,
         doc_id: &str,
         content_hash: &str,
+        file_mtime: Option<Timestamp>,
         state: GitState,
         commit: Option<&str>,
         blob: Option<&str>,
     ) -> Result<bool> {
         let tx = self.write_tx()?;
-        if !still_waiting(&tx, doc_id, content_hash)? {
+        if !still_waiting(&tx, doc_id, content_hash, file_mtime)? {
             return Ok(false);
         }
         tx.execute(
@@ -1914,16 +1920,26 @@ fn insert_section(
     Ok(())
 }
 
-/// Is the document live, waiting for a date, and still at `content_hash`?
-fn still_waiting(conn: &Connection, doc_id: &str, content_hash: &str) -> Result<bool> {
-    let row: Option<(String, String)> = conn
+/// Is the document live, waiting for a date, still at `content_hash`, and has the file not
+/// been seen with another modification time since the caller read `file_mtime`? The last
+/// part matters for saves the parser normalises away: same hash, other bytes.
+fn still_waiting(
+    conn: &Connection,
+    doc_id: &str,
+    content_hash: &str,
+    file_mtime: Option<Timestamp>,
+) -> Result<bool> {
+    let row: Option<(String, String, Option<Timestamp>)> = conn
         .query_row(
-            "SELECT content_hash, git_state FROM docs WHERE doc_id = ?1 AND deleted_at IS NULL",
+            "SELECT content_hash, git_state, file_mtime FROM docs
+             WHERE doc_id = ?1 AND deleted_at IS NULL",
             params![doc_id],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )
         .optional()?;
-    Ok(row.is_some_and(|(hash, state)| hash == content_hash && state == "needs"))
+    Ok(row.is_some_and(|(hash, state, mtime)| {
+        hash == content_hash && state == "needs" && mtime == file_mtime
+    }))
 }
 
 fn section_keys(conn: &Connection, doc_id: &str) -> Result<Vec<SectionKey>> {

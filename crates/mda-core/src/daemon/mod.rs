@@ -455,7 +455,10 @@ async fn dater_loop(mut engine: Engine, shared: Arc<Shared>, dcfg: DaemonConfig)
             };
             engine = back;
             if head.is_none() {
+                // Whatever was queued meanwhile is swept when git is back, even at the same
+                // commit: forget that it was seen.
                 unusable_until = Some(Instant::now() + dcfg.git_poll_unusable);
+                seen_head = None;
                 continue;
             }
             unusable_until = None;
@@ -472,6 +475,7 @@ async fn dater_loop(mut engine: Engine, shared: Arc<Shared>, dcfg: DaemonConfig)
             seen_head = sweep.commit;
         } else {
             unusable_until = Some(Instant::now() + dcfg.git_poll_unusable);
+            seen_head = None;
         }
     }
 }
@@ -517,8 +521,10 @@ async fn date_sweep(
         let report = match result {
             Ok(report) => report,
             Err(e) => {
+                // Not a completed look at this commit: with no commit recorded, the next
+                // poll runs the sweep again.
                 shared.error("git times", &e);
-                return Some(Sweep { engine, usable: true, commit });
+                return Some(Sweep { engine, usable: true, commit: None });
             }
         };
         if report.source != "usable" {

@@ -126,7 +126,9 @@ fn a_populated_v3_store_migrates_to_v4_and_keeps_its_rows() {
     // Opening it migrated nothing else and called no git: the validated commit is unset.
     assert_eq!(store.git_validated_commit().unwrap(), None);
     // The new write paths work on a migrated row.
-    assert!(store.set_git_state("d1", "h", GitState::Filesystem, Some("c"), None).unwrap());
+    assert!(
+        store.set_git_state("d1", "h", Some(ts(5)), GitState::Filesystem, Some("c"), None).unwrap()
+    );
     assert_eq!(store.requeue_git_undated().unwrap(), 1);
 }
 
@@ -143,7 +145,7 @@ fn a_rename_inherits_the_created_time_and_its_source() {
         updated_at: ts(-100),
         section_updated_at: vec![ts(-100); keys.len()],
     };
-    assert!(store.apply_git_dates(&out.doc_id, &doc.hash, &keys, &dates).unwrap());
+    assert!(store.apply_git_dates(&out.doc_id, &doc.hash, Some(ts(0)), &keys, &dates).unwrap());
     store.upsert_document("new.md", &doc, &times(50)).unwrap();
     assert!(store.note_rename("old.md", "new.md", ts(50)).unwrap());
     let moved = store.document_by_path("new.md").unwrap().unwrap();

@@ -167,7 +167,13 @@ impl Engine {
             report.last_path = Some(doc.rel_path.clone());
             match self.examine(&repo, &commit, &tree, doc, now) {
                 Ok(Verdict::Dated(keys, dates)) => {
-                    if self.store.apply_git_dates(&doc.doc_id, &doc.content_hash, &keys, &dates)? {
+                    if self.store.apply_git_dates(
+                        &doc.doc_id,
+                        &doc.content_hash,
+                        doc.file_mtime,
+                        &keys,
+                        &dates,
+                    )? {
                         report.dated += 1;
                     } else {
                         report.skipped += 1;
@@ -178,6 +184,7 @@ impl Engine {
                     if self.store.set_git_state(
                         &doc.doc_id,
                         &doc.content_hash,
+                        doc.file_mtime,
                         GitState::Filesystem,
                         Some(&commit),
                         blob.as_deref(),
@@ -193,6 +200,7 @@ impl Engine {
                     if self.store.set_git_state(
                         &doc.doc_id,
                         &doc.content_hash,
+                        doc.file_mtime,
                         GitState::Failed,
                         Some(&commit),
                         None,
