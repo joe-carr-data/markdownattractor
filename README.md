@@ -2,118 +2,127 @@
   <img src="logo/mda_logo.jpg" alt="markdownattractor" width="320">
 </p>
 
-<h3 align="center">Claude reads your markdown <em>before</em> it reads your files.</h3>
+<h3 align="center">Claude answers from your ADRs and runbooks, and shows you the exact lines, when they were written and when they last changed.</h3>
 
 <p align="center">
-  A Claude Code plugin that turns every folder of markdown into a live, time-aware, searchable knowledge layer.<br>
-  One Rust binary. Bring your own API key, or run a local model and pay nothing. Nothing else leaves your machine.
+  A Claude Code plugin that keeps a live, searchable index of the markdown in your project.<br>
+  One Rust binary. Your own Anthropic API key, or a free local model. Local only, no telemetry, never writes to your files.
 </p>
 
 <p align="center">
-  <a href="#status"><img alt="status: design" src="https://img.shields.io/badge/status-v0%20design-7c3aed?style=flat-square"></a>
+  <a href="https://github.com/joe-carr-data/markdownattractor/releases"><img alt="release" src="https://img.shields.io/github/v/release/joe-carr-data/markdownattractor?style=flat-square"></a>
   <a href="LICENSE"><img alt="license: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square"></a>
   <img alt="rust" src="https://img.shields.io/badge/built%20with-Rust-black?style=flat-square&logo=rust">
   <img alt="claude code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97706?style=flat-square">
+  <a href="docs/benchmarks.md"><img alt="benchmarks: preregistered" src="https://img.shields.io/badge/benchmarks-preregistered-16a34a?style=flat-square"></a>
 </p>
 
 ---
 
 ## The problem
 
-Claude Code reads files whole. On a real project, answering *"how do we roll back a deploy?"* means grepping, opening three runbooks, and burning 40K tokens to find one paragraph. Worse: it can't tell you whether that paragraph was written last week or two years ago.
+Claude Code reads files whole. On a real project, *"how do we roll back a deploy?"* means grepping, opening several runbooks end to end, and reading hundreds of lines to find one paragraph. And it can't tell you whether that paragraph was written last week or two years ago.
 
 ## What markdownattractor does
 
-A background daemon watches your folder. Every markdown file is parsed into sections, each section is summarized once into a ~100-token **card** by Haiku through your own API key (or by a local model such as gpt-oss-20b), and everything lands in a local hybrid index. Claude searches the index, reads a card, and opens only the 40 lines it needs.
+A background daemon watches your folder. Every markdown file is split into sections. Each section is summarized once into a short **card** by Haiku through your own API key, or by a local model, and everything lands in a local index. Claude searches the index, reads the cards, and opens only the lines it needs.
 
 ```
 you save deploy.md
-        │  < 15 s
+        │  raw text searchable in ~2 s, card ready in ~8 s
         ▼
-  ┌─────────────────────────────────────────────────────────┐
-  │  L0  search hit      "Rollback · deploy.md §Rollback     │
-  │                       lines 212–340 · updated 2d ago"   │
-  │  L1  section card     tldr, entities, dates, questions   │
-  │  L2  doc card         summary, TOC with line ranges      │
-  │  ──  exact lines      mda_open → the 40 lines that matter│
-  └─────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │  search hit     runbooks/deploy.md › Rollback  L11–13    │
+  │                 updated 2 days ago                       │
+  │  section card   summary, entities, dates, questions      │
+  │  exact lines    mda_open → only the lines that matter    │
+  └──────────────────────────────────────────────────────────┘
 ```
 
-Every hit carries provenance: **which file, which section, which lines, and when it was created, changed, and last seen.**
-
-### Three things nobody else does
-
-| | |
-|---|---|
-| **Time is a first-class dimension** | Four clocks, never conflated: filesystem/git time, dates *inside* the text, index time, and validity. Ask *"what changed in the runbooks since Monday?"* and get an answer. |
-| **Summaries, not just chunks** | Cards carry `questions_answered`, entities, decisions and grounded dates. Queries match what people ask, not what the file happens to contain. A raw-text index sits underneath as a safety net, so nothing the card omitted is ever lost. |
-| **Always fresh, section by section** | A watcher plus per-section hashing means only the paragraph you edited gets re-summarized. No rebuild step, ever. Line ranges are re-checked at read time, so Claude never quotes a stale excerpt. |
-
-## Quick start
-
-> **Not released yet.** The engine, the daemon, hybrid search with local embeddings and the MCP server are built and tested (`mda start|index|search|explain|open|card|timeline|recent|stale|status|watch|stop|mcp`); the release pipeline and the first-run polish are next. The commands below are the contract we are building to. Watch the repo or open an issue if you want to be a design partner.
-
-```
-/plugin install markdownattractor --marketplace joe-carr-data/markdownattractor
-export ANTHROPIC_API_KEY=…        # or: /mda backend local   (see below)
-/mda start
-```
-
-That's it. `/mda start` confirms the folder, indexes it with sensible defaults, and finishes by running one real query against your first indexed docs so you see a hit with line ranges before you walk away. Target: **install to first useful answer in under ten minutes.**
-
-No Python. No Node. No model download blocking first use. Two ways to pay for summaries, both visible in `/mda cost`:
-
-| Backend | What you need | Cost | Speed |
-|---|---|---|---|
-| **api** (default) | an [Anthropic API key](https://console.anthropic.com/) | Haiku list price, ≈ $0.006 per section, with a daily cap you set | ≈ 1 section/s at 16 workers |
-| **local** | `brew install llama.cpp` and one command ([guide](docs/guides/local-model.md)) | $0 | depends on your machine |
-
-Why not your Claude subscription? Anthropic's terms don't allow third-party tools to route requests through Pro or Max plan credentials on a user's behalf, and this project won't ship a pattern the terms name. Details in [ADR-0002](docs/adr/0002-backends-and-login-policy.md).
+Every hit carries provenance: **which file, which section, which lines, and when it was created and last changed.**
 
 ## What a session looks like
 
+A real headless Claude Code session on the fictional demo corpus in [`evals/golden/docs`](evals/golden/docs) (an excerpt: the tool calls are verbatim, the results and the answer lightly trimmed):
+
 ```
-> how do we roll back a failed deploy?
+> How do we roll back a failed deploy, and how long does it take?
 
-⏺ mda_search("rollback failed deploy", status=current)
-  1. deploy-runbook.md › Deploy › Rollback         lines 212–340   updated 2 days ago   0.91
-  2. adr/0007-blue-green.md › Consequences         lines 40–58     updated 3 months ago 0.74
-  3. incidents/2026-08-14.md › Timeline            lines 12–90     updated 5 weeks ago  0.61
+⏺ mda_search("roll back a failed deploy, how long does rollback take")
+  1. runbooks/deploy.md › Deploy runbook › Rollback            L11–13
+  2. runbooks/deploy.md › Deploy runbook › Release             L5–9
+  3. adr/0002-blue-green-deploys.md › ADR 0002 › Decision      L10–12
 
-⏺ mda_open("deploy-runbook.md#rollback")
-  → 128 lines read instead of 2,400
+⏺ mda_open("58c690e807a880d0#2")    ⏺ mda_open("58c690e807a880d0#1")
 
-  To roll back, run `deployctl rollback --to <previous-sha>` …
+  To roll back, run `deployctl rollback --to <previous-sha>` (runbooks/deploy.md:11-13):
+  - Within 30 minutes of the release the previous colour is still warm, so traffic
+    flips back within 20 seconds.
+  - After that, a rollback is a full release of the old sha: about six minutes.
+  When to roll back: watch the error-rate panel for ten minutes; above 1% is a
+  rollback (runbooks/deploy.md:9).
 ```
 
-Claude read 5% of the file and knows the answer is two days old. Ask *"what changed in the runbooks since Monday?"* and `mda_timeline` lists it, grouped by day, with the sections that moved.
+One search, two sections opened, every claim cited to a line range. Ask *"what changed in the runbooks this week?"* and `mda_timeline` lists it, grouped by day.
 
-## Commands
+## Install
 
-Everything is `/markdownattractor …` or the short form `/mda …`. The search tools are also exposed to Claude over MCP.
+Inside Claude Code:
+
+```
+/plugin marketplace add joe-carr-data/markdownattractor
+/plugin install markdownattractor@markdownattractor
+```
+
+Then give it a way to write cards, and start it in your project:
+
+```
+export ANTHROPIC_API_KEY=…      # before launching Claude Code; or use a local model (below)
+/mda start
+```
+
+The plugin downloads the binary for your platform from the GitHub release on the next session start and checks its checksum. `/mda start` indexes the folder and finishes with one real query against your first cards, so you see a hit with line ranges right away. Raw section text is searchable before any card exists, so search works while the first cards are still being written.
+
+| Backend | What you need | Cost | Speed |
+|---|---|---|---|
+| **api** (default) | an [Anthropic API key](https://console.anthropic.com/) | Haiku list price; the 117-section demo corpus cost $0.31 | about 1 section/s at 16 workers |
+| **local** | `brew install llama.cpp` and one command ([guide](docs/guides/local-model.md)) | $0 | depends on your machine |
+
+Why not your Claude subscription? Anthropic's terms don't allow third-party tools to route requests through Pro or Max plan credentials on a user's behalf, so this project doesn't ship that as a supported path. Details in [ADR-0002](docs/adr/0002-backends-and-login-policy.md).
+
+## What it does differently
 
 | | |
 |---|---|
-| **Lifecycle** | `start` · `stop` · `restart` · `status` · `watch` · `doctor` |
-| **Indexing** | `index [path]` · `pause` · `resume` · `rebuild` · `ignore <pattern>` · `prune` |
-| **Search** | `search <q> [--since 7d] [--status current] [--in path]` · `open <id>` · `timeline` · `recent` · `stale` · `explain <q>` |
-| **Configure** | `summarization_model` · `escalation_model` · `backend` · `embeddings` · `concurrency` · `budget` · `retention` · `nudge` · `config` |
-| **Meta** | `cost [--since 7d]` · `diagnostics [--out file]` · `export` · `logs` · `reset` · `version` · `update` · `help` |
+| **Time is a first-class dimension** | Filesystem and git time, dates written *inside* the text, and index time are kept apart, per section. Search with `--since 7d`, or ask for a timeline of what was created, changed, renamed or deleted. |
+| **Summaries, not just chunks** | Cards carry a summary, the questions a section answers, entities and grounded dates, so queries match what people ask. Raw section text is indexed underneath, so nothing a card omitted is lost. |
+| **Fresh, section by section** | A watcher plus a hash per section means only the section you edited is re-summarized. No rebuild step. Line ranges are re-checked when Claude opens them, and a changed section is flagged as stale instead of quoted wrong. |
 
-The full reference with flags is in [`docs/project-plan.md` §6](docs/project-plan.md#6-command-ux--markdownattractor).
+## Commands
+
+Everything is `/mda …` inside Claude Code, or `mda …` in a terminal. Every command supports `--json`. The search tools are also exposed to Claude over MCP.
+
+| | |
+|---|---|
+| **Lifecycle** | `start` · `stop` · `restart` · `status` · `watch` · `pause` · `resume` · `doctor` |
+| **Search** | `search <q> [--since 7d] [--until …] [--in path] [--raw]` · `open <id>` · `card <id>` · `timeline` · `recent` · `stale` · `explain <q>` |
+| **Indexing** | `index [path]` · `rebuild --embeddings` · `parse <file>` |
+| **Configure** | `backend` · `embeddings` · `nudge` |
+| **Meta** | `cost` · `diagnostics` · `schema` · `eval` |
 
 ## How it works
 
 ```
-Watcher ─► Parser ─► Section diff ─► Planner ─► Workers ─► Validator ─► Reducer ─► Index
-(notify)   (comrak)  (blake3/sect.)  (chunks)   (claude -p)  (evidence)  (doc card)  (FTS5 + sqlite-vec)
+Watcher ─► Parser ─► Section diff ─► Workers ─► Validator ─► Index
+(notify)   (comrak)  (blake3 per     (Haiku or   (evidence   (SQLite: FTS5 over cards and raw
+                      section)        local)      check)      text, local embeddings, time)
 ```
 
-- **Daemon** (`mda start`, one per folder): FSEvents/inotify watcher, debounced with a size-stable check, `.gitignore`-aware. A save is raw-searchable in about a second and carded a few seconds later; renames keep their history without a model call. Controlled over a local socket (`status`, `stop`, `pause`, `resume`, `watch`). Never touches anything outside `.markdownattractor/`.
-- **Section diff**: a blake3 hash per section. Unchanged sections never go to the LLM.
-- **Workers**: an adaptive pool against the Messages API (or a local OpenAI-compatible server) with a replaced system prompt, structured output, and a JSON schema. Concurrency ramps up on success and halves on rate limits; failing rounds back off.
-- **Validator**: every extracted date and entity must quote an `evidence` substring that exists in the section, or it is dropped. Metadata is never hallucinated into the index.
-- **Index**: SQLite with FTS5 over cards, FTS5 over raw section text, and card embeddings from a small local ONNX model (`bge-small-en-v1.5`, 33 MB, downloaded once, never inside a query) scanned from Rust, fused with reciprocal rank fusion and a recency prior. Lexical search answers in a few milliseconds; hybrid adds the query embedding (≈ 50 ms). On the golden set hybrid success@5 is 0.98 against 0.88 lexical ([benchmarks](docs/benchmarks.md)).
+- **Daemon** (`mda start`, one per folder): FSEvents/inotify watcher, debounced, `.gitignore`-aware. Renames keep their history without a model call. Never writes anything outside `.markdownattractor/`.
+- **Section diff**: a blake3 hash per section. Unchanged sections never go to the model.
+- **Workers**: an adaptive pool against the Messages API or a local OpenAI-compatible server, with structured output and a JSON schema. Concurrency ramps up on success and halves on rate limits.
+- **Validator**: every extracted date and entity must quote an evidence substring that exists in the section, or it is dropped. On the demo corpus it dropped 16 dates and 49 entities.
+- **Index**: SQLite with FTS5 over cards and over raw section text, plus card embeddings from a small local ONNX model (`bge-small-en-v1.5`, 33 MB, downloaded once), fused with reciprocal rank fusion and a recency prior.
 - **MCP**: `mda_search`, `mda_card`, `mda_open`, `mda_timeline`, `mda_recent`, `mda_stale`, `mda_status`, served by the same binary (`mda mcp`).
 
 Full design: [`docs/project-plan.md`](docs/project-plan.md).
@@ -121,10 +130,9 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 ## Guarantees
 
 - **Never writes into your source files.** Identity lives in SQLite; your markdown is read-only to us.
-- **Local only.** No cloud, no hosted service, no telemetry. The only network calls are the summarization requests to the API with your key (none at all on the local backend), and the one-time download of the embedding model.
-- **Grounded metadata.** 100% of dates and entities in the index are backed by text in the source.
-- **Fallback that works.** Cards are plain markdown on disk. With MCP off, `Grep` over `cards/` still works.
-- **Honest benchmarks.** Corpora, comparators and gates are named before results exist; every published number is rendered by a script from committed artifacts, preceded by a freeze, and a claim is made only where its preregistered gate passed. The headline claims, as measured ([benchmarks](docs/benchmarks.md), the page by axis; generated by `scripts/eval/t6.sh readme-row`, checked by `make check`):
+- **Local only.** No cloud, no hosted service, no telemetry. The only network calls are the summarization requests with your key (none on the local backend) and the one-time download of the embedding model.
+- **Grounded metadata.** Every stored date and entity quotes text that exists in its section; anything without evidence is dropped.
+- **Honest benchmarks.** Corpora, comparators and gates are named before results exist. Every published number is rendered by a script from committed artifacts, preceded by a freeze, and a claim is made only where its preregistered gate passed. The headline claims, as measured ([benchmarks](docs/benchmarks.md); generated by `scripts/eval/t6.sh readme-row`, checked by `make check`):
 
 <!-- benchmark-row:start -->
 | Headline claim | Status, as measured (gates passed only) |
@@ -137,35 +145,26 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 
 ## How it compares
 
-| | graphify | CodeGraph | qmd | **markdownattractor** |
-|---|---|---|---|---|
-| Target | code + docs + media | code | markdown | markdown |
-| Freshness | rebuild on commit | live watcher | manual | live, **section-level** |
-| Time model | — | — | — | **4 clocks, section `updated_at`** |
-| Summaries | LLM concept graph | none | none | **LLM cards + raw-text safety net** |
-| Retrieval | graph traversal | FTS5 symbols | BM25 + vectors + rerank | BM25 + vectors + recency |
-| Auth | provider API keys | none | local models | **your API key, or a local model** |
-| Runtime | Python | Node | Bun | **one Rust binary** |
+| | graphify | qmd | **markdownattractor** |
+|---|---|---|---|
+| Target | code, docs and media | markdown and docs | markdown |
+| Freshness | `--update` rebuild | `update` command | live watcher, **per section** |
+| Time model | — | — | **section `updated_at`, dates in the text, timeline** |
+| Summaries | LLM concept graph | none | **LLM cards plus raw text** |
+| Retrieval | graph traversal | BM25, vectors, rerank | BM25, vectors, recency |
+| Runtime | Python | Bun | **one Rust binary** |
 
-We don't compete on scope. A code index covers the code; markdownattractor covers the prose around it. Install both.
+All three are measured side by side, with grep, on the [benchmarks page](docs/benchmarks.md). We don't compete on scope: a code index covers the code, markdownattractor covers the prose around it.
 
 ## Status
 
-**v0 design, September 2026.** The plan has been through an adversarial pre-mortem by a second model ([findings and triage](docs/reviews/codex/2026-09-21-pre-mortem.md)) and the mitigations are folded in.
-
-| Phase | What | State |
-|---|---|---|
-| 0 | Spike: cost and latency, Haiku grounding quality, backend policy | done |
-| 1 | Summarization engine, raw + card search, core `/mda` commands, API and local backends | engine done, daemon next |
-| 2 | Vectors, hybrid ranking, time filters, MCP server, search-first skill, default-on nudge | |
-| 3 | Relationships (`relates_to`, `supersedes`) and wiki index pages | |
-| 4 | Distribution, benchmarks page, design-partner program, launch | |
+**v0.1.1, released 2026-09-22.** The engine, daemon, hybrid search, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). Relationships between documents (`supersedes`, `relates_to`) are not built yet.
 
 Progress lives in [`docs/STATUS.md`](docs/STATUS.md). Lessons learned in [`docs/aha.md`](docs/aha.md).
 
 ## Contributing
 
-Design partners wanted: if you run Claude Code on a repo with a lot of markdown (ADRs, runbooks, specs, notes), open an issue titled `design partner` and say roughly how many files. You get early builds and a direct line; we get a real corpus for the benchmarks.
+Early users wanted: if you run Claude Code on a repo with a lot of markdown (ADRs, runbooks, specs, notes), open an issue titled `early user` and say roughly how many files. You get a direct line; we get the feedback that shapes the next release.
 
 Read [`CLAUDE.md`](CLAUDE.md) for the golden rules before opening a PR. Every PR touching `crates/` gets a second-model review; findings are triaged in `docs/reviews/`, never silently dropped.
 
