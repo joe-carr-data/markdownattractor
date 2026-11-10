@@ -29,6 +29,66 @@ pub struct Args {
     pub limit: Option<usize>,
 }
 
+/// The one-line result of the parse-and-index step, and a line per skipped file.
+fn print_indexed(report: &IndexReport, parse_ms: u128, st: &Style) {
+    println!(
+        "{} {} file(s) · {} changed · {} section(s) need a card · {} tombstoned · {} ms",
+        st.ok("indexed"),
+        report.files,
+        report.changed,
+        report.pending,
+        report.tombstoned,
+        parse_ms,
+    );
+    for (path, err) in &report.errors {
+        println!("  {} {path}: {err}", st.warn("skipped"));
+    }
+}
+
+/// Run the git dating pass to completion and print one line when it did something.
+fn date_from_git(
+    engine: &mut Engine,
+    json: bool,
+    st: &Style,
+) -> Option<mda_core::pipeline::DateReport> {
+    let started = std::time::Instant::now();
+    let result = (|| {
+        let restored = engine.restore_filesystem_times()?;
+        if restored > 0 && !json {
+            println!(
+                "{} {restored} document(s) back on file times (time_source = \"filesystem\")",
+                st.ok("times")
+            );
+        }
+        if engine.git_times_enabled() {
+            engine.store_mut().requeue_git_undated()?;
+        }
+        engine.date_from_git(mda_core::pipeline::DateLimits::default())
+    })();
+    match result {
+        Ok(report) => {
+            if !json && report.source == "usable" && (report.progressed() || report.skipped > 0) {
+                println!(
+                    "{} {} document(s) from git · {} on file times · {} failed · {} ms",
+                    st.ok("dated"),
+                    report.dated,
+                    report.ineligible + report.skipped,
+                    report.failed,
+                    started.elapsed().as_millis(),
+                );
+            }
+            Some(report)
+        }
+        Err(e) => {
+            if !json {
+                println!("  {} git times: {e}", st.warn("skipped"));
+            }
+            tracing::warn!(error = %e, "git dating failed");
+            None
+        }
+    }
+}
+
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let Target { root_arg, path, enclosing_note } = target_of(args)?;
@@ -79,19 +139,13 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let parse_ms = started.elapsed().as_millis();
 
     if !json {
-        println!(
-            "{} {} file(s) · {} changed · {} section(s) need a card · {} tombstoned · {} ms",
-            st.ok("indexed"),
-            report.files,
-            report.changed,
-            report.pending,
-            report.tombstoned,
-            parse_ms,
-        );
-        for (path, err) in &report.errors {
-            println!("  {} {path}: {err}", st.warn("skipped"));
-        }
+        print_indexed(&report, parse_ms, &st);
     }
+
+    // Times from git history, for files git can vouch for (ADR-0008). After the raw index, so
+    // search never waits for it; an explicit index also retries documents that were not
+    // dated before. A failure here is a warning: the index is complete without it.
+    let git_times = date_from_git(&mut engine, json, &st);
 
     if args.retry_failed {
         let n = engine.store_mut().retry_failed()?;
@@ -121,6 +175,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "root": engine.root(),
             "index": report,
             "parse_ms": parse_ms,
+            "git_times": git_times,
             "summarize": summarize,
             "embeddings": embeddings,
         }));

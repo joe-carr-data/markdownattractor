@@ -39,7 +39,7 @@ you save deploy.md
   └──────────────────────────────────────────────────────────┘
 ```
 
-Every hit carries provenance: **which file, which section, which lines, and when the section last changed.** Times come from the filesystem: a section's change time is when its content was last seen new on disk, and a document's creation time is its file's birth time or when it was first indexed. Git history is not read yet, so in a fresh clone every file starts at the clone's time.
+Every hit carries provenance: **which file, which section, which lines, and when the section last changed.** In a git repository, times come from history: a section's change time is when the last commit touching its lines was authored, for every file that is committed and unmodified. Uncommitted edits, untracked files and folders without git use file times, and each time says which source it came from.
 
 ## What a session looks like
 
@@ -94,7 +94,7 @@ Why not your Claude subscription? Anthropic's terms don't allow third-party tool
 
 | | |
 |---|---|
-| **Time is a first-class dimension** | File times, dates written *inside* the text, and index time are kept apart, per section. Search with `--since 7d`, or ask for a timeline of what was created, changed, renamed or deleted since the folder was first indexed. |
+| **Time is a first-class dimension** | Git history or file times, dates written *inside* the text, and index time are kept apart, per section. Search with `--since 7d`, or ask for a timeline of what the index saw created, changed, renamed or deleted. |
 | **Summaries, not just chunks** | Cards carry a summary, the questions a section answers, entities and grounded dates, so queries match what people ask. Raw section text is indexed underneath, so nothing a card omitted is lost. |
 | **Fresh, section by section** | A watcher plus a hash per section means only the section you edited is re-summarized. No rebuild step. Line ranges are re-checked when Claude opens them, and a changed section is flagged as stale instead of quoted wrong. |
 
@@ -149,7 +149,7 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 |---|---|---|---|
 | Target | code, docs and media | markdown and docs | markdown |
 | Freshness | `--update` rebuild | `update` command | live watcher, **per section** |
-| Time model | — | — | **section `updated_at`, dates in the text, timeline** |
+| Time model | — | — | **per-section change time from git, dates in the text, timeline** |
 | Summaries | LLM concept graph | none | **LLM cards plus raw text** |
 | Retrieval | graph traversal | BM25, vectors, rerank | BM25, vectors |
 | Runtime | Python | Bun | **one Rust binary** |

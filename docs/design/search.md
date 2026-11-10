@@ -28,7 +28,8 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 
 ## Time semantics
 
-- `updated_at` on a section is the file's mtime when that content was last seen new for that document.
+- `updated_at` on a section is, with source `git`, the authored time of the last commit that touched its lines; with source `filesystem`, the file's mtime when that content was last seen new for that document. Which one applies is decided per file (ADR-0008): git only for a file that is committed and byte-identical to `HEAD` in a full clone, proven by a dating pass after indexing; the filesystem for everything else (no repository, a shallow clone, untracked or edited files, CRLF or filtered files). `mda card` and `mda_card` show the source; `mda status` counts documents by source. `time_source = "filesystem"` turns git off and the next `mda index` restores file times.
+- Limits of git times: a section changed only by deleting lines keeps the time of its remaining lines, so `--since` can miss it; an uncommitted edit shows the save time until it is committed; rebased author dates move times. The timeline's events are a different clock: they record when the index *observed* a change and are never backdated.
 - Filters and the recency prior use `updated_at`. Content-time (dates *inside* the text) is stored on cards as `mentioned_dates` and is not yet a ranking signal.
 
 ## Tuning knobs

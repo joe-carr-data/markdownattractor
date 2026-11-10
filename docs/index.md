@@ -21,11 +21,12 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [plans/2026-09-phase0-spike.md](plans/2026-09-phase0-spike.md) | Status: **done (measurements)** · one exit criterion open (login policy) · 2026-09-21 |
 | 2026-11-10 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-11-10 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
+| 2026-11-10 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
 | 2026-09-22 | [design/distribution.md](design/distribution.md) | As built in Phase 4 (2026-09-22). Decisions: ADR-0005. This document describes *what the pipeline… |
 | 2026-09-22 | [design/daemon.md](design/daemon.md) | As built at the end of Phase 1 (2026-09-22). Decisions and their reasons: ADR-0003. This document… |
-| 2026-09-22 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
+| 2026-11-10 | [adr/0008-time-sources-git-with-filesystem-fallback.md](adr/0008-time-sources-git-with-filesystem-fallback.md) | Date: 2026-11-10 |
 | 2026-11-10 | [adr/0007-recency-prior-off-by-default.md](adr/0007-recency-prior-off-by-default.md) | Date: 2026-11-10 |
 | 2026-10-15 | [adr/0006-mda-now-clock-override-for-the-historical-replay.md](adr/0006-mda-now-clock-override-for-the-historical-replay.md) | Date: 2026-10-15 |
 | 2026-09-22 | [adr/0005-release-pipeline.md](adr/0005-release-pipeline.md) | Status: **Accepted** · 2026-09-22 · Plan §9.3, §9.4, Phase 4 plan row 7 |
@@ -34,6 +35,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
 | 2026-11-10 | [reviews/codex/2026-11-10-recency-and-git-times-v2.md](reviews/codex/2026-11-10-recency-and-git-times-v2.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
+| 2026-11-10 | [reviews/codex/2026-11-10-git-times-v3.md](reviews/codex/2026-11-10-git-times-v3.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-git-times-design.md](reviews/codex/2026-11-10-git-times-design.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-deps-advisories.md](reviews/codex/2026-11-10-deps-advisories.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-10-27 | [reviews/codex/2026-10-27-t6-page.md](reviews/codex/2026-10-27-t6-page.md) | Reviewer: Codex (`gpt-6-astra`, read-only, fresh thread, through the `codex:codex-rescue` compani… |

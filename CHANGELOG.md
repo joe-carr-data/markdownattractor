@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- **Times from git history** (ADR-0008; `docs/design/search.md`). In a full clone, a document's created and changed times and each section's changed time come from git (authored time: `git log --follow` for the document, `git blame` for a section's lines) for every file that is committed and byte-identical to `HEAD`; folders without git, shallow clones, untracked or edited files and CRLF or filtered files keep filesystem times. Each time records its source: `mda card` prints `(git)` or `(file time)`, `mda_card` carries `updated_source`, `mda status` and `mda index` report how many documents were dated. Dating runs after indexing (`mda index`) and in the daemon's background task (after changes and when a new commit appears), never on the save path, never under `MDA_NOW`. New config key `time_source` (`auto`, `filesystem`). Store schema v4 (additive; existing stores migrate on open and are dated by the first pass). A section now keeps its time across an edit only when its content is unique in the document.
+
 ### Changed
 - **The recency prior is off by default** (ADR-0007). Search no longer down-weights old sections; set `search_recency_half_life_days` in `config.toml` to restore a prior. On the golden set with realistic file ages a 30-day prior cut hybrid MRR from 0.853 to 0.629. The published retrieval tables (T1) already ran without it; fresh agent runs with a new binary search without it and can rank differently from the published runs (T5's replay had historical file times).
 
