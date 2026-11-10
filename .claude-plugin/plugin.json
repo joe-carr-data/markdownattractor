@@ -2,7 +2,7 @@
   "name": "markdownattractor",
   "displayName": "markdownattractor",
   "version": "0.1.1",
-  "description": "Claude reads your markdown before it reads your files: a live, time-aware, searchable knowledge layer over ADRs, runbooks, specs and notes. One Rust binary, no API key.",
+  "description": "Claude answers from your ADRs, runbooks, specs and notes, and shows the exact lines and when they last changed. A live, time-aware markdown index in one Rust binary; your own API key or a free local model.",
   "icon": "logo/mda_logo.jpg",
   "author": {
     "name": "Joe Carr",
