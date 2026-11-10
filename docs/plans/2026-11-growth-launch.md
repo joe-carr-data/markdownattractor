@@ -1,0 +1,90 @@
+# Growth and launch plan (2026-11)
+
+Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go.
+
+Sources: a Codex strategy pass (fresh thread, read-only, 2026-11-10) and an external research report the owner commissioned through Claude Desktop (2026-11-10, not committed; its key figures are restated below with their sources' names). Every figure in this plan is the research's, not a forecast of ours.
+
+## Goal
+
+Turn a released, rigorously benchmarked plugin with 0 stars and no users into a tool with real, returning users, and give it the best available chance of a breakout. The owner's target is 50,000 GitHub stars. Both reviews agree that 50K is a long-shot outcome over 12–24 months, not a 90-day plan. This plan is judged on users and on the funnel; stars are the lagging signal.
+
+## What the evidence says (the short version)
+
+- **Base rates.** The median Show HN gets 2 points. A successful one (258+ points) brings a median of about 509 stars on day 1, and 92% of the effect is over within 48 hours (Daniel King's analysis of 188,085 Show HN posts). An arXiv study of 138 AI repositories found an average of 121 stars in 24 hours and 289 in a week.
+- **Comparables.** The solo, no-audience projects nearest to us reached 19K–38K stars over 17–28 months (Repomix, claude-code-router, ccusage). Each supports many agents or is about context and cost. graphify (≈145K) shipped within 48 hours of a Karpathy post: a catalyst we can prepare for but not schedule. qmd (≈31K) had a famous author.
+- **Realistic checkpoints** (research's base case): 300–2,000 stars in 90 days with a well-run launch; 2K–10K in 12 months with multi-client support and steady releases.
+- **Biggest levers:** support every MCP client, not only Claude Code; a 20–40 s demo at the top of the README; one concentrated launch window so stars land together and can reach GitHub Trending; the directories and registries; frequent releases with a post each.
+- **Our honesty rule is a selling point.** Competitors lead with token multipliers that independent re-tests contradicted. We publish only what passed its gates.
+- **Never** buy, trade or reward stars (GitHub's Acceptable Use Policies; the ICSE '26 fake-star study found a short-lived effect and a long-term liability).
+
+## Positioning
+
+- **Hook** (to test): "Claude answers from your ADRs and runbooks, and shows the exact lines, when they were written and when they last changed. Local, no telemetry."
+- **Claims we may make:** answer quality on par with grep and qmd in preregistered benchmarks (scoped as on the page); save-to-searchable-summary p50 8.4 s (T4, passed); every hit carries file, line range and dates; local only; never writes to your files; raw text is searchable before any summary exists.
+- **Claims we may not make:** any token or cost saving as a headline (no pair passed the gates); "nobody else does time"; anything about T5 temporal superiority. Source tokens read may appear only labelled in plain words as a reported, not-yet-gated observation.
+- **How it runs:** your own Anthropic API key (the default) or a free local model. We do not market "runs on your Claude plan": the product's own warning says Anthropic's terms do not permit third-party tools to do that (ADR-0002).
+- **Name:** keep "markdownattractor". The evidence says the hook matters more than the name, and renaming has costs.
+
+## Who does what
+
+The assistant prepares everything in the repository: code, docs, demo scripts, recordings it can produce, drafts of every post. **The owner alone posts, submits and sends**: Hacker News, X, Reddit, LinkedIn, creator messages, the Claude plugin directory (needs the owner's paid plan) and the awesome-claude-code issue form. No account action is taken on the owner's behalf.
+
+## Tasks
+
+### Phase 0 — Make the first visit convert (weeks 1–2, from 2026-11-16)
+
+- [ ] **Launch blocker: four security advisories** published after the last merge fail `cargo deny` on `main` (2026-11-10): RUSTSEC-2026-0459 (the bundled SQLite in `libsqlite3-sys` 0.38.2; fixed in ≥ 0.39.0) and RUSTSEC-2026-0457/0461/0462 (`rmcp` 3.4.0; fixed in ≥ 3.9.0). Upgrade in its own PR with a Codex review; Dependabot #51 may cover part of it. No launch with a red dependency audit.
+- [ ] **Launch blocker: the plugin's MCP server failed to start in a resumed Claude Code session** (2026-11-10: `ENOENT` on the launcher path although `scripts/mda` and the binary are installed). Reproduce on a clean install and in a resumed session, fix, add a test.
+- [ ] Clean-machine install check (macOS and Linux) from the marketplace, timed to the first useful answer; target under 5 minutes, with raw search answering before cards finish.
+- [ ] README rewrite: the hook first; the demo GIF; the verified install path and prerequisites; a comparison table against grep, qmd and graphify using only gated numbers; a link to the benchmark page. Remove "Not released yet", the "v0 design" badge, "40K tokens", "nobody else" and the sqlite-vec mention (ADR-0004 stores vectors in plain SQLite).
+- [ ] Marketplace description: drop "no API key"; say "your own API key or a free local model".
+- [ ] A public demo corpus: the fictional golden set (`evals/golden/docs`, 32 files) packaged as a ready-to-try example, with three questions that show provenance well.
+- [ ] Multi-client setup docs for the existing `mda mcp` server: Codex, Cursor, Gemini CLI, opencode, Claude Desktop. Each verified end to end on this machine before it is documented; the summarizer backend requirement stated plainly.
+- [ ] Demo video 1, "Where did that answer come from?" (25–35 s, silent, captioned): a question, the hit with file, lines and dates, Claude opening only those lines, the install line. Recorded with VHS (to install) or a screen recorder; script and tape committed under `docs/demo/`.
+- [ ] Demo video 2, "Edit, searchable in 8 s" (15–20 s, split screen with a timer; caption "p50 8.4 s in our benchmark").
+- [ ] Owner: start commenting on HN and r/ClaudeAI now, so the accounts are not new at launch (HN currently restricts Show HN from new accounts; r/ClaudeAI reportedly needs karma for showcase posts).
+- [ ] Funnel measurement without telemetry: a script that records GitHub traffic (views, unique visitors, referrers, clones), stars and release download counts daily to a local file, so each launch step can be read against the funnel.
+
+### Phase 1 — Directories and first users (weeks 3–4)
+
+- [ ] MCP Registry entry (`mcp-publisher`; namespace `io.github.joe-carr-data/…`; the registry hosts metadata only, so the Rust binary needs OCI or MCPB packaging — decide and build it).
+- [ ] Owner: submit to the Claude plugin directory (claude.ai/directory/manage).
+- [ ] Owner: 5–8 personal invitations to people with large, frequently edited markdown collections. The assistant drafts the message; watch at least three of them install. Success: five activate, three still use it after 14 days and can say why.
+- [ ] Fix the largest onboarding obstacles they hit, released as v0.1.2 before launch.
+- [ ] Owner: submit to awesome-claude-code through its issue form once 14 days of active development are visible (a description, not a pitch).
+- [ ] A launch write-up for the blog or the repository: what it does, the demo, the benchmark method and what did not pass.
+
+### Phase 2 — The launch window (week 5)
+
+- [ ] Drafts ready: the Show HN title and first comment (backstory, demo, benchmark link, what did not pass), the X thread with video 1, the r/ClaudeAI "Built with Claude" post.
+- [ ] Owner: Show HN near Monday 00:00 UTC; the X thread the same day; r/ClaudeAI 24 hours later. Answer every comment for 48 hours.
+- [ ] Record the funnel for the window: HN points, visits, stars per day against Trending, installs (release downloads).
+
+### Phase 3 — Sustain (weeks 6–13)
+
+- [ ] Owner: r/rust (the Rust-binary angle) and r/ObsidianMD (the vault angle) on separate days, after reading each sidebar; a This Week in Rust Crate of the Week nomination.
+- [ ] v0.2 within three weeks of launch with the launch feedback; a changelog post per release.
+- [ ] Demo video 3, "Same question, three tools" (60–90 s): grep, qmd and markdownattractor on the public benchmark repository, gate status labelled on screen, ending with "rerun it yourself".
+- [ ] Good-first-issues and a short contributor guide.
+- [ ] Owner: 5–10 personal messages to Claude Code, MCP and Obsidian creators, each offering the demo corpus; no request to star.
+- [ ] v0.3 with one integration users asked for (for example an Obsidian-vault guide); a second HN post only for a major change.
+- [ ] Be ready for a catalyst: when a public conversation on agent memory, LLM knowledge bases or context engineering starts, the clearest working demo goes into it the same day.
+- [ ] Week 13 retrospective against the funnel; decide whether to pursue a token-savings claim (the grounding fix in the skill or card prompt, then a T6 public rerun under a new freeze).
+
+## Paused
+
+The owed benchmark reruns (T2, T4, T5, T6 public) and the rubric calibration are paused for this plan's duration, except the grounding fix, which is a week-13 decision. Pausing them changes no published number.
+
+## Exit criteria (week 13, about 2026-02-15)
+
+- [ ] A new user on a clean machine reaches a useful answer in under 5 minutes from the README alone.
+- [ ] The README, marketplace text and every launch post make only claims listed under "Claims we may make".
+- [ ] `mda mcp` documented and verified with at least three MCP clients besides Claude Code.
+- [ ] Listed in the MCP Registry and submitted to the Claude plugin directory and awesome-claude-code.
+- [ ] One launch window run, with its funnel recorded.
+- [ ] At least five people outside the author used it for 14 days or more.
+- [ ] A retrospective in `docs/` that reads stars, visits, installs and returning users against the research's base case (300–2,000 stars in 90 days) and states the next 90 days.
+
+## Decision rule
+
+Under 1K stars after a well-run launch: read the funnel before adding features. Few visits means distribution. Visits without stars means positioning. Installs without continued use means product value or friction.
