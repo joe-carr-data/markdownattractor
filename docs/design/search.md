@@ -14,7 +14,7 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 2. **Two BM25 lists**: `cards_fts` over `heading_path`, `tldr`, `summary`, `keywords`, `questions_answered`, `entities` with weights 3/3/1/1/2/1, and `sections_raw_fts` over `heading_path` (3) and the raw section text (1). Both use `unicode61 remove_diacritics 2`. `search --raw` skips the cards list.
 3. **Vectors** (`search::vector_list`, ADR-0004): when embeddings are on, an embedder is given and its model is already on disk (`Embedder::ready`; a query never triggers a download), the query is embedded with `bge-small-en-v1.5` (quantised, 384 dimensions) and every card vector of that model is scored by dot product (`VectorIndex::top_k`, brute force from a contiguous `f32` buffer; ~15 MB and single-digit milliseconds at 10K sections). Vectors are keyed by section hash like the cards (so a moved or duplicated section costs nothing; the trade-off is that a hash shared by several documents carries one document's title and heading context, the same ambiguity the card itself has), made from `title + heading_path + tldr + summary + keywords + questions_answered` right after a card is attached (`Engine::embed_pending`, batches of 32), and rebuilt by `mda rebuild --embeddings`.
 4. **Fusion** (`search::fuse`): reciprocal rank fusion with k = 60 over the three lists. A section in both lexical lists is `matched: both`; one found only by its vector is `matched: vector`; every hit carries `vector: bool` and `vector_score` (cosine).
-5. **Recency** (`search::recency_factor`): score × (0.5 + 0.5·2^(−age/half-life)), half-life 30 days by default. Old but relevant sections are never buried below half weight; `0` disables it.
+5. **Recency** (`search::recency_factor`): score × (0.5 + 0.5·2^(−age/half-life)) when `search_recency_half_life_days` is positive. **Off by default** since 2026-11-10 (ADR-0007): on the golden set with realistic file ages a 30-day half-life cut hybrid MRR from 0.853 to 0.629 and lexical success@5 from 0.883 to 0.550, no time-flagged query gained, and the published retrieval tables ran without it.
 6. **Filters**: `--since`/`--until` on the section's `updated_at`, `--in <prefix>` on the relative path. Applied after fusion on the stored rows.
 7. **OR fallback**: if the AND query returns nothing lexically, the same terms are retried joined with `OR` and hits are flagged `via_or_fallback`; the CLI prints "(showing partial matches)". The vector list is computed once and joins either way.
 
@@ -36,7 +36,7 @@ query ─► fts_escape ─► cards_fts (bm25) ─┐
 | Knob | Where | Default |
 |---|---|---|
 | `k` | `SearchOptions.k`, `-k` | 8 |
-| recency half-life | `SearchOptions.recency_half_life_days` | 30 |
+| recency half-life | `search_recency_half_life_days` (`SearchOptions.recency_half_life_days`), clamped to 0–36,500 | 0 (off) |
 | OR fallback | `SearchOptions.or_fallback` | on |
 | fetch depth per list | `k × 4`, min 16 | |
 | bm25 weights | `store/mod.rs`; the `questions_answered` weight is `search_questions_weight` in `config.toml` | 3/3/1/1/2/1 |

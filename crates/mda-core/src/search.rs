@@ -46,7 +46,7 @@ pub struct SearchOptions {
     pub until: Option<Timestamp>,
     /// Keep only documents whose relative path starts with this prefix.
     pub path_prefix: Option<String>,
-    /// Half-life of the recency bonus, in days. `0` disables recency.
+    /// Half-life of the recency bonus, in days. `0` (the default) disables recency (ADR-0007).
     pub recency_half_life_days: f64,
     /// Fall back to an OR query when the AND query returns nothing.
     pub or_fallback: bool,
@@ -74,6 +74,7 @@ impl SearchOptions {
             raw_list_weight: finite(cfg.search_raw_weight, 0.0, 100.0, 1.0),
             questions_weight: finite(cfg.search_questions_weight, 0.0, 100.0, 2.0),
             and_stopwords: cfg.search_and_stopwords,
+            recency_half_life_days: finite(cfg.search_recency_half_life_days, 0.0, 36_500.0, 0.0),
             ..Self::default()
         }
     }
@@ -87,7 +88,7 @@ impl Default for SearchOptions {
             since: None,
             until: None,
             path_prefix: None,
-            recency_half_life_days: 30.0,
+            recency_half_life_days: 0.0,
             or_fallback: true,
             vectors: true,
             rrf_k: RRF_K,
@@ -615,6 +616,30 @@ mod tests {
             "what is it",
             "all stop-words: the query stays"
         );
+    }
+
+    #[test]
+    fn recency_is_off_by_default_and_set_from_the_config() {
+        let dflt = SearchOptions::for_config(&crate::config::Config::default());
+        assert!(dflt.recency_half_life_days.abs() < 1e-12, "off by default (ADR-0007)");
+        assert!(SearchOptions::default().recency_half_life_days.abs() < 1e-12);
+        let cfg = crate::config::Config {
+            search_recency_half_life_days: 30.0,
+            ..crate::config::Config::default()
+        };
+        assert!((SearchOptions::for_config(&cfg).recency_half_life_days - 30.0).abs() < 1e-9);
+        for bad in [f64::NAN, f64::INFINITY, -5.0] {
+            let cfg = crate::config::Config {
+                search_recency_half_life_days: bad,
+                ..crate::config::Config::default()
+            };
+            let h = SearchOptions::for_config(&cfg).recency_half_life_days;
+            assert!(h.is_finite() && h >= 0.0, "{bad} -> {h}");
+        }
+        // Off means age does not move the score: an old and a new section score alike.
+        let now = crate::clock::now();
+        let old = now.checked_sub(jiff::SignedDuration::from_hours(24 * 700)).unwrap();
+        assert!((recency_factor(old, now, 0.0) - recency_factor(now, now, 0.0)).abs() < 1e-12);
     }
 
     #[test]
