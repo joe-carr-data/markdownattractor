@@ -796,7 +796,8 @@ impl Engine {
             .modified()
             .ok()
             .and_then(|t| Timestamp::try_from(t).ok())
-            .is_some_and(|m| m > doc.updated_at);
+            // The file's own time at the last upsert: `updated_at` may be a git time (ADR-0008).
+            .is_some_and(|m| m > doc.file_mtime.unwrap_or(doc.updated_at));
         if !newer {
             return DiskState::Fresh;
         }

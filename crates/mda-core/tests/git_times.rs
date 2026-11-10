@@ -488,3 +488,20 @@ fn time_source_filesystem_calls_no_git_and_restores_file_times() {
     );
     assert_eq!(engine.restore_filesystem_times().unwrap(), 0, "idempotent");
 }
+
+#[test]
+fn a_git_dated_document_is_not_reported_stale() {
+    let (_tmp, dir) = repo();
+    write(&dir, "a.md", "# A\n\nOne.\n");
+    commit_at(&dir, T1, "one");
+    let mut engine = index(&dir);
+    date(&mut engine);
+    // `updated_at` is now years before the file's modification time; the stale check must
+    // compare against the file's own stored time, not the git time.
+    assert!(doc(&engine, "a.md").updated_at < doc(&engine, "a.md").file_mtime.unwrap());
+    let stale = engine.stale().unwrap();
+    assert!(stale.iter().all(|s| !s.changed_on_disk), "{stale:?}");
+    write(&dir, "a.md", "# A\n\nTwo.\n");
+    let stale = engine.stale().unwrap();
+    assert!(stale.iter().any(|s| s.rel_path == "a.md" && s.changed_on_disk), "{stale:?}");
+}
