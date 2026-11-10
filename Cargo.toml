@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/mda-core", "crates/mda-cli"]
 
 [workspace.package]
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.89"
 license = "Apache-2.0"
@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "text-processing"]
 
 [workspace.dependencies]
 # internal
-mda-core = { path = "crates/mda-core", version = "0.1.0", default-features = false }
+mda-core = { path = "crates/mda-core", version = "0.2.0", default-features = false }
 
 # runtime
 tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "process", "io-util", "sync", "time", "fs", "signal"] }

@@ -158,7 +158,7 @@ All three are measured side by side, with grep, on the [benchmarks page](docs/be
 
 ## Status
 
-**v0.1.1, released 2026-09-22.** The engine, daemon, hybrid search, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). Relationships between documents (`supersedes`, `relates_to`) are not built yet.
+**Released** (the badge above shows the current version; [changelog](CHANGELOG.md)). The engine, daemon, hybrid search, git-aware times, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). Relationships between documents (`supersedes`, `relates_to`) are not built yet.
 
 Progress lives in [`docs/STATUS.md`](docs/STATUS.md). Lessons learned in [`docs/aha.md`](docs/aha.md).
 
