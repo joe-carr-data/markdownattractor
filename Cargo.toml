@@ -51,7 +51,7 @@ fastembed = { version = "7", default-features = false, features = ["ort-download
 rmcp = { version = "3.4", features = ["server", "transport-io", "macros", "schemars"] }
 
 # storage & search
-rusqlite = { version = "0.40", features = ["bundled", "jiff", "functions"] }
+rusqlite = { version = "0.41", features = ["bundled", "jiff", "functions"] }
 
 # time
 jiff = { version = "0.2", features = ["serde"] }
