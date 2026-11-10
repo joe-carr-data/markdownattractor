@@ -42,7 +42,7 @@ use crate::{Error, Result};
 
 /// Schema migrations, applied in order. Version `n` is `MIGRATIONS[n - 1]`. To add a
 /// version, append one entry; [`Store::open`] runs whatever the file is missing.
-const MIGRATIONS: &[&str] = &[SCHEMA_V1, SCHEMA_V2, SCHEMA_V3];
+const MIGRATIONS: &[&str] = &[SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4];
 
 /// How long a connection waits for another writer before giving up.
 pub const BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
@@ -50,6 +50,28 @@ pub const BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 /// Current schema version: the one a freshly opened store reports.
 #[allow(clippy::cast_possible_truncation)] // a handful of migrations, never 2^32
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
+
+/// v4: where each time came from, and the state of git dating (ADR-0008). Additive columns
+/// with defaults, so existing rows stay valid: every document starts as `needs` and is dated
+/// by the first pass. `created_at_source` keeps its meaning and applies only while
+/// `created_source` is `filesystem`. `file_mtime` is the file's modification time at the last
+/// upsert, kept apart from `updated_at` once that can be a git time; on existing rows it is
+/// backfilled from `updated_at`, which until now was exactly that.
+const SCHEMA_V4: &str = r"
+ALTER TABLE docs ADD COLUMN created_source TEXT NOT NULL DEFAULT 'filesystem'
+    CHECK (created_source IN ('filesystem', 'git'));
+ALTER TABLE docs ADD COLUMN updated_source TEXT NOT NULL DEFAULT 'filesystem'
+    CHECK (updated_source IN ('filesystem', 'git'));
+ALTER TABLE docs ADD COLUMN git_state TEXT NOT NULL DEFAULT 'needs'
+    CHECK (git_state IN ('needs', 'git', 'filesystem', 'failed'));
+ALTER TABLE docs ADD COLUMN git_commit TEXT;
+ALTER TABLE docs ADD COLUMN git_blob TEXT;
+ALTER TABLE docs ADD COLUMN file_mtime TEXT;
+UPDATE docs SET file_mtime = updated_at;
+ALTER TABLE sections ADD COLUMN updated_source TEXT NOT NULL DEFAULT 'filesystem'
+    CHECK (updated_source IN ('filesystem', 'git'));
+CREATE INDEX docs_by_git_state ON docs(git_state);
+";
 
 /// v3: card embeddings, keyed by section hash like the cards themselves (ADR-0004). One row
 /// per hash and model; `vector` is little-endian `f32`, L2-normalised, `dim` values long.
@@ -177,7 +199,7 @@ const RAW_BM25: &str = "bm25(sections_raw_fts, 0.0, 3.0, 1.0)";
 const SECTION_COLUMNS: &str = "
     s.section_id, s.doc_id, d.rel_path, s.idx, s.level, s.heading_path, s.line_start, s.line_end,
     s.token_estimate, s.section_hash, s.code_langs, s.has_tables, s.text, m.first_seen_at,
-    s.updated_at, m.summary, m.provenance, m.state, m.fail_reason
+    s.updated_at, m.summary, m.provenance, m.state, m.fail_reason, s.updated_source
     FROM sections s
     JOIN docs d ON d.doc_id = s.doc_id
     JOIN summaries m ON m.section_hash = s.section_hash";
@@ -186,7 +208,8 @@ const SECTION_COLUMNS: &str = "
 const DOC_COLUMNS: &str = "
     doc_id, rel_path, title, content_hash, size_bytes, line_count, token_estimate, frontmatter,
     created_at, created_at_source, updated_at, first_seen_at, last_summarized_at, deleted_at,
-    links_internal, links_external
+    links_internal, links_external, created_source, updated_source, git_state, git_commit,
+    git_blob, file_mtime
     FROM docs";
 
 /// Stable identifier for a document: the first 16 hex characters of blake3 over its path
@@ -277,6 +300,116 @@ impl CreatedAtSource {
     }
 }
 
+/// Where a stored time came from (ADR-0008).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum TimeSource {
+    /// The filesystem: a modification time, a birth time, or when the file was first indexed.
+    #[default]
+    Filesystem,
+    /// Git history: the authored time of a commit.
+    Git,
+}
+
+impl TimeSource {
+    /// The stored spelling.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Filesystem => "filesystem",
+            Self::Git => "git",
+        }
+    }
+
+    fn parse(s: &str) -> Option<Self> {
+        match s {
+            "filesystem" => Some(Self::Filesystem),
+            "git" => Some(Self::Git),
+            _ => None,
+        }
+    }
+}
+
+/// Where a document stands with git dating (ADR-0008).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum GitState {
+    /// Not examined since it was created, changed, or its history changed.
+    #[default]
+    Needs,
+    /// Dated from git at `git_commit`.
+    Git,
+    /// Examined at `git_commit` and proven not eligible; it keeps filesystem times.
+    Filesystem,
+    /// A git call or a read failed; retried when the commit changes or on an explicit index.
+    Failed,
+}
+
+impl GitState {
+    /// The stored spelling.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Needs => "needs",
+            Self::Git => "git",
+            Self::Filesystem => "filesystem",
+            Self::Failed => "failed",
+        }
+    }
+
+    fn parse(s: &str) -> Option<Self> {
+        match s {
+            "needs" => Some(Self::Needs),
+            "git" => Some(Self::Git),
+            "filesystem" => Some(Self::Filesystem),
+            "failed" => Some(Self::Failed),
+            _ => None,
+        }
+    }
+}
+
+/// How many live documents are in each [`GitState`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GitStateCounts {
+    /// Waiting for a dating pass.
+    pub needs: u64,
+    /// Dated from git.
+    pub git: u64,
+    /// Examined, on filesystem times.
+    pub filesystem: u64,
+    /// The last attempt failed.
+    pub failed: u64,
+}
+
+/// The identity of one stored section that a dating result must still match when it is
+/// written: its id, content hash and line range.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SectionKey {
+    /// `<doc_id>#<index>`.
+    pub section_id: String,
+    /// The section's content hash.
+    pub section_hash: String,
+    /// First line, 1-based, inclusive.
+    pub line_start: u32,
+    /// Last line, 1-based, inclusive.
+    pub line_end: u32,
+}
+
+/// Git times for one document, ready to store (see [`Store::apply_git_dates`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GitDates {
+    /// The commit the times were read at.
+    pub commit: String,
+    /// The blob id of the file at that commit.
+    pub blob: String,
+    /// When the document was first authored.
+    pub created_at: Timestamp,
+    /// When the document was last authored.
+    pub updated_at: Timestamp,
+    /// One time per section, in document order.
+    pub section_updated_at: Vec<Timestamp>,
+}
+
 /// A document row.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StoredDocument {
@@ -312,6 +445,24 @@ pub struct StoredDocument {
     pub links_internal: Vec<String>,
     /// Link targets with a scheme.
     pub links_external: Vec<String>,
+    /// Where `created_at` came from: the filesystem (then see `created_at_source`) or git.
+    #[serde(default)]
+    pub created_source: TimeSource,
+    /// Where `updated_at` came from.
+    #[serde(default)]
+    pub updated_source: TimeSource,
+    /// Where the document stands with git dating.
+    #[serde(default)]
+    pub git_state: GitState,
+    /// The commit the document was last examined at, if it has been.
+    #[serde(default)]
+    pub git_commit: Option<String>,
+    /// The blob id the document was last examined with, if it has been.
+    #[serde(default)]
+    pub git_blob: Option<String>,
+    /// The file's modification time when the store last looked at the file.
+    #[serde(default)]
+    pub file_mtime: Option<Timestamp>,
 }
 
 /// Lifecycle of a section hash's summary.
@@ -378,6 +529,9 @@ pub struct StoredSection {
     pub state: SectionState,
     /// Why the last summarization attempt failed, when `state` is [`SectionState::Failed`].
     pub fail_reason: Option<String>,
+    /// Where `updated_at` came from.
+    #[serde(default)]
+    pub updated_source: TimeSource,
 }
 
 /// One item of summarization work: a hash plus a representative section to build the
@@ -661,15 +815,27 @@ impl Store {
         let created = !matches!(&existing, Some((_, None)));
         let changed = created || existing.as_ref().is_some_and(|(h, _)| *h != doc.hash);
 
-        // Hash -> updated_at of the sections this document had before.
-        let old: Vec<(String, Timestamp)> = tx
-            .prepare("SELECT section_hash, updated_at FROM sections WHERE doc_id = ?1")?
-            .query_map(params![doc_id], |r| Ok((r.get(0)?, r.get(1)?)))?
+        // Hash -> (time, source, occurrences) of the sections this document had before.
+        let old: Vec<(String, Timestamp, String)> = tx
+            .prepare(
+                "SELECT section_hash, updated_at, updated_source FROM sections
+                 WHERE doc_id = ?1 ORDER BY idx",
+            )?
+            .query_map(params![doc_id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
             .collect::<rusqlite::Result<_>>()?;
-        let mut old_by_hash: std::collections::HashMap<&str, Timestamp> =
+        let mut old_by_hash: std::collections::HashMap<&str, (Timestamp, TimeSource, usize)> =
             std::collections::HashMap::with_capacity(old.len());
-        for (hash, at) in &old {
-            old_by_hash.entry(hash.as_str()).or_insert(*at);
+        for (hash, at, source) in &old {
+            let source = TimeSource::parse(source).unwrap_or(TimeSource::Filesystem);
+            old_by_hash.entry(hash.as_str()).or_insert((*at, source, 0)).2 += 1;
+        }
+        // A time belongs to an occurrence, not to a text: it is carried over only when the
+        // hash names exactly one section before and exactly one now (ADR-0008). Duplicates
+        // cannot be told apart, so they count as changed.
+        let mut now_count: std::collections::HashMap<&str, usize> =
+            std::collections::HashMap::with_capacity(doc.sections.len());
+        for section in &doc.sections {
+            *now_count.entry(section.hash.as_str()).or_insert(0) += 1;
         }
 
         delete_doc_sections(&tx, &doc_id)?;
@@ -693,9 +859,13 @@ impl Store {
         for section in &doc.sections {
             let hash = section.hash.as_str();
             current_hashes.insert(hash);
-            let updated_at = if let Some(at) = old_by_hash.get(hash) {
+            let (updated_at, source) = if let Some((at, source, n)) = old_by_hash.get(hash) {
                 outcome.unchanged += 1;
-                *at
+                if *n == 1 && now_count.get(hash) == Some(&1) {
+                    (*at, *source)
+                } else {
+                    (times.modified_at, TimeSource::Filesystem)
+                }
             } else {
                 if new_hash_set.contains(hash) || summary_state(&tx, hash)?.is_some() {
                     outcome.reused += 1;
@@ -708,10 +878,10 @@ impl Store {
                     new_hash_set.insert(hash);
                     outcome.new_hashes.push(section.hash.clone());
                 }
-                times.modified_at
+                (times.modified_at, TimeSource::Filesystem)
             };
 
-            insert_section(&tx, &doc_id, section, updated_at)?;
+            insert_section(&tx, &doc_id, section, updated_at, source)?;
         }
 
         outcome.removed = old_by_hash.keys().filter(|h| !current_hashes.contains(*h)).count();
@@ -939,21 +1109,22 @@ impl Store {
             return Ok(false);
         }
         let tx = self.write_tx()?;
-        let history: Option<(String, String, String)> = tx
+        let history: Option<(String, String, String, String)> = tx
             .query_row(
-                "SELECT created_at, created_at_source, first_seen_at FROM docs
+                "SELECT created_at, created_at_source, first_seen_at, created_source FROM docs
                  WHERE doc_id = ?1 AND deleted_at IS NULL",
                 params![old_id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
             )
             .optional()?;
-        let Some((created_at, source, first_seen_at)) = history else {
+        let Some((created_at, source, first_seen_at, created_source)) = history else {
             return Ok(false);
         };
         let moved = tx.execute(
-            "UPDATE docs SET created_at = ?2, created_at_source = ?3, first_seen_at = ?4
+            "UPDATE docs SET created_at = ?2, created_at_source = ?3, first_seen_at = ?4,
+                created_source = ?5
              WHERE doc_id = ?1 AND deleted_at IS NULL",
-            params![new_id, created_at, source, first_seen_at],
+            params![new_id, created_at, source, first_seen_at, created_source],
         )?;
         if moved == 0 {
             return Ok(false);
@@ -975,6 +1146,241 @@ impl Store {
         let mut stmt = self.conn.prepare(&sql)?;
         let rows = stmt.query_map([], row_to_document)?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// The commit the last dating pass validated the store against, if any.
+    pub fn git_validated_commit(&self) -> Result<Option<String>> {
+        Ok(self
+            .conn
+            .query_row("SELECT value FROM meta WHERE key = 'git_validated_commit'", [], |r| {
+                r.get(0)
+            })
+            .optional()?)
+    }
+
+    /// Record that the store is being validated against `commit`, and in the same transaction
+    /// mark the documents whose history may have changed as needing a date: those at `paths`
+    /// (relative to the root), or every live document when `paths` is `None`. Documents whose
+    /// last attempt failed are always marked. Returns how many documents are now waiting.
+    pub fn advance_git_commit(&mut self, commit: &str, paths: Option<&[String]>) -> Result<u64> {
+        let tx = self.write_tx()?;
+        match paths {
+            None => {
+                tx.execute("UPDATE docs SET git_state = 'needs' WHERE deleted_at IS NULL", [])?;
+            }
+            Some(paths) => {
+                tx.execute(
+                    "UPDATE docs SET git_state = 'needs'
+                     WHERE deleted_at IS NULL AND git_state = 'failed'",
+                    [],
+                )?;
+                let mut stmt = tx.prepare(
+                    "UPDATE docs SET git_state = 'needs'
+                     WHERE doc_id = ?1 AND deleted_at IS NULL",
+                )?;
+                for path in paths {
+                    stmt.execute(params![doc_id_for(path)])?;
+                }
+            }
+        }
+        tx.execute(
+            "INSERT INTO meta (key, value) VALUES ('git_validated_commit', ?1)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![commit],
+        )?;
+        let waiting: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM docs WHERE deleted_at IS NULL AND git_state = 'needs'",
+            [],
+            |r| r.get(0),
+        )?;
+        tx.commit()?;
+        Ok(u64::try_from(waiting).unwrap_or_default())
+    }
+
+    /// Mark every live document that is not dated from git as needing a date again: the
+    /// retry an explicit `mda index` gives failed and previously ineligible documents.
+    pub fn requeue_git_undated(&mut self) -> Result<u64> {
+        let n = self.conn.execute(
+            "UPDATE docs SET git_state = 'needs'
+             WHERE deleted_at IS NULL AND git_state IN ('failed', 'filesystem')",
+            [],
+        )?;
+        Ok(n as u64)
+    }
+
+    /// Up to `limit` live documents waiting for a dating pass, ordered by path, starting
+    /// after the path `after` when one is given (a sweep's cursor).
+    pub fn documents_needing_git(
+        &self,
+        after: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<StoredDocument>> {
+        let sql = format!(
+            "SELECT {DOC_COLUMNS} WHERE deleted_at IS NULL AND git_state = 'needs'
+             AND rel_path > ?1 ORDER BY rel_path LIMIT ?2"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let rows = stmt.query_map(
+            params![after.unwrap_or_default(), i64::try_from(limit).unwrap_or(i64::MAX)],
+            row_to_document,
+        )?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// Note that the live document at `rel_path` was seen on disk with modification time
+    /// `mtime` and unchanged content. When that time differs from the stored one, the file's
+    /// bytes may have changed in a way the parser normalises away (line endings, trailing
+    /// spaces), which can change whether git can vouch for it: the new time is stored and the
+    /// document waits for a dating pass again. Returns whether it was marked.
+    pub fn note_file_seen(&mut self, rel_path: &str, mtime: Timestamp) -> Result<bool> {
+        let doc_id = doc_id_for(rel_path);
+        let stored: Option<Option<Timestamp>> = self
+            .conn
+            .query_row(
+                "SELECT file_mtime FROM docs WHERE doc_id = ?1 AND deleted_at IS NULL",
+                params![doc_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if stored.is_none() || stored == Some(Some(mtime)) {
+            return Ok(false);
+        }
+        // Guarded by the same condition, so a concurrent writer cannot make this a lost update.
+        let n = self.conn.execute(
+            "UPDATE docs SET file_mtime = ?2, git_state = 'needs'
+             WHERE doc_id = ?1 AND deleted_at IS NULL
+               AND (file_mtime IS NULL OR file_mtime != ?2)",
+            params![doc_id, fmt_ts(mtime)],
+        )?;
+        Ok(n > 0)
+    }
+
+    /// Live documents per [`GitState`].
+    pub fn git_state_counts(&self) -> Result<GitStateCounts> {
+        let mut counts = GitStateCounts::default();
+        let mut stmt = self.conn.prepare(
+            "SELECT git_state, COUNT(*) FROM docs WHERE deleted_at IS NULL GROUP BY git_state",
+        )?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+        for row in rows {
+            let (state, n) = row?;
+            let n = u64::try_from(n).unwrap_or_default();
+            match GitState::parse(&state) {
+                Some(GitState::Needs) => counts.needs = n,
+                Some(GitState::Git) => counts.git = n,
+                Some(GitState::Filesystem) => counts.filesystem = n,
+                Some(GitState::Failed) => counts.failed = n,
+                None => {}
+            }
+        }
+        Ok(counts)
+    }
+
+    /// The identity of a document's sections, in document order.
+    pub fn section_keys(&self, doc_id: &str) -> Result<Vec<SectionKey>> {
+        section_keys(&self.conn, doc_id)
+    }
+
+    /// Store git times for a document, if it is still the document they were computed for.
+    ///
+    /// Inside one transaction the document must still be live, still wait for a date, still
+    /// have `content_hash`, the stored `file_mtime` the caller read, and exactly the sections
+    /// in `expect`; otherwise nothing is written and `false` is returned (the document stays
+    /// `needs` and the next pass retries).
+    pub fn apply_git_dates(
+        &mut self,
+        doc_id: &str,
+        content_hash: &str,
+        file_mtime: Option<Timestamp>,
+        expect: &[SectionKey],
+        dates: &GitDates,
+    ) -> Result<bool> {
+        if dates.section_updated_at.len() != expect.len() {
+            return Ok(false);
+        }
+        let tx = self.write_tx()?;
+        if !still_waiting(&tx, doc_id, content_hash, file_mtime)?
+            || section_keys(&tx, doc_id)? != expect
+        {
+            return Ok(false);
+        }
+        tx.execute(
+            "UPDATE docs SET created_at = ?2, created_source = 'git', updated_at = ?3,
+                updated_source = 'git', git_state = 'git', git_commit = ?4, git_blob = ?5
+             WHERE doc_id = ?1",
+            params![
+                doc_id,
+                fmt_ts(dates.created_at),
+                fmt_ts(dates.updated_at),
+                dates.commit,
+                dates.blob
+            ],
+        )?;
+        {
+            let mut stmt = tx.prepare(
+                "UPDATE sections SET updated_at = ?2, updated_source = 'git'
+                 WHERE section_id = ?1",
+            )?;
+            for (key, at) in expect.iter().zip(&dates.section_updated_at) {
+                stmt.execute(params![key.section_id, fmt_ts(*at)])?;
+            }
+        }
+        tx.commit()?;
+        Ok(true)
+    }
+
+    /// Record the outcome of examining a document that was not dated: `Filesystem` (proven
+    /// not eligible at `commit` with `blob`) or `Failed`. Written only if the document is
+    /// still live, still waiting, and still has `content_hash` and the `file_mtime` the caller
+    /// read. Times are not touched: text that did not change keeps the date it was given.
+    pub fn set_git_state(
+        &mut self,
+        doc_id: &str,
+        content_hash: &str,
+        file_mtime: Option<Timestamp>,
+        state: GitState,
+        commit: Option<&str>,
+        blob: Option<&str>,
+    ) -> Result<bool> {
+        let tx = self.write_tx()?;
+        if !still_waiting(&tx, doc_id, content_hash, file_mtime)? {
+            return Ok(false);
+        }
+        tx.execute(
+            "UPDATE docs SET git_state = ?2, git_commit = ?3, git_blob = ?4 WHERE doc_id = ?1",
+            params![doc_id, state.as_str(), commit, blob],
+        )?;
+        tx.commit()?;
+        Ok(true)
+    }
+
+    /// Put every git-dated live document back on filesystem times (`time_source =
+    /// "filesystem"`): `updated_at` and every section's time become the stored file
+    /// modification time, `created_at` the first time the store saw the file. Returns how
+    /// many documents were restored.
+    pub fn restore_filesystem_times(&mut self) -> Result<u64> {
+        let tx = self.write_tx()?;
+        tx.execute(
+            "UPDATE sections SET updated_source = 'filesystem',
+                updated_at = (SELECT COALESCE(d.file_mtime, d.first_seen_at) FROM docs d
+                              WHERE d.doc_id = sections.doc_id)
+             WHERE updated_source = 'git'",
+            [],
+        )?;
+        let n = tx.execute(
+            "UPDATE docs SET updated_at = COALESCE(file_mtime, first_seen_at),
+                updated_source = 'filesystem',
+                created_at = CASE WHEN created_source = 'git' THEN first_seen_at ELSE created_at END,
+                created_at_source = CASE WHEN created_source = 'git' THEN 'first_seen'
+                                         ELSE created_at_source END,
+                created_source = 'filesystem', git_state = 'needs', git_commit = NULL,
+                git_blob = NULL
+             WHERE created_source = 'git' OR updated_source = 'git' OR git_state != 'needs'",
+            [],
+        )?;
+        tx.execute("DELETE FROM meta WHERE key = 'git_validated_commit'", [])?;
+        tx.commit()?;
+        Ok(n as u64)
     }
 
     /// Tombstone a document: set `deleted_at`, drop its sections and their FTS rows, keep its
@@ -1423,7 +1829,8 @@ fn write_doc_row(
         tx.execute(
             "UPDATE docs SET title = ?2, content_hash = ?3, size_bytes = ?4, line_count = ?5,
                 token_estimate = ?6, frontmatter = ?7, links_internal = ?8,
-                links_external = ?9, updated_at = ?10, deleted_at = NULL
+                links_external = ?9, updated_at = ?10, deleted_at = NULL,
+                updated_source = 'filesystem', git_state = 'needs', file_mtime = ?10
              WHERE doc_id = ?1",
             params![
                 doc_id,
@@ -1446,8 +1853,8 @@ fn write_doc_row(
         tx.execute(
             "INSERT INTO docs (doc_id, rel_path, title, content_hash, size_bytes, line_count,
                 token_estimate, frontmatter, links_internal, links_external, created_at,
-                created_at_source, updated_at, first_seen_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+                created_at_source, updated_at, first_seen_at, file_mtime)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?13)",
             params![
                 doc_id,
                 rel_path,
@@ -1475,12 +1882,14 @@ fn insert_section(
     doc_id: &str,
     section: &crate::markdown::Section,
     updated_at: Timestamp,
+    updated_source: TimeSource,
 ) -> Result<()> {
     let section_id = section_id_for(doc_id, section.index);
     tx.execute(
         "INSERT INTO sections (section_id, doc_id, idx, level, heading_path, line_start,
-            line_end, token_estimate, section_hash, code_langs, has_tables, text, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            line_end, token_estimate, section_hash, code_langs, has_tables, text, updated_at,
+            updated_source)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![
             section_id,
             doc_id,
@@ -1495,6 +1904,7 @@ fn insert_section(
             section.has_tables,
             section.text,
             fmt_ts(updated_at),
+            updated_source.as_str(),
         ],
     )?;
     let rowid = tx.last_insert_rowid();
@@ -1508,6 +1918,44 @@ fn insert_section(
         insert_card_row(tx, rowid, &section_id, &heading_text, &summary)?;
     }
     Ok(())
+}
+
+/// Is the document live, waiting for a date, still at `content_hash`, and has the file not
+/// been seen with another modification time since the caller read `file_mtime`? The last
+/// part matters for saves the parser normalises away: same hash, other bytes.
+fn still_waiting(
+    conn: &Connection,
+    doc_id: &str,
+    content_hash: &str,
+    file_mtime: Option<Timestamp>,
+) -> Result<bool> {
+    let row: Option<(String, String, Option<Timestamp>)> = conn
+        .query_row(
+            "SELECT content_hash, git_state, file_mtime FROM docs
+             WHERE doc_id = ?1 AND deleted_at IS NULL",
+            params![doc_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()?;
+    Ok(row.is_some_and(|(hash, state, mtime)| {
+        hash == content_hash && state == "needs" && mtime == file_mtime
+    }))
+}
+
+fn section_keys(conn: &Connection, doc_id: &str) -> Result<Vec<SectionKey>> {
+    let mut stmt = conn.prepare(
+        "SELECT section_id, section_hash, line_start, line_end FROM sections
+         WHERE doc_id = ?1 ORDER BY idx",
+    )?;
+    let rows = stmt.query_map(params![doc_id], |r| {
+        Ok(SectionKey {
+            section_id: r.get(0)?,
+            section_hash: r.get(1)?,
+            line_start: r.get(2)?,
+            line_end: r.get(3)?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
 fn summary_state(conn: &Connection, hash: &str) -> Result<Option<SectionState>> {
@@ -1604,6 +2052,7 @@ fn row_to_section(r: &Row<'_>) -> rusqlite::Result<StoredSection> {
         state: SectionState::parse(&state)
             .ok_or_else(|| bad_column(17, format!("unknown section state {state}")))?,
         fail_reason: r.get(18)?,
+        updated_source: source_col(r, 19)?,
     })
 }
 
@@ -1628,7 +2077,23 @@ fn row_to_document(r: &Row<'_>) -> rusqlite::Result<StoredDocument> {
         deleted_at: r.get(13)?,
         links_internal: json_col(r, 14)?,
         links_external: json_col(r, 15)?,
+        created_source: source_col(r, 16)?,
+        updated_source: source_col(r, 17)?,
+        git_state: {
+            let state: String = r.get(18)?;
+            GitState::parse(&state)
+                .ok_or_else(|| bad_column(18, format!("unknown git_state {state}")))?
+        },
+        git_commit: r.get(19)?,
+        git_blob: r.get(20)?,
+        file_mtime: r.get(21)?,
     })
+}
+
+fn source_col(r: &Row<'_>, idx: usize) -> rusqlite::Result<TimeSource> {
+    let source: String = r.get(idx)?;
+    TimeSource::parse(&source)
+        .ok_or_else(|| bad_column(idx, format!("unknown time source {source}")))
 }
 
 fn json_col<T: DeserializeOwned>(r: &Row<'_>, idx: usize) -> rusqlite::Result<T> {

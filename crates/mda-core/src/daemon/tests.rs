@@ -204,3 +204,88 @@ async fn second_daemon_on_the_same_root_is_refused_and_failures_back_off() {
 fn futures_lite_block(fut: impl std::future::Future<Output = bool>) -> bool {
     tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(fut))
 }
+
+/// Run git in `dir` with a fixed identity and commit date.
+fn git_at(dir: &Path, date: &str, args: &[&str]) {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["-c", "user.name=Test", "-c", "user.email=test@example.invalid"])
+        .args(["-c", "commit.gpgsign=false", "-c", "core.autocrlf=false"])
+        .args(args)
+        .env("GIT_AUTHOR_DATE", date)
+        .env("GIT_COMMITTER_DATE", date)
+        .env_remove("GIT_DIR")
+        .env_remove("GIT_WORK_TREE")
+        .env_remove("GIT_INDEX_FILE")
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn daemon_dates_from_git_falls_back_on_a_save_and_redates_after_a_commit() {
+    use crate::store::{GitState, TimeSource};
+    const T1: &str = "2024-03-01T10:00:00Z";
+    const T2: &str = "2025-06-15T12:00:00Z";
+    const GUIDE: &str = "# Guide\n\nIntro.\n\n## Install\n\nRun the installer.\n";
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    git_at(&root, T1, &["init", "-q"]);
+    write(&root, ".gitignore", ".markdownattractor/\n");
+    write(&root, "guide.md", GUIDE);
+    git_at(&root, T1, &["add", "-A"]);
+    git_at(&root, T1, &["commit", "-q", "-m", "add guide"]);
+    embeddings_off(&root);
+
+    let backend: DynBackend = Arc::new(Mock::new().default_ok());
+    let cancel = CancellationToken::new();
+    let dcfg = DaemonConfig { git_poll: Duration::from_millis(200), ..fast() };
+    let task = {
+        let (root, cancel) = (root.clone(), cancel.clone());
+        tokio::spawn(async move { run(&root, backend, dcfg, cancel).await })
+    };
+    let doc = |root: &Path| store(root).document_by_path("guide.md").unwrap();
+    let sources = |root: &Path| -> Vec<(Timestamp, TimeSource)> {
+        let s = store(root);
+        let id = s.document_by_path("guide.md").unwrap().unwrap().doc_id;
+        s.sections_of(&id).unwrap().into_iter().map(|x| (x.updated_at, x.updated_source)).collect()
+    };
+    let t1: Timestamp = T1.parse().unwrap();
+    let t2: Timestamp = T2.parse().unwrap();
+
+    // The initial scan indexed the file; the dating task gave it its history's time.
+    // Like the test above: nothing opens the store before the daemon has created it.
+    wait_until("daemon socket", || futures_lite_block(is_running(&root))).await;
+    wait_until("guide.md dated from git", || {
+        let d = doc(&root);
+        d.is_some_and(|d| d.git_state == GitState::Git && d.updated_at == t1)
+    })
+    .await;
+    assert_eq!(sources(&root), vec![(t1, TimeSource::Git), (t1, TimeSource::Git)]);
+
+    // A save: the edited section is on file time at once; the untouched one keeps git. The
+    // dating task examines the dirty file and leaves it alone.
+    write(&root, "guide.md", &GUIDE.replace("Run the installer.", "Run the new installer."));
+    wait_until("the save is indexed and judged dirty", || {
+        doc(&root).is_some_and(|d| d.git_state == GitState::Filesystem)
+    })
+    .await;
+    let s = sources(&root);
+    assert_eq!(s[0], (t1, TimeSource::Git));
+    assert_eq!(s[1].1, TimeSource::Filesystem);
+    assert!(s[1].0 > t2, "the save's own time");
+
+    // A commit, with no further save: the poll sees the new commit and the section is dated.
+    git_at(&root, T2, &["commit", "-q", "-am", "edit install"]);
+    wait_until("the commit re-dates the edited section", || {
+        doc(&root).is_some_and(|d| d.git_state == GitState::Git)
+            && sources(&root)[1] == (t2, TimeSource::Git)
+    })
+    .await;
+    assert_eq!(sources(&root)[0], (t1, TimeSource::Git));
+
+    cancel.cancel();
+    task.await.unwrap().unwrap();
+}

@@ -179,6 +179,9 @@ pub struct CardView {
     pub provenance: Option<crate::card::Provenance>,
     /// When the section content last changed.
     pub updated_at: jiff::Timestamp,
+    /// Where `updated_at` came from: `git` (the authored time of the last commit that
+    /// touched the section's lines) or `filesystem` (when the content was last saved).
+    pub updated_source: crate::store::TimeSource,
     /// Why summarization failed, when it did.
     pub fail_reason: Option<String>,
 }
@@ -355,6 +358,7 @@ impl McpServer {
             summary: s.summary,
             provenance: s.provenance,
             updated_at: s.updated_at,
+            updated_source: s.updated_source,
             fail_reason: s.fail_reason,
         })
     }

@@ -1362,3 +1362,100 @@ fn eval_on_an_own_root_exports_cards_and_reports_coverage_without_a_dataset() {
         .failure()
         .stderr(predicate::str::contains("the golden set is --golden"));
 }
+
+// ---- git times (ADR-0008): the CLI on a real repository, and the clock override ----
+
+/// Run git in `dir` with a fixed identity; the commit dates come from `date`.
+fn git_in(dir: &Path, date: &str, args: &[&str]) {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["-c", "user.name=Test", "-c", "user.email=test@example.invalid"])
+        .args(["-c", "commit.gpgsign=false", "-c", "core.autocrlf=false"])
+        .args(args)
+        .env("GIT_AUTHOR_DATE", date)
+        .env("GIT_COMMITTER_DATE", date)
+        .env_remove("GIT_DIR")
+        .env_remove("GIT_WORK_TREE")
+        .env_remove("GIT_INDEX_FILE")
+        .output()
+        .expect("git runs");
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+}
+
+fn committed_repo() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    git_in(root, "2024-03-01T10:00:00Z", &["init", "-q"]);
+    write(root, ".gitignore", ".markdownattractor/\n");
+    write(root, "runbook.md", "# Runbook\n\n## Rollback\n\nRun deployctl rollback.\n");
+    git_in(root, "2024-03-01T10:00:00Z", &["add", "-A"]);
+    git_in(root, "2024-03-01T10:00:00Z", &["commit", "-q", "-m", "add runbook"]);
+    dir
+}
+
+fn json_from(assert: assert_cmd::assert::Assert) -> serde_json::Value {
+    serde_json::from_slice(&assert.success().get_output().stdout).expect("json output")
+}
+
+#[test]
+fn index_dates_a_committed_file_from_git_and_card_and_status_say_so() {
+    let dir = committed_repo();
+    let root = dir.path();
+    let out =
+        json_from(mda().args(["--json", "index", "--no-summarize", "--root"]).arg(root).assert());
+    assert_eq!(out["git_times"]["source"], "usable", "{out}");
+    assert_eq!(out["git_times"]["dated"], 1, "{out}");
+
+    let hits = json_from(mda().args(["--json", "search", "rollback", "--root"]).arg(root).assert());
+    let hit = &hits["hits"][0];
+    assert!(hit["updated_at"].as_str().unwrap().starts_with("2024-03-01T10:00:00"), "{hit}");
+    let id = hit["section_id"].as_str().unwrap();
+    let card = json_from(mda().args(["--json", "card", id, "--root"]).arg(root).assert());
+    assert_eq!(card["updated_source"], "git", "{card}");
+    mda()
+        .args(["card", id, "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("(git)"));
+
+    let status = json_from(mda().args(["--json", "status", "--root"]).arg(root).assert());
+    assert_eq!(status["git_times"]["git"], 1, "{status}");
+    mda()
+        .args(["status", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("times 1 doc(s) from git"));
+
+    // The human line of `index` appears when the pass did something: after an edit and a commit.
+    write(root, "runbook.md", "# Runbook\n\n## Rollback\n\nRun deployctl rollback --to <sha>.\n");
+    git_in(root, "2025-06-15T12:00:00Z", &["commit", "-q", "-am", "edit"]);
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("dated 1 document(s) from git"));
+}
+
+#[test]
+fn mda_now_means_no_git_dating_even_in_a_full_repository() {
+    let dir = committed_repo();
+    let root = dir.path();
+    let out = json_from(
+        mda()
+            .env("MDA_NOW", "2026-08-01T12:00:00Z")
+            .args(["--json", "index", "--no-summarize", "--root"])
+            .arg(root)
+            .assert(),
+    );
+    assert_eq!(out["git_times"]["source"], "clock_override", "{out}");
+    assert_eq!(out["git_times"]["dated"], 0);
+    let status = json_from(mda().args(["--json", "status", "--root"]).arg(root).assert());
+    assert_eq!(status["git_times"]["git"], 0, "{status}");
+    let hits = json_from(mda().args(["--json", "search", "rollback", "--root"]).arg(root).assert());
+    let at = hits["hits"][0]["updated_at"].as_str().unwrap();
+    assert!(!at.starts_with("2024-03-01"), "the replay's file time, not git's: {at}");
+}

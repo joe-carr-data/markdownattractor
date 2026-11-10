@@ -56,6 +56,12 @@ pub struct DaemonConfig {
     pub backoff_max: Duration,
     /// Pause after the daily token budget stopped a round.
     pub budget_pause: Duration,
+    /// How often the dating task looks for a new commit (ADR-0008).
+    pub git_poll: Duration,
+    /// How often it looks again when the root is not in a usable repository.
+    pub git_poll_unusable: Duration,
+    /// The longest one dating slice runs before it yields.
+    pub git_slice: Duration,
 }
 
 impl Default for DaemonConfig {
@@ -68,6 +74,9 @@ impl Default for DaemonConfig {
             backoff_min: Duration::from_secs(5),
             backoff_max: Duration::from_secs(300),
             budget_pause: Duration::from_secs(600),
+            git_poll: Duration::from_secs(30),
+            git_poll_unusable: Duration::from_secs(600),
+            git_slice: Duration::from_secs(5),
         }
     }
 }
@@ -244,6 +253,8 @@ struct Shared {
     hot: Mutex<HotSet>,
     events: broadcast::Sender<DaemonEvent>,
     wake: Notify,
+    /// Wakes the dating task: the indexer changed documents, so some may wait for a date.
+    date_wake: Notify,
     paused: AtomicBool,
     cancel: CancellationToken,
 }
@@ -329,6 +340,7 @@ pub async fn run(
     })?;
     let indexer_engine = Engine::open(&root)?;
     let summarizer_engine = Engine::open(&root)?;
+    let dater_engine = Engine::open(&root)?;
     let server = Server::bind(&root)?;
 
     let info = DaemonInfo {
@@ -349,6 +361,7 @@ pub async fn run(
         hot: Mutex::new(HotSet::new(dcfg.hot_ttl)),
         events,
         wake: Notify::new(),
+        date_wake: Notify::new(),
         paused: AtomicBool::new(false),
         cancel: cancel.clone(),
     });
@@ -371,6 +384,8 @@ pub async fn run(
         Arc::clone(&shared),
         dcfg.clone(),
     ));
+    // Its own engine and connection: git runs outside the indexer, which never waits for it.
+    let dater = tokio::spawn(dater_loop(dater_engine, Arc::clone(&shared), dcfg.clone()));
     let summarizer = tokio::spawn(summarizer_loop(
         summarizer_engine,
         backend,
@@ -386,12 +401,159 @@ pub async fn run(
     tracing::info!("daemon stopping");
     let _ = indexer.await;
     let _ = summarizer.await;
+    let _ = dater.await;
     server_task.abort();
     drop(watcher);
     DaemonInfo::remove(&root);
     drop(root_lock);
     tracing::info!("daemon stopped");
     Ok(())
+}
+
+/// Date documents from git in the background (ADR-0008): when the indexer changed
+/// something, and when a poll sees `HEAD` name another commit. Each wake runs one sweep over
+/// the waiting documents, in short slices on a blocking thread with a cursor between them, so
+/// a save is never behind more than one document's write and a slice of documents that
+/// cannot be dated yet does not starve the rest. While the root is not in a usable repository
+/// git is asked again only every `git_poll_unusable`, however many saves arrive. Does nothing
+/// at all under `time_source = "filesystem"`.
+async fn dater_loop(mut engine: Engine, shared: Arc<Shared>, dcfg: DaemonConfig) {
+    if !engine.git_times_enabled() {
+        return;
+    }
+    // The blocking slices cannot see the cancellation token; they watch this flag.
+    let stop = Arc::new(AtomicBool::new(false));
+    {
+        let (stop, cancel) = (Arc::clone(&stop), shared.cancel.clone());
+        tokio::spawn(async move {
+            cancel.cancelled().await;
+            stop.store(true, Ordering::Relaxed);
+        });
+    }
+    let mut seen_head: Option<String> = None;
+    // Set while the root has no usable repository: no git call before this instant.
+    let mut unusable_until: Option<Instant> = None;
+    loop {
+        let poll = if unusable_until.is_some() { dcfg.git_poll_unusable } else { dcfg.git_poll };
+        let woken = tokio::select! {
+            () = shared.cancel.cancelled() => break,
+            () = shared.date_wake.notified() => true,
+            () = tokio::time::sleep(poll) => false,
+        };
+        if unusable_until.is_some_and(|t| Instant::now() < t) {
+            continue;
+        }
+        if !woken {
+            // A poll: one cheap question, and nothing more unless the commit moved.
+            let Ok((back, head)) = tokio::task::spawn_blocking(move || {
+                let head = engine.git_head();
+                (engine, head)
+            })
+            .await
+            else {
+                return;
+            };
+            engine = back;
+            if head.is_none() {
+                // Whatever was queued meanwhile is swept when git is back, even at the same
+                // commit: forget that it was seen.
+                unusable_until = Some(Instant::now() + dcfg.git_poll_unusable);
+                seen_head = None;
+                continue;
+            }
+            unusable_until = None;
+            if head == seen_head {
+                continue;
+            }
+        }
+        let Some(sweep) = date_sweep(engine, &shared, &dcfg, &stop).await else {
+            return;
+        };
+        engine = sweep.engine;
+        if sweep.usable {
+            unusable_until = None;
+            seen_head = sweep.commit;
+        } else {
+            unusable_until = Some(Instant::now() + dcfg.git_poll_unusable);
+            seen_head = None;
+        }
+    }
+}
+
+/// How a dating sweep ended.
+struct Sweep {
+    engine: Engine,
+    /// Whether git could be used at all.
+    usable: bool,
+    /// The commit the sweep last read.
+    commit: Option<String>,
+}
+
+/// One sweep over the waiting documents: slices in path order, on a blocking thread, until a
+/// slice finds nothing after the cursor. `None` when the daemon is stopping or the engine
+/// was lost with a panicked slice.
+async fn date_sweep(
+    mut engine: Engine,
+    shared: &Arc<Shared>,
+    dcfg: &DaemonConfig,
+    stop: &Arc<AtomicBool>,
+) -> Option<Sweep> {
+    let mut cursor: Option<String> = None;
+    let mut commit: Option<String> = None;
+    loop {
+        if shared.cancel.is_cancelled() {
+            return None;
+        }
+        let (flag, slice, after) = (Arc::clone(stop), dcfg.git_slice, cursor.take());
+        let (back, result) = tokio::task::spawn_blocking(move || {
+            let limits = crate::pipeline::DateLimits {
+                max_documents: Some(50),
+                deadline: Some(Instant::now() + slice),
+                cancel: Some(&flag),
+                start_after: after.as_deref(),
+            };
+            let result = engine.date_from_git(limits);
+            (engine, result)
+        })
+        .await
+        .ok()?;
+        engine = back;
+        let report = match result {
+            Ok(report) => report,
+            Err(e) => {
+                // Not a completed look at this commit: with no commit recorded, the next
+                // poll runs the sweep again.
+                shared.error("git times", &e);
+                return Some(Sweep { engine, usable: true, commit: None });
+            }
+        };
+        if report.source != "usable" {
+            return Some(Sweep { engine, usable: false, commit: None });
+        }
+        if report.progressed() || report.skipped > 0 {
+            tracing::info!(
+                dated = report.dated,
+                file_times = report.ineligible,
+                failed = report.failed,
+                skipped = report.skipped,
+                remaining = report.remaining,
+                "git times"
+            );
+        }
+        if commit.is_some() && commit != report.commit {
+            // A commit landed mid-sweep and marked documents the cursor has already passed:
+            // start over at the new commit.
+            commit = report.commit;
+            continue;
+        }
+        commit.clone_from(&report.commit);
+        if report.examined == 0 {
+            return Some(Sweep { engine, usable: true, commit });
+        }
+        cursor = report.last_path;
+        // Let the indexer in between slices.
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
 }
 
 async fn recv_hint(rx: &mut Option<mpsc::UnboundedReceiver<Hint>>) -> Option<Hint> {
@@ -411,6 +573,7 @@ async fn indexer_loop(
     let root = engine.root().to_path_buf();
     let mut deb = Debouncer::new(dcfg.debounce);
     let _ = rescan(&mut engine, &shared);
+    shared.date_wake.notify_one();
     loop {
         let deadline = deb.next_deadline();
         let sleep_to =
@@ -418,7 +581,23 @@ async fn indexer_loop(
         tokio::select! {
             () = shared.cancel.cancelled() => break,
             cmd = cmds.recv() => match cmd {
-                Some(cmd) => handle_cmd(&mut engine, cmd, &shared),
+                Some(cmd) => {
+                    handle_cmd(&mut engine, cmd, &shared);
+                    // An explicit `mda index` through the daemon means what it means inline:
+                    // file times back under `time_source = "filesystem"`, and another try
+                    // for documents that were not dated (ADR-0008).
+                    let requeued = engine.restore_filesystem_times().and_then(|_| {
+                        if engine.git_times_enabled() {
+                            engine.store_mut().requeue_git_undated()
+                        } else {
+                            Ok(0)
+                        }
+                    });
+                    if let Err(e) = requeued {
+                        shared.error("git times", &e);
+                    }
+                    shared.date_wake.notify_one();
+                }
                 None => break,
             },
             hint = recv_hint(&mut hints) => {
@@ -436,6 +615,7 @@ async fn indexer_loop(
             () = tokio::time::sleep_until(sleep_to), if deadline.is_some() => {
                 let batch = deb.due(Instant::now());
                 apply_batch(&mut engine, batch, &shared);
+                shared.date_wake.notify_one();
             }
         }
     }

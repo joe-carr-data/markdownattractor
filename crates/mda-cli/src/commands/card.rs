@@ -18,6 +18,14 @@ pub struct Args {
     pub root: Option<PathBuf>,
 }
 
+/// How a time's source reads in the one-line header.
+fn source_label(source: mda_core::store::TimeSource) -> &'static str {
+    match source {
+        mda_core::store::TimeSource::Git => "git",
+        mda_core::store::TimeSource::Filesystem => "file time",
+    }
+}
+
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let root = super::resolve_root(args.root.as_deref())?;
@@ -38,12 +46,13 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         section.heading_path.join(" › ")
     };
     println!(
-        "{} › {}   {} · ~{} tok · updated {}",
+        "{} › {}   {} · ~{} tok · updated {} ({})",
         st.bold(&section.rel_path),
         heading,
         st.accent(&format!("L{}–{}", section.line_start, section.line_end)),
         section.token_estimate,
         super::humanize_age(section.updated_at),
+        source_label(section.updated_source),
     );
     match (&section.summary, section.state) {
         (Some(s), _) => {

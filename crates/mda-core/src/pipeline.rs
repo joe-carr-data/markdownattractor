@@ -349,6 +349,8 @@ impl Engine {
         times: &DocTimes,
     ) -> Result<IndexOutcome> {
         if self.store.document_hash(rel_path)?.as_deref() == Some(doc.hash.as_str()) {
+            // Same parsed content, but possibly other bytes: git eligibility is re-examined.
+            self.store.note_file_seen(rel_path, times.modified_at)?;
             tracing::debug!(path = rel_path, "unchanged");
             return Ok(IndexOutcome {
                 rel_path: rel_path.to_owned(),
@@ -796,7 +798,8 @@ impl Engine {
             .modified()
             .ok()
             .and_then(|t| Timestamp::try_from(t).ok())
-            .is_some_and(|m| m > doc.updated_at);
+            // The file's own time at the last upsert: `updated_at` may be a git time (ADR-0008).
+            .is_some_and(|m| m > doc.file_mtime.unwrap_or(doc.updated_at));
         if !newer {
             return DiskState::Fresh;
         }
@@ -1006,6 +1009,9 @@ pub fn file_times(path: &Path) -> Result<DocTimes> {
         size_bytes: meta.len(),
     })
 }
+
+mod dating;
+pub use dating::{DateLimits, DateReport};
 
 #[cfg(test)]
 mod tests;

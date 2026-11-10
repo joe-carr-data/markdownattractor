@@ -15,6 +15,25 @@ pub struct Args {
     pub root: Option<PathBuf>,
 }
 
+/// One line on where document times come from, when git dating is in play (ADR-0008).
+fn print_git_times(engine: &Engine, docs: u64, st: &Style) -> anyhow::Result<()> {
+    let git = engine.store().git_state_counts()?;
+    if git.git + git.failed > 0 || (engine.git_times_enabled() && git.needs > 0 && docs > 0) {
+        println!(
+            "  times {} doc(s) from git · {} on file times · {} waiting · {}",
+            st.ok(&git.git.to_string()),
+            git.filesystem,
+            git.needs,
+            if git.failed > 0 {
+                st.fail(&format!("{} failed", git.failed))
+            } else {
+                "0 failed".to_owned()
+            },
+        );
+    }
+    Ok(())
+}
+
 /// Run the command.
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let root = super::resolve_root(args.root.as_deref())?;
@@ -34,6 +53,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "counts": counts,
             "config": cfg,
             "schema_version": engine.store().schema_version()?,
+            "git_times": engine.store().git_state_counts()?,
             "daemon": live,
             "embeddings": { "check": embed_check, "counts": embed_counts },
         }));
@@ -77,6 +97,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         ),
         _ => println!("  embeddings {} · search is lexical only", st.dim("off")),
     }
+    print_git_times(&engine, counts.docs, &st)?;
     if let Some(l) = &live {
         let state = if l.paused {
             st.warn("paused")

@@ -47,6 +47,7 @@ pub mod diff;
 pub mod embed;
 pub mod error;
 pub mod eval;
+pub mod gittime;
 pub mod markdown;
 pub mod mcp;
 pub mod pipeline;

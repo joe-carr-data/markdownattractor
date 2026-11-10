@@ -70,6 +70,90 @@ fn migrations_are_idempotent_on_disk() {
 }
 
 #[test]
+fn a_populated_v3_store_migrates_to_v4_and_keeps_its_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("state.db");
+    {
+        // A store as schema v3 left it: one document, one carded section, its FTS rows.
+        let conn = Connection::open(&path).unwrap();
+        for sql in [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3] {
+            conn.execute_batch(sql).unwrap();
+        }
+        conn.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '3')", []).unwrap();
+        let at = fmt_ts(ts(5));
+        conn.execute(
+            "INSERT INTO docs (doc_id, rel_path, title, content_hash, size_bytes, line_count,
+                token_estimate, links_internal, links_external, created_at, created_at_source,
+                updated_at, first_seen_at)
+             VALUES ('d1', 'a.md', 'Alpha', 'h', 10, 3, 4, '[]', '[]', ?1, 'birthtime', ?1, ?1)",
+            params![at],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO summaries (section_hash, state, first_seen_at) VALUES ('s1', 'pending', ?1)",
+            params![at],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO sections (section_id, doc_id, idx, level, heading_path, line_start,
+                line_end, token_estimate, section_hash, code_langs, has_tables, text, updated_at)
+             VALUES ('d1#0', 'd1', 0, 1, '[\"Alpha\"]', 1, 3, 4, 's1', '[]', 0, 'zebras here', ?1)",
+            params![at],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO sections_raw_fts (rowid, section_id, heading_path, text)
+             VALUES (last_insert_rowid(), 'd1#0', 'Alpha', 'zebras here')",
+            [],
+        )
+        .unwrap();
+    }
+    let mut store = Store::open(&path).unwrap();
+    assert_eq!(store.schema_version().unwrap(), 4);
+    let doc = store.document("d1").unwrap().unwrap();
+    assert_eq!((doc.created_at, doc.updated_at), (ts(5), ts(5)), "times untouched");
+    assert_eq!(doc.created_at_source, CreatedAtSource::Birthtime, "old provenance kept");
+    assert_eq!(
+        (doc.created_source, doc.updated_source),
+        (TimeSource::Filesystem, TimeSource::Filesystem)
+    );
+    assert_eq!(doc.git_state, GitState::Needs, "waits for its first pass");
+    assert_eq!(doc.file_mtime, Some(ts(5)), "the old updated_at was the file time: kept");
+    let section = store.section("d1#0").unwrap().unwrap();
+    assert_eq!((section.updated_at, section.updated_source), (ts(5), TimeSource::Filesystem));
+    assert_eq!(store.search_raw("zebras", 5).unwrap().len(), 1, "raw FTS still answers");
+    assert_eq!(store.git_state_counts().unwrap().needs, 1);
+    // Opening it migrated nothing else and called no git: the validated commit is unset.
+    assert_eq!(store.git_validated_commit().unwrap(), None);
+    // The new write paths work on a migrated row.
+    assert!(
+        store.set_git_state("d1", "h", Some(ts(5)), GitState::Filesystem, Some("c"), None).unwrap()
+    );
+    assert_eq!(store.requeue_git_undated().unwrap(), 1);
+}
+
+#[test]
+fn a_rename_inherits_the_created_time_and_its_source() {
+    let mut store = Store::open_in_memory().unwrap();
+    let doc = parse_str(DOC_A);
+    let out = store.upsert_document("old.md", &doc, &times(0)).unwrap();
+    let keys = store.section_keys(&out.doc_id).unwrap();
+    let dates = GitDates {
+        commit: "c".into(),
+        blob: "b".into(),
+        created_at: ts(-500),
+        updated_at: ts(-100),
+        section_updated_at: vec![ts(-100); keys.len()],
+    };
+    assert!(store.apply_git_dates(&out.doc_id, &doc.hash, Some(ts(0)), &keys, &dates).unwrap());
+    store.upsert_document("new.md", &doc, &times(50)).unwrap();
+    assert!(store.note_rename("old.md", "new.md", ts(50)).unwrap());
+    let moved = store.document_by_path("new.md").unwrap().unwrap();
+    assert_eq!((moved.created_at, moved.created_source), (ts(-500), TimeSource::Git));
+    assert_eq!(moved.git_state, GitState::Needs, "the new path waits for its own date");
+}
+
+#[test]
 fn timestamps_are_fixed_width_and_round_trip() {
     let a = Timestamp::from_second(10).unwrap();
     let b = Timestamp::new(10, 5).unwrap();

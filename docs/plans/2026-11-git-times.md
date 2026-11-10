@@ -57,20 +57,26 @@ With the prior off, realistic ages score exactly as flat ages. None of the 16 ti
 9. **Storage (schema v4).** `docs`: `created_source`, `updated_source` (`'filesystem'|'git'`, `NOT NULL DEFAULT 'filesystem'`, checked), `git_state` (`'needs'|'git'|'filesystem'|'failed'`, default `'needs'`), `git_commit`, `git_blob`, `git_attempts`, `git_retry_at`. `sections`: `updated_source`. `meta`: `git_validated_commit`. `created_at_source` applies only when `created_source = 'filesystem'`; a document's created time moves from filesystem to git, and between git values when history changes, never back to filesystem except through `time_source = "filesystem"`, which makes the next `mda index` restore file times. `first_seen_at` and events are observation times and never change.
 10. **Surfacing.** `mda card` / `mda_card` show each time's source; `mda status` counts documents by dating state; `docs/design/search.md` explains the clocks and the limits of `--since` on git times.
 
+## Implementation scope (v3 with the third Codex pass, `docs/reviews/codex/2026-11-10-git-times-v3.md`: "ready with listed changes")
+
+Design v3 as written, with these changes: the history walk uses `--diff-merges=separate`; marking documents and advancing the validated commit are one transaction, and any failed listing marks every document; three outcomes per document (ineligible, snapshot mismatch, operational failure); no retry timers (a failed document is retried on a commit change or the next explicit `mda index`); no `--no-git-times` flag; a delegated `mda index` returns after indexing and the daemon dates in the background; tree paths are matched exactly, case included.
+
 ## Tasks
 
 - [x] Recency: config key, default 0, wired into CLI and MCP search; `docs/design/search.md`; a test that the default is off (shipped separately, ADR-0007).
-- [x] ADR-0007 (recency). - [ ] The git-times ADR, after design v2.
-- [ ] `gittime` module: discover (work tree, prefix, shallow), status of paths (tracked and clean), per-file log times (`--follow`), per-line blame times; one child-process helper with a timeout.
-- [ ] Schema v4 and store methods: carry sources on upsert; `redate_from_git`; rows needing a date.
-- [ ] `Engine::date_from_git` after `index_root`; daemon rescan; `time_source` config; off under `MDA_NOW`.
-- [ ] Surfacing: card, status.
-- [ ] Tests (temporary repositories with fixed author and committer dates): not a repo, git missing, shallow clone, clean tracked file (document and per-section times), untracked, modified and staged files, a CRLF or filtered checkout falls back, a submodule falls back, rename followed, a root below the top level, paths with spaces and unicode, an edit then a commit re-dated after a `HEAD` change, an amended commit re-dated, duplicate sections in one file, front matter and MDX imports, a heading-only section, a future author date capped, a concurrent re-index discards the stale result, `MDA_NOW` (subprocess, full clone) means no git call, `time_source = "filesystem"` restores file times, migration of a populated v3 store, save-to-raw latency unchanged while a pass runs.
-- [ ] Measure the pass on this repository's `docs/` (73 files) and on a Prisma copy; record in `docs/benchmarks.md` as development numbers.
-- [ ] Docs: `docs/design/search.md` (times), README provenance line and hook, CHANGELOG, STATUS, aha.
+- [x] ADR-0007 (recency).
+- [x] ADR-0008 (git times).
+- [x] `gittime` module: discover (work tree, prefix, shallow), status of paths (tracked and clean), per-file log times (`--follow`), per-line blame times; one child-process helper with a timeout.
+- [x] Schema v4 and store methods: carry sources on upsert; `redate_from_git`; rows needing a date.
+- [x] `Engine::date_from_git` after `index_root`; daemon rescan; `time_source` config; off under `MDA_NOW`.
+- [x] Surfacing: card, status.
+- [x] Tests (20 on real repositories in `crates/mda-core/tests/git_times.rs` and the unit, store, daemon and CLI suites; temporary repositories with fixed author and committer dates): not a repo, git missing, shallow clone, clean tracked file (document and per-section times), untracked, modified and staged files, a CRLF or filtered checkout falls back, a submodule falls back, rename followed, a root below the top level, paths with spaces and unicode, an edit then a commit re-dated after a `HEAD` change, an amended commit re-dated, duplicate sections in one file, front matter and MDX imports, a heading-only section, a future author date capped, a concurrent re-index discards the stale result, `MDA_NOW` (subprocess, full clone) means no git call, `time_source = "filesystem"` restores file times, migration of a populated v3 store, save-to-raw latency unchanged while a pass runs.
+- [x] Measured on a full clone of this repository's `docs/` (2026-11-10, one machine, development number): 88 documents, 605 sections dated in 7.0 s, about 80 ms a document, three git processes each. A large repository (Prisma) is not measured yet.
+- [x] Docs: `docs/design/search.md` (times), README, CHANGELOG, STATUS, aha.
 - [x] Codex design pass on v1 (rework, 15 findings, all accepted into v2).
 - [x] Codex pass on v2 (not ready: 4 of 15 resolved, 12 new findings, all accepted into v3).
-- [ ] Codex pass on v3 before code; review of the implementation PR before merge.
+- [x] Codex pass on v3 (ready with listed changes; four findings accepted).
+- [x] Codex review of the implementation (`docs/reviews/codex/2026-11-10-git-times-code.md`: not ready, 8 findings, all fixed).
 
 ## Exit criteria
 
