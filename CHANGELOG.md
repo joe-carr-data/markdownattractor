@@ -5,6 +5,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Fixed
+- **The plugin's MCP server is declared in `.claude-plugin/plugin.json`** instead of a root `.mcp.json`. Opening Claude Code inside a clone of this repository no longer shows a failing `markdownattractor` server (the root file was read as a project server, where `${CLAUDE_PLUGIN_ROOT}` is unset). The plugin manifest also names its icon (`logo/mda_logo.jpg`). The plugin and marketplace descriptions no longer say "no API key": the default backend uses your own Anthropic API key, or a free local model. Verified with a marketplace install from a local checkout under an isolated config: the plugin's server connects.
 - **Dependencies:** `rmcp` 3.9.0 and `rusqlite` 0.41 (bundled SQLite 3.54.1) clear RUSTSEC-2026-0457, -0459, -0461 and -0462 (Codex review `docs/reviews/codex/2026-11-10-deps-advisories.md`).
 
 ### Added

@@ -4,7 +4,7 @@ As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *
 
 ## Shape
 
-`mda mcp` serves the index over stdio with `rmcp` 3. The plugin declares it in `.mcp.json` (`${CLAUDE_PLUGIN_ROOT}/scripts/mda mcp`, `MDA_ROOT=${CLAUDE_PROJECT_DIR}`, `MDA_MODEL_DIR=${CLAUDE_PLUGIN_DATA}/models`; the plugin reference substitutes these placeholders in an MCP stdio server's `command`, `args` and `env`), so Claude Code starts it with the plugin and the tools appear as `mcp__plugin_markdownattractor_markdownattractor__<tool>`. The root is `--root`, else `$MDA_ROOT`, else the nearest indexed ancestor of the working directory.
+`mda mcp` serves the index over stdio with `rmcp` 3. The plugin declares it inline under `mcpServers` in `.claude-plugin/plugin.json` (since 2026-11-10; a root `.mcp.json` was also read as a project server whenever Claude Code opened this repository itself, where the plugin variables are unset, and failed with `ENOENT`) (`${CLAUDE_PLUGIN_ROOT}/scripts/mda mcp`, `MDA_ROOT=${CLAUDE_PROJECT_DIR}`, `MDA_MODEL_DIR=${CLAUDE_PLUGIN_DATA}/models`; the plugin reference substitutes these placeholders in an MCP stdio server's `command`, `args` and `env`), so Claude Code starts it with the plugin and the tools appear as `mcp__plugin_markdownattractor_markdownattractor__<tool>`. The root is `--root`, else `$MDA_ROOT`, else the nearest indexed ancestor of the working directory.
 
 One `Engine` behind a mutex, one optional embedder built from the config. stdout is the protocol channel; logs go to stderr. Results are `structured_content` (plus the same JSON as text) built from the CLI's own `--json` types, so a skill reading the CLI and a tool call see one format. The one exception is `mda_search`: its hits keep the CLI's field names but drop the ranking diagnostics and the snippet-when-carded, because a search result is paid on every question (the CLI `--json` shape is unchanged).
 
@@ -49,4 +49,4 @@ What the transcript showed:
 - `mda_status.embeddings.ready` was `false`: the plugin's model directory is `${CLAUDE_PLUGIN_DATA}/models`, empty until the first embedding pass (daemon or `mda index`) downloads the model. A query never downloads, as designed; until then the hits are lexical.
 - One first-run bug surfaced on the way: `mda index .` treated `.` as a file and failed with "is a directory". A directory argument is now the root.
 
-The `.mcp.json` placeholders (`${CLAUDE_PLUGIN_ROOT}`, `${CLAUDE_PROJECT_DIR}`, `${CLAUDE_PLUGIN_DATA}`) were substituted as the plugin reference describes; no change was needed there.
+The placeholders (then in `.mcp.json`) (`${CLAUDE_PLUGIN_ROOT}`, `${CLAUDE_PROJECT_DIR}`, `${CLAUDE_PLUGIN_DATA}`) were substituted as the plugin reference describes; no change was needed there.
