@@ -55,7 +55,8 @@ pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
 /// with defaults, so existing rows stay valid: every document starts as `needs` and is dated
 /// by the first pass. `created_at_source` keeps its meaning and applies only while
 /// `created_source` is `filesystem`. `file_mtime` is the file's modification time at the last
-/// upsert, kept apart from `updated_at` once that can be a git time.
+/// upsert, kept apart from `updated_at` once that can be a git time; on existing rows it is
+/// backfilled from `updated_at`, which until now was exactly that.
 const SCHEMA_V4: &str = r"
 ALTER TABLE docs ADD COLUMN created_source TEXT NOT NULL DEFAULT 'filesystem'
     CHECK (created_source IN ('filesystem', 'git'));
@@ -66,6 +67,7 @@ ALTER TABLE docs ADD COLUMN git_state TEXT NOT NULL DEFAULT 'needs'
 ALTER TABLE docs ADD COLUMN git_commit TEXT;
 ALTER TABLE docs ADD COLUMN git_blob TEXT;
 ALTER TABLE docs ADD COLUMN file_mtime TEXT;
+UPDATE docs SET file_mtime = updated_at;
 ALTER TABLE sections ADD COLUMN updated_source TEXT NOT NULL DEFAULT 'filesystem'
     CHECK (updated_source IN ('filesystem', 'git'));
 CREATE INDEX docs_by_git_state ON docs(git_state);
@@ -299,10 +301,11 @@ impl CreatedAtSource {
 }
 
 /// Where a stored time came from (ADR-0008).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum TimeSource {
     /// The filesystem: a modification time, a birth time, or when the file was first indexed.
+    #[default]
     Filesystem,
     /// Git history: the authored time of a commit.
     Git,
@@ -328,10 +331,11 @@ impl TimeSource {
 }
 
 /// Where a document stands with git dating (ADR-0008).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum GitState {
     /// Not examined since it was created, changed, or its history changed.
+    #[default]
     Needs,
     /// Dated from git at `git_commit`.
     Git,
@@ -442,16 +446,22 @@ pub struct StoredDocument {
     /// Link targets with a scheme.
     pub links_external: Vec<String>,
     /// Where `created_at` came from: the filesystem (then see `created_at_source`) or git.
+    #[serde(default)]
     pub created_source: TimeSource,
     /// Where `updated_at` came from.
+    #[serde(default)]
     pub updated_source: TimeSource,
     /// Where the document stands with git dating.
+    #[serde(default)]
     pub git_state: GitState,
     /// The commit the document was last examined at, if it has been.
+    #[serde(default)]
     pub git_commit: Option<String>,
     /// The blob id the document was last examined with, if it has been.
+    #[serde(default)]
     pub git_blob: Option<String>,
-    /// The file's modification time at the last upsert (`None` on rows older than schema v4).
+    /// The file's modification time when the store last looked at the file.
+    #[serde(default)]
     pub file_mtime: Option<Timestamp>,
 }
 
@@ -520,6 +530,7 @@ pub struct StoredSection {
     /// Why the last summarization attempt failed, when `state` is [`SectionState::Failed`].
     pub fail_reason: Option<String>,
     /// Where `updated_at` came from.
+    #[serde(default)]
     pub updated_source: TimeSource,
 }
 
@@ -1197,16 +1208,51 @@ impl Store {
         Ok(n as u64)
     }
 
-    /// Up to `limit` live documents waiting for a dating pass, ordered by path.
-    pub fn documents_needing_git(&self, limit: usize) -> Result<Vec<StoredDocument>> {
+    /// Up to `limit` live documents waiting for a dating pass, ordered by path, starting
+    /// after the path `after` when one is given (a sweep's cursor).
+    pub fn documents_needing_git(
+        &self,
+        after: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<StoredDocument>> {
         let sql = format!(
             "SELECT {DOC_COLUMNS} WHERE deleted_at IS NULL AND git_state = 'needs'
-             ORDER BY rel_path LIMIT ?1"
+             AND rel_path > ?1 ORDER BY rel_path LIMIT ?2"
         );
         let mut stmt = self.conn.prepare(&sql)?;
-        let rows =
-            stmt.query_map(params![i64::try_from(limit).unwrap_or(i64::MAX)], row_to_document)?;
+        let rows = stmt.query_map(
+            params![after.unwrap_or_default(), i64::try_from(limit).unwrap_or(i64::MAX)],
+            row_to_document,
+        )?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// Note that the live document at `rel_path` was seen on disk with modification time
+    /// `mtime` and unchanged content. When that time differs from the stored one, the file's
+    /// bytes may have changed in a way the parser normalises away (line endings, trailing
+    /// spaces), which can change whether git can vouch for it: the new time is stored and the
+    /// document waits for a dating pass again. Returns whether it was marked.
+    pub fn note_file_seen(&mut self, rel_path: &str, mtime: Timestamp) -> Result<bool> {
+        let doc_id = doc_id_for(rel_path);
+        let stored: Option<Option<Timestamp>> = self
+            .conn
+            .query_row(
+                "SELECT file_mtime FROM docs WHERE doc_id = ?1 AND deleted_at IS NULL",
+                params![doc_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if stored.is_none() || stored == Some(Some(mtime)) {
+            return Ok(false);
+        }
+        // Guarded by the same condition, so a concurrent writer cannot make this a lost update.
+        let n = self.conn.execute(
+            "UPDATE docs SET file_mtime = ?2, git_state = 'needs'
+             WHERE doc_id = ?1 AND deleted_at IS NULL
+               AND (file_mtime IS NULL OR file_mtime != ?2)",
+            params![doc_id, fmt_ts(mtime)],
+        )?;
+        Ok(n > 0)
     }
 
     /// Live documents per [`GitState`].

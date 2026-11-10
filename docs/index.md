@@ -37,6 +37,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-10 | [reviews/codex/2026-11-10-recency-and-git-times-v2.md](reviews/codex/2026-11-10-recency-and-git-times-v2.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-git-times-v3.md](reviews/codex/2026-11-10-git-times-v3.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-git-times-design.md](reviews/codex/2026-11-10-git-times-design.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
+| 2026-11-10 | [reviews/codex/2026-11-10-git-times-code.md](reviews/codex/2026-11-10-git-times-code.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-deps-advisories.md](reviews/codex/2026-11-10-deps-advisories.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-10-27 | [reviews/codex/2026-10-27-t6-page.md](reviews/codex/2026-10-27-t6-page.md) | Reviewer: Codex (`gpt-6-astra`, read-only, fresh thread, through the `codex:codex-rescue` compani… |
 | 2026-10-27 | [reviews/codex/2026-10-26-m9-harness.md](reviews/codex/2026-10-26-m9-harness.md) | \ |

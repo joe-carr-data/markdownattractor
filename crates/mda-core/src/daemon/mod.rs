@@ -411,9 +411,12 @@ pub async fn run(
 }
 
 /// Date documents from git in the background (ADR-0008): when the indexer changed
-/// something, and when a poll sees `HEAD` name another commit. Runs short slices on a blocking
-/// thread until a slice makes no progress, so a save is never behind more than one
-/// document's write. Does nothing at all under `time_source = "filesystem"`.
+/// something, and when a poll sees `HEAD` name another commit. Each wake runs one sweep over
+/// the waiting documents, in short slices on a blocking thread with a cursor between them, so
+/// a save is never behind more than one document's write and a slice of documents that
+/// cannot be dated yet does not starve the rest. While the root is not in a usable repository
+/// git is asked again only every `git_poll_unusable`, however many saves arrive. Does nothing
+/// at all under `time_source = "filesystem"`.
 async fn dater_loop(mut engine: Engine, shared: Arc<Shared>, dcfg: DaemonConfig) {
     if !engine.git_times_enabled() {
         return;
@@ -428,13 +431,18 @@ async fn dater_loop(mut engine: Engine, shared: Arc<Shared>, dcfg: DaemonConfig)
         });
     }
     let mut seen_head: Option<String> = None;
-    let mut poll = dcfg.git_poll;
+    // Set while the root has no usable repository: no git call before this instant.
+    let mut unusable_until: Option<Instant> = None;
     loop {
+        let poll = if unusable_until.is_some() { dcfg.git_poll_unusable } else { dcfg.git_poll };
         let woken = tokio::select! {
             () = shared.cancel.cancelled() => break,
             () = shared.date_wake.notified() => true,
             () = tokio::time::sleep(poll) => false,
         };
+        if unusable_until.is_some_and(|t| Instant::now() < t) {
+            continue;
+        }
         if !woken {
             // A poll: one cheap question, and nothing more unless the commit moved.
             let Ok((back, head)) = tokio::task::spawn_blocking(move || {
@@ -446,60 +454,99 @@ async fn dater_loop(mut engine: Engine, shared: Arc<Shared>, dcfg: DaemonConfig)
                 return;
             };
             engine = back;
-            poll = if head.is_some() { dcfg.git_poll } else { dcfg.git_poll_unusable };
-            if head.is_none() || head == seen_head {
+            if head.is_none() {
+                unusable_until = Some(Instant::now() + dcfg.git_poll_unusable);
+                continue;
+            }
+            unusable_until = None;
+            if head == seen_head {
                 continue;
             }
         }
-        loop {
-            if shared.cancel.is_cancelled() {
-                return;
-            }
-            let (flag, slice) = (Arc::clone(&stop), dcfg.git_slice);
-            let Ok((back, result)) = tokio::task::spawn_blocking(move || {
-                let limits = crate::pipeline::DateLimits {
-                    max_documents: Some(50),
-                    deadline: Some(Instant::now() + slice),
-                    cancel: Some(&flag),
-                };
-                let result = engine.date_from_git(limits);
-                (engine, result)
-            })
-            .await
-            else {
-                return;
-            };
-            engine = back;
-            match result {
-                Ok(report) => {
-                    if report.source == "usable" {
-                        seen_head.clone_from(&report.commit);
-                        poll = dcfg.git_poll;
-                    } else {
-                        poll = dcfg.git_poll_unusable;
-                    }
-                    if report.progressed() || report.skipped > 0 {
-                        tracing::info!(
-                            dated = report.dated,
-                            file_times = report.ineligible,
-                            failed = report.failed,
-                            skipped = report.skipped,
-                            remaining = report.remaining,
-                            "git times"
-                        );
-                    }
-                    if !report.progressed() || report.remaining == 0 {
-                        break;
-                    }
-                }
-                Err(e) => {
-                    shared.error("git times", &e);
-                    break;
-                }
-            }
-            // Let the indexer in between slices.
-            tokio::time::sleep(Duration::from_millis(20)).await;
+        let Some(sweep) = date_sweep(engine, &shared, &dcfg, &stop).await else {
+            return;
+        };
+        engine = sweep.engine;
+        if sweep.usable {
+            unusable_until = None;
+            seen_head = sweep.commit;
+        } else {
+            unusable_until = Some(Instant::now() + dcfg.git_poll_unusable);
         }
+    }
+}
+
+/// How a dating sweep ended.
+struct Sweep {
+    engine: Engine,
+    /// Whether git could be used at all.
+    usable: bool,
+    /// The commit the sweep last read.
+    commit: Option<String>,
+}
+
+/// One sweep over the waiting documents: slices in path order, on a blocking thread, until a
+/// slice finds nothing after the cursor. `None` when the daemon is stopping or the engine
+/// was lost with a panicked slice.
+async fn date_sweep(
+    mut engine: Engine,
+    shared: &Arc<Shared>,
+    dcfg: &DaemonConfig,
+    stop: &Arc<AtomicBool>,
+) -> Option<Sweep> {
+    let mut cursor: Option<String> = None;
+    let mut commit: Option<String> = None;
+    loop {
+        if shared.cancel.is_cancelled() {
+            return None;
+        }
+        let (flag, slice, after) = (Arc::clone(stop), dcfg.git_slice, cursor.take());
+        let (back, result) = tokio::task::spawn_blocking(move || {
+            let limits = crate::pipeline::DateLimits {
+                max_documents: Some(50),
+                deadline: Some(Instant::now() + slice),
+                cancel: Some(&flag),
+                start_after: after.as_deref(),
+            };
+            let result = engine.date_from_git(limits);
+            (engine, result)
+        })
+        .await
+        .ok()?;
+        engine = back;
+        let report = match result {
+            Ok(report) => report,
+            Err(e) => {
+                shared.error("git times", &e);
+                return Some(Sweep { engine, usable: true, commit });
+            }
+        };
+        if report.source != "usable" {
+            return Some(Sweep { engine, usable: false, commit: None });
+        }
+        if report.progressed() || report.skipped > 0 {
+            tracing::info!(
+                dated = report.dated,
+                file_times = report.ineligible,
+                failed = report.failed,
+                skipped = report.skipped,
+                remaining = report.remaining,
+                "git times"
+            );
+        }
+        if commit.is_some() && commit != report.commit {
+            // A commit landed mid-sweep and marked documents the cursor has already passed:
+            // start over at the new commit.
+            commit = report.commit;
+            continue;
+        }
+        commit.clone_from(&report.commit);
+        if report.examined == 0 {
+            return Some(Sweep { engine, usable: true, commit });
+        }
+        cursor = report.last_path;
+        // Let the indexer in between slices.
+        tokio::time::sleep(Duration::from_millis(20)).await;
     }
 }
 
@@ -530,6 +577,19 @@ async fn indexer_loop(
             cmd = cmds.recv() => match cmd {
                 Some(cmd) => {
                     handle_cmd(&mut engine, cmd, &shared);
+                    // An explicit `mda index` through the daemon means what it means inline:
+                    // file times back under `time_source = "filesystem"`, and another try
+                    // for documents that were not dated (ADR-0008).
+                    let requeued = engine.restore_filesystem_times().and_then(|_| {
+                        if engine.git_times_enabled() {
+                            engine.store_mut().requeue_git_undated()
+                        } else {
+                            Ok(0)
+                        }
+                    });
+                    if let Err(e) = requeued {
+                        shared.error("git times", &e);
+                    }
                     shared.date_wake.notify_one();
                 }
                 None => break,

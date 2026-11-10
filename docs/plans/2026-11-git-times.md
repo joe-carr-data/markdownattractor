@@ -76,7 +76,7 @@ Design v3 as written, with these changes: the history walk uses `--diff-merges=s
 - [x] Codex design pass on v1 (rework, 15 findings, all accepted into v2).
 - [x] Codex pass on v2 (not ready: 4 of 15 resolved, 12 new findings, all accepted into v3).
 - [x] Codex pass on v3 (ready with listed changes; four findings accepted).
-- [ ] Codex review of the implementation PR before merge.
+- [x] Codex review of the implementation (`docs/reviews/codex/2026-11-10-git-times-code.md`: not ready, 8 findings, all fixed).
 
 ## Exit criteria
 

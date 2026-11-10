@@ -152,6 +152,16 @@ fn a_committed_file_gets_document_and_per_section_times_from_git() {
 fn a_folder_that_is_not_a_repository_keeps_filesystem_times() {
     let tmp = tempfile::tempdir().unwrap();
     let dir = tmp.path().canonicalize().unwrap();
+    // A TMPDIR below some checkout would make this folder part of that repository.
+    let enclosed = Command::new("git")
+        .arg("-C")
+        .arg(&dir)
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .output()
+        .is_ok_and(|o| o.status.success());
+    if enclosed {
+        return;
+    }
     write(&dir, "notes.md", "# Notes\n\nText.\n");
     let mut engine = index(&dir);
     let before = doc(&engine, "notes.md");
@@ -504,4 +514,69 @@ fn a_git_dated_document_is_not_reported_stale() {
     write(&dir, "a.md", "# A\n\nTwo.\n");
     let stale = engine.stale().unwrap();
     assert!(stale.iter().any(|s| s.rel_path == "a.md" && s.changed_on_disk), "{stale:?}");
+}
+
+#[test]
+fn a_sweep_with_a_cursor_reaches_documents_behind_ones_that_cannot_be_dated_yet() {
+    let (_tmp, dir) = repo();
+    for name in ["a.md", "b.md", "c.md"] {
+        write(&dir, name, &format!("# {name}\n\nText.\n"));
+    }
+    commit_at(&dir, T1, "three");
+    let mut engine = index(&dir);
+    // a.md and b.md change on disk and are committed, but the index has not caught up: the
+    // pass can prove nothing about them and leaves them waiting.
+    write(&dir, "a.md", "# a.md\n\nNewer.\n");
+    write(&dir, "b.md", "# b.md\n\nNewer.\n");
+    commit_at(&dir, T2, "two change");
+
+    let slice = |engine: &mut Engine, after: Option<&str>| {
+        let limits =
+            DateLimits { max_documents: Some(2), start_after: after, ..DateLimits::default() };
+        engine.date_from_git(limits).unwrap()
+    };
+    let first = slice(&mut engine, None);
+    assert_eq!((first.examined, first.skipped, first.dated), (2, 2, 0), "{first:?}");
+    assert_eq!(first.last_path.as_deref(), Some("b.md"));
+    let second = slice(&mut engine, first.last_path.as_deref());
+    assert_eq!((second.examined, second.dated), (1, 1), "c.md is reached: {second:?}");
+    let third = slice(&mut engine, second.last_path.as_deref());
+    assert_eq!(third.examined, 0, "the sweep is over");
+    assert_eq!(third.remaining, 2, "a.md and b.md wait for the indexer");
+
+    // An expired deadline still examines one document, so a slow setup cannot stall a sweep.
+    let expired = DateLimits { deadline: Some(std::time::Instant::now()), ..DateLimits::default() };
+    assert_eq!(engine.date_from_git(expired).unwrap().examined, 1);
+}
+
+#[test]
+fn a_byte_only_change_makes_the_document_eligible_again() {
+    let (_tmp, dir) = repo();
+    write(&dir, "a.md", "# A\n\nText.\n");
+    commit_at(&dir, T1, "lf");
+    // Checked out (or saved) with CRLF: the parsed content is the same, the bytes are not.
+    write(&dir, "a.md", "# A\r\n\r\nText.\r\n");
+    let mut engine = index(&dir);
+    assert_eq!(date(&mut engine).ineligible, 1);
+    assert_eq!(doc(&engine, "a.md").git_state, GitState::Filesystem);
+
+    // Saved back as LF with a later modification time: same content hash, so no re-index,
+    // but the file is seen again and waits for a pass, which can now vouch for it.
+    write(&dir, "a.md", "# A\n\nText.\n");
+    let later = std::time::SystemTime::now() + std::time::Duration::from_secs(5);
+    std::fs::File::options()
+        .write(true)
+        .open(dir.join("a.md"))
+        .unwrap()
+        .set_modified(later)
+        .unwrap();
+    let report = engine.index_root().unwrap();
+    assert_eq!(report.changed, 0, "the parser sees the same document");
+    assert_eq!(doc(&engine, "a.md").git_state, GitState::Needs);
+    assert_eq!(date(&mut engine).dated, 1);
+    assert_eq!(doc(&engine, "a.md").updated_at, ts(T1));
+
+    // Seen again with the same time: nothing is requeued.
+    engine.index_root().unwrap();
+    assert_eq!(doc(&engine, "a.md").git_state, GitState::Git);
 }

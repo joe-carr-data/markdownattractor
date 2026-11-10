@@ -28,12 +28,17 @@ pub struct DateLimits<'a> {
     pub deadline: Option<Instant>,
     /// Stop when this flag is set.
     pub cancel: Option<&'a AtomicBool>,
+    /// Examine only documents whose path sorts after this one: the cursor of a sweep made of
+    /// several calls ([`DateReport::last_path`] of the previous call).
+    pub start_after: Option<&'a str>,
 }
 
 impl DateLimits<'_> {
     fn reached(&self, examined: usize) -> bool {
+        // The deadline never stops a call before its first document: discovery and the tree
+        // listing count against it, and a call that only set up would never get anywhere.
         self.max_documents.is_some_and(|m| examined >= m)
-            || self.deadline.is_some_and(|d| Instant::now() >= d)
+            || (examined > 0 && self.deadline.is_some_and(|d| Instant::now() >= d))
             || self.cancel.is_some_and(|c| c.load(Ordering::Relaxed))
     }
 }
@@ -56,6 +61,10 @@ pub struct DateReport {
     pub skipped: usize,
     /// Documents still waiting for a date when the call returned.
     pub remaining: u64,
+    /// Documents this call examined, whatever the outcome.
+    pub examined: usize,
+    /// The path of the last document examined: the next call's `start_after` in a sweep.
+    pub last_path: Option<String>,
 }
 
 impl DateReport {
@@ -149,11 +158,13 @@ impl Engine {
 
         let tree = repo.tree(&commit)?;
         let now = crate::clock::now();
-        let waiting = self.store.documents_needing_git(usize::MAX)?;
+        let waiting = self.store.documents_needing_git(limits.start_after, usize::MAX)?;
         for (examined, doc) in waiting.iter().enumerate() {
             if limits.reached(examined) {
                 break;
             }
+            report.examined = examined + 1;
+            report.last_path = Some(doc.rel_path.clone());
             match self.examine(&repo, &commit, &tree, doc, now) {
                 Ok(Verdict::Dated(keys, dates)) => {
                     if self.store.apply_git_dates(&doc.doc_id, &doc.content_hash, &keys, &dates)? {

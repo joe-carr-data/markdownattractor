@@ -21,6 +21,8 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
 use jiff::Timestamp;
@@ -31,6 +33,8 @@ use crate::{Error, Result};
 pub const CALL_TIMEOUT: Duration = Duration::from_secs(15);
 /// How much output one git call may produce before it is killed.
 pub const OUTPUT_CAP: usize = 64 * 1024 * 1024;
+/// How much it may write to stderr before it is killed.
+const STDERR_CAP: usize = 1024 * 1024;
 
 /// What [`discover`] found at a root.
 #[derive(Debug)]
@@ -98,31 +102,53 @@ fn base(dir: &Path) -> Command {
     cmd
 }
 
-/// Read a pipe to its end, keeping at most `cap` bytes. Returns the bytes and whether the
-/// cap was passed (the rest is read and dropped so the child never blocks on a full pipe).
-fn drain(mut pipe: impl Read, cap: usize) -> (Vec<u8>, bool) {
+/// Read a pipe until its end or until `cap` bytes were kept. Passing the cap sets `over` and
+/// stops reading, so the parent kills the child instead of letting it run on.
+fn drain(mut pipe: impl Read, cap: usize, over: &AtomicBool) -> Vec<u8> {
     let mut out = Vec::new();
-    let mut over = false;
     let mut buf = vec![0u8; 64 * 1024];
     loop {
         match pipe.read(&mut buf) {
             Ok(0) | Err(_) => break,
             Ok(n) => {
                 let room = cap.saturating_sub(out.len());
-                if n > room {
-                    over = true;
-                }
                 out.extend_from_slice(&buf[..n.min(room)]);
+                if n > room {
+                    over.store(true, Ordering::Relaxed);
+                    break;
+                }
             }
         }
     }
-    (out, over)
+    out
+}
+
+/// Kill the child and reap it. Errors mean it is already gone.
+fn stop(child: &mut std::process::Child) {
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 /// Run one git call to completion under [`CALL_TIMEOUT`] and [`OUTPUT_CAP`].
 ///
+/// The deadline covers the whole call: the child's exit *and* the end of its output. The pipe
+/// threads are never joined; they hand their bytes over a channel, so a descendant that keeps
+/// a pipe open after git exits cannot hold this function past the deadline (the thread ends
+/// when the pipe finally closes). A child that passes an output cap is killed at once.
+///
 /// `Ok(None)` means the binary could not be started because it does not exist.
-fn run(mut cmd: Command, stdin: Option<Vec<u8>>, what: &str) -> Result<Option<Output>> {
+fn run(cmd: Command, stdin: Option<Vec<u8>>, what: &str) -> Result<Option<Output>> {
+    run_within(cmd, stdin, what, CALL_TIMEOUT, OUTPUT_CAP)
+}
+
+/// [`run`] with explicit limits (tests use small ones).
+fn run_within(
+    mut cmd: Command,
+    stdin: Option<Vec<u8>>,
+    what: &str,
+    timeout: Duration,
+    cap: usize,
+) -> Result<Option<Output>> {
     let mut child = match cmd.spawn() {
         Ok(child) => child,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -131,45 +157,60 @@ fn run(mut cmd: Command, stdin: Option<Vec<u8>>, what: &str) -> Result<Option<Ou
     let child_in = child.stdin.take();
     let child_out = child.stdout.take();
     let child_err = child.stderr.take();
+    let over = Arc::new(AtomicBool::new(false));
 
     // The three pipes are served concurrently with the wait: a child that fills stdout before
     // it reads stdin would otherwise deadlock with us.
-    let feeder = std::thread::spawn(move || {
+    std::thread::spawn(move || {
         if let (Some(mut pipe), Some(bytes)) = (child_in, stdin) {
             // A write error only means the child exited early; its status explains why.
             let _ = pipe.write_all(&bytes);
         }
     });
-    let out_reader =
-        std::thread::spawn(move || child_out.map_or((Vec::new(), false), |p| drain(p, OUTPUT_CAP)));
-    let err_reader =
-        std::thread::spawn(move || child_err.map_or((Vec::new(), false), |p| drain(p, 64 * 1024)));
+    let (out_tx, out_rx) = mpsc::channel();
+    let (err_tx, err_rx) = mpsc::channel();
+    {
+        let over = Arc::clone(&over);
+        std::thread::spawn(move || {
+            let bytes = child_out.map(|p| drain(p, cap, &over)).unwrap_or_default();
+            let _ = out_tx.send(bytes);
+        });
+    }
+    {
+        let over = Arc::clone(&over);
+        std::thread::spawn(move || {
+            let bytes = child_err.map(|p| drain(p, STDERR_CAP, &over)).unwrap_or_default();
+            let _ = err_tx.send(bytes);
+        });
+    }
 
-    let deadline = Instant::now() + CALL_TIMEOUT;
+    let deadline = Instant::now() + timeout;
+    let timed_out = || Error::Git(format!("git {what} timed out after {} ms", timeout.as_millis()));
+    let too_much = || Error::Git(format!("git {what} produced more output than allowed"));
     let status = loop {
+        if over.load(Ordering::Relaxed) {
+            stop(&mut child);
+            return Err(too_much());
+        }
         match child.try_wait() {
-            Ok(Some(status)) => break Some(status),
-            Ok(None) if Instant::now() >= deadline => break None,
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() >= deadline => {
+                stop(&mut child);
+                return Err(timed_out());
+            }
             Ok(None) => std::thread::sleep(Duration::from_millis(2)),
             Err(e) => {
-                let _ = child.kill();
-                let _ = child.wait();
+                stop(&mut child);
                 return Err(Error::Git(format!("waiting for git {what}: {e}")));
             }
         }
     };
-    if status.is_none() {
-        let _ = child.kill();
-        let _ = child.wait();
-    }
-    let _ = feeder.join();
-    let (stdout, over) = out_reader.join().unwrap_or_default();
-    let (stderr, _) = err_reader.join().unwrap_or_default();
-    let Some(status) = status else {
-        return Err(Error::Git(format!("git {what} timed out after {} s", CALL_TIMEOUT.as_secs())));
-    };
-    if over {
-        return Err(Error::Git(format!("git {what} produced more than {OUTPUT_CAP} bytes")));
+    // The child is gone; its output ends when every holder of the pipes has closed them.
+    let left = |deadline: Instant| deadline.saturating_duration_since(Instant::now());
+    let stdout = out_rx.recv_timeout(left(deadline)).map_err(|_| timed_out())?;
+    let stderr = err_rx.recv_timeout(left(deadline)).map_err(|_| timed_out())?;
+    if over.load(Ordering::Relaxed) {
+        return Err(too_much());
     }
     Ok(Some(Output {
         success: status.success(),

@@ -117,11 +117,8 @@ fn a_populated_v3_store_migrates_to_v4_and_keeps_its_rows() {
         (doc.created_source, doc.updated_source),
         (TimeSource::Filesystem, TimeSource::Filesystem)
     );
-    assert_eq!(
-        (doc.git_state, doc.file_mtime),
-        (GitState::Needs, None),
-        "waits for its first pass"
-    );
+    assert_eq!(doc.git_state, GitState::Needs, "waits for its first pass");
+    assert_eq!(doc.file_mtime, Some(ts(5)), "the old updated_at was the file time: kept");
     let section = store.section("d1#0").unwrap().unwrap();
     assert_eq!((section.updated_at, section.updated_source), (ts(5), TimeSource::Filesystem));
     assert_eq!(store.search_raw("zebras", 5).unwrap().len(), 1, "raw FTS still answers");

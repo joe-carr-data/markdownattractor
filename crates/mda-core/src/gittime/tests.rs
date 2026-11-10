@@ -43,11 +43,79 @@ fn line_porcelain_rejects_lines_out_of_order_or_without_a_header() {
     assert!(parse_line_porcelain(b"", ts(10)).unwrap().is_empty());
 }
 
+/// Is `dir` inside some git work tree (a TMPDIR below a checkout)? Then "not a repository"
+/// cannot be tested there.
+fn inside_a_work_tree(dir: &std::path::Path) -> bool {
+    Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .output()
+        .is_ok_and(|o| o.status.success())
+}
+
 #[test]
 fn a_directory_outside_any_repository_is_not_a_repository() {
     let dir = tempfile::tempdir().unwrap();
-    // A ceiling is removed from the environment by `base`, so walk up from a fresh temp dir:
-    // the system temp directory is not inside a work tree on any CI runner or dev machine.
+    if inside_a_work_tree(dir.path()) {
+        return;
+    }
     let found = discover(dir.path());
     assert!(matches!(found, Discovery::NotARepository | Discovery::NoGit), "{}", found.name());
+}
+
+/// A shell command with the same pipe setup as a git call.
+#[cfg(unix)]
+fn sh(script: &str) -> Command {
+    let mut cmd = Command::new("sh");
+    cmd.args(["-c", script]).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    cmd
+}
+
+#[cfg(unix)]
+#[test]
+fn a_call_that_outlives_its_timeout_is_killed_and_reported() {
+    let started = Instant::now();
+    let err = run_within(sh("sleep 30"), None, "sleep", Duration::from_millis(200), 1024);
+    assert!(matches!(err, Err(Error::Git(ref m)) if m.contains("timed out")), "{:?}", err.err());
+    assert!(started.elapsed() < Duration::from_secs(5), "bounded: {:?}", started.elapsed());
+}
+
+#[cfg(unix)]
+#[test]
+fn a_descendant_holding_the_pipes_cannot_hold_the_call_past_its_deadline() {
+    // The shell exits at once; its background child keeps stdout and stderr open.
+    let started = Instant::now();
+    let err = run_within(sh("sleep 30 & exit 0"), None, "orphan", Duration::from_millis(300), 1024);
+    assert!(matches!(err, Err(Error::Git(ref m)) if m.contains("timed out")), "{:?}", err.err());
+    assert!(started.elapsed() < Duration::from_secs(5), "bounded: {:?}", started.elapsed());
+}
+
+#[cfg(unix)]
+#[test]
+fn a_call_that_passes_the_output_cap_is_killed_at_once() {
+    let started = Instant::now();
+    let err = run_within(sh("yes"), None, "yes", Duration::from_secs(20), 4096);
+    assert!(matches!(err, Err(Error::Git(ref m)) if m.contains("more output")), "{:?}", err.err());
+    assert!(
+        started.elapsed() < Duration::from_secs(5),
+        "killed, not timed out: {:?}",
+        started.elapsed()
+    );
+    // Too much on stderr counts too.
+    let err = run_within(sh("yes 1>&2"), None, "yes", Duration::from_secs(20), 4096);
+    assert!(matches!(err, Err(Error::Git(_))), "{:?}", err.err());
+}
+
+#[cfg(unix)]
+#[test]
+fn stdin_is_fed_while_output_is_read_and_a_normal_call_returns_its_output() {
+    // More than a pipe buffer in each direction: a helper that wrote before reading would hang.
+    let input = vec![b'x'; 512 * 1024];
+    let out =
+        run_within(sh("cat"), Some(input.clone()), "cat", Duration::from_secs(20), 1024 * 1024)
+            .unwrap()
+            .unwrap();
+    assert!(out.success);
+    assert_eq!(out.stdout.len(), input.len());
 }
