@@ -25,7 +25,7 @@ As built through Phase 4 (2026-09-22). One line per command: what it does, what 
 
 | Command | Does |
 |---|---|
-| `search <query> [-k 8] [--raw] [--since] [--until] [--in prefix]` | Hybrid hits (cards, raw text, vectors when the model is on disk), recency-weighted, filtered; prints the `mda open` id for each. |
+| `search <query> [-k 8] [--raw] [--since] [--until] [--in prefix]` | Hybrid hits (cards, raw text, vectors when the model is on disk), filtered (recency weighting only when `search_recency_half_life_days` is set); prints the `mda open` id for each. |
 | `open <section_id>` | The exact source lines, re-checked at read time; `stale: true` when the file changed. |
 | `card <section_id>` | The stored card, or the pending/failed state. |
 | `explain <query>` | The three lists behind a search and the fused result. |

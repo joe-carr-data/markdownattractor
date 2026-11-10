@@ -4,7 +4,7 @@ Date: 2026-11-10
 Status: Accepted
 
 ## Context
-Search multiplied every score by a recency factor, 0.5 + 0.5·2^(−age/30 days), on the section's `updated_at`. Every benchmark corpus was a fresh checkout or copy, so all files had the same age and the prior had no effect on any published number; the published retrieval tables (T1, DocsQA) ran with it off anyway (`eval/docsqa.rs`). Measured on the golden set's 60 labelled queries with realistic file ages (`scripts/demo/make-corpus.py`), same cards, same binary (`docs/plans/2026-11-git-times.md`):
+Search multiplied every score by a recency factor, 0.5 + 0.5·2^(−age/30 days), on the section's `updated_at`. The published retrieval tables (T1, the DocsQA adapter) ran with it off (`eval/docsqa.rs`: a frozen corpus has no "recent"), so the product default differed from the published retrieval configuration. The agent benchmarks searched through the product's MCP server with the 30-day default: on T2, T4 and T6 the corpora were fresh checkouts or copies with one age, so the prior was neutral there; the T5 replay assigns historical times to changed files, so its searches were recency-weighted. Measured on the golden set's 60 labelled queries with realistic file ages (`scripts/demo/make-corpus.py`), same cards, same binary (`docs/plans/2026-11-git-times.md`):
 
 | Half-life | lexical raw success@5 / MRR | hybrid success@5 / MRR |
 |---|---|---|
@@ -19,7 +19,7 @@ We turn the recency prior off by default. A root can set `search_recency_half_li
 
 ## Consequences
 - Positive: ranking no longer depends on file age; the product default equals the configuration of the published retrieval tables.
-- Negative: a corpus where "newer is more relevant" holds loses the boost unless the user sets a half-life. Fresh benchmark runs with a new binary (the owed reruns) rank without the prior; the published tables regenerate from committed artifacts and are unaffected.
+- Negative: a corpus where "newer is more relevant" holds loses the boost unless the user sets a half-life. Fresh agent runs with a new binary (the owed reruns, T5 above all) search without the prior and can rank differently from the published runs; regenerating the published tables from their committed artifacts is unaffected.
 - Follow-ups: consider content dates (`mentioned_dates`) or query-dependent recency for time questions.
 
 ## Alternatives considered

@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Changed
-- **The recency prior is off by default** (ADR-0007). Search no longer down-weights old sections; set `search_recency_half_life_days` in `config.toml` to restore a prior. On the golden set with realistic file ages a 30-day prior cut hybrid MRR from 0.853 to 0.629. The published retrieval tables already ran without it; fresh benchmark runs with a new binary rank without it too.
+- **The recency prior is off by default** (ADR-0007). Search no longer down-weights old sections; set `search_recency_half_life_days` in `config.toml` to restore a prior. On the golden set with realistic file ages a 30-day prior cut hybrid MRR from 0.853 to 0.629. The published retrieval tables (T1) already ran without it; fresh agent runs with a new binary search without it and can rank differently from the published runs (T5's replay had historical file times).
 
 ### Fixed
 - **The plugin's MCP server is declared in `.claude-plugin/plugin.json`** instead of a root `.mcp.json`. Opening Claude Code inside a clone of this repository no longer shows a failing `markdownattractor` server (the root file was read as a project server, where `${CLAUDE_PLUGIN_ROOT}` is unset). The plugin manifest also names its icon (`logo/mda_logo.jpg`). The plugin and marketplace descriptions no longer say "no API key": the default backend uses your own Anthropic API key, or a free local model. Verified with a marketplace install from a local checkout under an isolated config: the plugin's server connects.

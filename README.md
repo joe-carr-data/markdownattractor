@@ -122,7 +122,7 @@ Watcher ─► Parser ─► Section diff ─► Workers ─► Validator ─►
 - **Section diff**: a blake3 hash per section. Unchanged sections never go to the model.
 - **Workers**: an adaptive pool against the Messages API or a local OpenAI-compatible server, with structured output and a JSON schema. Concurrency ramps up on success and halves on rate limits.
 - **Validator**: every extracted date and entity must quote an evidence substring that exists in the section, or it is dropped. On the demo corpus it dropped 16 dates and 49 entities.
-- **Index**: SQLite with FTS5 over cards and over raw section text, plus card embeddings from a small local ONNX model (`bge-small-en-v1.5`, 33 MB, downloaded once), fused with reciprocal rank fusion and a recency prior.
+- **Index**: SQLite with FTS5 over cards and over raw section text, plus card embeddings from a small local ONNX model (`bge-small-en-v1.5`, 33 MB, downloaded once), fused with reciprocal rank fusion. An optional recency prior is off by default.
 - **MCP**: `mda_search`, `mda_card`, `mda_open`, `mda_timeline`, `mda_recent`, `mda_stale`, `mda_status`, served by the same binary (`mda mcp`).
 
 Full design: [`docs/project-plan.md`](docs/project-plan.md).
@@ -151,7 +151,7 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 | Freshness | `--update` rebuild | `update` command | live watcher, **per section** |
 | Time model | — | — | **section `updated_at`, dates in the text, timeline** |
 | Summaries | LLM concept graph | none | **LLM cards plus raw text** |
-| Retrieval | graph traversal | BM25, vectors, rerank | BM25, vectors, recency |
+| Retrieval | graph traversal | BM25, vectors, rerank | BM25, vectors |
 | Runtime | Python | Bun | **one Rust binary** |
 
 All three are measured side by side, with grep, on the [benchmarks page](docs/benchmarks.md). We don't compete on scope: a code index covers the code, markdownattractor covers the prose around it.
