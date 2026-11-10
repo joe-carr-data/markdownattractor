@@ -70,6 +70,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-10 | [handoffs/2026-11-10-1006-auto.md](handoffs/2026-11-10-1006-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-10 | [handoffs/2026-10-27-1139-auto.md](handoffs/2026-10-27-1139-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-10 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
+| 2026-11-10 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-10-27 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
