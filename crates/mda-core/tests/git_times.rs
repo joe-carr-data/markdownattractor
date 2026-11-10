@@ -407,9 +407,21 @@ fn a_shallow_clone_keeps_filesystem_times() {
     write(&dir, "a.md", "# A\n\nTwo.\n");
     commit_at(&dir, T2, "two");
     let clone_tmp = tempfile::tempdir().unwrap();
-    let clone = clone_tmp.path().canonicalize().unwrap().join("clone");
-    let url = format!("file://{}", dir.display());
-    git(&dir, &["clone", "-q", "--depth", "1", &url, clone.to_str().unwrap()]);
+    // `git clone` takes neither a Windows extended-length path (`\\?\C:\…`, what
+    // `canonicalize` returns there) nor a `file://` URL built from one.
+    let plain = |p: &Path| {
+        let text = p.to_string_lossy().replace('\\', "/");
+        text.strip_prefix("//?/").map(str::to_owned).unwrap_or(text)
+    };
+    let clone = clone_tmp.path().join("clone");
+    let source = plain(&dir);
+    let url = if source.starts_with('/') {
+        format!("file://{source}")
+    } else {
+        format!("file:///{source}")
+    };
+    git(&dir, &["clone", "-q", "--depth", "1", &url, &plain(&clone)]);
+    let clone = clone.canonicalize().unwrap();
     let mut engine = index(&clone);
     let report = date(&mut engine);
     assert_eq!((report.source.as_str(), report.dated), ("shallow", 0));
