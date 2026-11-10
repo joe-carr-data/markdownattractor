@@ -57,6 +57,10 @@ With the prior off, realistic ages score exactly as flat ages. None of the 16 ti
 9. **Storage (schema v4).** `docs`: `created_source`, `updated_source` (`'filesystem'|'git'`, `NOT NULL DEFAULT 'filesystem'`, checked), `git_state` (`'needs'|'git'|'filesystem'|'failed'`, default `'needs'`), `git_commit`, `git_blob`, `git_attempts`, `git_retry_at`. `sections`: `updated_source`. `meta`: `git_validated_commit`. `created_at_source` applies only when `created_source = 'filesystem'`; a document's created time moves from filesystem to git, and between git values when history changes, never back to filesystem except through `time_source = "filesystem"`, which makes the next `mda index` restore file times. `first_seen_at` and events are observation times and never change.
 10. **Surfacing.** `mda card` / `mda_card` show each time's source; `mda status` counts documents by dating state; `docs/design/search.md` explains the clocks and the limits of `--since` on git times.
 
+## Implementation scope (v3 with the third Codex pass, `docs/reviews/codex/2026-11-10-git-times-v3.md`: "ready with listed changes")
+
+Design v3 as written, with these changes: the history walk uses `--diff-merges=separate`; marking documents and advancing the validated commit are one transaction, and any failed listing marks every document; three outcomes per document (ineligible, snapshot mismatch, operational failure); no retry timers (a failed document is retried on a commit change or the next explicit `mda index`); no `--no-git-times` flag; a delegated `mda index` returns after indexing and the daemon dates in the background; tree paths are matched exactly, case included.
+
 ## Tasks
 
 - [x] Recency: config key, default 0, wired into CLI and MCP search; `docs/design/search.md`; a test that the default is off (shipped separately, ADR-0007).
@@ -70,7 +74,8 @@ With the prior off, realistic ages score exactly as flat ages. None of the 16 ti
 - [ ] Docs: `docs/design/search.md` (times), README provenance line and hook, CHANGELOG, STATUS, aha.
 - [x] Codex design pass on v1 (rework, 15 findings, all accepted into v2).
 - [x] Codex pass on v2 (not ready: 4 of 15 resolved, 12 new findings, all accepted into v3).
-- [ ] Codex pass on v3 before code; review of the implementation PR before merge.
+- [x] Codex pass on v3 (ready with listed changes; four findings accepted).
+- [ ] Codex review of the implementation PR before merge.
 
 ## Exit criteria
 
