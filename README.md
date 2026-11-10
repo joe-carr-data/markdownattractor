@@ -2,7 +2,7 @@
   <img src="logo/mda_logo.jpg" alt="markdownattractor" width="320">
 </p>
 
-<h3 align="center">Claude answers from your ADRs and runbooks, and shows you the exact lines, when they were written and when they last changed.</h3>
+<h3 align="center">Claude answers from your ADRs and runbooks, and shows you the exact lines it used and when each section last changed.</h3>
 
 <p align="center">
   A Claude Code plugin that keeps a live, searchable index of the markdown in your project.<br>
@@ -39,7 +39,7 @@ you save deploy.md
   └──────────────────────────────────────────────────────────┘
 ```
 
-Every hit carries provenance: **which file, which section, which lines, and when it was created and last changed.**
+Every hit carries provenance: **which file, which section, which lines, and when the section last changed.** Times come from the filesystem: a section's change time is when its content was last seen new on disk, and a document's creation time is its file's birth time or when it was first indexed. Git history is not read yet, so in a fresh clone every file starts at the clone's time.
 
 ## What a session looks like
 
@@ -94,7 +94,7 @@ Why not your Claude subscription? Anthropic's terms don't allow third-party tool
 
 | | |
 |---|---|
-| **Time is a first-class dimension** | Filesystem and git time, dates written *inside* the text, and index time are kept apart, per section. Search with `--since 7d`, or ask for a timeline of what was created, changed, renamed or deleted. |
+| **Time is a first-class dimension** | File times, dates written *inside* the text, and index time are kept apart, per section. Search with `--since 7d`, or ask for a timeline of what was created, changed, renamed or deleted since the folder was first indexed. |
 | **Summaries, not just chunks** | Cards carry a summary, the questions a section answers, entities and grounded dates, so queries match what people ask. Raw section text is indexed underneath, so nothing a card omitted is lost. |
 | **Fresh, section by section** | A watcher plus a hash per section means only the section you edited is re-summarized. No rebuild step. Line ranges are re-checked when Claude opens them, and a changed section is flagged as stale instead of quoted wrong. |
 
