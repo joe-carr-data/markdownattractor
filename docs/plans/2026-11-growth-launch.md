@@ -36,9 +36,9 @@ The assistant prepares everything in the repository: code, docs, demo scripts, r
 - [ ] **Launch blocker: four security advisories** published after the last merge fail `cargo deny` on `main` (2026-11-10): RUSTSEC-2026-0459 (the bundled SQLite in `libsqlite3-sys` 0.38.2; fixed in ≥ 0.39.0) and RUSTSEC-2026-0457/0461/0462 (`rmcp` 3.4.0; fixed in ≥ 3.9.0). Upgrade in its own PR with a Codex review; Dependabot #51 may cover part of it. No launch with a red dependency audit.
 - [x] **Launch blocker (diagnosed 2026-11-10): a failing `markdownattractor` MCP server.** The installed plugin's server was connected all along; the failure was the repository's root `.mcp.json`, read as a *project* server whenever Claude Code runs inside a clone of this repository, where `${CLAUDE_PLUGIN_ROOT}` is unset. It hit contributors, not users. Fixed by declaring the server inline in `plugin.json` (PR #58), verified with a marketplace install from the checkout under an isolated config.
 - [ ] Clean-machine install check (macOS and Linux) from the marketplace, timed to the first useful answer; target under 5 minutes, with raw search answering before cards finish.
-- [ ] README rewrite: the hook first; the demo GIF; the verified install path and prerequisites; a comparison table against grep, qmd and graphify using only gated numbers; a link to the benchmark page. Remove "Not released yet", the "v0 design" badge, "40K tokens", "nobody else" and the sqlite-vec mention (ADR-0004 stores vectors in plain SQLite).
-- [ ] Marketplace description: drop "no API key"; say "your own API key or a free local model".
-- [ ] A public demo corpus: the fictional golden set (`evals/golden/docs`, 32 files) packaged as a ready-to-try example, with three questions that show provenance well.
+- [x] README rewrite (PR #59, 2026-11-10): the hook first; the demo GIF; the verified install path and prerequisites; a comparison table against grep, qmd and graphify using only gated numbers; a link to the benchmark page. Remove "Not released yet", the "v0 design" badge, "40K tokens", "nobody else" and the sqlite-vec mention (ADR-0004 stores vectors in plain SQLite).
+- [x] Marketplace description: drop "no API key"; say "your own API key or a free local model" (PR #58).
+- [ ] A public demo corpus: the fictional golden set (`evals/golden/docs`, 32 files) packaged as a ready-to-try example, with three questions that show provenance well. It needs a git history with realistic, backdated commits, or every hit reads "just now" and the time-awareness does not show (seen 2026-11-10).
 - [ ] Multi-client setup docs for the existing `mda mcp` server: Codex, Cursor, Gemini CLI, opencode, Claude Desktop. Each verified end to end on this machine before it is documented; the summarizer backend requirement stated plainly.
 - [ ] Demo video 1, "Where did that answer come from?" (25–35 s, silent, captioned): a question, the hit with file, lines and dates, Claude opening only those lines, the install line. Recorded with VHS (to install) or a screen recorder; script and tape committed under `docs/demo/`.
 - [ ] Demo video 2, "Edit, searchable in 8 s" (15–20 s, split screen with a timer; caption "p50 8.4 s in our benchmark").
@@ -50,7 +50,7 @@ The assistant prepares everything in the repository: code, docs, demo scripts, r
 - [ ] MCP Registry entry (`mcp-publisher`; namespace `io.github.joe-carr-data/…`; the registry hosts metadata only, so the Rust binary needs OCI or MCPB packaging — decide and build it).
 - [ ] Owner: submit to the Claude plugin directory (claude.ai/directory/manage).
 - [ ] Owner: 5–8 personal invitations to people with large, frequently edited markdown collections. The assistant drafts the message; watch at least three of them install. Success: five activate, three still use it after 14 days and can say why.
-- [ ] Fix the largest onboarding obstacles they hit, released as v0.1.2 before launch.
+- [ ] Release v0.1.2 before any first user: installed v0.1.1 predates every change since 2026-09-22, including the leaner MCP search payload (seen 2026-11-10: the shipped server still returns scores and vector diagnostics). Then fix the largest onboarding obstacles first users hit, in v0.1.3 if needed.
 - [ ] Owner: submit to awesome-claude-code through its issue form once 14 days of active development are visible (a description, not a pitch).
 - [ ] A launch write-up for the blog or the repository: what it does, the demo, the benchmark method and what did not pass.
 
@@ -69,6 +69,7 @@ The assistant prepares everything in the repository: code, docs, demo scripts, r
 - [ ] Owner: 5–10 personal messages to Claude Code, MCP and Obsidian creators, each offering the demo corpus; no request to star.
 - [ ] v0.3 with one integration users asked for (for example an Obsidian-vault guide); a second HN post only for a major change.
 - [ ] Be ready for a catalyst: when a public conversation on agent memory, LLM knowledge bases or context engineering starts, the clearest working demo goes into it the same day.
+- [ ] Evidence for the grounding decision: a real demo session on the golden set (2026-11-10) answered correctly with line citations but added one unsupported sentence about a page it never opened (it said ADR 0002 omits the 30-minute limit; line 12 states it). The same embellishment pattern T6 measured; the search-first skill should require opening a section before making a claim about it.
 - [ ] Week 13 retrospective against the funnel; decide whether to pursue a token-savings claim (the grounding fix in the skill or card prompt, then a T6 public rerun under a new freeze).
 
 ## Paused
