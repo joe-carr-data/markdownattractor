@@ -1007,5 +1007,8 @@ pub fn file_times(path: &Path) -> Result<DocTimes> {
     })
 }
 
+mod dating;
+pub use dating::{DateLimits, DateReport};
+
 #[cfg(test)]
 mod tests;

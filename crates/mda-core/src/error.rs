@@ -70,6 +70,10 @@ pub enum Error {
     /// The embedding model could not be loaded or run.
     #[error("embedding error: {0}")]
     Embed(String),
+
+    /// A `git` call failed, timed out, or printed something unexpected (ADR-0008).
+    #[error("git error: {0}")]
+    Git(String),
 }
 
 /// Convenience alias used throughout the crate.

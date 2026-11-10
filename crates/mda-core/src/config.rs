@@ -254,10 +254,25 @@ pub struct Config {
     pub search_questions_weight: f64,
     /// Drop English stop-words from the AND form of a query (the OR fallback keeps them).
     pub search_and_stopwords: bool,
+    /// Where document and section times come from: `auto` (git history when it can be proven
+    /// to describe the indexed bytes, the filesystem otherwise) or `filesystem` (ADR-0008).
+    pub time_source: TimeSourceMode,
     /// Half-life in days of the recency bonus on search scores; `0` (the default) turns it off.
     /// On realistic file ages a 30-day prior cut the golden set's hybrid MRR from 0.853 to
     /// 0.629 (ADR-0007), and the published retrieval tables ran without it.
     pub search_recency_half_life_days: f64,
+}
+
+/// Where times come from (`time_source` in `config.toml`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum TimeSourceMode {
+    /// Git history for files that are committed and unmodified in a full clone; the
+    /// filesystem for everything else. Default.
+    #[default]
+    Auto,
+    /// The filesystem only; git is never called.
+    Filesystem,
 }
 
 impl Default for Config {
@@ -293,6 +308,7 @@ impl Default for Config {
             search_raw_weight: 1.0,
             search_questions_weight: 2.0,
             search_and_stopwords: false,
+            time_source: TimeSourceMode::default(),
             search_recency_half_life_days: 0.0,
         }
     }
