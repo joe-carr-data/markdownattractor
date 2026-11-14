@@ -444,6 +444,15 @@ mod tests {
             ms: 2892,
         });
         let s = serde_json::to_string(&e).unwrap();
+        assert_eq!(s, r#"{"kind":"event","event":"embedded","count":1,"remaining":0,"ms":2892}"#);
+        assert_eq!(serde_json::from_str::<Response>(&s).unwrap(), e);
+        // The largest duration the field can carry (the daemon saturates there) reads back too.
+        let e = Response::Event(crate::daemon::DaemonEvent::Embedded {
+            count: 1,
+            remaining: 0,
+            ms: u64::MAX,
+        });
+        let s = serde_json::to_string(&e).unwrap();
         assert_eq!(serde_json::from_str::<Response>(&s).unwrap(), e);
     }
 
