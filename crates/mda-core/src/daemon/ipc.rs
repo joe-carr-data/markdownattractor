@@ -436,6 +436,18 @@ mod tests {
     }
 
     #[test]
+    fn an_embedded_event_reads_back_from_the_wire() {
+        // `mda watch` stopped with "u128 is not supported" on the first embedding pass (v0.2.0).
+        let e = Response::Event(crate::daemon::DaemonEvent::Embedded {
+            count: 1,
+            remaining: 0,
+            ms: 2892,
+        });
+        let s = serde_json::to_string(&e).unwrap();
+        assert_eq!(serde_json::from_str::<Response>(&s).unwrap(), e);
+    }
+
+    #[test]
     fn info_file_round_trips_and_removes() {
         let dir = tempfile::tempdir().unwrap();
         assert_eq!(DaemonInfo::read(dir.path()).unwrap(), None);
