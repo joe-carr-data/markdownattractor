@@ -190,8 +190,9 @@ pub enum DaemonEvent {
         count: usize,
         /// Cards still without a vector.
         remaining: u64,
-        /// Wall-clock milliseconds.
-        ms: u128,
+        /// Wall-clock milliseconds. `u64`, not `u128`: serde cannot read a 128-bit number
+        /// back through an internally tagged enum, and `mda watch` reads every event that way.
+        ms: u64,
     },
     /// A summarization round ended.
     RoundFinished {
@@ -823,7 +824,7 @@ fn embed_pass(
                     shared.publish(DaemonEvent::Embedded {
                         count: r.embedded,
                         remaining: r.remaining,
-                        ms: r.ms,
+                        ms: u64::try_from(r.ms).unwrap_or(u64::MAX),
                     });
                 }
                 if r.remaining == 0 || r.embedded == 0 {

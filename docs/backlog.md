@@ -2,6 +2,14 @@
 
 Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we already know, and the exit criterion that would move it into a phase plan. Newest first.
 
+## B-0003 — Daemon socket: response size limit, finite costs, a round-trip test per event (added 2026-11-14)
+
+**What.** Three hardening items from the Codex review of PR #68 (`docs/reviews/codex/2026-11-14-watch-embedded-event.md`): the socket reader applies the 64 KiB request limit to responses, while `IndexReport.errors` is unbounded; `cost_usd` fields would not read back if a cost were ever NaN or infinite; only one `DaemonEvent` variant has a wire round-trip test.
+
+**Why not now.** None was observed; the release fix was the `mda watch` crash alone.
+
+**Exit criterion to schedule it.** The next change to `daemon/ipc.rs`, or a report of a delegated `mda index` failing on a root with many unreadable files.
+
 ## B-0002 — In-session summarization backend (added 2026-09-22)
 
 **What.** A backend where the user's own Claude Code session produces the cards: the daemon only queues; a `/mda sync` skill (or a `SessionStart` nudge showing "N sections pending") has Claude spawn parallel Haiku subagents that call `mda_next_batch` over MCP and post cards back with `mda_submit_cards`. This is how Understand Anything and llm-wiki-plugin do their model work, and it is unambiguously "ordinary use of Claude Code" under the policy (ADR-0002).
