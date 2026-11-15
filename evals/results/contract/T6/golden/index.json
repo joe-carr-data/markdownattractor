@@ -17,5 +17,23 @@
     "model": "bge-small-en-v1.5-q"
   },
   "store_sha256": "b5c2179c325ef0f078ad30a7c352cab7718e4d20010a8b9a1a90c6e854a0b2fb",
-  "indexed_at": "2026-11-15T18:24:42Z"
+  "indexed_at": "2026-11-15T18:24:42Z",
+  "cards": {
+    "cards": 117,
+    "sections": 117,
+    "sections_carded": 117,
+    "complete": true,
+    "truncated": 0,
+    "by_model": {
+      "claude-haiku-4-5": 97,
+      "none": 20
+    },
+    "summarized_from": "2026-10-26T19:31:18.502064Z",
+    "summarized_to": "2026-10-26T19:32:46.914572Z",
+    "usage": {
+      "cost_usd_list_price_equivalent": 0.46153,
+      "input_tokens": 258015,
+      "output_tokens": 40703
+    }
+  }
 }
