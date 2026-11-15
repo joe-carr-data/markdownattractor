@@ -1,6 +1,6 @@
 # markdownattractor — charter
 
-A Claude Code plugin that turns every folder of markdown into a time-aware, searchable knowledge layer Claude reads *before* it reads your files. One Rust binary is watcher, summarizer orchestrator (spawns the user's `claude -p`, no API key), hybrid index (FTS5 + sqlite-vec + time), MCP server and CLI. Claude searches the index, reads a ~200-token card, and opens only the lines it needs. Every hit carries provenance: file, section, line range, and when it was created, changed and last seen.
+A Claude Code plugin that turns every folder of markdown into a time-aware, searchable knowledge layer Claude reads *before* it reads your files. One Rust binary is watcher, summarizer orchestrator (the user's own Anthropic API key by default, or a free local model; spawning `claude -p` is opt-in only, ADR-0002), hybrid index (FTS5 + local embeddings + time), MCP server and CLI. Claude searches the index, reads a ~200-token card, and opens only the lines it needs. Every hit carries provenance: file, section, line range, and when it was created, changed and last seen.
 
 ## Goals (optimise for these, in this order when they conflict)
 
