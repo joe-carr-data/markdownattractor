@@ -153,7 +153,9 @@ def clean(tok, outer):   # the anchor and trailing punctuation go; enclosing bra
         tok = new
     tok = tok.split("#", 1)[0]
     # a line reference after the path (`runbooks/deploy.md:11-13`, `a.md:5`, `a.md:5-7,12`) is not part of the page:
-    # the form the answer contract asks for (2026-11-15, runbook §7.7); before it, such a token was no citation at all
+    # the form the answer contract asks for (2026-11-15, runbook §7.7); before it, such a token was no citation at all.
+    # The grammar is deliberately narrow: `:N`, `:N-M` (hyphen or en dash) and comma lists of those. Line:column
+    # (`a.md:12:34`), `:L5-L7` and a suffix inside a span with other words stay non-citations; line existence is not checked.
     tok = re.sub(r":\d+(?:[-\u2013]\d+)?(?:,\s*\d+(?:[-\u2013]\d+)?)*$", "", tok)
     return tok if tok and EXT.search(tok) and "/" not in tok.rsplit(".", 1)[-1] else None
 # 1. markdown links, consumed WHOLE (text, destination, optional title): the destination is the citation, verbatim

@@ -49,6 +49,20 @@ cites="$(printf 'See `c/odd name (v2).md` and docs/a.mdx, plus `x/y.md#anchor`, 
 # a line reference after the path is not part of the page (the answer contract's form, runbook §7.7); a clock time or a version is no citation
 lined="$(printf 'Per `adr/0001-x.md:6-8` and a.md:5, [t](docs/b.md:3-4), c.md:1\xe2\x80\x932,9. Not 10:30 nor v1.2:3 nor d.md:x.\n' | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
 [ "$lined" = "a.md|adr/0001-x.md|c.md|docs/b.md|" ] || fail "citation extraction with line references: got $lined"
+cite_is() { # expected(sorted, |-joined) input...
+  local want="$1" got; shift
+  got="$(printf '%s\n' "$*" | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
+  [ "$got" = "$want" ] || fail "citation extraction of [$*]: want [$want], got [$got]"
+}
+cite_is 'odd name (v2).md|' '`odd name (v2).md:5-7, 12-14`'
+cite_is 'docs/a.md|' '[label.md:9](docs/a.md:5-7 "title")'
+cite_is 'odd name.md|' '[g](<odd name.md:5-7, 12>)'
+cite_is 'a.md|' 'a.md:5#heading a.md#heading:5'
+cite_is 'a.md|' '(a.md:5-7), a.md:5:'
+cite_is 'a.md:5.md|notes:2026.md|' '`notes:2026.md` `a.md:5.md`'
+cite_is '' 'a.md:12:34 a.md:L5-L7 a.md::5 a.md.bak:5'
+cite_is '' '`a.md:5, junk`'
+cite_is 'a.md|' 'a.md (lines 5-7)'
 # 7. the private export round trip: a synthetic private run directory exports and conforms; a hand
 #    edit of a committed file (a heading in a numeric field), an unknown key and an unknown file are
 #    each refused; the question digests are the exporter's own serialisation
