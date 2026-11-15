@@ -169,6 +169,7 @@ bm25_fingerprint() { # project
 # under it.
 arm_launch() { # arm project model
   local arm="$1" project="$2" model="$3" dir mcp_cfg="" skill="" skill_sha=""
+  local arm_cmd="$MDA" arm_rules="$REPO/skills/search-first/SKILL.md"
   dir="$(project_dir "$project")"; ARM_CORPUS="${ARM_CORPUS_OVERRIDE:-$RUN/$dir}"; ARM_SETTING_SOURCES=""; ARM_TMP=()
   case "$arm" in
     mda-index)
@@ -192,6 +193,18 @@ arm_launch() { # arm project model
       ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__markdownattractor__*"
                 --append-system-prompt-file "$REPO/skills/search-first/SKILL.md")
       ARM_WANT='^mcp__markdownattractor__(mda_search|mda_timeline|mda_recent)$' ;;   # the temporal tools count since T5 (2026-10-15)
+    mda-old)
+      # The contract experiment's control (plan 2026-11-v0.3, Phase A; runbook §7.7): mda as it was
+      # released before the answer contract — the binary MDA_OLD and the skill file MDA_OLD_SKILL,
+      # both named and hashed in the freeze — on the same store, otherwise launched exactly as mda.
+      [ -x "${MDA_OLD:-}" ] && [ -f "${MDA_OLD_SKILL:-}" ] || die "the mda-old arm needs MDA_OLD (a binary) and MDA_OLD_SKILL (its skill file)"
+      arm_cmd="$MDA_OLD"; arm_rules="$MDA_OLD_SKILL"
+      mcp_cfg="$(mktemp -t mda-arm-mcp.XXXXXX)"; ARM_TMP+=("$mcp_cfg")
+      jq -n --arg cmd "$arm_cmd" --arg root "$ARM_CORPUS" --arg models "$MDA_MODEL_DIR" \
+        '{mcpServers: {markdownattractor: {command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: $models}}}}' > "$mcp_cfg"
+      ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__markdownattractor__*"
+                --append-system-prompt-file "$arm_rules")
+      ARM_WANT='^mcp__markdownattractor__(mda_search|mda_timeline|mda_recent)$' ;;
     grep)
       ARM_ARGS=(--tools Read Grep Glob --allowedTools Read Grep Glob)
       ARM_WANT='^(Grep|Read|Glob)$' ;;
@@ -216,7 +229,7 @@ arm_launch() { # arm project model
       jq -n --arg graph "$G/graph.json" '{mcpServers: {graphify: {command: "graphify-mcp", args: [$graph]}}}' > "$mcp_cfg"
       ARM_ARGS=(--mcp-config "$mcp_cfg" --tools Read Grep Glob --allowedTools Read Grep Glob "mcp__graphify__*")
       ARM_WANT='^mcp__graphify__(query_graph|get_node|get_neighbors|get_community|god_nodes|shortest_path)$' ;;
-    *) die "unknown arm $arm (mda|grep|qmd|graphify|graphify-haiku|git|mda-index)" ;;
+    *) die "unknown arm $arm (mda|mda-old|grep|qmd|graphify|graphify-haiku|git|mda-index)" ;;
   esac
   if [ "${ARM_WITH_GIT:-0}" = 1 ] && [ "$arm" != mda-index ]; then
     # `--tools` lists the built-in set; `--allowedTools` pre-approves `git` invocations only
@@ -224,12 +237,12 @@ arm_launch() { # arm project model
     # arm's own flags so the launch record shows both.
     ARM_ARGS+=(--tools Read Grep Glob Bash --allowedTools "Bash(git *)")
   fi
-  ARM_LAUNCH="$(jq -n --arg model "$model" --arg cmd "$MDA" --arg root "$ARM_CORPUS" --arg rules "$REPO/skills/search-first/SKILL.md" --arg arm "$arm" --arg project "$project" --arg sources "$ARM_SETTING_SOURCES" --arg skill_sha "$skill_sha" --arg with_git "$([ "${ARM_WITH_GIT:-0}" = 1 ] && [ "$arm" != mda-index ] && echo 1 || echo 0)" \
+  ARM_LAUNCH="$(jq -n --arg model "$model" --arg cmd "$arm_cmd" --arg root "$ARM_CORPUS" --arg rules "$arm_rules" --arg arm "$arm" --arg project "$project" --arg sources "$ARM_SETTING_SOURCES" --arg skill_sha "$skill_sha" --arg with_git "$([ "${ARM_WITH_GIT:-0}" = 1 ] && [ "$arm" != mda-index ] && echo 1 || echo 0)" \
     --args '{claude_flags: ($ARGS.positional + ["--setting-sources", $sources]), model: $model, cwd: $root, with_git: ($with_git == "1"),
-             mcp: (if ($arm == "mda" or $arm == "mda-index") then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
+             mcp: (if ($arm == "mda" or $arm == "mda-index" or $arm == "mda-old") then {server: "markdownattractor", command: $cmd, args: ["mcp"], env: {MDA_ROOT: $root, MDA_MODEL_DIR: env.MDA_MODEL_DIR}}
                    elif $arm == "qmd" then {server: "qmd", command: "qmd", args: ["--index", (env.ARM_QMD_INDEX // $project), "mcp"]}
                    elif ($arm | startswith("graphify")) then {server: "graphify", command: "graphify-mcp", args: [($root + "/../graph.json")], project_settings: ($root + "/.claude")} else null end),
-             system_prompt: (if ($arm == "mda" or $arm == "mda-index") then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} elif ($arm | startswith("graphify")) then {source: "project .claude/ written by graphify install --project"} else null end)}' -- "${ARM_ARGS[@]}")"
+             system_prompt: (if ($arm == "mda" or $arm == "mda-index" or $arm == "mda-old") then {file: $rules} elif $arm == "qmd" then {source: "qmd skills get qmd --full", sha256: $skill_sha} elif ($arm | startswith("graphify")) then {source: "project .claude/ written by graphify install --project"} else null end)}' -- "${ARM_ARGS[@]}")"
 }
 
 # The split a question belongs to, from the committed split.json.

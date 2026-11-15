@@ -34,9 +34,14 @@ unset_nested_session; unset_provider_keys
 
 # Nothing of DocsQA is read on a T6 path (pre-mortem F5): the dataset location is made unreadable.
 export DOCSQA_DATA="/nonexistent/docsqa-data-is-not-read-by-T6"
-RES_PUB="$REPO/evals/results/own"            # the committed results of our own corpora
+# The committed results of our own corpora. OWN_RESULTS points the whole T6 machinery at another
+# directory of the repository: the contract experiment (runbook §7.7) runs the T6 method there,
+# on the October corpora and questions, without touching the published T6 files.
+RES_PUB="${OWN_RESULTS:-$REPO/evals/results/own}"
 T6="$RUN/t6"
 MODEL="${T6_MODEL:-sonnet}"; RUNS_DEFAULT=3; ARMS_DEFAULT="grep,mda,qmd,graphify"
+# T6_CONTROL=mda-old adds the old-contract control arm (lib.sh; MDA_OLD and MDA_OLD_SKILL), named in the freeze.
+case "${T6_CONTROL:-}" in "") ;; mda-old) ARMS_DEFAULT="grep,mda,mda-old,qmd,graphify" ;; *) die "T6_CONTROL: only mda-old is defined" ;; esac
 N_QUESTIONS=25; N_PILOT=10
 SEED="${SEED:-20260922}"
 if [ -z "${T6_SMOKE:-}" ]; then
@@ -618,7 +623,8 @@ for l in open(sys.argv[1]):
   grade) c="${1:?corpus}"; corpus_env "$c"; "$REPO/scripts/eval/t2.sh" grade "$c" "$(runs_of "$c")" ;;
   panel)
     c="${1:?corpus}"; P="$(cdir "$c")"; corpus_env "$c"; out="$(runs_of "$c")"; ver="$("$MDA" --version)"
-    T2_QUESTIONS_FULL="$P/questions.full.jsonl" "$REPO/scripts/eval/panel.sh" regrade "$out" 30
+    # 30 sampled answers per corpus (T6); 60 with the control arm, so each of the five arms keeps 12
+    T2_QUESTIONS_FULL="$P/questions.full.jsonl" "$REPO/scripts/eval/panel.sh" regrade "$out" "$([ -n "${T6_CONTROL:-}" ] && echo 60 || echo 30)"
     PANEL_CARDS_FILE="$(res_of "$c")/cards-${ver#mda }-$c.json" PANEL_OUT_DIR="$(if is_private "$c"; then echo "$P/panel"; else echo "$(t6dir "$c")/panel"; fi)" "$REPO/scripts/eval/panel.sh" cards "$c" 100 ;;
   analysis) c="${1:?corpus}"; corpus_env "$c"; out="$(runs_of "$c")"; "$REPO/scripts/eval/t2.sh" analysis "$out" --json > "$out/analysis.json"; [ ! -f "$out/panel/grades.adjudicated.jsonl" ] || "$REPO/scripts/eval/t2.sh" analysis "$out" --adjudicated --json > "$out/analysis.adjudicated.json"; jq -c '.analysis.pairs[] | {comparator, mean_delta, ci95, gates: .gates.pass}' "$out/analysis.json" ;;
 
