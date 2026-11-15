@@ -50,7 +50,10 @@ result's updated_at and updated_source; they supersede the search hit's. Cite a 
 in a document to its lines, and label an index date separately as 'index last changed <date> \
 (git or file time)'. Never state a date that is in neither. (4) Do not say what a section \
 contains, omits or implies unless you opened it, and do not rank or generalise beyond what \
-the lines state.";
+the lines state. (5) Answer what was asked and stop: omit background and related facts \
+unless needed for the answer or requested. Keep required disclosures and caveats needed for \
+accuracy or safe action, including relevant conflicts in opened sources and what remains \
+unchecked or unanswered.";
 
 /// Arguments of `mda_search`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]

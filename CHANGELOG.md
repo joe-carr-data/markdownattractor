@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Changed
-- **The answer contract.** The MCP server's instructions and the search-first skill now tell the client to take each claim from opened lines (a card is a pointer, not a source), to put the file and line range next to each claim, to give a date from the index as the index's "last changed" with its source, and to say nothing about a section it did not open. This changes how agents answer; the published benchmark tables describe the instructions before it.
+- **The answer contract.** The MCP server's instructions and the search-first skill now tell the client to take each claim from opened lines (a card is a pointer, not a source), to put the file and line range next to each claim, to give a date from the index as the index's "last changed" with its source, to say nothing about a section it did not open, and to answer what was asked and stop. This changes how agents answer; the published benchmark tables describe the instructions before it.
 - Search hits (CLI `--json` and MCP) carry `updated_source` (`git` or `filesystem`); `mda open` returns and prints the section's last-changed date and its source.
 
 ### Fixed
