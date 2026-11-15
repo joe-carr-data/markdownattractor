@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-11-15
+
+A fix release. For users: `mda watch` no longer stops after the first save, and there is a setup guide for MCP clients other than Claude Code.
+
 ### Added
 - A setup guide for other MCP clients (`docs/guides/mcp-clients.md`): Codex CLI (verified end to end), Gemini CLI (connection verified), Claude Desktop, Cursor and opencode (not yet verified), with a manual install of the release binary.
 - `scripts/dev/funnel.sh`: records GitHub traffic, stars and release downloads to a local file, for reading a launch without telemetry.
