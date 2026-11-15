@@ -669,6 +669,7 @@ e88e2ba  2026-10-27T01:56:04Z  the accepted-probe-failure exception; the       f
 
 - **Regeneration of the archived tables is unchanged**: it reads committed observations, not the skill or a live search payload.
 - **Reproducing the historical answering runs** (T2, T5, T6) needs their frozen source commit and its skill, as each table's freeze names them. A freeze check that covers the skill will report it as changed on today's tree; that is this change, and no frozen file or hash is rewritten.
+- **The citation extractor accepts a line reference after the path** (`scripts/eval/t2.sh` `cite_paths`, 2026-11-15): `runbooks/deploy.md:11-13` is the page `runbooks/deploy.md`. The contract asks for that form; before the change such a token was no citation at all, and an answer citing only that way was ungrounded without being judged (seen on 72 of 123 development answers). This is a harness change after the published freezes: archived tables are unaffected (they are regenerated from committed grades), an independent rerun of T2, T5 or T6 uses its frozen source, and the new experiment's freeze names this extractor. Tested in `scripts/eval/tests/t6-smoke.sh`.
 - **The effect of the contract is not claimed anywhere.** It is measured by a separate experiment under a new freeze (the T6 method, mda arm, golden set and `docs/`), published beside the original T6 with its own section here when it exists.
 
 ## 8. Report

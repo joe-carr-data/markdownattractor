@@ -46,6 +46,9 @@ if T2_QUESTIONS_FULL="$tmp/dup.jsonl" "$repo/scripts/eval/t2.sh" materialise pri
 # 6. citation extraction (review F23): a backticked odd name yields one citation, not two; bare paths still found
 cites="$(printf 'See `c/odd name (v2).md` and docs/a.mdx, plus `x/y.md#anchor`, not docs/a.md.bak nor docs/b.md_old nor docs/c.md/child nor docs/d.md+backup nor docs/e.md=old; (e/f.markdown). A [guide](g/h.md) and `_notes.md` and *i/j.md*. Links: [docs/t.md](l/b.md), [guide](l/c.md "title"), [g](<l/odd name.md>), [g](l/a(v2).md).' | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
 [ "$cites" = "_notes.md|c/odd name (v2).md|docs/a.mdx|e/f.markdown|g/h.md|i/j.md|l/a(v2).md|l/b.md|l/c.md|l/odd name.md|x/y.md|" ] || fail "citation extraction: got $cites"
+# a line reference after the path is not part of the page (the answer contract's form, runbook §7.7); a clock time or a version is no citation
+lined="$(printf 'Per `adr/0001-x.md:6-8` and a.md:5, [t](docs/b.md:3-4), c.md:1\xe2\x80\x932,9. Not 10:30 nor v1.2:3 nor d.md:x.\n' | "$repo/scripts/eval/t2.sh" cite | LC_ALL=C sort | tr '\n' '|')"
+[ "$lined" = "a.md|adr/0001-x.md|c.md|docs/b.md|" ] || fail "citation extraction with line references: got $lined"
 # 7. the private export round trip: a synthetic private run directory exports and conforms; a hand
 #    edit of a committed file (a heading in a numeric field), an unknown key and an unknown file are
 #    each refused; the question digests are the exporter's own serialisation

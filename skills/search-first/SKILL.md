@@ -23,6 +23,7 @@ The plugin also serves these as MCP tools (`mda_search`, `mda_card`, `mda_open`,
 - **Dates**: a date written in a document is cited to its lines. An index date is labelled separately, as "index last changed <date> (git or file time)". For a section you opened, use the open result's `updated_at` and `updated_source`; they supersede the search hit's. Never state a date that is in neither.
 - **Nothing about a section you did not open**: not what it says, not what it omits, not what it implies. Say what you did not check instead of filling the gap.
 - **No ranking or generalising beyond the lines**: one stated cause is not "the usual cause"; listed reasons are not ranked unless the page ranks them.
+- **Answer what was asked and stop**: leave out background, related facts and caveats from other sections unless the question needs them or the user asks for more. A true extra detail still has to be checked by the reader.
 
 ## Recovery rule
 
