@@ -663,6 +663,14 @@ e88e2ba  2026-10-27T01:56:04Z  the accepted-probe-failure exception; the       f
 
 **Disclosed about the private corpus's coverage.** Its inventory has 821 pages; mda indexed 595 documents and qmd 600: both skip the 221 pages under dot-directories (hidden entries are excluded by both walkers), and mda's git-aware walker also skips 5 tracked files that a `.gitignore` pattern in the repository matches (qmd indexes them); graphify's graph has a node for 762. Candidates are drawn from the store's sections, so no question targets a page outside mda's index; the resolver accepts citations to any inventory page.
 
+### 7.7 The answer contract changes the mda answering arm (2026-11-15; no table yet)
+
+`skills/search-first/SKILL.md` is the appended system prompt of the mda answering agent (`scripts/eval/lib.sh`), and the MCP server's instructions travel with the binary. Both gained the answer contract on 2026-11-15 (plan `docs/plans/2026-11-v0.3-clear-advantage.md`, Phase A), after every published freeze. Consequences:
+
+- **Regeneration of the archived tables is unchanged**: it reads committed observations, not the skill or a live search payload.
+- **Reproducing the historical answering runs** (T2, T5, T6) needs their frozen source commit and its skill, as each table's freeze names them. A freeze check that covers the skill will report it as changed on today's tree; that is this change, and no frozen file or hash is rewritten.
+- **The effect of the contract is not claimed anywhere.** It is measured by a separate experiment under a new freeze (the T6 method, mda arm, golden set and `docs/`), published beside the original T6 with its own section here when it exists.
+
 ## 8. Report
 
 Write `evals/results/reproductions/<date>-<who>.md`: hardware, OS, `mda --version` and SHA, `claude --version`, the model file hashes, the checksums of §2, every attempt (timestamp, step, outcome) including failed ones, the tables of §3–§5 with your numbers next to the expected ones marked *regeneration* (exact match: yes/no) or *rerun* (paired difference), and every deviation. A regeneration that does not match is the most valuable outcome this file can produce: open an issue with the report.

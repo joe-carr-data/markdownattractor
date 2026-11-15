@@ -19,7 +19,7 @@ pub struct Args {
 }
 
 /// How a time's source reads in the one-line header.
-fn source_label(source: mda_core::store::TimeSource) -> &'static str {
+pub(super) fn source_label(source: mda_core::store::TimeSource) -> &'static str {
     match source {
         mda_core::store::TimeSource::Git => "git",
         mda_core::store::TimeSource::Filesystem => "file time",

@@ -1,0 +1,20 @@
+# Codex review — the answer contract, PR #73 (2026-11-15)
+
+Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companion; no nested `codex exec`). Subject: `git diff main...feat/answer-contract` (plan `docs/plans/2026-11-v0.3-clear-advantage.md`, Phase A). Static review; Codex ran no tests.
+
+**Verdict:** no High findings. On the ordinary paths the relocation lookup, the keep-time rule, `MDA_NOW`, the JSON consumers (the eval harness projects `rel_path`; archived tables read committed observations) and `git_head()` in `status` are correct. The contract "plausibly addresses all three recorded embellishments"; "effectiveness remains unmeasured".
+
+## Findings and triage (10 items: 5 Medium, 3 Low, 2 without a finding)
+
+| # | Sev | Finding | Triage |
+|---|---|---|---|
+| 1 | Medium | "Each claim from lines you opened" excluded the permitted grep fallback and answers from `mda_status`, `mda_recent`, `mda_timeline`. | **Accepted.** The contract is scoped to claims about document content; index metadata and events are reported as the index's, without a line citation; after a grep fallback the lines are read and cited. Instructions and skill. |
+| 2 | Medium | The date wording overstated the timestamps ("when the file was last saved", "the last commit that touched the lines") and did not say the open result supersedes the hit. | **Accepted.** `updated_at` is described as the index's recorded section-change time, from git history or the file's modification time, "not a date the document declares, and not proof that the information is still current"; the open result supersedes the hit; document dates are cited to lines, index dates labelled separately. The skill's "Deprecated in March" line is replaced. |
+| 3 | Medium | The skill is the mda answering agent's system prompt (`scripts/eval/lib.sh`), so this is an arm change, and the runbook must say so in the same change. | **Accepted.** Runbook §7.7. No frozen file or hash is rewritten. |
+| 4 | Medium | The new date was tested on fresh opens only. | **Accepted in part.** `open_dates_the_section_it_returns_after_a_stale_reindex`: an edited section, an unchanged section through a re-index, a section moved to another id. Not added: duplicate hashes, recovery by heading path and by position, a git-dated section edited before an open — the same code path; deferred to the Phase A measurement branch. |
+| 5 | Medium | Another writer can re-index between the re-index and the date lookup; ids are positional, so the row could describe other content, and the fallback returned the requested section's date. | **Accepted.** The row's date is used only when its hash and line range are the returned section's; otherwise the date is the modification time of the file the lines were read from, as `filesystem`. |
+| 6 | Low | "L1 — read the card" encouraged card calls that can no longer supply evidence; "sections that bear on the answer" had no stopping condition; the unanswered case was implicit; the whole-file exception differed between skill and server. | **Accepted.** "Choose sections from the hits"; the smallest set, stop when supported; say what was checked and what remains unanswered; both say "the document is small". |
+| 7 | Low | The plan the design text cites was not on the branch. | **Accepted.** `main` (PR #72) merged into the branch. |
+| 8 | — | No further correctness finding; `git_head()` is three short git calls, not "one cheap call". | Comment corrected. |
+| 9 | — | The contract does not enforce entailment, line arithmetic or faithful quotation; the docs-corpus citation-parser issue is untouched; the frozen grounding grader sees cited page text, not index metadata. | **Noted for the rerun**: check how correctly labelled index dates are graded, without changing the rubric silently. |
+| 10 | Low | Status tests for the new gate. | **Accepted in part.** `time_source = "filesystem"` and a folder without git are tested. Not added: a shallow repository, `MDA_NOW`, and a usable repository with rows still waiting. |

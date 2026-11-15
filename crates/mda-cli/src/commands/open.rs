@@ -35,10 +35,15 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         opened.heading_path.join(" › ")
     };
     println!(
-        "{} {} {}{}",
+        "{} {} {} {}{}",
         st.bold(&opened.rel_path),
         st.accent(&format!("L{}–{}", opened.line_start, opened.line_end)),
         st.dim(&heading),
+        st.dim(&format!(
+            "· changed {} ({})",
+            opened.updated_at.strftime("%Y-%m-%d"),
+            super::card::source_label(opened.updated_source)
+        )),
         if opened.stale {
             st.warn("  (file changed since indexing; showing current lines)")
         } else {

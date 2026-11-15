@@ -20,8 +20,8 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [plans/2026-09-phase1-engine.md](plans/2026-09-phase1-engine.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1 |
 | 2026-09-22 | [plans/2026-09-phase1-daemon.md](plans/2026-09-phase1-daemon.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1, row 13 of `2026-09-phase1-engi… |
 | 2026-09-22 | [plans/2026-09-phase0-spike.md](plans/2026-09-phase0-spike.md) | Status: **done (measurements)** · one exit criterion open (login policy) · 2026-09-21 |
+| 2026-11-15 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
 | 2026-11-10 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
-| 2026-11-10 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
 | 2026-11-10 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
@@ -35,6 +35,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-11-15 | [reviews/codex/2026-11-15-answer-contract.md](reviews/codex/2026-11-15-answer-contract.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-14 | [reviews/codex/2026-11-14-watch-embedded-event.md](reviews/codex/2026-11-14-watch-embedded-event.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-recency-and-git-times-v2.md](reviews/codex/2026-11-10-recency-and-git-times-v2.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-10 | [reviews/codex/2026-11-10-git-times-v3.md](reviews/codex/2026-11-10-git-times-v3.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |

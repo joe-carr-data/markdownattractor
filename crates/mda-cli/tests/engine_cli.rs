@@ -1399,6 +1399,46 @@ fn json_from(assert: assert_cmd::assert::Assert) -> serde_json::Value {
 }
 
 #[test]
+fn a_folder_without_git_reports_file_times_and_nothing_waiting() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, "runbook.md", "# Runbook\n\n## Rollback\n\nRun deployctl rollback.\n");
+    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    // No repository: nothing is waiting for git, so the status line on time sources is absent.
+    mda()
+        .args(["status", "--root"])
+        .arg(root)
+        .env("GIT_CEILING_DIRECTORIES", root.parent().unwrap())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("waiting").not());
+    let hits = json_from(mda().args(["--json", "search", "rollback", "--root"]).arg(root).assert());
+    assert_eq!(hits["hits"][0]["updated_source"], "filesystem", "{hits}");
+    let id = hits["hits"][0]["section_id"].as_str().unwrap();
+    mda()
+        .args(["open", id, "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("(file time)"));
+}
+
+#[test]
+fn status_reports_nothing_waiting_when_git_times_are_switched_off() {
+    let dir = committed_repo();
+    let root = dir.path();
+    std::fs::create_dir_all(root.join(".markdownattractor")).unwrap();
+    write(root, ".markdownattractor/config.toml", "time_source = \"filesystem\"\n");
+    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    mda()
+        .args(["status", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("waiting").not());
+}
+
+#[test]
 fn index_dates_a_committed_file_from_git_and_card_and_status_say_so() {
     let dir = committed_repo();
     let root = dir.path();
@@ -1410,9 +1450,20 @@ fn index_dates_a_committed_file_from_git_and_card_and_status_say_so() {
     let hits = json_from(mda().args(["--json", "search", "rollback", "--root"]).arg(root).assert());
     let hit = &hits["hits"][0];
     assert!(hit["updated_at"].as_str().unwrap().starts_with("2024-03-01T10:00:00"), "{hit}");
+    assert_eq!(hit["updated_source"], "git", "{hit}");
     let id = hit["section_id"].as_str().unwrap();
     let card = json_from(mda().args(["--json", "card", id, "--root"]).arg(root).assert());
     assert_eq!(card["updated_source"], "git", "{card}");
+    // `open` carries the same date and source, in JSON and in its header.
+    let opened = json_from(mda().args(["--json", "open", id, "--root"]).arg(root).assert());
+    assert!(opened["updated_at"].as_str().unwrap().starts_with("2024-03-01T10:00:00"), "{opened}");
+    assert_eq!(opened["updated_source"], "git", "{opened}");
+    mda()
+        .args(["open", id, "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("changed 2024-03-01 (git)"));
     mda()
         .args(["card", id, "--root"])
         .arg(root)

@@ -249,6 +249,10 @@ pub struct Opened {
     /// `true` when the file changed after it was indexed. The lines are still the *current*
     /// ones, and the file has been re-indexed as a side effect.
     pub stale: bool,
+    /// When the section content last changed, as the index holds it after this call.
+    pub updated_at: jiff::Timestamp,
+    /// Where `updated_at` comes from: git history or the file's save time (ADR-0008).
+    pub updated_source: crate::store::TimeSource,
 }
 
 impl Engine {
@@ -912,8 +916,10 @@ impl Engine {
         let doc = markdown::parse_str_as(&text, markdown::Flavor::of_path(&abs));
 
         let stale = doc.hash != stored_doc.content_hash;
+        let mut file_time = None;
         if stale {
             let times = file_times(&abs)?;
+            file_time = Some(times.modified_at);
             self.index_parsed(&stored.rel_path, &doc, &times)?;
         }
         let same_place =
@@ -932,15 +938,36 @@ impl Engine {
         let lines: Vec<&str> = text.lines().collect();
         let start = (section.line_start as usize).saturating_sub(1).min(lines.len());
         let end = (section.line_end as usize).min(lines.len());
+        let current_id = crate::store::section_id_for(&stored.doc_id, section.index);
+        // After a re-index, the row of the section that was found carries its date — when it
+        // still is that section. Ids are positional and another writer (the watcher) may have
+        // indexed a later save in between: then the row describes other content, and the
+        // honest date for the lines returned is the modification time of the file they were
+        // read from, never the date of the section that was asked for.
+        let (updated_at, updated_source) = match file_time {
+            None => (stored.updated_at, stored.updated_source),
+            Some(file_time) => match self.store.section(&current_id)? {
+                Some(row)
+                    if row.section_hash == section.hash
+                        && row.line_start == section.line_start
+                        && row.line_end == section.line_end =>
+                {
+                    (row.updated_at, row.updated_source)
+                }
+                _ => (file_time, crate::store::TimeSource::Filesystem),
+            },
+        };
         Ok(Opened {
             requested_id: section_id.to_owned(),
-            section_id: crate::store::section_id_for(&stored.doc_id, section.index),
+            section_id: current_id,
             rel_path: stored.rel_path,
             heading_path: section.heading_path.clone(),
             line_start: section.line_start,
             line_end: section.line_end,
             text: lines[start..end].join("\n"),
             stale,
+            updated_at,
+            updated_source,
         })
     }
 }

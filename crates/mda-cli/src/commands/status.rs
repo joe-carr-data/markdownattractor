@@ -15,10 +15,11 @@ pub struct Args {
     pub root: Option<PathBuf>,
 }
 
-/// One line on where document times come from, when git dating is in play (ADR-0008).
+/// One line on where document times come from, when git dating is in play (ADR-0008). A folder
+/// that is not in a usable git work tree has nothing waiting: its documents are on file times.
 fn print_git_times(engine: &Engine, docs: u64, st: &Style) -> anyhow::Result<()> {
     let git = engine.store().git_state_counts()?;
-    if git.git + git.failed > 0 || (engine.git_times_enabled() && git.needs > 0 && docs > 0) {
+    if git.git + git.failed > 0 || (git.needs > 0 && docs > 0 && engine.git_head().is_some()) {
         println!(
             "  times {} doc(s) from git · {} on file times · {} waiting · {}",
             st.ok(&git.git.to_string()),
