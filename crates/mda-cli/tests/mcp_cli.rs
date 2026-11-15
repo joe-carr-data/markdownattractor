@@ -44,6 +44,12 @@ async fn mcp_server_serves_the_index_over_stdio() {
     let info = client.peer_info().expect("server info");
     assert_eq!(info.server_info.as_ref().expect("implementation").name, "markdownattractor");
     assert!(info.instructions.as_deref().unwrap_or("").contains("Search first"));
+    // The answer contract travels with the server, so every client gets it.
+    let instructions = info.instructions.as_deref().unwrap_or("");
+    for part in ["file and line range next to each claim", "updated_source", "unless you opened it"]
+    {
+        assert!(instructions.contains(part), "instructions lack {part:?}");
+    }
 
     let tools = client.list_tools(None).await.unwrap().tools;
     let mut names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
@@ -85,6 +91,7 @@ async fn mcp_server_serves_the_index_over_stdio() {
         assert!(!hit.contains_key(absent), "{absent} should not be in the MCP hit: {hit:?}");
     }
     assert_eq!(hit["updated_at"].as_str().unwrap().len(), "2026-09-22T08:34:46Z".len());
+    assert_eq!(hit["updated_source"], "filesystem");
     assert!(hit["token_estimate"].as_u64().unwrap() > 0);
     let id = v["hits"][0]["section_id"].as_str().unwrap().to_owned();
 
@@ -94,6 +101,8 @@ async fn mcp_server_serves_the_index_over_stdio() {
     assert_eq!(v["line_start"], 3);
     assert_eq!(v["text"], "## Rollback\n\nRun deployctl rollback --to <sha>.");
     assert_eq!(v["stale"], false);
+    assert_eq!(v["updated_source"], "filesystem");
+    assert!(v["updated_at"].as_str().is_some(), "{v}");
 
     let r =
         client.call_tool(call("mda_card", serde_json::json!({ "section_id": id }))).await.unwrap();

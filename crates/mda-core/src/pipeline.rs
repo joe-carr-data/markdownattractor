@@ -249,6 +249,10 @@ pub struct Opened {
     /// `true` when the file changed after it was indexed. The lines are still the *current*
     /// ones, and the file has been re-indexed as a side effect.
     pub stale: bool,
+    /// When the section content last changed, as the index holds it after this call.
+    pub updated_at: jiff::Timestamp,
+    /// Where `updated_at` comes from: git history or the file's save time (ADR-0008).
+    pub updated_source: crate::store::TimeSource,
 }
 
 impl Engine {
@@ -932,15 +936,23 @@ impl Engine {
         let lines: Vec<&str> = text.lines().collect();
         let start = (section.line_start as usize).saturating_sub(1).min(lines.len());
         let end = (section.line_end as usize).min(lines.len());
+        let current_id = crate::store::section_id_for(&stored.doc_id, section.index);
+        // After a re-index the stored row of the section that was found is the one to date.
+        let (updated_at, updated_source) = match self.store.section(&current_id)? {
+            Some(now) if stale => (now.updated_at, now.updated_source),
+            _ => (stored.updated_at, stored.updated_source),
+        };
         Ok(Opened {
             requested_id: section_id.to_owned(),
-            section_id: crate::store::section_id_for(&stored.doc_id, section.index),
+            section_id: current_id,
             rel_path: stored.rel_path,
             heading_path: section.heading_path.clone(),
             line_start: section.line_start,
             line_end: section.line_end,
             text: lines[start..end].join("\n"),
             stale,
+            updated_at,
+            updated_source,
         })
     }
 }

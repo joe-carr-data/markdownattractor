@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+- **The answer contract.** The MCP server's instructions and the search-first skill now tell the client to take each claim from opened lines (a card is a pointer, not a source), to put the file and line range next to each claim, to give a date from the index as the index's "last changed" with its source, and to say nothing about a section it did not open. This changes how agents answer; the published benchmark tables describe the instructions before it.
+- Search hits (CLI `--json` and MCP) carry `updated_source` (`git` or `filesystem`); `mda open` returns and prints the section's last-changed date and its source.
+
+### Fixed
+- `mda status` no longer reports documents as "waiting" for git times in a folder that is not a git repository.
+
 ## [0.2.1] — 2026-11-15
 
 A fix release. For users: `mda watch` no longer stops after the first save, and there is a setup guide for MCP clients other than Claude Code.

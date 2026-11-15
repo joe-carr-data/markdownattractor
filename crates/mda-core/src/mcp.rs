@@ -28,13 +28,21 @@ use crate::search::{self, SearchOptions};
 /// What `initialize` tells the client about how to use the tools.
 pub const INSTRUCTIONS: &str = "markdownattractor indexes this project's markdown into sections \
 with summaries (cards). Search first: call mda_search with the user's question (5 hits by \
-default; ask for more only when the first five miss), read the tldr of each hit, then call \
-mda_open on the one or two section ids you need to quote exact lines, or mda_card for the full \
-card. Only read a whole file when the user asks for it or the hit says the section is small. If \
-the top hits do not contain the answer, retry mda_search with raw=true (raw text only), and if \
-that fails too, fall back to grep and say so. Every hit carries a line range, a token estimate \
-and when the section last changed; a hit with pending=true has no card yet, so it shows a raw \
-snippet instead of a tldr.";
+default; ask for more only when the first five miss), read the tldr of each hit to decide where \
+to look, then call mda_open on the section ids that bear on the answer. Only read a whole file \
+when the user asks for it or the hit says the section is small. If the top hits do not contain \
+the answer, retry mda_search with raw=true (raw text only), and if that fails too, fall back to \
+grep and say so. Every hit carries a line range, a token estimate and when the section last \
+changed: updated_at, with updated_source saying where that time comes from (git: the authored \
+time of the last commit that touched those lines; filesystem: when the file was last saved). A \
+hit with pending=true has no card yet, so it shows a raw snippet instead of a tldr. \
+When you answer: (1) take each claim from lines you opened with mda_open; a tldr or a card is a \
+pointer, not a source. (2) Put the file and line range next to each claim, for example \
+runbooks/deploy.md:11-13. (3) When the age of the information matters, give updated_at as the \
+index's 'last changed' date and name its source; never present it as something the document \
+says, and never state a date that is not in a tool result or in the opened lines. (4) Do not \
+say what a section contains, omits or implies unless you opened it; say what you did not \
+check instead of filling the gap, and do not rank or generalise beyond what the lines state.";
 
 /// Arguments of `mda_search`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -135,6 +143,8 @@ pub struct HitView {
     pub pending: bool,
     /// When the section content last changed, to the second.
     pub updated_at: String,
+    /// Where `updated_at` comes from: `git` or `filesystem`.
+    pub updated_source: crate::store::TimeSource,
 }
 
 impl From<search::Hit> for HitView {
@@ -152,6 +162,7 @@ impl From<search::Hit> for HitView {
             matched: h.matched,
             pending: h.pending,
             updated_at: h.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            updated_source: h.updated_source,
         }
     }
 }

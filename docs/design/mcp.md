@@ -20,6 +20,10 @@ One `Engine` behind a mutex, one optional embedder built from the config. stdout
 | `mda_stale` | — | documents with pending or failed sections, or changed or missing on disk |
 | `mda_status` | — | store counts, embedding setting/readiness/coverage, the daemon's live status when it runs |
 
+Since 2026-11-15 a search hit also carries `updated_source` (`git` or `filesystem`), and `mda_open` returns the section's `updated_at` and `updated_source`, so a client never has to guess where a date comes from.
+
+**The answer contract** (2026-11-15, plan `docs/plans/2026-11-v0.3-clear-advantage.md` Phase A). `initialize` also tells the client how to answer: each claim from lines opened with `mda_open` (a tldr or card is a pointer, not a source); the file and line range next to each claim; a date from the index given as the index's "last changed" with its source, never as something the document says; nothing about a section that was not opened. Reason: T6 measured grounding at 89.6 % for mda against 97.9 % for the other arms on the golden set, the failures being embellishment beyond the cited page, one of them a last-updated date the page does not carry. The search-first skill carries the same contract. Whether it closes the gap is measured by the Phase A rerun, not assumed.
+
 `initialize` carries the search-first instructions (search, read cards, open sections, retry with `raw=true`, then grep and say so). Argument errors come back as `invalid_params`; engine errors as `internal_error`; a bad `section_id` is an error result, not a crash.
 
 ## What it never does

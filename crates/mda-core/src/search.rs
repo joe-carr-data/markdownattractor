@@ -191,6 +191,8 @@ pub struct Hit {
     pub pending: bool,
     /// When the section content last changed.
     pub updated_at: Timestamp,
+    /// Where `updated_at` comes from: git history or the file's save time (ADR-0008).
+    pub updated_source: crate::store::TimeSource,
     /// Whether the AND query had to fall back to OR.
     pub via_or_fallback: bool,
 }
@@ -466,6 +468,7 @@ fn to_hit(
         vector_score,
         pending,
         updated_at: section.updated_at,
+        updated_source: section.updated_source,
         via_or_fallback: via_or,
     }
 }
