@@ -3,12 +3,14 @@
 > A Claude Code plugin that turns every folder of markdown into a time-aware, searchable knowledge layer Claude reads *before* it reads your files.
 >
 > Status: v0 design · Date: 2026-09-21 · Owner: Joe · Reviewed: [Codex pre-mortem 2026-09-21](reviews/codex/2026-09-21-pre-mortem.md)
+>
+> **This is the original design, kept as reference.** Later decisions changed parts of it, and the ADRs win where they differ. The largest: summaries no longer run through the user's Claude Code login. Since [ADR-0002](adr/0002-backends-and-login-policy.md) (2026-09-22) the default backend is the user's own Anthropic API key, a local model is the second option, and spawning `claude -p` is opt-in only; every `claude -p` worker detail below describes that opt-in backend. Vectors live in plain SQLite, not sqlite-vec ([ADR-0004](adr/0004-phase2-vectors-embeddings-mcp.md)).
 
 ---
 
 ## 0. One-paragraph pitch
 
-Claude Code reads files whole. On real projects that means burning tens of thousands of tokens to find one paragraph. **markdownattractor** runs an ultrafast Rust daemon that watches a folder, summarizes every markdown file section-by-section with the user's *existing* Claude Code login (no API key), and builds a local hybrid search index (BM25 + vectors + time). Claude searches the index, reads a 200-token card, and opens only the 40 lines it needs. Every fact in the index carries provenance: which file, which section, which lines, and *when* it was created, changed, and last seen.
+Claude Code reads files whole. On real projects that means burning tens of thousands of tokens to find one paragraph. **markdownattractor** runs an ultrafast Rust daemon that watches a folder, summarizes every markdown file section-by-section with the user's own Anthropic API key or a free local model (originally: the user's existing Claude Code login, no API key; changed by ADR-0002), and builds a local hybrid search index (BM25 + vectors + time). Claude searches the index, reads a 200-token card, and opens only the 40 lines it needs. Every fact in the index carries provenance: which file, which section, which lines, and *when* it was created, changed, and last seen.
 
 ---
 
@@ -19,7 +21,7 @@ Claude Code reads files whole. On real projects that means burning tens of thous
 | # | Goal | Success metric |
 |---|---|---|
 | G1 | **Speed** — new file searchable in seconds | p50 < 1 s from save to raw-text searchable; p50 < 20 s from save to card available (Haiku, thinking off, ≤ 3K-token doc) |
-| G2 | **Zero-config** — `/markdownattractor start` and forget | No API key, no model download prompt blocking first use |
+| G2 | **Zero-config** — `/markdownattractor start` and forget | One backend choice (an API key or a local model, ADR-0002; originally "no API key"), no model download prompt blocking first use |
 | G3 | **Token economy** — Claude reads less | ≥ 5× fewer source tokens read per answer on the eval set vs. plain `Read`/`Grep` |
 | G4 | **Temporal provenance** — every hit is dated | 100% of cards have `created_at`, `updated_at`, `first_seen_at`; sections have their own `updated_at` |
 | G5 | **Searchability** — hybrid search that beats grep | Recall@5 ≥ 0.85 on the golden query set; time-filtered queries (“what changed since Monday”) work |
