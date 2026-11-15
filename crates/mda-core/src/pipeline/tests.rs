@@ -218,6 +218,45 @@ fn open_section_returns_exact_lines_and_detects_staleness() {
 }
 
 #[test]
+fn open_dates_the_section_it_returns_after_a_stale_reindex() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let mut e = engine_in(&root);
+    let p = write(&root, "t.md", "# A\n\none\n\n# B\n\ntwo\n");
+    let old = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_704_103_200);
+    std::fs::File::options().write(true).open(&p).unwrap().set_modified(old).unwrap();
+    let out = e.index_file(&p).unwrap();
+    let (a, b) = (format!("{}#0", out.upsert.doc_id), format!("{}#1", out.upsert.doc_id));
+    let old_ts = jiff::Timestamp::try_from(old).unwrap();
+    let fresh = e.open_section(&b).unwrap();
+    assert!(!fresh.stale);
+    assert_eq!(fresh.updated_at, old_ts);
+    assert_eq!(fresh.updated_source, crate::store::TimeSource::Filesystem);
+
+    // Edit B behind the index's back: the stale open returns B's new time, not the old one.
+    write(&root, "t.md", "# A\n\none\n\n# B\n\ntwo\nthree\n");
+    let edited = e.open_section(&b).unwrap();
+    assert!(edited.stale);
+    assert!(edited.updated_at > old_ts, "the edited section carries the file's new time");
+    assert_eq!(edited.updated_at, e.store().section(&b).unwrap().unwrap().updated_at);
+
+    // Edit B again and open A: stale, but A's lines did not change, so A keeps its time.
+    write(&root, "t.md", "# A\n\none\n\n# B\n\ntwo\nthree\nfour\n");
+    let kept = e.open_section(&a).unwrap();
+    assert!(kept.stale);
+    assert_eq!(kept.updated_at, old_ts, "an unchanged section keeps its time through a re-index");
+
+    // Prepend a section: B moves to another id and the open of its old id dates the moved B.
+    let b_time = e.store().section(&b).unwrap().unwrap().updated_at;
+    write(&root, "t.md", "# X\n\nnew\n\n# A\n\none\n\n# B\n\ntwo\nthree\nfour\n");
+    let moved = e.open_section(&b).unwrap();
+    assert!(moved.stale);
+    assert_eq!(moved.section_id, format!("{}#2", out.upsert.doc_id));
+    assert_eq!(moved.text, "# B\n\ntwo\nthree\nfour");
+    assert_eq!(moved.updated_at, b_time, "the moved section's own time, not the newcomer's");
+}
+
+#[test]
 fn open_after_prepend_returns_current_id_and_refreshes_store() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();

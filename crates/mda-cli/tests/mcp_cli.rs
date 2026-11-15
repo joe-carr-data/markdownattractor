@@ -46,7 +46,8 @@ async fn mcp_server_serves_the_index_over_stdio() {
     assert!(info.instructions.as_deref().unwrap_or("").contains("Search first"));
     // The answer contract travels with the server, so every client gets it.
     let instructions = info.instructions.as_deref().unwrap_or("");
-    for part in ["file and line range next to each claim", "updated_source", "unless you opened it"]
+    for part in
+        ["file and line range next to each such claim", "updated_source", "unless you opened it"]
     {
         assert!(instructions.contains(part), "instructions lack {part:?}");
     }

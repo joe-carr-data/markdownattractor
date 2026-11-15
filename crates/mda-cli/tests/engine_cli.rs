@@ -1424,6 +1424,21 @@ fn a_folder_without_git_reports_file_times_and_nothing_waiting() {
 }
 
 #[test]
+fn status_reports_nothing_waiting_when_git_times_are_switched_off() {
+    let dir = committed_repo();
+    let root = dir.path();
+    std::fs::create_dir_all(root.join(".markdownattractor")).unwrap();
+    write(root, ".markdownattractor/config.toml", "time_source = \"filesystem\"\n");
+    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    mda()
+        .args(["status", "--root"])
+        .arg(root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("waiting").not());
+}
+
+#[test]
 fn index_dates_a_committed_file_from_git_and_card_and_status_say_so() {
     let dir = committed_repo();
     let root = dir.path();

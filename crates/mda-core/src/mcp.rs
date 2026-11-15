@@ -28,21 +28,29 @@ use crate::search::{self, SearchOptions};
 /// What `initialize` tells the client about how to use the tools.
 pub const INSTRUCTIONS: &str = "markdownattractor indexes this project's markdown into sections \
 with summaries (cards). Search first: call mda_search with the user's question (5 hits by \
-default; ask for more only when the first five miss), read the tldr of each hit to decide where \
-to look, then call mda_open on the section ids that bear on the answer. Only read a whole file \
-when the user asks for it or the hit says the section is small. If the top hits do not contain \
-the answer, retry mda_search with raw=true (raw text only), and if that fails too, fall back to \
-grep and say so. Every hit carries a line range, a token estimate and when the section last \
-changed: updated_at, with updated_source saying where that time comes from (git: the authored \
-time of the last commit that touched those lines; filesystem: when the file was last saved). A \
-hit with pending=true has no card yet, so it shows a raw snippet instead of a tldr. \
-When you answer: (1) take each claim from lines you opened with mda_open; a tldr or a card is a \
-pointer, not a source. (2) Put the file and line range next to each claim, for example \
-runbooks/deploy.md:11-13. (3) When the age of the information matters, give updated_at as the \
-index's 'last changed' date and name its source; never present it as something the document \
-says, and never state a date that is not in a tool result or in the opened lines. (4) Do not \
-say what a section contains, omits or implies unless you opened it; say what you did not \
-check instead of filling the gap, and do not rank or generalise beyond what the lines state.";
+default; ask for more only when the first five miss), read the tldr of each hit to choose where \
+to look (call mda_card only when a hit is not enough to choose), then call mda_open on the \
+smallest set of sections that supports the answer and stop when the requested claims are \
+supported. Only read a whole file when the user asks for it or the document is small. If the \
+top hits do not contain the answer, retry mda_search with raw=true (raw text only), and if that \
+fails too, fall back to grep and say so; after a grep fallback, read the relevant source lines \
+and cite them. If the opened lines and the fallback still do not answer the question, say what \
+you checked and what remains unanswered; do not conclude that the whole corpus omits it. \
+Every hit carries a line range, a token estimate, and updated_at with updated_source: the \
+index's recorded time the section last changed, taken from git history or from the file's \
+modification time. It is not a date the document declares, and not proof that the information \
+is still current. A hit with pending=true has no card yet, so it shows a raw snippet instead \
+of a tldr; open it rather than wait. \
+When you answer: (1) support each claim about document content with source lines you opened \
+with mda_open; a tldr or a card is a pointer, not a source. (2) Put the file and line range \
+next to each such claim, for example runbooks/deploy.md:11-13. (3) Report index metadata and \
+events (mda_status, mda_recent, mda_timeline, updated_at) as facts the index reports, naming \
+them as the index's, without a source-line citation. For an opened section use the open \
+result's updated_at and updated_source; they supersede the search hit's. Cite a date written \
+in a document to its lines, and label an index date separately as 'index last changed <date> \
+(git or file time)'. Never state a date that is in neither. (4) Do not say what a section \
+contains, omits or implies unless you opened it, and do not rank or generalise beyond what \
+the lines state.";
 
 /// Arguments of `mda_search`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]

@@ -109,7 +109,8 @@ impl Engine {
     }
 
     /// The commit `HEAD` names, when git may be used and the root is in a full work tree.
-    /// One cheap call; the daemon polls it to notice commits.
+    /// A few short git calls (discovery, then `HEAD`), no history walk; the daemon polls it to
+    /// notice commits.
     #[must_use]
     pub fn git_head(&self) -> Option<String> {
         if !self.git_times_enabled() {
