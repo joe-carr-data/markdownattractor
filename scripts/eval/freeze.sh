@@ -229,7 +229,7 @@ val() { local v; if ! v="$("$@" 2>/dev/null)"; then printf 'cannot compute: %s\n
 vals_ok() { if [ -s "$VAL_FAILED" ]; then cat "$VAL_FAILED" >&2; die "freeze: a frozen value could not be computed (above): nothing written"; fi; }
 t6_common() {
   local f h ver bin own cal
-  own="$REPO/evals/results/own"; cal="$own/T6/calibration.json"
+  own="${OWN_RESULTS:-$REPO/evals/results/own}"; cal="$own/T6/calibration.json"
   echo "### mda"
   ver="$(val "$MDA" --version)"; bin="$(val sha256 "$MDA")"
   echo "- version: $ver · binary sha256 $bin (the preflight rebuilds with \`cargo build --release --locked\` from the source commit and requires this hash)"
@@ -254,6 +254,10 @@ t6_common() {
   echo "- answering model requested: sonnet · grader: sonnet · panel: claude-fable-5-1 through the owner's Claude Code login, gpt-6-astra through the owner's Codex login · question writer: sonnet (resolved ids per the calibration record above and the run rows)"
   echo "- 25 counted questions per corpus (single-section lookup; synthetic, panel-validated, one per page; a corpus that reached fewer publishes with its count) and up to 10 disjoint pilot questions (never counted), 3 runs per question and arm, max 12 turns, 600 s per run, one declared retry, every MCP server cold (rule 0.9 as amended); the arm set certified by the preflight"
   echo "- arms: grep (Read/Grep/Glob) · mda (\`mda mcp\` + search-first rules) · qmd (its MCP server on index t6-<corpus>, its skill) · graphify (its MCP server on a Sonnet-built graph of a copy; where the build did not complete the arm is absent and the record says so)"
+  if [ -n "${T6_CONTROL:-}" ]; then
+    echo "- control arm ${T6_CONTROL}: mda as released before the answer contract — $(val "$MDA_OLD" --version) · binary sha256 $(val sha256 "$MDA_OLD") · its skill file sha256 $(val sha256 "$MDA_OLD_SKILL") · same store, launched as mda (lib.sh arm_launch)"
+    echo "- results directory: ${own#"$REPO"/} (OWN_RESULTS; the paths this file prints as evals/results/own/… are under it)"
+  fi
   echo "- arm versions: qmd $(val qmd --version) · graphify $(val graphify --version) · claude $(val claude --version) · codex $(val codex --version)"
 }
 # the live artifacts an arm serves from (review F8): the graph, graphify's skill and hook settings
@@ -269,7 +273,7 @@ t6_arm_lines() { # corpus results-dir run-dir
 }
 inputs_t6() {
   local c sub tree src n ver cards f own srcf
-  own="$REPO/evals/results/own"; srcf="$own/T6/sources.json"; [ -f "$srcf" ] || die "no $srcf (t6.sh setup)"
+  own="${OWN_RESULTS:-$REPO/evals/results/own}"; srcf="$own/T6/sources.json"; [ -f "$srcf" ] || die "no $srcf (t6.sh setup)"
   src="$(val jq -r .source_commit "$srcf")"
   echo "### Corpora (public: \`git archive <commit>:<subtree>\` of this repository; a reader rebuilds them from the published commit)"
   for c in golden docs; do
@@ -304,7 +308,7 @@ inputs_t6() {
 }
 inputs_t6_private() {
   local f own
-  own="$REPO/evals/results/own"
+  own="${OWN_RESULTS:-$REPO/evals/results/own}"
   [ -n "${T6_PRIVATE_COMMITMENT:-}" ] || die "T6_PRIVATE_COMMITMENT is required for the private freeze (t6.sh freeze computes it)"
   echo "### Corpus (private; nothing content-bearing leaves this machine)"
   echo "- commitment: sha256(salt ‖ rel_path NUL sha256(file bytes) LF, in byte order over the inventory) = $T6_PRIVATE_COMMITMENT · salt under \$RUN/t6/private/salt"

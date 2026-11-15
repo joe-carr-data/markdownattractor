@@ -1,0 +1,21 @@
+{
+  "seconds": 4,
+  "retries": 0,
+  "counts": {
+    "docs": 73,
+    "failed": 0,
+    "pending": 0,
+    "sections": 514,
+    "summarized": 506,
+    "tombstoned": 0,
+    "total_cost_usd": 3.3220399,
+    "total_input_tokens": 1446193,
+    "total_output_tokens": 319375
+  },
+  "embeddings": {
+    "embedded": 506,
+    "model": "bge-small-en-v1.5-q"
+  },
+  "store_sha256": "0bba1563f9940e2ac8e1361a590a2438e8528dbc616ce7b09130622a66cb6460",
+  "indexed_at": "2026-11-15T18:24:46Z"
+}

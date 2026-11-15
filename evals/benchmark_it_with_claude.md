@@ -670,6 +670,19 @@ e88e2ba  2026-10-27T01:56:04Z  the accepted-probe-failure exception; the       f
 - **Regeneration of the archived tables is unchanged**: it reads committed observations, not the skill or a live search payload.
 - **Reproducing the historical answering runs** (T2, T5, T6) needs their frozen source commit and its skill, as each table's freeze names them. A freeze check that covers the skill will report it as changed on today's tree; that is this change, and no frozen file or hash is rewritten.
 - **The citation extractor accepts a line reference after the path** (`scripts/eval/t2.sh` `cite_paths`, 2026-11-15): `runbooks/deploy.md:11-13` is the page `runbooks/deploy.md`. The contract asks for that form; before the change such a token was no citation at all, and an answer citing only that way was marked ungrounded without a model-based grounding judgment (seen on 72 of 123 development answers; correctness was still graded). The grammar is narrow on purpose: `:N`, `:N-M` and comma lists; `a.md:12:34` and `a.md:L5-L7` are not citations. This is a harness change after the published freezes: rendering archived tables from committed grades does not change (Codex re-rendered the T6 report to the published sha256 and found all 2,214 recorded T2/T6 citation tokens extracting identically), but **regrading historical answers with today's extractor can change results**: extraction differs for 59 of the 1,002 T2 answers (none of T6's public 492). The historical freezes and grades are preserved; an independent rerun of T2, T5 or T6 uses its frozen source, and the new experiment's freeze names this extractor. Tested in `scripts/eval/tests/t6-smoke.sh`.
+- **The contract experiment's harness** (2026-11-15): `OWN_RESULTS` points `t6.sh` and `freeze.sh` at another results directory (`evals/results/contract/`, seeded with T6's `sources.json`, `calibration.json`, `config.toml`, the two public corpora's page inventories, question files and arm records, copied unchanged), and `T6_CONTROL=mda-old` adds a fifth arm, `mda-old`: mda as released before the contract, from `MDA_OLD` (the `mda` of the v0.2.1 release archive) and `MDA_OLD_SKILL` (`git show v0.2.1:skills/search-first/SKILL.md`), both hashed in the freeze, on the same store and launched exactly as `mda`. The corpora are the October copies with their stores (copied with `cp -Rp` into a new `$RUN`, opened by today's binary, `index.json` re-recorded; graphify serves from the October build, qmd from the October index); the questions are T6's. The panel samples 60 answers per corpus (12 per arm). Recipe, on the tree the freeze names:
+
+  ```bash
+  export RUN=<a new run directory holding the copies> MDA="$REPO/target/release/mda" OWN_RESULTS="$REPO/evals/results/contract" \
+         T6_CONTROL=mda-old MDA_OLD=<the v0.2.1 mda> MDA_OLD_SKILL=<its SKILL.md>
+  cargo build --release --locked
+  for c in golden docs; do scripts/eval/t6.sh index "$c"; scripts/eval/t6.sh cards "$c"; done
+  scripts/eval/t6.sh freeze                      # evals/results/contract/T6/FROZEN.md; committed before any counted row
+  for c in golden docs; do scripts/eval/t6.sh preflight "$c"; scripts/eval/t6.sh run "$c"; scripts/eval/t6.sh status "$c"; done
+  for c in golden docs; do scripts/eval/t6.sh grade "$c"; scripts/eval/t6.sh panel "$c"; scripts/eval/t6.sh analysis "$c"; scripts/eval/t6.sh archive "$c"; done
+  ```
+
+  The analysis pairs `mda` with every other arm of the manifest, so `mda` against `mda-old` is one of the pairs. These questions guided the contract's wording: the run is not held out, and is published as such.
 - **The effect of the contract is not claimed anywhere.** It is measured by a separate experiment under a new freeze (the T6 method, mda arm, golden set and `docs/`), published beside the original T6 with its own section here when it exists.
 
 ## 8. Report
