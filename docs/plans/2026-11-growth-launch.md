@@ -1,5 +1,7 @@
 # Growth and launch plan (2026-11)
 
+> **2026-11-15:** the active plan is `docs/plans/2026-11-v0.3-clear-advantage.md`. The remaining Phase 0 video work here is paused; the launch tasks resume in that plan's Phase D.
+
 Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go.
 
 Sources: a Codex strategy pass (fresh thread, read-only, 2026-11-10) and an external research report the owner commissioned through Claude Desktop (2026-11-10, not committed; its key figures are restated below with their sources' names). Every figure in this plan is the research's, not a forecast of ours.

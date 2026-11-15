@@ -6,6 +6,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 |---|---|---|
 | 2026-11-15 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-15 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-11-15 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-15 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
 | 2026-11-10 | [plans/2026-11-git-times.md](plans/2026-11-git-times.md) | Date: 2026-11-10. Owner go: "go git times" (2026-11-10), with the requirement "not everything is … |
 | 2026-10-27 | [plans/2026-10-m9-t6-page-readme.md](plans/2026-10-m9-t6-page-readme.md) | Milestone M9 of the execution plan (`2026-09-benchmark-execution.md` §4 T6, §5 M9, §7): the la… |
@@ -70,11 +71,11 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-10 | [handoffs/2026-11-10-1010-auto.md](handoffs/2026-11-10-1010-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-10 | [handoffs/2026-11-10-1006-auto.md](handoffs/2026-11-10-1006-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-10 | [handoffs/2026-10-27-1139-auto.md](handoffs/2026-10-27-1139-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-11-15 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-11-14 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
 | 2026-11-10 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-11-10 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-10-27 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
-| 2026-09-22 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 
 ## Not yet written
