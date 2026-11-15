@@ -663,7 +663,7 @@ e88e2ba  2026-10-27T01:56:04Z  the accepted-probe-failure exception; the       f
 
 **Disclosed about the private corpus's coverage.** Its inventory has 821 pages; mda indexed 595 documents and qmd 600: both skip the 221 pages under dot-directories (hidden entries are excluded by both walkers), and mda's git-aware walker also skips 5 tracked files that a `.gitignore` pattern in the repository matches (qmd indexes them); graphify's graph has a node for 762. Candidates are drawn from the store's sections, so no question targets a page outside mda's index; the resolver accepts citations to any inventory page.
 
-### 7.7 The answer contract changes the mda answering arm (2026-11-15; no table yet)
+### 7.7 The answer contract changes the mda answering arm (2026-11-15; measured in §7.8)
 
 `skills/search-first/SKILL.md` is the appended system prompt of the mda answering agent (`scripts/eval/lib.sh`), and the MCP server's instructions travel with the binary. Both gained the answer contract on 2026-11-15 (plan `docs/plans/2026-11-v0.3-clear-advantage.md`, Phase A), after every published freeze. Consequences:
 
@@ -683,7 +683,17 @@ e88e2ba  2026-10-27T01:56:04Z  the accepted-probe-failure exception; the       f
   ```
 
   The analysis pairs `mda` with every other arm of the manifest, so `mda` against `mda-old` is one of the pairs. These questions guided the contract's wording: the run is not held out, and is published as such.
-- **The effect of the contract is not claimed anywhere.** It is measured by a separate experiment under a new freeze (the T6 method, mda arm, golden set and `docs/`), published beside the original T6 with its own section here when it exists.
+- **The effect of the contract is not claimed anywhere.** It is measured by a separate experiment under a new freeze, §7.8, published beside the original T6.
+
+### 7.8 The contract experiment (published 2026-11-15, `docs/benchmarks.md` § The answer contract)
+
+**What it is.** The T6 method on T6's two public corpora, stores and questions, five arms under one freeze: grep, qmd, graphify, mda (the tree of the freeze's source commit, with the answer contract) and `mda-old` (§7.7: the `mda` of the v0.2.1 release archive and `git show v0.2.1:skills/search-first/SKILL.md`). The freeze: `evals/results/contract/T6/FROZEN.md`, source commit `23d7feb79ac8…`, committed as `847c8ec` before any counted row; it names the control's binary and skill hashes, the results directory and the panel's first member (`claude-opus-5-5`).
+
+**As run.** The recipe of §7.7, with `RUN` a new directory holding `cp -Rp` copies of October's `t6/golden` and `t6/docs` working directories (their `runs/` moved aside: the runner refuses a run set of another configuration), graphify serving from October's build and qmd from October's index. Pre-run checks: golden passed on the first attempt (every arm 3 of 3 probes); docs failed its first attempt on graphify's probes (2 of 3; kept as `preflight/T6-docs.attempt-1.json`) and passed the second with 3 of 3, run with the probe exception declared (`T6_ACCEPT_PROBE_FAIL=graphify`, as October declared it), which therefore did not fire. 615 answers, 0 error rows; 615 graded, 0 without a score or a grounding verdict; panel `regrade` on 60 per corpus and `cards` on up to 100 cards per corpus; `analysis` on the original and the adjudicated grades; `archive`.
+
+**Regeneration (exact).** `OWN_RESULTS="$REPO/evals/results/contract" scripts/eval/t6.sh table` and `scripts/eval/t6_report.py evals/results/contract/T6` read the committed files and print the page's tables; the page corrects four captions by hand where the generators' fixed wording describes October (the sample size, the panel member's name, the arm list of the cause table) and omits the generators' footers, which name `evals/results/own`.
+
+**Independent rerun.** The answers and grades are model outputs. A rerun needs the freeze's source commit, the v0.2.1 archive for the control, and the corpora rebuilt from `sources.json`; it is published beside this one. **Disclosed:** the questions guided the contract's wording (not held out); one grader decides the gates; the panel's first member differs from T6's.
 
 ## 8. Report
 

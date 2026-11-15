@@ -1,0 +1,144 @@
+{
+  "table": "T6",
+  "project": "docs",
+  "run_at": "2026-11-15T18:42:44Z",
+  "status": "completed",
+  "passed": false,
+  "checks": [
+    {
+      "name": "env",
+      "status": "ok",
+      "detail": "no provider key · claude 2.1.325 (Claude Code) · codex codex-cli 0.167.0"
+    },
+    {
+      "name": "frozen",
+      "status": "ok",
+      "detail": "frozen inputs match /Users/jcarr/markdownattractor/evals/results/contract/T6/FROZEN.md (source commit 23d7feb79ac804650b1aa6c6a06442b182ca43f4, HEAD 847c8ec6e97b0ff801e7e79fb42f379113442641)"
+    },
+    {
+      "name": "binary",
+      "status": "ok",
+      "detail": "the --locked build completed; cargo's executable (/Users/jcarr/markdownattractor/target/release/mda) and $MDA both have the frozen hash (bfcaa14e914489c1b2dbd32e5f6c2e993e381340ed7672c1cc8cdff1a58db8cf)"
+    },
+    {
+      "name": "calibration",
+      "status": "ok",
+      "detail": "calibration.json conforms, names docs, has pilot runs and resolved ids; rule: either-member-differs-by-more-than-one-point-then-panel-mean"
+    },
+    {
+      "name": "copy",
+      "status": "ok",
+      "detail": "inventory and content identical to git archive d061f8c12948:docs (73 files)"
+    },
+    {
+      "name": "extras",
+      "status": "ok",
+      "detail": "no file beyond the archive outside the store"
+    },
+    {
+      "name": "copy-graphify",
+      "status": "ok",
+      "detail": "graphify's serving copy equals the source copy on every entry (73 files, 0 symlinks the source has too; its .claude/, CLAUDE.md and graphify-out/ aside)"
+    },
+    {
+      "name": "inventory",
+      "status": "ok",
+      "detail": "73 pages, unchanged since setup (sha256 a45828b6dd36…)"
+    },
+    {
+      "name": "store",
+      "status": "ok",
+      "detail": "store unchanged since indexing (0bba1563f994…)"
+    },
+    {
+      "name": "complete",
+      "status": "ok",
+      "detail": "{\"docs\":73,\"sections\":514,\"summarized\":506} · no daemon"
+    },
+    {
+      "name": "reconstruction",
+      "status": "ok",
+      "detail": "a raw index of a fresh copy with cards-0.2.1-docs.json attached is complete (506 attached, 506 vectors): same section identities, identical cards per section hash, every distinct section embedded in both stores (review F9)"
+    },
+    {
+      "name": "questions",
+      "status": "ok",
+      "detail": "25 questions committed (sha256 9a3e02d3e5fd…)"
+    },
+    {
+      "name": "question-shape",
+      "status": "ok",
+      "detail": "every row has q, reference, evidence, relevant"
+    },
+    {
+      "name": "qmd",
+      "status": "ok",
+      "detail": "index t6-docs fingerprint f74386635a1f…"
+    },
+    {
+      "name": "graphify",
+      "status": "ok",
+      "detail": "served graph equals the recorded build (89055aac1e8d…)"
+    },
+    {
+      "name": "probes-grep",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-mda",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-mda-old",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-qmd",
+      "status": "ok",
+      "detail": "3 of 3 probes made a successful call of the arm's tool"
+    },
+    {
+      "name": "probes-graphify",
+      "status": "FAIL",
+      "detail": "2 of 3 probes activated (see /Users/jcarr/.cache/markdownattractor/bench-a/t6/docs/probes.err)"
+    }
+  ],
+  "probes": {
+    "grep": {
+      "activated": 3,
+      "of": 3
+    },
+    "mda": {
+      "activated": 3,
+      "of": 3
+    },
+    "mda-old": {
+      "activated": 3,
+      "of": 3
+    },
+    "qmd": {
+      "activated": 3,
+      "of": 3
+    },
+    "graphify": {
+      "activated": 2,
+      "of": 3
+    }
+  },
+  "accepted_probe_failures": [],
+  "arms": [
+    "grep",
+    "mda",
+    "mda-old",
+    "qmd",
+    "graphify"
+  ],
+  "store_sha256": "0bba1563f9940e2ac8e1361a590a2438e8528dbc616ce7b09130622a66cb6460",
+  "inventory_sha256": "a45828b6dd36bf05e45e20e12f67539e9f53a6457e32a32760cfef97c1ee4e66",
+  "frozen_sha256": "183eaa509bbf063909cbf992b48583a0718d94b86a55692f85e5419010aca242",
+  "private_frozen_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "source_commit": "847c8ec6e97b0ff801e7e79fb42f379113442641"
+}
