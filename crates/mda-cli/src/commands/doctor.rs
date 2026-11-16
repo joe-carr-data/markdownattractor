@@ -78,6 +78,8 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         println!();
         if failed {
             println!("{}", st.fail("mda is not ready."));
+        } else if super::start::api_key_missing(&cfg) {
+            println!("{}", st.ok("mda is ready: raw search, no cards."));
         } else {
             println!("{}", st.ok("mda is ready."));
         }
@@ -101,12 +103,16 @@ fn check_backend(cfg: &mda_core::config::Config) -> Check {
     match cfg.backend {
         Backend::Api => {
             if !std::env::var(&cfg.api_key_env).is_ok_and(|v| !v.trim().is_empty()) {
+                // Not a failure: indexing and raw search need no backend. Cards do.
                 return Check {
                     name: "backend",
-                    status: Status::Fail,
-                    detail: format!("api: ${} is not set", cfg.api_key_env),
+                    status: Status::Warn,
+                    detail: format!(
+                        "api: ${} is not set · raw search works, cards (summaries) are off",
+                        cfg.api_key_env
+                    ),
                     fix: Some(
-                        "export ANTHROPIC_API_KEY=… (console.anthropic.com), or `mda backend local` to use a local model",
+                        "for cards: export ANTHROPIC_API_KEY=… (console.anthropic.com), or `mda backend local` to use a free local model",
                     ),
                 };
             }

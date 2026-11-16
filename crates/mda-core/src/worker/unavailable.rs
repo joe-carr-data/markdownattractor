@@ -2,7 +2,8 @@
 //!
 //! The daemon uses it when the configured backend cannot be built (no API key in the
 //! environment, for example) so that watching and raw indexing still work. Nothing is ever
-//! sent anywhere; the summarizer sees one `Fatal` per round and backs off.
+//! sent anywhere. The daemon reads [`Backend::unavailable_reason`] and runs no model rounds;
+//! a caller that tries anyway sees one pool-stopping `Fatal`.
 
 use std::future::ready;
 
@@ -44,6 +45,10 @@ impl Backend for Unavailable {
     fn name(&self) -> &'static str {
         BACKEND_NAME
     }
+
+    fn unavailable_reason(&self) -> Option<&str> {
+        Some(&self.reason)
+    }
 }
 
 #[cfg(test)]
@@ -65,5 +70,6 @@ mod tests {
         assert!(matches!(out, Outcome::Fatal { reason } if reason.contains("not set")));
         assert_eq!(b.name(), "unavailable");
         assert_eq!(b.reason(), "ANTHROPIC_API_KEY is not set");
+        assert_eq!(b.unavailable_reason(), Some("ANTHROPIC_API_KEY is not set"));
     }
 }

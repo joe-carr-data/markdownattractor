@@ -34,7 +34,7 @@ cd /path/to/your/project
 mda start          # watches the folder, indexes on save, writes summaries in the background
 ```
 
-Search works on raw text as soon as the files are parsed, within seconds. Summaries ("cards") need a summarization backend: your own Anthropic API key or a free local model ([local model guide](local-model.md)); choose with `mda backend`. Without one, run `mda index --no-summarize` and the tools still answer from raw text.
+No key and no account are needed: `mda start` indexes the folder and the tools answer from the raw text of every section within seconds, with file, line range and dates. Summaries ("cards") are an upgrade that needs a summarization backend: your own Anthropic API key (`export ANTHROPIC_API_KEY=…`) or a free local model ([local model guide](local-model.md)); choose with `mda backend`, then `mda restart`. Until then `mda start` says that cards are off, and nothing fails or retries.
 
 The index lives in `.markdownattractor/` inside the folder. Your markdown files are never modified.
 

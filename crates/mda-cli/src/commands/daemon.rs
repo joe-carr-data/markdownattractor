@@ -47,7 +47,7 @@ pub fn backend_or_unavailable(cfg: &Config) -> DynBackend {
     match backend_for(cfg) {
         Ok(b) => b,
         Err(e) => {
-            tracing::error!(error = %e, "summarization backend unavailable; indexing only");
+            tracing::info!(reason = %e, "no summarization backend: raw search only, no cards");
             Arc::new(Unavailable::new(e.to_string()))
         }
     }

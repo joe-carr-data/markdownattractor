@@ -27,7 +27,7 @@ One process per watched root (`mda daemon --root <root>`, spawned detached by `m
 - Sleeps on a `Notify` woken by the indexer, re-checking the store every 30 s regardless.
 - **Backoff**: a round in which nothing succeeded (bad key, dead server, outage) doubles a pause from 5 s to 5 min; a round the daily budget cut pauses 10 min. Pause and cancel are re-checked after every sleep, before any model call.
 - **Nothing is marked failed by the environment**: cancelled, stopped and pool-stopping outcomes leave sections pending. Only the model's answer or the validator can fail a section.
-- When the configured backend cannot be built (no API key in the environment), the daemon still starts with an `Unavailable` backend: watching and raw indexing work, every round backs off, `mda status` shows the reason, and `mda restart` picks up the fix.
+- When the configured backend cannot be built (no API key in the environment: the ordinary first run), the daemon still starts, with an `Unavailable` backend: watching, raw indexing, git dating and embeddings work; the summarizer runs no model round and never fails or backs off (`Backend::unavailable_reason`), giving only heading-only sections their deterministic cards; `mda status` shows `cards off` and the reason (`daemon.summaries_off` in `--json`), and `mda restart` picks up a backend configured later. `mda start` words this as a note, not a warning, and `mda doctor` as a warning, not a failure (exit 0).
 
 ## Control channel
 

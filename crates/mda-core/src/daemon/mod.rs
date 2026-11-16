@@ -126,6 +126,10 @@ pub struct LiveStatus {
     pub cost_usd: f64,
     /// Seconds the summarizer is currently backing off, `0` when it is not.
     pub backoff_secs: u64,
+    /// Why no cards are being written, when the summarization backend cannot run at all (no
+    /// API key, for example). Raw search is unaffected. `None` when summaries are on.
+    #[serde(default)]
+    pub summaries_off: Option<String>,
     /// Last error the daemon logged, if any.
     pub last_error: Option<String>,
     /// When the last summarization round finished.
@@ -249,6 +253,8 @@ struct Live {
 struct Shared {
     info: DaemonInfo,
     embedding_model: Option<String>,
+    /// Why the backend can never summarise, fixed for the daemon's life.
+    summaries_off: Option<String>,
     started: Instant,
     live: Mutex<Live>,
     hot: Mutex<HotSet>,
@@ -302,6 +308,7 @@ impl Shared {
             embedding_error: live.embedding_error.clone(),
             cost_usd: live.cost_usd,
             backoff_secs: live.backoff_secs,
+            summaries_off: self.summaries_off.clone(),
             last_error: live.last_error.clone(),
             last_round_at: live.last_round_at,
             hot_paths,
@@ -357,6 +364,7 @@ pub async fn run(
     let shared = Arc::new(Shared {
         info,
         embedding_model: embedder.as_ref().map(|e| e.model().to_owned()),
+        summaries_off: backend.unavailable_reason().map(str::to_owned),
         started: Instant::now(),
         live: Mutex::new(Live::default()),
         hot: Mutex::new(HotSet::new(dcfg.hot_ttl)),
@@ -844,6 +852,44 @@ fn embed_pass(
     }
 }
 
+/// One pass of the summarizer when no backend can run: no model round, no failure, no
+/// backoff. Heading-only sections still get their deterministic cards; everything else stays
+/// pending and raw-searchable.
+fn cards_off_pass(
+    engine: &mut Engine,
+    embedder: Option<&Arc<dyn crate::embed::Embedder>>,
+    shared: &Shared,
+) {
+    match engine.card_trivial_pending() {
+        Ok(0) => {}
+        Ok(n) => lock(&shared.live).cards += n as u64,
+        Err(e) => shared.error("deterministic cards", &e),
+    }
+    embed_pass(engine, embedder, shared);
+}
+
+/// The summarizer's whole round when no backend can run. The scan reads every pending section,
+/// and without a backend they stay pending: it runs once, then only after the indexer says
+/// something changed. Returns whether the next round owes a scan.
+async fn cards_off_round(
+    engine: &mut Engine,
+    embedder: Option<&Arc<dyn crate::embed::Embedder>>,
+    shared: &Shared,
+    dcfg: &DaemonConfig,
+    scan_due: bool,
+) -> bool {
+    if scan_due {
+        cards_off_pass(engine, embedder, shared);
+    } else {
+        embed_pass(engine, embedder, shared);
+    }
+    tokio::select! {
+        () = shared.cancel.cancelled() => false,
+        () = shared.wake.notified() => true,
+        () = tokio::time::sleep(dcfg.idle_poll) => false,
+    }
+}
+
 async fn summarizer_loop(
     mut engine: Engine,
     backend: DynBackend,
@@ -858,6 +904,7 @@ async fn summarizer_loop(
     // pause and cancel checks run again before any model call.
     let mut sleep_owed = false;
     let mut carried_concurrency: Option<u16> = None;
+    let mut cards_scan_due = true;
     let next_backoff = |b: Option<Duration>| match b {
         None => dcfg.backoff_min,
         Some(b) => (b * 2).min(dcfg.backoff_max),
@@ -875,6 +922,12 @@ async fn summarizer_loop(
             sleep_cancellable(&shared, b).await;
             lock(&shared.live).backoff_secs = 0;
             sleep_owed = false;
+            continue;
+        }
+        if shared.summaries_off.is_some() {
+            cards_scan_due =
+                cards_off_round(&mut engine, embedder.as_ref(), &shared, &dcfg, cards_scan_due)
+                    .await;
             continue;
         }
         let pending = match engine.store().counts() {

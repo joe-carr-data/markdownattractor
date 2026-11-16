@@ -10,7 +10,7 @@ As built through Phase 4 (2026-09-22). One line per command: what it does, what 
 | `stop` · `restart` | Graceful stop over the socket; unfinished sections stay pending. `restart` never waits for an example. | Sends signals. |
 | `status` | Store counts, config, embedding coverage, and the daemon's live block when one answers. | Talks to a model. |
 | `watch [--count n]` | Streams daemon events (JSON lines with `--json`). | |
-| `doctor` | Root, state dir, backend (reachability), embeddings, daemon; exit 1 on a failure. | Modifies anything. |
+| `doctor` | Root, state dir, backend (reachability), embeddings, daemon; exit 1 on a failure. A missing API key is a warning (raw search works, cards are off), not a failure. | Modifies anything. |
 | `pause` · `resume` | Stop / restart model calls; indexing continues. | |
 
 ## Indexing

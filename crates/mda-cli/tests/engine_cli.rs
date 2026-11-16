@@ -400,7 +400,7 @@ fn backend_command_switches_and_guards_claude_cli() {
 }
 
 #[test]
-fn doctor_reports_missing_api_key() {
+fn doctor_reports_a_missing_api_key_as_a_warning_not_a_failure() {
     let dir = root_with_docs();
     let root = dir.path();
     let out = mda()
@@ -408,14 +408,15 @@ fn doctor_reports_missing_api_key() {
         .arg(root)
         .env_remove("ANTHROPIC_API_KEY")
         .assert()
-        .failure()
         .get_output()
         .stdout
         .clone();
     let v = json_of(&out);
     let backend = v["checks"].as_array().unwrap().iter().find(|c| c["name"] == "backend").unwrap();
-    assert_eq!(backend["status"], "fail");
+    // Indexing and raw search need no backend; only cards do.
+    assert_eq!(backend["status"], "warn");
     assert!(backend["detail"].as_str().unwrap().contains("ANTHROPIC_API_KEY"));
+    assert!(backend["detail"].as_str().unwrap().contains("raw search works"));
 }
 
 #[test]
@@ -1509,4 +1510,45 @@ fn mda_now_means_no_git_dating_even_in_a_full_repository() {
     let hits = json_from(mda().args(["--json", "search", "rollback", "--root"]).arg(root).assert());
     let at = hits["hits"][0]["updated_at"].as_str().unwrap();
     assert!(!at.starts_with("2024-03-01"), "the replay's file time, not git's: {at}");
+}
+
+#[test]
+fn index_without_a_daemon_or_a_key_succeeds_and_says_cards_are_off() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    write(root, ".markdownattractor/config.toml", "embeddings = \"off\"\n");
+    let out = mda()
+        .args(["--json", "index", "--root"])
+        .arg(root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    assert!(v["cards_off"].as_str().unwrap().contains("API key"), "{v}");
+    assert!(v["summarize"].is_null());
+    // The heading-only section (`# Runbook`) has its deterministic card; the rest waits.
+    let out = mda().args(["--json", "status", "--root"]).arg(root).output().unwrap();
+    let s = json_of(&out.stdout);
+    assert_eq!(s["counts"]["summarized"], 1, "{s}");
+    assert!(s["counts"]["pending"].as_u64().unwrap() >= 3, "{s}");
+    assert_eq!(s["counts"]["failed"], 0);
+
+    // The human output is a note, not an error, and the raw text answers a search.
+    mda()
+        .args(["index", "--root"])
+        .arg(root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("search works now on the raw text"));
+    mda()
+        .args(["search", "deployctl rollback", "--root"])
+        .arg(root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Rollback"));
 }
