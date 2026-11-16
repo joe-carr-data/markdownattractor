@@ -149,7 +149,7 @@ pub(super) fn api_key_missing(cfg: &mda_core::config::Config) -> bool {
 }
 
 /// Two lines for a start without a summarization backend: what works now, and the upgrade.
-fn print_cards_off(cfg: &mda_core::config::Config, why: &str, st: &Style) {
+pub(super) fn print_cards_off(cfg: &mda_core::config::Config, why: &str, st: &Style) {
     if api_key_missing(cfg) {
         println!(
             "  {} search works now on the raw text; cards (summaries) are off: no API key set",

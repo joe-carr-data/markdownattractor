@@ -7,7 +7,8 @@
 #   MDA_BIN=target/release/mda scripts/dev/first-run.sh   # a local build instead (says so)
 #
 # Everything lives in one temporary directory (plugin data, HOME, the demo corpus) and is
-# removed at the end. No provider key reaches any child process. Exit 0 only when every
+# removed at the end. Every child process runs in an emptied environment (`env -i` plus PATH
+# and the temporary HOME), so no credential of the caller reaches it. Exit 0 only when every
 # question's expected section is in the top 5 and the whole run took under LIMIT seconds.
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -21,12 +22,13 @@ cleanup() {
 trap cleanup EXIT
 # A clean user: empty HOME and configuration, no keys.
 run() {
-  env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_WORKSPACE_ID \
+  env -i PATH="$PATH" TMPDIR="$T/tmp" LANG="${LANG:-C}" \
     HOME="$T/home" XDG_CONFIG_HOME="$T/home/.config" XDG_CACHE_HOME="$T/home/.cache" \
     MDA_MODEL_DIR="$T/data/models" NO_COLOR=1 "$@"
 }
-mkdir -p "$T/home" "$T/data"
-python3 "$REPO/scripts/demo/make-corpus.py" "$T/corpus" >/dev/null
+mkdir -p "$T/home" "$T/data" "$T/tmp" "$T/plugin/scripts"
+run python3 "$REPO/scripts/demo/make-corpus.py" "$T/corpus" >/dev/null
+WANTED="$(tr -d '[:space:]' < "$REPO/VERSION")"
 
 t0="$(date +%s)"
 if [ -n "${MDA_BIN:-}" ]; then
@@ -34,10 +36,16 @@ if [ -n "${MDA_BIN:-}" ]; then
   how="a local build ($MDA_BIN); the download step is not timed"
 else
   # The SessionStart hook, as a marketplace install runs it: download, checksum, install.
-  run env CLAUDE_PLUGIN_ROOT="$REPO" CLAUDE_PLUGIN_DATA="$T/data" CLAUDE_PROJECT_DIR="$T/corpus" \
-    bash "$REPO/scripts/bootstrap.sh"
+  # It runs from a plugin layout that holds only the hook and VERSION, so its fallback to a
+  # local `target/release/mda` cannot stand in for the download.
+  cp "$REPO/scripts/bootstrap.sh" "$T/plugin/scripts/"; cp "$REPO/VERSION" "$T/plugin/"
+  run env CLAUDE_PLUGIN_ROOT="$T/plugin" CLAUDE_PLUGIN_DATA="$T/data" CLAUDE_PROJECT_DIR="$T/corpus" \
+    bash "$T/plugin/scripts/bootstrap.sh"
   MDA="$T/data/bin/mda"
-  how="the release binary for v$(tr -d '[:space:]' < "$REPO/VERSION"), downloaded by the bootstrap hook"
+  how="the release binary for v$WANTED, downloaded by the bootstrap hook"
+  [ -x "$MDA" ] || { echo "first-run: FAIL — the hook installed no binary (is v$WANTED released?)" >&2; exit 1; }
+  got="$(run "$MDA" --version | awk '{print $2}')"
+  [ "$got" = "$WANTED" ] || { echo "first-run: FAIL — installed $got, wanted $WANTED" >&2; exit 1; }
 fi
 [ -x "$MDA" ] || { echo "first-run: no binary at $MDA" >&2; exit 1; }
 t_bin="$(date +%s)"
@@ -48,17 +56,17 @@ if grep -qiE 'warning|error' "$T/start.out"; then
   echo "first-run: FAIL — start words the missing key as a fault" >&2; exit 1
 fi
 
-# question | the file whose section must be among the first five hits
+# question | file | heading: that section must be among the first five hits
 ok=0; n=0; t_hit=""
-while IFS='|' read -r q want; do
+while IFS='|' read -r q want head; do
   n=$((n + 1))
   found=""
   for _ in $(seq 1 100); do   # the daemon's first scan takes a moment
     if run "$MDA" --json search "$q" --root "$T/corpus" -k 5 2>/dev/null \
-      | python3 -c 'import json,sys
+      | run python3 -c 'import json,sys
 try: hits = json.load(sys.stdin)["hits"]
 except ValueError: sys.exit(1)
-sys.exit(0 if any(h["rel_path"] == sys.argv[1] for h in hits) else 1)' "$want"; then
+sys.exit(0 if any(h["rel_path"] == sys.argv[1] and (h["heading_path"] or [""])[-1] == sys.argv[2] for h in hits) else 1)' "$want" "$head"; then
       found=1; break
     fi
     [ "$n" -gt 1 ] && break
@@ -66,11 +74,11 @@ sys.exit(0 if any(h["rel_path"] == sys.argv[1] for h in hits) else 1)' "$want"; 
   done
   [ -n "$found" ] && ok=$((ok + 1))
   [ -z "$t_hit" ] && [ -n "$found" ] && t_hit="$(date +%s)"
-  printf '  %s  %s → %s\n' "$([ -n "$found" ] && echo hit || echo MISS)" "$q" "$want"
+  printf '  %s  %s → %s\n' "$([ -n "$found" ] && echo hit || echo MISS)" "$q" "$want › $head"
 done <<'Q'
-how do we roll back a deploy|runbooks/deploy.md
-why did we choose PostgreSQL|adr/0001-postgres-over-mysql.md
-who do I page for an outage|onboarding/faq.md
+how do we roll back a deploy|runbooks/deploy.md|Rollback
+why did we choose PostgreSQL|adr/0001-postgres-over-mysql.md|Decision
+who do I page for an outage|onboarding/faq.md|Who do I page?
 Q
 t1="$(date +%s)"
 total=$((t1 - t0))

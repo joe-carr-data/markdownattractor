@@ -156,15 +156,10 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     // Pending work includes sections left over from earlier runs (failures, interrupted
     // runs), not only what this run discovered.
     let pending_total = engine.store().counts()?.pending;
-    let summarize = if args.no_summarize || pending_total == 0 {
-        None
+    let (summarize, cards_off) = if args.no_summarize || pending_total == 0 {
+        (None, None)
     } else {
-        Some(summarize(
-            &mut engine,
-            json,
-            &st,
-            SummarizeOptions { limit: args.limit, ..SummarizeOptions::default() },
-        )?)
+        summarize_or_cards_off(&mut engine, json, &st, args.limit)?
     };
     // Vectors for whatever has a card and no vector yet; a model that cannot be fetched is
     // one warning, never a failed run.
@@ -177,10 +172,15 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "parse_ms": parse_ms,
             "git_times": git_times,
             "summarize": summarize,
+            "cards_off": cards_off,
             "embeddings": embeddings,
         }));
     } else {
-        print_summary(summarize.as_ref(), pending_total, &st);
+        if let Some(why) = &cards_off {
+            super::start::print_cards_off(engine.config(), why, &st);
+        } else {
+            print_summary(summarize.as_ref(), pending_total, &st);
+        }
         if let Some(r) = &embeddings
             && r.embedded > 0
         {
@@ -380,18 +380,34 @@ fn delegate(
     Ok(if report.errors.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE })
 }
 
+/// Summarize what is pending, or, when no backend can be built (no API key: the ordinary
+/// first run), give heading-only sections their deterministic cards and return the reason.
+/// That is not a failure: the raw index is complete and the rest stays pending.
+fn summarize_or_cards_off(
+    engine: &mut Engine,
+    json: bool,
+    st: &Style,
+    limit: Option<usize>,
+) -> anyhow::Result<(Option<SummarizeReport>, Option<String>)> {
+    match mda_core::worker::backend_for(engine.config()) {
+        Ok(backend) => {
+            let opts = SummarizeOptions { limit, ..SummarizeOptions::default() };
+            Ok((Some(summarize(engine, backend, json, st, opts)?), None))
+        }
+        Err(e) => {
+            engine.card_trivial_pending()?;
+            Ok((None, Some(e.to_string())))
+        }
+    }
+}
+
 fn summarize(
     engine: &mut Engine,
+    backend: mda_core::worker::DynBackend,
     json: bool,
     st: &Style,
     opts: SummarizeOptions,
 ) -> anyhow::Result<SummarizeReport> {
-    let backend = mda_core::worker::backend_for(engine.config()).with_context(|| {
-        format!(
-            "preparing the {} backend (run `mda doctor`, or `mda backend local` for a local model)",
-            engine.config().backend.as_str()
-        )
-    })?;
     let cancel = CancellationToken::new();
     let ctrl_c = cancel.clone();
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;

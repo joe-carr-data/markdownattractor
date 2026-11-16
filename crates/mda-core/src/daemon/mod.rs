@@ -868,6 +868,28 @@ fn cards_off_pass(
     embed_pass(engine, embedder, shared);
 }
 
+/// The summarizer's whole round when no backend can run. The scan reads every pending section,
+/// and without a backend they stay pending: it runs once, then only after the indexer says
+/// something changed. Returns whether the next round owes a scan.
+async fn cards_off_round(
+    engine: &mut Engine,
+    embedder: Option<&Arc<dyn crate::embed::Embedder>>,
+    shared: &Shared,
+    dcfg: &DaemonConfig,
+    scan_due: bool,
+) -> bool {
+    if scan_due {
+        cards_off_pass(engine, embedder, shared);
+    } else {
+        embed_pass(engine, embedder, shared);
+    }
+    tokio::select! {
+        () = shared.cancel.cancelled() => false,
+        () = shared.wake.notified() => true,
+        () = tokio::time::sleep(dcfg.idle_poll) => false,
+    }
+}
+
 async fn summarizer_loop(
     mut engine: Engine,
     backend: DynBackend,
@@ -882,6 +904,7 @@ async fn summarizer_loop(
     // pause and cancel checks run again before any model call.
     let mut sleep_owed = false;
     let mut carried_concurrency: Option<u16> = None;
+    let mut cards_scan_due = true;
     let next_backoff = |b: Option<Duration>| match b {
         None => dcfg.backoff_min,
         Some(b) => (b * 2).min(dcfg.backoff_max),
@@ -902,8 +925,9 @@ async fn summarizer_loop(
             continue;
         }
         if shared.summaries_off.is_some() {
-            cards_off_pass(&mut engine, embedder.as_ref(), &shared);
-            wait_wake_or(&shared, dcfg.idle_poll).await;
+            cards_scan_due =
+                cards_off_round(&mut engine, embedder.as_ref(), &shared, &dcfg, cards_scan_due)
+                    .await;
             continue;
         }
         let pending = match engine.store().counts() {
