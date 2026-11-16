@@ -287,4 +287,10 @@ pub trait Backend: Send + Sync {
 
     /// Backend name for provenance: `api`, `local`, `claude-cli`, `mock`.
     fn name(&self) -> &'static str;
+
+    /// Why this backend can never summarise (no credentials, for example), or `None` when it
+    /// can be tried. A caller that sees a reason skips model calls instead of failing them.
+    fn unavailable_reason(&self) -> Option<&str> {
+        None
+    }
 }

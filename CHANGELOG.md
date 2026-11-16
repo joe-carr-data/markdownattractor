@@ -9,6 +9,12 @@ All notable changes to this project are documented here. The format follows [Kee
 For users: Claude now answers from the lines it opened and puts the file and line range next to each claim; search hits say whether a date comes from git or from the file.
 
 ### Changed
+- **A first run needs no key.** `mda start` without a summarization backend says in one note that search works on the raw text and that cards are off, and names the upgrade; the daemon no longer tries, fails and backs off every few seconds, and its log holds no error. `mda status` shows `cards off` (`daemon.summaries_off` in `--json`). `mda doctor` reports a missing API key as a warning and exits 0. The README and the MCP clients guide lead with this path.
+
+### Added
+- `scripts/dev/first-run.sh`: the first-run gate, scripted and timed — from the bootstrap hook's download to a useful search hit on the demo corpus with no credentials, in under two minutes.
+
+### Changed
 - **The answer contract.** The MCP server's instructions and the search-first skill now tell the client to take each claim from opened lines (a card is a pointer, not a source), to put the file and line range next to each claim, to give a date from the index as the index's "last changed" with its source, to say nothing about a section it did not open, and to answer what was asked and stop. This changes how agents answer; the published benchmark tables describe the instructions before it.
 - Search hits (CLI `--json` and MCP) carry `updated_source` (`git` or `filesystem`); `mda open` returns and prints the section's last-changed date and its source.
 

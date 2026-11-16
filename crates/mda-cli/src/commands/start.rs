@@ -64,7 +64,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
                 st.dim(&root.display().to_string())
             );
             if let Some(w) = &backend_warning {
-                println!("  {} summarization disabled: {w}", st.warn("warning:"));
+                print_cards_off(&cfg, w, &st);
             }
         }
         let d = super::daemon::Args { root, log_dir: None, debounce_ms: 1000 };
@@ -121,11 +121,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             st.dim(&log_dir.display().to_string()),
         );
         if let Some(w) = &backend_warning {
-            println!("  {} summarization disabled: {w}", st.warn("warning:"));
-            println!(
-                "  {} raw search works now; fix the backend (`mda doctor`) and run `mda restart`",
-                st.dim("hint:")
-            );
+            print_cards_off(&cfg, w, &st);
         } else {
             println!(
                 "  {} raw search is live as files are parsed; cards follow within seconds",
@@ -145,6 +141,31 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
+/// Whether the only thing missing is the API key of the default backend: the ordinary first
+/// run, which is not an error.
+pub(super) fn api_key_missing(cfg: &mda_core::config::Config) -> bool {
+    cfg.backend == mda_core::config::Backend::Api
+        && !std::env::var(&cfg.api_key_env).is_ok_and(|v| !v.trim().is_empty())
+}
+
+/// Two lines for a start without a summarization backend: what works now, and the upgrade.
+fn print_cards_off(cfg: &mda_core::config::Config, why: &str, st: &Style) {
+    if api_key_missing(cfg) {
+        println!(
+            "  {} search works now on the raw text; cards (summaries) are off: no API key set",
+            st.dim("note:")
+        );
+        println!(
+            "  {} export {}=… or `mda backend local` (a free local model), then `mda restart`",
+            st.dim("cards:"),
+            cfg.api_key_env
+        );
+    } else {
+        println!("  {} search works now on the raw text; cards are off: {why}", st.dim("note:"));
+        println!("  {} `mda doctor` shows the fix; then `mda restart`", st.dim("cards:"));
+    }
+}
+
 /// Decide whether this start gets an example query and, if so, wait for it. Returns the
 /// example or the reason it was skipped.
 fn first_run_example(
@@ -157,7 +178,7 @@ fn first_run_example(
     let skip = if args.no_example {
         Some("--no-example")
     } else if backend_warning.is_some() {
-        Some("summarization is disabled")
+        Some("cards are off (no summarization backend)")
     } else if carded_before > 0 {
         Some("this root already had cards")
     } else if files == 0 {

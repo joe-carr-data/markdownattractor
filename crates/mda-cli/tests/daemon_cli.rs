@@ -226,3 +226,68 @@ fn start_status_index_pause_resume_stop() {
     assert!(log.contains("daemon started"), "log file has the startup line: {log}");
     assert!(log.contains("daemon stopped"), "log file has the shutdown line: {log}");
 }
+
+#[test]
+fn a_first_run_without_credentials_starts_searches_and_says_cards_are_off() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    write(&root, "runbook.md", "# Runbook\n\n## Rollback\n\nRun deployctl rollback --to <sha>.\n");
+    write(&root, ".markdownattractor/config.toml", "embeddings = \"off\"\n");
+
+    let out = mda()
+        .args(["start", "--root"])
+        .arg(&root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .timeout(Duration::from_secs(30))
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let _guard = StopGuard(root.clone());
+    let text = String::from_utf8(out).unwrap();
+    assert!(text.contains("search works now on the raw text"), "{text}");
+    assert!(text.contains("cards (summaries) are off: no API key set"), "{text}");
+    assert!(text.contains("mda backend local"), "{text}");
+    assert!(!text.contains("warning") && !text.contains("error"), "not worded as a fault: {text}");
+
+    // The raw text answers a search at once, with its line range.
+    wait_for("the runbook indexed", || status(&root)["counts"]["docs"] == 1);
+    let out = mda()
+        .args(["--json", "search", "deployctl rollback", "--root"])
+        .arg(&root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .output()
+        .unwrap();
+    let hits = json_of(&out.stdout);
+    let hit = &hits["hits"][0];
+    assert_eq!(hit["rel_path"], "runbook.md", "{hits}");
+    assert_eq!((hit["line_start"].as_u64(), hit["line_end"].as_u64()), (Some(3), Some(5)));
+    assert_eq!(hit["pending"], true);
+
+    // Status says why there are no cards; nothing failed and nothing is backing off.
+    let s = status(&root);
+    assert!(s["daemon"]["summaries_off"].as_str().unwrap().contains("API key"), "{s}");
+    assert_eq!(s["daemon"]["backoff_secs"], 0);
+    assert_eq!(s["counts"]["failed"], 0);
+    mda()
+        .args(["status", "--root"])
+        .arg(&root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("cards off (no summarization backend; raw search works)"));
+
+    // Doctor: ready, with the upgrade named. The daemon's log holds no error.
+    mda()
+        .args(["doctor", "--root"])
+        .arg(&root)
+        .env_remove("ANTHROPIC_API_KEY")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("mda is ready: raw search, no cards."));
+    let logs = root.join(".markdownattractor/logs");
+    for e in std::fs::read_dir(&logs).unwrap().filter_map(Result::ok) {
+        let log = std::fs::read_to_string(e.path()).unwrap();
+        assert!(!log.contains("ERROR"), "{}: {log}", e.path().display());
+    }
+}

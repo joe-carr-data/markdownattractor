@@ -289,3 +289,45 @@ async fn daemon_dates_from_git_falls_back_on_a_save_and_redates_after_a_commit()
     cancel.cancel();
     task.await.unwrap().unwrap();
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn without_a_backend_the_daemon_indexes_and_never_calls_fails_or_backs_off() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    write(&root, "guide.md", "# Guide\n\n## Install\n\nRun the installer.\n");
+    embeddings_off(&root);
+
+    let backend: DynBackend = Arc::new(crate::worker::Unavailable::new("no API key"));
+    let cancel = CancellationToken::new();
+    let task = {
+        let (root, cancel) = (root.clone(), cancel.clone());
+        tokio::spawn(async move { run(&root, backend, fast(), cancel).await })
+    };
+    wait_until("daemon socket", || futures_lite_block(is_running(&root))).await;
+
+    // The heading-only section gets its deterministic card; the section with a body waits.
+    wait_until("the heading-only section carded", || {
+        let c = store(&root).counts().unwrap();
+        c.docs == 1 && c.summarized == 1 && c.pending == 1
+    })
+    .await;
+    // Several idle polls and backoff periods later nothing has been tried, failed or slept on.
+    tokio::time::sleep(Duration::from_millis(900)).await;
+    let mut c = Client::connect(&root).await.unwrap();
+    let Response::Status(status) = c.request(&Request::Status).await.unwrap() else {
+        unreachable!("status")
+    };
+    assert_eq!(status.summaries_off.as_deref(), Some("no API key"));
+    assert_eq!((status.rounds, status.failures, status.backoff_secs), (0, 0, 0));
+    assert_eq!(status.cards, 1);
+    assert_eq!(status.last_error, None);
+    let counts = store(&root).counts().unwrap();
+    assert_eq!((counts.pending, counts.failed), (1, 0));
+
+    // A save while cards are off is indexed like any other.
+    write(&root, "new.md", "# New\n\nfresh text\n");
+    wait_until("new.md indexed", || store(&root).counts().unwrap().docs == 2).await;
+
+    cancel.cancel();
+    task.await.unwrap().unwrap();
+}

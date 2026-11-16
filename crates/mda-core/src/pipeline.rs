@@ -541,6 +541,19 @@ impl Engine {
         Ok(report)
     }
 
+    /// Give every pending heading-only section its deterministic card, without any model.
+    /// Returns how many cards were attached. This is all the carding a root without a
+    /// summarization backend gets; every other section stays pending and raw-searchable.
+    pub fn card_trivial_pending(&mut self) -> Result<usize> {
+        let trivial: Vec<PendingSection> = self
+            .store
+            .pending_hashes(usize::MAX)?
+            .into_iter()
+            .filter(|p| is_heading_only(&p.text))
+            .collect();
+        self.card_heading_only(&trivial)
+    }
+
     /// Attach a deterministic card to every heading-only section. Returns how many.
     fn card_heading_only(&mut self, trivial: &[PendingSection]) -> Result<usize> {
         for p in trivial {

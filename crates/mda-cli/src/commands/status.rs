@@ -104,6 +104,11 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             st.warn("paused")
         } else if l.backoff_secs > 0 {
             st.warn(&format!("backing off {}s", l.backoff_secs))
+        } else if l.watching && l.summaries_off.is_some() {
+            format!(
+                "{} · cards off (no summarization backend; raw search works)",
+                st.ok("watching")
+            )
         } else if l.watching {
             st.ok("watching")
         } else {

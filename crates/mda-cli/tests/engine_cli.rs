@@ -400,7 +400,7 @@ fn backend_command_switches_and_guards_claude_cli() {
 }
 
 #[test]
-fn doctor_reports_missing_api_key() {
+fn doctor_reports_a_missing_api_key_as_a_warning_not_a_failure() {
     let dir = root_with_docs();
     let root = dir.path();
     let out = mda()
@@ -408,14 +408,15 @@ fn doctor_reports_missing_api_key() {
         .arg(root)
         .env_remove("ANTHROPIC_API_KEY")
         .assert()
-        .failure()
         .get_output()
         .stdout
         .clone();
     let v = json_of(&out);
     let backend = v["checks"].as_array().unwrap().iter().find(|c| c["name"] == "backend").unwrap();
-    assert_eq!(backend["status"], "fail");
+    // Indexing and raw search need no backend; only cards do.
+    assert_eq!(backend["status"], "warn");
     assert!(backend["detail"].as_str().unwrap().contains("ANTHROPIC_API_KEY"));
+    assert!(backend["detail"].as_str().unwrap().contains("raw search works"));
 }
 
 #[test]
