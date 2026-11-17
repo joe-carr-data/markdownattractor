@@ -1573,10 +1573,38 @@ fn search_in_takes_an_absolute_path_and_refuses_one_outside_the_root() {
     let got =
         json_of(&search(&["--in", abs.to_str().unwrap()]).assert().success().get_output().stdout);
     assert_eq!(got["hits"], rel["hits"]);
-    // The root itself as an absolute path is no filter.
-    let all =
-        json_of(&search(&["--in", root.to_str().unwrap()]).assert().success().get_output().stdout);
-    assert_eq!(hits(&all), 1);
+    // The root itself as an absolute path is no filter: a document outside docs/ is found,
+    // which the docs filter excludes.
+    let adr = |extra: &[&str]| {
+        let mut c = mda();
+        c.args(["search", "blue-green", "--json", "--root"]).arg(&root).args(extra);
+        hits(&json_of(&c.assert().success().get_output().stdout))
+    };
+    assert_eq!(adr(&["--in", root.to_str().unwrap()]), 1);
+    assert_eq!(adr(&["--in", abs.to_str().unwrap()]), 0);
+    // A trailing separator is a folder boundary: `docs/` does not match `docs2/…`.
+    write(&root, "docs2/other.md", "# Other\n\nRollback notes for the second folder.\n");
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let with_slash = format!("{}/", abs.display());
+    let n =
+        |arg: &str| hits(&json_of(&search(&["--in", arg]).assert().success().get_output().stdout));
+    assert_eq!(n(&with_slash), 1, "docs/ only");
+    assert_eq!(n("docs/"), 1);
+    assert_eq!(
+        n(abs.to_str().unwrap()),
+        2,
+        "a bare prefix matches docs and docs2, as it always did"
+    );
+    // A folder that no longer exists can still be named (the timeline keeps its events).
+    let gone = root.join("removed");
+    mda()
+        .args(["timeline", "--in", gone.to_str().unwrap(), "--root"])
+        .arg(&root)
+        .assert()
+        .success();
+    // `..` cannot walk out of the root and back to a sibling.
+    let sneaky = format!("{}/../{}", root.display(), "elsewhere");
+    search(&["--in", &sneaky]).assert().failure().stdout(predicate::str::contains("is not under"));
     // A path outside the root is an error that names both, never an empty result.
     let outside = tempfile::tempdir().unwrap();
     search(&["--in", outside.path().to_str().unwrap()])
@@ -1587,7 +1615,7 @@ fn search_in_takes_an_absolute_path_and_refuses_one_outside_the_root() {
     let got = json_of(
         &mda()
             .current_dir(root.join("docs"))
-            .args(["search", "rollback", "--json", "--in", "../docs"])
+            .args(["search", "rollback", "--json", "--in", "../docs/"])
             .assert()
             .success()
             .get_output()
@@ -1604,7 +1632,7 @@ fn search_in_takes_an_absolute_path_and_refuses_one_outside_the_root() {
 }
 
 #[test]
-fn doctor_and_start_use_the_index_above_a_subfolder_and_say_so() {
+fn doctor_uses_the_index_above_a_subfolder_and_says_so() {
     let dir = root_with_docs();
     let root = dir.path().canonicalize().unwrap();
     mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();

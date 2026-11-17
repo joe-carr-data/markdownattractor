@@ -258,6 +258,13 @@ fn structured<T: Serialize>(value: &T) -> std::result::Result<CallToolResult, Mc
     Ok(CallToolResult::structured(serde_json::to_value(value).map_err(internal)?))
 }
 
+/// A client's `path_prefix` as a root-relative prefix, decided on the text alone (no
+/// filesystem access). A path outside the root is the client's mistake: invalid params.
+fn client_prefix(root: &Path, raw: &str) -> std::result::Result<Option<String>, McpError> {
+    search::path_prefix_under(&[root], raw)
+        .map_err(|e| McpError::invalid_params(e.to_string(), None))
+}
+
 fn parse_opt_time(s: Option<&str>) -> std::result::Result<Option<jiff::Timestamp>, McpError> {
     s.map(crate::timefmt::parse_time)
         .transpose()
@@ -334,7 +341,7 @@ impl McpServer {
             .blocking(move |engine, embedder| {
                 // The root's tunables (config.toml) are read where the engine is available.
                 let path_prefix = match path_prefix {
-                    Some(p) => search::path_prefix_under(engine.root(), &p).map_err(internal)?,
+                    Some(p) => client_prefix(engine.root(), &p)?,
                     None => None,
                 };
                 let opts = SearchOptions {
@@ -423,7 +430,7 @@ impl McpServer {
         let entries = self
             .blocking(move |engine, _| {
                 let prefix = match prefix {
-                    Some(p) => search::path_prefix_under(engine.root(), &p).map_err(internal)?,
+                    Some(p) => client_prefix(engine.root(), &p)?,
                     None => None,
                 };
                 engine.timeline(since, until, prefix.as_deref(), limit).map_err(internal)

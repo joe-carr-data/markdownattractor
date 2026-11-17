@@ -199,27 +199,88 @@ pub struct Hit {
 
 /// Turn a path filter a user typed into the root-relative prefix the index stores.
 ///
-/// A relative path is taken as relative to the root and returned as it is (without a leading
-/// `./`). An absolute path must be the root or below it and is made relative; one outside the
-/// root is an error, never an empty result. `None` means "the whole root": no filter.
-pub fn path_prefix_under(root: &std::path::Path, raw: &str) -> Result<Option<String>> {
-    let raw = raw.trim();
-    let path = std::path::Path::new(raw);
+/// Decided on the text alone: this function never touches the filesystem, so a client cannot
+/// use it to learn what exists outside the root, and a folder that was deleted can still be
+/// named (the timeline keeps its events).
+///
+/// - A relative path is taken as relative to the root and returned as typed, without a leading
+///   `./`. Nothing is trimmed: spaces are valid in file names.
+/// - An absolute path has its `.` and `..` components resolved textually and must then be the
+///   root or below it, under either spelling in `roots` (the root as stored and any alias the
+///   caller knows, such as the path before symlinks were resolved). Anything else is an error,
+///   never an empty result.
+/// - A trailing separator is kept: `docs/` does not match `docs2/…`, `docs` does (the filter
+///   is a string prefix).
+///
+/// `None` means "the whole root": no filter.
+pub fn path_prefix_under(roots: &[&std::path::Path], raw: &str) -> Result<Option<String>> {
+    use std::path::{Component, Path, PathBuf};
+    if raw.is_empty() {
+        return Ok(None);
+    }
+    let path = Path::new(raw);
+    let ends_dir = raw.ends_with('/') || raw.ends_with(std::path::MAIN_SEPARATOR);
     if !path.is_absolute() {
-        let rel = raw.trim_start_matches("./");
+        let rel = raw.strip_prefix("./").unwrap_or(raw);
         return Ok((!rel.is_empty() && rel != ".").then(|| rel.to_owned()));
     }
-    let canon = |p: &std::path::Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
-    let (root_c, path_c) = (canon(root), canon(path));
-    let Ok(rel) = path_c.strip_prefix(&root_c) else {
-        return Err(crate::Error::Config(format!(
-            "{} is not under the indexed root {}",
-            path.display(),
-            root_c.display()
-        )));
+    // Textual normalisation: no symlink is followed, nothing is looked up.
+    let normal = |p: &Path| {
+        let mut out = PathBuf::new();
+        for c in p.components() {
+            match c {
+                Component::CurDir => {}
+                Component::ParentDir => {
+                    out.pop();
+                }
+                other => out.push(other.as_os_str()),
+            }
+        }
+        // Windows: `canonicalize` gives the verbatim form `\\?\C:\…`; compare without it.
+        let text = out.to_string_lossy().into_owned();
+        PathBuf::from(text.strip_prefix(r"\\?\").map_or(text.clone(), str::to_owned))
     };
-    let rel = rel.to_string_lossy().replace('\\', "/");
-    Ok((!rel.is_empty()).then_some(rel))
+    let target = normal(path);
+    for root in roots {
+        if let Ok(rel) = target.strip_prefix(normal(root)) {
+            let mut rel = rel.to_string_lossy().replace('\\', "/");
+            if rel.is_empty() {
+                return Ok(None);
+            }
+            if ends_dir {
+                rel.push('/');
+            }
+            return Ok(Some(rel));
+        }
+    }
+    Err(crate::Error::Config(format!(
+        "{} is not under the indexed root {}",
+        path.display(),
+        roots.first().map(|r| r.display().to_string()).unwrap_or_default()
+    )))
+}
+
+/// A path with the longest part of it that exists made canonical (symlinks resolved) and the
+/// rest appended as typed. For a command line, where the user names their own files: `/var/x`
+/// and `/private/var/x` are then the same place. Reads the filesystem; not for client input.
+#[must_use]
+pub fn canonical_where_it_exists(path: &std::path::Path) -> std::path::PathBuf {
+    let mut rest: Vec<&std::ffi::OsStr> = Vec::new();
+    let mut cur = path;
+    loop {
+        if let Ok(canon) = cur.canonicalize() {
+            let mut out = canon;
+            out.extend(rest.iter().rev());
+            return out;
+        }
+        match (cur.file_name(), cur.parent()) {
+            (Some(name), Some(parent)) => {
+                rest.push(name);
+                cur = parent;
+            }
+            _ => return path.to_path_buf(),
+        }
+    }
 }
 
 /// Run a lexical-only hybrid search (cards + raw text). See [`search_with`] for vectors.
@@ -908,5 +969,55 @@ mod tests {
         let e = or_expression("roll back deploy");
         assert!(e.contains(" OR "));
         assert_eq!(e.matches(" OR ").count(), 2);
+    }
+}
+
+#[cfg(all(test, unix))] // the fixtures are Unix absolute paths
+#[allow(clippy::unwrap_used, reason = "test assertions")]
+mod path_prefix_tests {
+    use std::path::Path;
+
+    use super::path_prefix_under;
+
+    fn under(raw: &str) -> Option<String> {
+        path_prefix_under(&[Path::new("/project")], raw).unwrap()
+    }
+
+    #[test]
+    fn relative_input_is_kept_as_typed_and_absolute_input_is_made_relative() {
+        assert_eq!(under("docs").as_deref(), Some("docs"));
+        assert_eq!(under("./docs/a.md").as_deref(), Some("docs/a.md"));
+        assert_eq!(under(" docs/").as_deref(), Some(" docs/"), "a leading space is part of a name");
+        assert_eq!(under("/project/docs").as_deref(), Some("docs"));
+        assert_eq!(
+            under("/project/docs/").as_deref(),
+            Some("docs/"),
+            "the folder boundary is kept"
+        );
+        assert_eq!(under("/project/./docs/../notes/x.md").as_deref(), Some("notes/x.md"));
+        for whole in ["", ".", "./", "/project", "/project/", "/project/docs/.."] {
+            assert_eq!(under(whole), None, "{whole:?} means the whole root");
+        }
+    }
+
+    #[test]
+    fn a_path_outside_the_root_is_an_error_whatever_exists_on_disk() {
+        for outside in ["/elsewhere", "/project/../outside/probe", "/projectile/docs", "/"] {
+            let err = path_prefix_under(&[Path::new("/project")], outside).unwrap_err();
+            assert!(err.to_string().contains("is not under the indexed root /project"), "{err}");
+        }
+    }
+
+    #[test]
+    fn any_known_spelling_of_the_root_is_accepted() {
+        let roots = [Path::new("/private/var/project"), Path::new("/var/project")];
+        assert_eq!(
+            path_prefix_under(&roots, "/var/project/docs").unwrap().as_deref(),
+            Some("docs")
+        );
+        assert_eq!(
+            path_prefix_under(&roots, "/private/var/project/docs").unwrap().as_deref(),
+            Some("docs")
+        );
     }
 }

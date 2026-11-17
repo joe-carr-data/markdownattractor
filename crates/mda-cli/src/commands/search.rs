@@ -26,27 +26,14 @@ pub struct Args {
     /// Only sections updated before this time.
     #[arg(long)]
     pub until: Option<String>,
-    /// Only documents under this path: relative to the indexed root, or absolute.
+    /// Only documents whose path starts with this: relative to the indexed root, or absolute.
+    /// A relative path that exists below the current folder but not below the root is read
+    /// from the current folder. End a folder with `/` to keep `docs/` from matching `docs2/`.
     #[arg(long = "in")]
     pub path_prefix: Option<String>,
     /// Watched root.
     #[arg(long)]
     pub root: Option<PathBuf>,
-}
-
-/// The `--in` filter as a root-relative prefix. An absolute path is made relative to the root
-/// (and refused when it is outside it); a relative path that exists below the current
-/// directory but not below the root is taken as relative to the current directory.
-fn in_prefix(root: &std::path::Path, raw: &str) -> anyhow::Result<Option<String>> {
-    let given = std::path::Path::new(raw);
-    if !given.is_absolute()
-        && !root.join(given).exists()
-        && let Ok(cwd) = std::env::current_dir()
-        && cwd.join(given).exists()
-    {
-        return Ok(search::path_prefix_under(root, &cwd.join(given).to_string_lossy())?);
-    }
-    Ok(search::path_prefix_under(root, raw)?)
 }
 
 /// Run the command.
@@ -55,7 +42,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let engine = Engine::open(&root)?;
     let query = args.query.join(" ");
     let path_prefix = match &args.path_prefix {
-        Some(raw) => in_prefix(engine.root(), raw)?,
+        Some(raw) => super::in_prefix(engine.root(), raw)?,
         None => None,
     };
     let opts = SearchOptions {
