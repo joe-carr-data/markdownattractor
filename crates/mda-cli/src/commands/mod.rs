@@ -50,6 +50,49 @@ pub fn resolve_root(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
     Ok(cwd)
 }
 
+/// The `--in` filter of `search` and `timeline` as a root-relative prefix.
+///
+/// The user names their own files here, so the path may be looked up: an absolute path is
+/// compared with the root after symlinks in its existing part are resolved (`/var/x` and
+/// `/private/var/x` are one place), and refused when it is outside the root. A relative path
+/// is relative to the root; only when nothing is there and something is at that path below
+/// the current folder is it read from the current folder. The root wins when both exist.
+pub fn in_prefix(root: &Path, raw: &str) -> anyhow::Result<Option<String>> {
+    use mda_core::search::{canonical_where_it_exists, path_prefix_under};
+    let given = Path::new(raw);
+    let absolute = if given.is_absolute() {
+        Some(given.to_path_buf())
+    } else {
+        let cwd = std::env::current_dir().ok();
+        cwd.map(|c| c.join(given)).filter(|p| !root.join(given).exists() && p.exists())
+    };
+    let Some(abs) = absolute else {
+        return Ok(path_prefix_under(&[root], raw)?);
+    };
+    let mut text = canonical_where_it_exists(&abs).to_string_lossy().into_owned();
+    if (raw.ends_with('/') || raw.ends_with(std::path::MAIN_SEPARATOR)) && !text.ends_with('/') {
+        text.push('/');
+    }
+    // The typed spelling is tried too: the root may itself be reached through a symlink.
+    path_prefix_under(&[root], &text)
+        .or_else(|_| path_prefix_under(&[root], &abs.to_string_lossy()))
+        .map_err(Into::into)
+}
+
+/// When the root was found above the current folder (no explicit root given), one phrase that
+/// says so: a command run inside a project is then working on a wider index than the user may
+/// think. `None` when the root is the current folder or was given explicitly.
+pub fn ancestor_note(root: &Path, explicit: bool) -> Option<String> {
+    if explicit {
+        return None;
+    }
+    let canon = |p: &Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    let cwd = canon(&std::env::current_dir().ok()?);
+    (canon(root) != cwd).then(|| {
+        "the index found above the current folder; `--root .` uses this folder instead".to_owned()
+    })
+}
+
 /// Run a short async operation (socket round-trips) on a fresh current-thread runtime.
 pub fn block_on<F: std::future::Future>(f: F) -> anyhow::Result<F::Output> {
     let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;

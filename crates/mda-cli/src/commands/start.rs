@@ -43,6 +43,10 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let root = super::resolve_root(args.path.as_deref().or(args.root.as_deref()))?;
     let root = root.canonicalize().with_context(|| format!("resolving {}", root.display()))?;
     let st = Style::auto();
+    let explicit = args.path.is_some() || args.root.is_some();
+    if !json && let Some(note) = super::ancestor_note(&root, explicit) {
+        println!("{} using {} — {note}", st.dim("note:"), root.display());
+    }
 
     if super::block_on(is_running(&root))? {
         return report_already_running(&root, json, &st);

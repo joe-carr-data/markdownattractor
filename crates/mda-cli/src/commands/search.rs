@@ -26,7 +26,9 @@ pub struct Args {
     /// Only sections updated before this time.
     #[arg(long)]
     pub until: Option<String>,
-    /// Only documents under this path (relative to the root).
+    /// Only documents whose path starts with this: relative to the indexed root, or absolute.
+    /// A relative path that exists below the current folder but not below the root is read
+    /// from the current folder. End a folder with `/` to keep `docs/` from matching `docs2/`.
     #[arg(long = "in")]
     pub path_prefix: Option<String>,
     /// Watched root.
@@ -39,12 +41,16 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let root = super::resolve_root(args.root.as_deref())?;
     let engine = Engine::open(&root)?;
     let query = args.query.join(" ");
+    let path_prefix = match &args.path_prefix {
+        Some(raw) => super::in_prefix(engine.root(), raw)?,
+        None => None,
+    };
     let opts = SearchOptions {
         k: args.k,
         raw_only: args.raw,
         since: args.since.as_deref().map(super::parse_time).transpose()?,
         until: args.until.as_deref().map(super::parse_time).transpose()?,
-        path_prefix: args.path_prefix.clone(),
+        path_prefix: path_prefix.clone(),
         ..SearchOptions::for_config(engine.config())
     };
     let embedder = super::embedder_for(engine.config());
@@ -59,6 +65,13 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     if hits.is_empty() {
         println!("{} for {:?}", st.warn("no hits"), query);
         println!("  {} try fewer words, `--raw` for exact identifiers, or `grep`", st.dim("hint:"));
+        if let Some(prefix) = &path_prefix {
+            println!(
+                "  {} only documents under {prefix}/ were searched, a path relative to the index root {}",
+                st.dim("note:"),
+                engine.root().display()
+            );
+        }
         return Ok(ExitCode::SUCCESS);
     }
     if hits[0].via_or_fallback {

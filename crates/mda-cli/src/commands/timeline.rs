@@ -34,7 +34,11 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let engine = Engine::open(&root)?;
     let since = Some(super::parse_time(&args.since)?);
     let until = args.until.as_deref().map(super::parse_time).transpose()?;
-    let entries = engine.timeline(since, until, args.path_prefix.as_deref(), args.limit)?;
+    let prefix = match &args.path_prefix {
+        Some(raw) => super::in_prefix(engine.root(), raw)?,
+        None => None,
+    };
+    let entries = engine.timeline(since, until, prefix.as_deref(), args.limit)?;
 
     if json {
         output::json(&serde_json::json!({ "entries": entries }));

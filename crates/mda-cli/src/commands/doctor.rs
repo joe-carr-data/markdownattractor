@@ -10,9 +10,10 @@ use crate::output::{self, Style};
 /// Arguments for `mda doctor`.
 #[derive(Debug, clap::Args)]
 pub struct Args {
-    /// Watched root to check (defaults to the current directory).
-    #[arg(long, default_value = ".")]
-    pub root: PathBuf,
+    /// Watched root to check. Default: the nearest folder at or above the current one that
+    /// holds an index, as every other command; otherwise the current folder.
+    #[arg(long)]
+    pub root: Option<PathBuf>,
 }
 
 /// Outcome of one check.
@@ -54,10 +55,15 @@ pub fn checks(root: &std::path::Path, cfg: &mda_core::config::Config) -> Vec<Che
 }
 
 /// Run the command. Exit code is non-zero when any check fails.
-#[expect(clippy::unnecessary_wraps, reason = "every command shares the same signature")]
 pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
-    let cfg = mda_core::config::Config::load(&args.root).unwrap_or_default();
-    let checks = checks(&args.root, &cfg);
+    let root = super::resolve_root(args.root.as_deref())?;
+    let cfg = mda_core::config::Config::load(&root).unwrap_or_default();
+    let mut checks = checks(&root, &cfg);
+    if let Some(note) = super::ancestor_note(&root, args.root.is_some())
+        && let Some(c) = checks.iter_mut().find(|c| c.name == "root")
+    {
+        c.detail = format!("{} ({note})", c.detail);
+    }
     let failed = checks.iter().any(|c| matches!(c.status, Status::Fail));
 
     if json {
