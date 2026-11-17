@@ -236,6 +236,19 @@ scripts/eval/pool.sh column prisma dev                       # every arm rescore
 
 The judge sees the question and the page's first 6,000 characters inside `<submission>` tags, never the arm; a judgment that is not a valid structured output is recorded as `null` and never as 0. The column is computed by the same scorer as every other number (`--extra-labels`, `--only-questions`), from the archived page lists; nothing is searched again. At M4 the sample is drawn from the final test-split runs and judged by both panel members (Astra through the Codex CLI, `panel.sh`); until then the numbers are labelled development.
 
+## 4f. Change-impact review — mining hypotheses (plan 2026-11-v0.3, Phase C; in preparation, nothing published)
+
+Design: `docs/plans/2026-11-v0.3-clear-advantage.md` § Phase C design v2. This step uses no model and produces **hypotheses, not labels**.
+
+```sh
+C=~/.cache/markdownattractor/bench/c; mkdir -p $C/clones $C/mined
+# history and small blobs only; the pinned benchmark checkouts are not used
+git clone --bare --single-branch --filter=blob:limit=128k https://github.com/<owner>/<repo>.git $C/clones/<owner>__<repo>.git
+python3 -I scripts/eval/c_mine.py $C/clones/<owner>__<repo>.git > $C/mined/<owner>__<repo>.jsonl
+```
+
+A hypothesis is a commit A that replaces one to three tokens in markdown file X, and a commit B within 60 days that makes the same replacement in a file Y that A did not touch and that carried the old tokens at A. Replacements seen in more than 30 places and replacements of timestamps are skipped. Flags mark what the panel is not asked about: `locale_path`, `log_like`, `mirror_path`, `same_basename`, `words_only`, `link_only`. Only unflagged hypotheses go to the panel, which sees X before and after and Y at A, never B. No count from this step is a result; the case list, the split by repository and the prompts are frozen before the first scored run, and this section is completed then.
+
 ## 5. Answer quality on the golden corpus
 
 **5a. Regeneration (exact).** The archived observations are `evals/ab/results/<date>-*.md` with their `runs.jsonl` and `grades.jsonl` under `evals/results/` (from M5; the 2026-09-22 runs predate the archive rule and are exploratory). Recompute the table from the archived `grades.jsonl` with `scripts/eval/grade.sh --table-only <questions> <dir>` (M5) and diff against the published file: it must be byte-identical.
