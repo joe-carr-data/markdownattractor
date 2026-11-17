@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.5] — 2026-11-17
+
+A fix release. For users: the plugin keeps to its own data folder, `--in` takes an absolute path, `doctor` agrees with `start` about which index a folder uses, and git is never allowed to start a program or a download while mda reads history.
+
 ### Fixed
 - `mda search --in` (and the MCP `path_prefix`) accepts an absolute path and makes it relative to the indexed root; a path outside the root is an error that names both, where it used to return no hits and no message. A relative path that exists below the current folder but not below the root is read from the current folder. With no hits under a filter, the output says which folder was searched.
 - `mda doctor` checks the same root as every other command: the nearest folder at or above the current one that holds an index. Run inside a project below a wider index it used to say "not initialised" while `mda start` attached to that wider index. `doctor` and `start` now say when the index they use sits above the current folder, and that `--root .` uses the folder itself.
