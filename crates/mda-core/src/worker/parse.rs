@@ -46,24 +46,61 @@ pub fn parse_result_with_model(json: &str, wall_ms: u64, requested_model: &str) 
             };
         }
     };
-    let usage = extract_usage(&doc, wall_ms, requested_model);
+    let (usage, result_text) = match guardrails(&doc, wall_ms, requested_model) {
+        Guarded { usage, verdict: Ok(()) } => {
+            (usage, doc.get("result").and_then(Value::as_str).unwrap_or_default())
+        }
+        Guarded { verdict: Err(outcome), .. } => return outcome,
+    };
+
+    match doc.get("structured_output") {
+        Some(so) if !so.is_null() => match serde_json::from_value::<SectionSummary>(so.clone()) {
+            Ok(summary) => Outcome::Ok { summary, usage },
+            Err(e) => summary_from_text(result_text, usage, format!("structured_output: {e}")),
+        },
+        _ => summary_from_text(result_text, usage, "structured_output is null".to_owned()),
+    }
+}
+
+/// What the guardrail table decided about a result document, with the usage it reported.
+pub(super) struct Guarded {
+    /// The usage in the document, whatever the verdict.
+    pub usage: Usage,
+    /// `Ok` when no guardrail fired and the output may be read; otherwise the failure.
+    pub verdict: std::result::Result<(), Outcome>,
+}
+
+/// The error half of the table in [`parse_result`]: everything decided before the model's
+/// output is looked at. Shared by the card path and [`super::structured`].
+pub(super) fn guardrails(doc: &Value, wall_ms: u64, requested_model: &str) -> Guarded {
+    let usage = extract_usage(doc, wall_ms, requested_model);
+    let fail = |usage: Usage, outcome: Outcome| Guarded { usage, verdict: Err(outcome) };
     let result_text = doc.get("result").and_then(Value::as_str).unwrap_or_default();
-    let error_text = error_text(&doc, result_text);
+    let error_text = error_text(doc, result_text);
 
     if let Some(status) = doc.get("api_error_status").and_then(Value::as_u64) {
         match status {
             401 | 403 => {
-                return Outcome::Fatal {
-                    reason: format!("{FATAL_NOT_LOGGED_IN} (HTTP {status}): {error_text}"),
-                };
+                return fail(
+                    usage,
+                    Outcome::Fatal {
+                        reason: format!("{FATAL_NOT_LOGGED_IN} (HTTP {status}): {error_text}"),
+                    },
+                );
             }
             404 => {
-                return Outcome::Fatal {
-                    reason: format!("{FATAL_BAD_MODEL} (HTTP {status}): {error_text}"),
-                };
+                return fail(
+                    usage,
+                    Outcome::Fatal {
+                        reason: format!("{FATAL_BAD_MODEL} (HTTP {status}): {error_text}"),
+                    },
+                );
             }
             429 | 529 => {
-                return Outcome::RateLimited { reason: format!("HTTP {status}: {error_text}") };
+                return fail(
+                    usage,
+                    Outcome::RateLimited { reason: format!("HTTP {status}: {error_text}") },
+                );
             }
             _ => {}
         }
@@ -73,28 +110,25 @@ pub fn parse_result_with_model(json: &str, wall_ms: u64, requested_model: &str) 
     let subtype = doc.get("subtype").and_then(Value::as_str).unwrap_or_default();
     if terminal_reason == "budget_exhausted" || subtype == "error_max_budget_usd" {
         tracing::warn!(cost_usd = usage.cost_usd, "per-call budget exhausted");
-        return Outcome::Fatal {
-            reason: format!(
-                "per-call budget exhausted (spent ${:.4}): {error_text}",
-                usage.cost_usd
-            ),
-        };
+        let cost = usage.cost_usd;
+        return fail(
+            usage,
+            Outcome::Fatal {
+                reason: format!("per-call budget exhausted (spent ${cost:.4}): {error_text}"),
+            },
+        );
     }
 
     if doc.get("is_error").and_then(Value::as_bool).unwrap_or(false) {
         if looks_rate_limited(&error_text) {
-            return Outcome::RateLimited { reason: error_text };
+            return fail(usage, Outcome::RateLimited { reason: error_text });
         }
-        return Outcome::Retryable { reason: format!("claude reported an error: {error_text}") };
+        return fail(
+            usage,
+            Outcome::Retryable { reason: format!("claude reported an error: {error_text}") },
+        );
     }
-
-    match doc.get("structured_output") {
-        Some(so) if !so.is_null() => match serde_json::from_value::<SectionSummary>(so.clone()) {
-            Ok(summary) => Outcome::Ok { summary, usage },
-            Err(e) => summary_from_text(result_text, usage, format!("structured_output: {e}")),
-        },
-        _ => summary_from_text(result_text, usage, "structured_output is null".to_owned()),
-    }
+    Guarded { usage, verdict: Ok(()) }
 }
 
 /// The reminder-turn fallback: the model wrote the card as text instead of calling the
