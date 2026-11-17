@@ -52,6 +52,14 @@ fn repo(root: &Path) -> Repo {
     }
 }
 
+fn working(paths: &[&str]) -> Vec<String> {
+    paths.iter().map(|p| (*p).to_owned()).collect()
+}
+
+fn md(path: &str) -> bool {
+    Path::new(path).extension().is_some_and(|e| e.eq_ignore_ascii_case("md"))
+}
+
 const GUIDE: &str =
     "# Guide\n\n## Timeouts\n\nThe default timeout is 30 seconds.\n\n## Auth\n\nUse a token.\n";
 
@@ -97,17 +105,22 @@ fn changes_since_a_commit_cover_committed_and_uncommitted_edits_under_the_root_o
     write(dir.path(), "outside.md", "# Outside, edited\n");
 
     let r = repo(&docs);
-    let mut changed = r.changed_since(&first).unwrap();
-    changed.sort_by(|a, b| a.1.cmp(&b.1));
+    let changed =
+        r.changed_since(&first, &working(&["guide.md", "new.md", "untracked.md"]), &md).unwrap();
     assert_eq!(
         changed,
         [
             (FileChange::Modified, "guide.md".to_owned()),
             (FileChange::Added, "new.md".to_owned()),
             (FileChange::Deleted, "old.md".to_owned()),
+            (FileChange::Added, "untracked.md".to_owned()),
         ],
-        "root-relative, tracked files only, nothing from outside the root"
+        "root-relative, sorted, nothing from outside the root; a file git never saw is an addition"
     );
+    // An unchanged file is not listed, and a file `wanted` rejects is not a deletion.
+    let none = r.changed_since(&first, &working(&["guide.md", "new.md"]), &|_| false).unwrap();
+    assert!(!none.iter().any(|(k, _)| *k == FileChange::Deleted), "{none:?}");
+    assert!(r.changed_since(&first, &working(&["a\nb.md"]), &md).is_err(), "a newline in a path");
 
     // The earlier text comes from the pinned commit, not from HEAD or the index.
     let tree = r.tree(&first).unwrap();
@@ -135,8 +148,11 @@ fn a_crlf_working_file_against_an_lf_blob_is_no_change_and_a_rename_is_not_paire
 
     // A renamed file is a deletion and an addition: no earlier text is attributed to it.
     git(dir.path(), &["mv", "docs/old.md", "docs/renamed.md"]);
-    let mut changed = r.changed_since(&first).unwrap();
-    changed.sort_by(|a, b| a.1.cmp(&b.1));
+    let changed = r.changed_since(&first, &working(&["guide.md", "renamed.md"]), &md).unwrap();
+    assert!(
+        changed.contains(&(FileChange::Modified, "guide.md".to_owned())),
+        "the bytes differ (CRLF), so the file is listed; the section comparison found no change in it"
+    );
     assert!(changed.contains(&(FileChange::Deleted, "old.md".to_owned())));
     assert!(changed.contains(&(FileChange::Added, "renamed.md".to_owned())));
 
@@ -151,17 +167,83 @@ fn a_crlf_working_file_against_an_lf_blob_is_no_change_and_a_rename_is_not_paire
 fn a_program_named_by_the_repository_configuration_is_never_run() {
     let (dir, first) = fixture();
     let marker = dir.path().join("executed");
-    let hook = format!("touch '{}'; false #", marker.display());
-    git(dir.path(), &["config", "core.fsmonitor", &hook]);
-    git(dir.path(), &["config", "core.pager", &hook]);
-    git(dir.path(), &["config", "diff.external", &hook]);
+    let hook = format!("touch '{}'; cat", marker.display());
+    // Every way a read could start a configured program: the fsmonitor hook, a clean filter
+    // and a process filter on the file, a textconv driver, a pager, an external diff.
+    write(dir.path(), ".gitattributes", "*.md filter=review diff=review\n");
+    for key in [
+        "core.fsmonitor",
+        "filter.review.clean",
+        "filter.review.smudge",
+        "filter.review.process",
+        "diff.review.textconv",
+        "diff.review.command",
+        "core.pager",
+        "diff.external",
+    ] {
+        git(dir.path(), &["config", key, &hook]);
+    }
     write(dir.path(), "docs/guide.md", &GUIDE.replace("30 seconds", "60 seconds"));
+    assert!(!marker.exists(), "the fixture itself must not have run the hook");
 
     let r = repo(&dir.path().join("docs"));
-    let changed = r.changed_since(&first).unwrap();
+    let changed = r.changed_since(&first, &working(&["guide.md", "old.md"]), &md).unwrap();
     assert_eq!(changed, [(FileChange::Modified, "guide.md".to_owned())]);
     let tree = r.tree(&first).unwrap();
     r.blob(&tree["guide.md"]).unwrap();
     r.resolve_commit("HEAD").unwrap();
-    assert!(!marker.exists(), "a configured fsmonitor, pager or external diff was started");
+    r.blob_of(b"x").unwrap();
+    // The dating calls of ADR-0008 as well: history and blame.
+    let now = jiff::Timestamp::now();
+    r.document_times(&first, "guide.md", now).unwrap();
+    r.line_times(&first, "guide.md", now).unwrap();
+    assert!(!marker.exists(), "a configured hook, filter, textconv, pager or diff was started");
+}
+
+#[test]
+fn revision_syntax_that_searches_or_stands_in_for_the_commit_check_is_refused() {
+    let (dir, first) = fixture();
+    // A tracked file whose name ends like the peel suffix.
+    write(dir.path(), "docs/x^{commit}", "not a commit\n");
+    commit(dir.path(), "odd name");
+    let r = repo(&dir.path().join("docs"));
+    for bad in [":/first", "HEAD^{/first}", "HEAD:docs/x", &"a".repeat(201)] {
+        assert!(r.resolve_commit(bad).is_err(), "{bad:?} must not resolve");
+    }
+    assert_eq!(r.resolve_commit(&first).unwrap(), first);
+    assert_eq!(r.resolve_commit("HEAD~1").unwrap(), first);
+}
+
+#[cfg(unix)] // a `file://` URL built from a path
+#[test]
+fn a_missing_object_in_a_partial_clone_is_an_error_and_nothing_is_fetched() {
+    let (src, _) = fixture();
+    git(src.path(), &["config", "uploadpack.allowFilter", "true"]);
+    let dst = tempfile::tempdir().unwrap();
+    let url = format!("file://{}", src.path().display());
+    let out = Command::new("git")
+        .args(["clone", "-q", "--no-checkout", "--filter=blob:none", &url])
+        .arg(dst.path())
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let missing = |dir: &Path| {
+        git(dir, &["rev-list", "--objects", "--missing=print", "HEAD"])
+            .lines()
+            .filter(|l| l.starts_with('?'))
+            .count()
+    };
+    let before = missing(dst.path());
+    if before == 0 {
+        return; // this git did not make a partial clone over file://; nothing to prove
+    }
+    // Discovery from the top (no checkout, so `docs/` does not exist on disk).
+    let r = repo(dst.path());
+    let head = r.head().unwrap();
+    let tree = r.tree(&head).unwrap();
+    assert!(
+        r.blob(&tree["docs/guide.md"]).is_err(),
+        "the blob is not here and must not be fetched"
+    );
+    assert_eq!(missing(dst.path()), before, "no object arrived");
 }

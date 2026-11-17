@@ -21,4 +21,4 @@ North star reminder: G6 100% grounded metadata · G1 < 1 s save→raw-searchable
 - Hybrid query latency (≈ 50 ms in-process, 257 ms as a cold process) misses the plan's 30 ms budget; lexical meets it. Recorded, not hidden.
 - §13 open decisions left: commit `cards/` or not. (Embeddings and MCP-as-subcommand decided in ADR-0004; daemon per-root in ADR-0003.)
 
-## Last Codex review: 2026-11-17 (PR #90, the schema-constrained backend call: changes requested, 4 P2 and 1 P3, all fixed — `docs/reviews/codex/2026-11-17-structured-backend-call.md`). Before it: the Phase C design pass the same day (rework, 14 findings, all accepted).
+## Last Codex review: 2026-11-17 (PR #91, the change unit for `mda check`: two rounds, changes requested both times; 2 P1 on git starting configured programs or fetches, one of them in released dating code, all findings fixed or recorded — `docs/reviews/codex/2026-11-17-change-unit.md`). Before it: PR #90 the same day (5 findings, all fixed).

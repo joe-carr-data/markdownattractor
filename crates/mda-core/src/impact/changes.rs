@@ -10,7 +10,7 @@
 //!    before side that it could be a renamed or moved form of;
 //! 4. everything else is [`NotReviewed`], with the reason. A deletion is not reviewed.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use serde::Serialize;
 
@@ -100,13 +100,17 @@ pub fn compare(before: &str, after: &str, flavor: Flavor) -> FileReview {
 
     // 1a. Unchanged in place: the same heading path and the same hash. Sections under
     // different parents can share a hash (the text does not include the parent), so the
-    // heading path is matched first.
+    // heading path is matched first. Queues keep document order; every step is a map lookup.
     let mut old_used = vec![false; old.len()];
     let mut new_used = vec![false; new.len()];
+    let mut in_place: HashMap<(&[String], &str), VecDeque<usize>> = HashMap::new();
+    for (oi, o) in old.iter().enumerate() {
+        in_place.entry((o.heading_path.as_slice(), o.hash.as_str())).or_default().push_back(oi);
+    }
     for (ni, s) in new.iter().enumerate() {
-        let twin = old.iter().enumerate().position(|(oi, o)| {
-            !old_used[oi] && o.hash == s.hash && o.heading_path == s.heading_path
-        });
+        let twin = in_place
+            .get_mut(&(s.heading_path.as_slice(), s.hash.as_str()))
+            .and_then(VecDeque::pop_front);
         if let Some(oi) = twin {
             old_used[oi] = true;
             new_used[ni] = true;
@@ -114,27 +118,38 @@ pub fn compare(before: &str, after: &str, flavor: Flavor) -> FileReview {
         }
     }
     // 1b. Unchanged but moved: the same hash under another heading path, taken only when
-    // neither side has a competing section on that path. Otherwise the old text stays
-    // available to pair with its own heading path below (a section edited in place whose old
-    // wording was also copied elsewhere is a change, not an addition).
-    let path_left = |sections: &[Section], used: &[bool], path: &[String]| {
-        sections.iter().zip(used).any(|(s, u)| !*u && s.heading_path == path)
-    };
+    // neither side has an unmatched section competing for either path. Otherwise the old text
+    // stays available to pair with its own heading path below (a section edited in place
+    // whose old wording was also copied elsewhere is a change, not an addition).
+    let mut old_open = open_paths(&old, &old_used);
+    let mut new_open = open_paths(&new, &new_used);
+    let mut by_hash: HashMap<&str, VecDeque<usize>> = HashMap::new();
+    for (oi, o) in old.iter().enumerate().filter(|(oi, _)| !old_used[*oi]) {
+        by_hash.entry(o.hash.as_str()).or_default().push_back(oi);
+    }
     for ni in 0..new.len() {
         if new_used[ni] {
             continue;
         }
         let s = &new[ni];
-        let moved = old.iter().enumerate().position(|(oi, o)| {
-            !old_used[oi]
-                && o.hash == s.hash
-                && !path_left(&new, &new_used, &o.heading_path)
-                && !path_left(&old, &old_used, &s.heading_path)
-        });
-        if let Some(oi) = moved {
-            old_used[oi] = true;
-            new_used[ni] = true;
-            review.unchanged += 1;
+        let Some(&oi) = by_hash.get(s.hash.as_str()).and_then(VecDeque::front) else { continue };
+        let o = &old[oi];
+        let contested = new_open.get(o.heading_path.as_slice()).copied().unwrap_or(0) > 0
+            || old_open.get(s.heading_path.as_slice()).copied().unwrap_or(0) > 0;
+        if contested {
+            continue;
+        }
+        if let Some(q) = by_hash.get_mut(s.hash.as_str()) {
+            q.pop_front();
+        }
+        old_used[oi] = true;
+        new_used[ni] = true;
+        review.unchanged += 1;
+        if let Some(n) = old_open.get_mut(o.heading_path.as_slice()) {
+            *n = n.saturating_sub(1);
+        }
+        if let Some(n) = new_open.get_mut(s.heading_path.as_slice()) {
+            *n = n.saturating_sub(1);
         }
     }
     let new_left: Vec<&Section> =
@@ -147,11 +162,13 @@ pub fn compare(before: &str, after: &str, flavor: Flavor) -> FileReview {
     let unique = |path: &[String]| {
         old_count.get(path).copied() == Some(1) && new_count.get(path).copied() == Some(1)
     };
+    let old_at: HashMap<&[String], usize> =
+        old_left.iter().enumerate().map(|(i, o)| (o.heading_path.as_slice(), i)).collect();
     let mut paired = vec![false; old_left.len()];
     let mut unpaired_new: Vec<&Section> = Vec::new();
     for s in &new_left {
         let partner = unique(&s.heading_path)
-            .then(|| old_left.iter().position(|o| o.heading_path == s.heading_path))
+            .then(|| old_at.get(s.heading_path.as_slice()).copied())
             .flatten();
         if let Some(i) = partner {
             paired[i] = true;
@@ -185,6 +202,15 @@ pub fn compare(before: &str, after: &str, flavor: Flavor) -> FileReview {
     review
 }
 
+/// How many unmatched sections each heading path still has.
+fn open_paths<'a>(sections: &'a [Section], used: &[bool]) -> HashMap<&'a [String], usize> {
+    let mut m: HashMap<&[String], usize> = HashMap::new();
+    for (s, _) in sections.iter().zip(used).filter(|(_, u)| !**u) {
+        *m.entry(s.heading_path.as_slice()).or_default() += 1;
+    }
+    m
+}
+
 /// How many sections carry each heading path.
 fn count(sections: &[Section]) -> HashMap<&[String], usize> {
     let mut m: HashMap<&[String], usize> = HashMap::new();
@@ -212,19 +238,20 @@ fn change(before: Option<&Section>, after: &Section) -> SectionChange {
     }
 }
 
-/// The trimmed, non-blank lines of `a` that `b` does not have, as a multiset difference, in
-/// `a`'s order. Not a minimal diff: a moved line is in neither result, which is what the
-/// search terms want.
+/// The non-blank lines of `a` that `b` does not have, as a multiset difference, in `a`'s
+/// order. Lines are compared with their indentation (it carries meaning in code and nested
+/// lists) and returned trimmed. Not a minimal diff: a line that only moved is in neither
+/// result, which is what the search terms want.
 fn lines_only_in(a: &str, b: &str) -> Vec<String> {
     let mut have: HashMap<&str, usize> = HashMap::new();
-    for line in b.lines().map(str::trim).filter(|l| !l.is_empty()) {
+    for line in b.lines().map(str::trim_end).filter(|l| !l.trim().is_empty()) {
         *have.entry(line).or_default() += 1;
     }
     let mut out = Vec::new();
-    for line in a.lines().map(str::trim).filter(|l| !l.is_empty()) {
+    for line in a.lines().map(str::trim_end).filter(|l| !l.trim().is_empty()) {
         match have.get_mut(line) {
             Some(n) if *n > 0 => *n -= 1,
-            _ => out.push(line.to_owned()),
+            _ => out.push(line.trim().to_owned()),
         }
     }
     out
@@ -321,16 +348,45 @@ mod tests {
 
     #[test]
     fn an_edited_section_whose_old_text_was_copied_elsewhere_is_still_a_change() {
+        // The copy sits under the same heading text (`## X`) in another parent, so its hash
+        // equals the old A/X hash: only the competition rule keeps the old text with A/X.
         let before = "# A\n\n## X\n\nThe limit is 5.\n\n# B\n\nOther.\n";
-        let after = "# A\n\n## X\n\nThe limit is 9.\n\n# B\n\nOther.\n\n## Y\n\nThe limit is 5.\n";
+        let after = "# A\n\n## X\n\nThe limit is 9.\n\n# B\n\nOther.\n\n## X\n\nThe limit is 5.\n";
+        let old_hash = markdown::parse_str_as(before, Flavor::Markdown).sections[1].hash.clone();
+        let new_sections = markdown::parse_str_as(after, Flavor::Markdown).sections;
+        assert_eq!(new_sections[3].hash, old_hash, "the fixture must collide");
         let r = cmp(before, after);
         let edited = r.changes.iter().find(|c| c.heading_path == ["A", "X"]).unwrap();
         assert_eq!(edited.removed_lines, ["The limit is 5."], "the old wording stays with A/X");
-        assert!(edited.before.is_some());
-        assert!(
-            r.changes.iter().all(|c| c.before.is_some() || c.heading_path == ["B", "Y"]),
-            "{r:?}"
-        );
+        assert_eq!(edited.added_lines, ["The limit is 9."]);
+        let copy = r.changes.iter().find(|c| c.heading_path == ["B", "X"]).unwrap();
+        assert!(copy.before.is_none(), "the copy is new text in the file");
+        assert_eq!(r.changes.len(), 2, "{r:?}");
+    }
+
+    #[test]
+    fn an_indentation_only_change_in_code_is_a_changed_line() {
+        let before = "# P\n\n```python\nif enabled:\n    send()\n```\n";
+        let after = "# P\n\n```python\nif enabled:\n    pass\nsend()\n```\n";
+        let r = cmp(before, after);
+        let [c] = r.changes.as_slice() else { panic!("{r:?}") };
+        assert_eq!(c.removed_lines, ["send()"], "the indented call is gone");
+        assert_eq!(c.added_lines, ["pass", "send()"], "and an unindented one is new");
+    }
+
+    #[test]
+    fn a_large_identical_file_is_compared_in_linear_time() {
+        use std::fmt::Write as _;
+        let mut doc = String::new();
+        for i in 0..20_000 {
+            let _ = write!(doc, "# Section {i}\n\nText {i}\n\n");
+        }
+        let started = std::time::Instant::now();
+        let r = cmp(&doc, &doc);
+        assert_eq!(r.unchanged, 20_000);
+        assert!(r.changes.is_empty() && r.not_reviewed.is_empty());
+        // Parsing dominates; the quadratic matching this replaces took minutes at this size.
+        assert!(started.elapsed() < std::time::Duration::from_secs(20), "{:?}", started.elapsed());
     }
 
     #[test]

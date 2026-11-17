@@ -11,6 +11,7 @@ use std::collections::HashSet;
 use serde::Serialize;
 
 use super::changes::SectionChange;
+use crate::markdown::{self, Piece};
 
 /// What a term looks like.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
@@ -86,56 +87,66 @@ pub fn terms_for(change: &SectionChange) -> Vec<Term> {
     terms
 }
 
-/// Tokens of some lines with their kind, in order of appearance.
+/// Tokens of some lines with their kind, in order of appearance. Each line is read by the
+/// markdown parser, so a code span of any delimiter length and a link destination are known
+/// for what they are instead of being guessed from punctuation.
 fn extract(lines: &[String]) -> Vec<(String, TermKind)> {
     let mut out = Vec::new();
     for line in lines {
-        for (segment, code) in segments(line) {
-            if code {
+        for (piece, what) in markdown::inline_pieces(line) {
+            match what {
                 // A code span is an identifier whatever its length or spelling: `on`, `from`.
-                for t in segment.split_whitespace().filter(|t| usable(t)) {
-                    out.push((t.to_owned(), TermKind::Identifier));
-                }
-                continue;
-            }
-            // Table cells and the two halves of a link are separate tokens.
-            let spaced: String = segment
-                .chars()
-                .map(|c| if matches!(c, '|' | '[' | ']' | '(' | ')') { ' ' } else { c })
-                .collect();
-            let tokens: Vec<&str> =
-                spaced.split_whitespace().map(strip).filter(|t| !t.is_empty()).collect();
-            let mut i = 0;
-            while i < tokens.len() {
-                let t = tokens[i];
-                if let Some(kind) = classify(t) {
-                    if kind == TermKind::Number
-                        && let Some(unit) = tokens.get(i + 1).filter(|u| is_unit(u))
-                    {
-                        out.push((format!("{t} {unit}"), kind));
-                        i += 2;
-                        continue;
+                Piece::Code => {
+                    for t in piece.split_whitespace().filter(|t| usable(t)) {
+                        out.push((t.to_owned(), TermKind::Identifier));
                     }
-                    out.push((t.to_owned(), kind));
                 }
-                i += 1;
+                Piece::LinkTarget => {
+                    let url = piece.trim();
+                    if usable(url) && !url.contains(char::is_whitespace) {
+                        out.push((url.to_owned(), TermKind::Identifier));
+                    }
+                }
+                Piece::Text => text_tokens(&piece, &mut out),
             }
         }
     }
     out
 }
 
-/// Split a line into text and code-span segments. Backticks that do not pair up leave the
-/// whole line as text.
-fn segments(line: &str) -> Vec<(&str, bool)> {
-    if !line.matches('`').count().is_multiple_of(2) {
-        return vec![(line, false)];
+/// Tokens of running text. Table bars separate cells; a call such as `fn()` stays whole.
+fn text_tokens(text: &str, out: &mut Vec<(String, TermKind)>) {
+    let spaced = text.replace('|', " ");
+    let tokens: Vec<&str> =
+        spaced.split_whitespace().map(clean).filter(|t| !t.is_empty()).collect();
+    let mut i = 0;
+    while i < tokens.len() {
+        let t = tokens[i];
+        if let Some(kind) = classify(t) {
+            if kind == TermKind::Number
+                && let Some(unit) = tokens.get(i + 1).filter(|u| is_unit(u))
+            {
+                out.push((format!("{t} {unit}"), kind));
+                i += 2;
+                continue;
+            }
+            out.push((t.to_owned(), kind));
+        }
+        i += 1;
     }
-    line.split('`')
-        .enumerate()
-        .map(|(i, part)| (part, i % 2 == 1))
-        .filter(|(p, _)| !p.is_empty())
-        .collect()
+}
+
+/// [`strip`], except that a token with a name before an opening parenthesis (`fn()`,
+/// `get(id)`) keeps its parentheses and loses only sentence punctuation at its end.
+fn clean(token: &str) -> &str {
+    let call = token.find('(').is_some_and(|i| token[..i].chars().any(char::is_alphanumeric));
+    if call && token.contains(')') {
+        token
+            .trim_end_matches(['.', ',', ';', ':', '!', '?'])
+            .trim_start_matches(['(', '[', '"', '\''])
+    } else {
+        strip(token)
+    }
 }
 
 /// A token short enough to search for that holds a letter or a digit.
@@ -188,6 +199,9 @@ fn classify(t: &str) -> Option<TermKind> {
         && t.chars().all(|c| c.is_ascii_digit() || matches!(c, '.' | ',' | '%'))
     {
         return Some(TermKind::Number);
+    }
+    if t.contains('(') && t.contains(')') {
+        return Some(TermKind::Identifier);
     }
     let has_digit = t.chars().any(|c| c.is_ascii_digit());
     let joined = t.chars().any(|c| matches!(c, '_' | '-' | '.' | '/' | ':' | '@' | '\\' | '$'));
@@ -268,9 +282,27 @@ mod tests {
         let ts = terms("# Q\n\nSelect `from` the table with `a b`.\n", "# Q\n\nNothing.\n");
         let got = texts(&ts, Role::Replaced);
         assert!(got.contains(&"from") && got.contains(&"a") && got.contains(&"b"), "{got:?}");
-        // An unbalanced backtick leaves the line as plain text.
+        // A stray backtick opens nothing: the line is plain text.
         let ts = terms("# Q\n\nA stray ` and on.\n", "# Q\n\nNothing.\n");
         assert!(!texts(&ts, Role::Replaced).contains(&"on"));
+    }
+
+    #[test]
+    fn code_spans_of_any_delimiter_calls_and_urls_with_parentheses_keep_the_replaced_value() {
+        let ts = terms("# C\n\nUse ``on``.\n", "# C\n\nUse ``off``.\n");
+        assert_eq!(texts(&ts, Role::Replaced), ["on"], "a double-backtick span");
+        let ts = terms("# C\n\nA literal \\` then `on`.\n", "# C\n\nA literal \\` then `off`.\n");
+        assert_eq!(texts(&ts, Role::Replaced), ["on"], "an escaped backtick does not open a span");
+        let ts = terms("# C\n\nCall fn() first.\n", "# C\n\nCall go() first.\n");
+        assert_eq!(texts(&ts, Role::Replaced), ["fn()"]);
+        assert_eq!(texts(&ts, Role::Added), ["go()"]);
+        let ts = terms(
+            "# C\n\nSee [guide](https://example.test/a(on)).\n",
+            "# C\n\nSee [guide](https://example.test/a(off)).\n",
+        );
+        assert_eq!(texts(&ts, Role::Replaced), ["https://example.test/a(on)"]);
+        let ts = terms("# C\n\nRun `fn()` now.\n", "# C\n\nRun `go()` now.\n");
+        assert_eq!(texts(&ts, Role::Replaced), ["fn()"]);
     }
 
     #[test]
