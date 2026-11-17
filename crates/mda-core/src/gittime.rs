@@ -79,13 +79,19 @@ struct Output {
     stderr: String,
 }
 
-/// The base command: no optional locks, no prompts, a fixed locale, and none of the
+/// The base command: no optional locks, no prompts, no program named by the repository's
+/// configuration (fsmonitor, pager, external diff), a fixed locale, and none of the
 /// environment variables that redirect git to another repository or index.
 fn base(dir: &Path) -> Command {
     let mut cmd = Command::new("git");
     cmd.arg("-C")
         .arg(dir)
         .args(["--no-optional-locks", "--literal-pathspecs", "-c", "core.quotepath=off"])
+        // A repository's configuration must not make a read run a program: `core.fsmonitor`
+        // names a hook that git starts when it refreshes the index (`git diff` against the
+        // working tree does), and a pager or an external diff are the other two ways in.
+        .args(["-c", "core.fsmonitor=false", "-c", "core.pager=cat", "-c", "diff.external="])
+        .arg("--no-pager")
         .env("GIT_OPTIONAL_LOCKS", "0")
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("LC_ALL", "C")

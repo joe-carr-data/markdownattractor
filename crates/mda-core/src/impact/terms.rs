@@ -90,25 +90,57 @@ pub fn terms_for(change: &SectionChange) -> Vec<Term> {
 fn extract(lines: &[String]) -> Vec<(String, TermKind)> {
     let mut out = Vec::new();
     for line in lines {
-        let tokens: Vec<&str> =
-            line.split_whitespace().map(strip).filter(|t| !t.is_empty()).collect();
-        let mut i = 0;
-        while i < tokens.len() {
-            let t = tokens[i];
-            if let Some(kind) = classify(t) {
-                if kind == TermKind::Number
-                    && let Some(unit) = tokens.get(i + 1).filter(|u| is_unit(u))
-                {
-                    out.push((format!("{t} {unit}"), kind));
-                    i += 2;
-                    continue;
+        for (segment, code) in segments(line) {
+            if code {
+                // A code span is an identifier whatever its length or spelling: `on`, `from`.
+                for t in segment.split_whitespace().filter(|t| usable(t)) {
+                    out.push((t.to_owned(), TermKind::Identifier));
                 }
-                out.push((t.to_owned(), kind));
+                continue;
             }
-            i += 1;
+            // Table cells and the two halves of a link are separate tokens.
+            let spaced: String = segment
+                .chars()
+                .map(|c| if matches!(c, '|' | '[' | ']' | '(' | ')') { ' ' } else { c })
+                .collect();
+            let tokens: Vec<&str> =
+                spaced.split_whitespace().map(strip).filter(|t| !t.is_empty()).collect();
+            let mut i = 0;
+            while i < tokens.len() {
+                let t = tokens[i];
+                if let Some(kind) = classify(t) {
+                    if kind == TermKind::Number
+                        && let Some(unit) = tokens.get(i + 1).filter(|u| is_unit(u))
+                    {
+                        out.push((format!("{t} {unit}"), kind));
+                        i += 2;
+                        continue;
+                    }
+                    out.push((t.to_owned(), kind));
+                }
+                i += 1;
+            }
         }
     }
     out
+}
+
+/// Split a line into text and code-span segments. Backticks that do not pair up leave the
+/// whole line as text.
+fn segments(line: &str) -> Vec<(&str, bool)> {
+    if !line.matches('`').count().is_multiple_of(2) {
+        return vec![(line, false)];
+    }
+    line.split('`')
+        .enumerate()
+        .map(|(i, part)| (part, i % 2 == 1))
+        .filter(|(p, _)| !p.is_empty())
+        .collect()
+}
+
+/// A token short enough to search for that holds a letter or a digit.
+fn usable(t: &str) -> bool {
+    t.chars().count() <= 80 && t.chars().any(char::is_alphanumeric)
 }
 
 /// Remove markdown and sentence punctuation around a token, keeping what is inside it.
@@ -148,7 +180,7 @@ fn is_unit(word: &str) -> bool {
 
 fn classify(t: &str) -> Option<TermKind> {
     let chars = t.chars().count();
-    if chars > 80 || !t.chars().any(char::is_alphanumeric) {
+    if !usable(t) {
         return None;
     }
     let first = t.chars().next()?;
@@ -212,6 +244,33 @@ mod tests {
         let kinds: Vec<TermKind> =
             ts.iter().filter(|t| t.role == Role::Replaced).map(|t| t.kind).collect();
         assert!(kinds.windows(2).all(|w| w[0] <= w[1]), "identifiers before words: {kinds:?}");
+    }
+
+    #[test]
+    fn table_cells_and_links_are_split_before_classification() {
+        let ts = terms("# T\n\n|timeout|30|seconds|\n", "# T\n\n|timeout|60|seconds|\n");
+        assert_eq!(texts(&ts, Role::Replaced), ["30 seconds"]);
+        assert_eq!(texts(&ts, Role::Context), ["timeout"]);
+
+        let ts = terms(
+            "# T\n\nSee the [guide](docs/v2.md) first.\n",
+            "# T\n\nSee the [guide](docs/v3.md) first.\n",
+        );
+        assert_eq!(texts(&ts, Role::Replaced), ["docs/v2.md"]);
+        assert!(texts(&ts, Role::Context).contains(&"guide"));
+    }
+
+    #[test]
+    fn a_code_span_is_an_identifier_however_short_or_common() {
+        let ts = terms("# Config\n\nUse `on`.\n", "# Config\n\nUse `off`.\n");
+        assert_eq!(texts(&ts, Role::Replaced), ["on"]);
+        assert_eq!(texts(&ts, Role::Added), ["off"]);
+        let ts = terms("# Q\n\nSelect `from` the table with `a b`.\n", "# Q\n\nNothing.\n");
+        let got = texts(&ts, Role::Replaced);
+        assert!(got.contains(&"from") && got.contains(&"a") && got.contains(&"b"), "{got:?}");
+        // An unbalanced backtick leaves the line as plain text.
+        let ts = terms("# Q\n\nA stray ` and on.\n", "# Q\n\nNothing.\n");
+        assert!(!texts(&ts, Role::Replaced).contains(&"on"));
     }
 
     #[test]

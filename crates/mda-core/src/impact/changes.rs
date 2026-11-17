@@ -2,8 +2,8 @@
 //!
 //! [`compare`] takes the two texts of a file and pairs their sections conservatively:
 //!
-//! 1. sections whose hash is the same on both sides are unchanged (matched as a multiset, so
-//!    a section that only moved is not a change);
+//! 1. sections with the same hash are unchanged: first those under the same heading path, then
+//!    those that moved, when no section competes for either heading path;
 //! 2. of the rest, a section pairs with the one that has the same heading path when that
 //!    heading path occurs exactly once on each side;
 //! 3. a section left on the after side is an *addition* only when nothing is left on the
@@ -98,54 +98,70 @@ pub fn compare(before: &str, after: &str, flavor: Flavor) -> FileReview {
     let new = markdown::parse_str_as(after, flavor).sections;
     let mut review = FileReview::default();
 
-    // 1. Unchanged content, as a multiset of hashes.
-    let mut spare: HashMap<&str, usize> = HashMap::new();
-    for s in &old {
-        *spare.entry(s.hash.as_str()).or_default() += 1;
-    }
-    let mut new_left: Vec<&Section> = Vec::new();
-    for s in &new {
-        match spare.get_mut(s.hash.as_str()) {
-            Some(n) if *n > 0 => {
-                *n -= 1;
-                review.unchanged += 1;
-            }
-            _ => new_left.push(s),
+    // 1a. Unchanged in place: the same heading path and the same hash. Sections under
+    // different parents can share a hash (the text does not include the parent), so the
+    // heading path is matched first.
+    let mut old_used = vec![false; old.len()];
+    let mut new_used = vec![false; new.len()];
+    for (ni, s) in new.iter().enumerate() {
+        let twin = old.iter().enumerate().position(|(oi, o)| {
+            !old_used[oi] && o.hash == s.hash && o.heading_path == s.heading_path
+        });
+        if let Some(oi) = twin {
+            old_used[oi] = true;
+            new_used[ni] = true;
+            review.unchanged += 1;
         }
     }
-    let mut old_left: Vec<&Section> = Vec::new();
-    for s in old.iter().rev() {
-        // Drop from the back the occurrences that were matched, keeping document order.
-        match spare.get_mut(s.hash.as_str()) {
-            Some(n) if *n > 0 => {
-                *n -= 1;
-                old_left.push(s);
-            }
-            _ => {}
+    // 1b. Unchanged but moved: the same hash under another heading path, taken only when
+    // neither side has a competing section on that path. Otherwise the old text stays
+    // available to pair with its own heading path below (a section edited in place whose old
+    // wording was also copied elsewhere is a change, not an addition).
+    let path_left = |sections: &[Section], used: &[bool], path: &[String]| {
+        sections.iter().zip(used).any(|(s, u)| !*u && s.heading_path == path)
+    };
+    for ni in 0..new.len() {
+        if new_used[ni] {
+            continue;
+        }
+        let s = &new[ni];
+        let moved = old.iter().enumerate().position(|(oi, o)| {
+            !old_used[oi]
+                && o.hash == s.hash
+                && !path_left(&new, &new_used, &o.heading_path)
+                && !path_left(&old, &old_used, &s.heading_path)
+        });
+        if let Some(oi) = moved {
+            old_used[oi] = true;
+            new_used[ni] = true;
+            review.unchanged += 1;
         }
     }
-    old_left.reverse();
+    let new_left: Vec<&Section> =
+        new.iter().zip(&new_used).filter(|(_, u)| !**u).map(|(s, _)| s).collect();
+    let old_left: Vec<&Section> =
+        old.iter().zip(&old_used).filter(|(_, u)| !**u).map(|(s, _)| s).collect();
 
     // 2. Pair by a heading path that is unique on each whole side.
     let (old_count, new_count) = (count(&old), count(&new));
     let unique = |path: &[String]| {
         old_count.get(path).copied() == Some(1) && new_count.get(path).copied() == Some(1)
     };
-    let mut old_used = vec![false; old_left.len()];
+    let mut paired = vec![false; old_left.len()];
     let mut unpaired_new: Vec<&Section> = Vec::new();
     for s in &new_left {
         let partner = unique(&s.heading_path)
             .then(|| old_left.iter().position(|o| o.heading_path == s.heading_path))
             .flatten();
         if let Some(i) = partner {
-            old_used[i] = true;
+            paired[i] = true;
             review.changes.push(change(Some(old_left[i]), s));
         } else {
             unpaired_new.push(s);
         }
     }
     let unpaired_old: Vec<&Section> =
-        old_left.iter().zip(&old_used).filter(|(_, used)| !**used).map(|(s, _)| *s).collect();
+        old_left.iter().zip(&paired).filter(|(_, used)| !**used).map(|(s, _)| *s).collect();
 
     // 3 and 4. What is left.
     let repeated = |s: &Section| {
@@ -288,6 +304,33 @@ mod tests {
             "two new texts and the one old text they could pair with"
         );
         assert_eq!(r.unchanged, 2);
+    }
+
+    #[test]
+    fn identical_sections_under_different_parents_keep_their_identity() {
+        let before = "# A\n\n## X\n\nsame\n\n# B\n\n## X\n\nsame\n";
+        // The copy under A is removed: A/X (and A itself) are the deletions, B/X is untouched.
+        let r = cmp(before, "# B\n\n## X\n\nsame\n");
+        assert!(r.changes.is_empty(), "{r:?}");
+        let gone: Vec<&[String]> =
+            r.not_reviewed.iter().map(|n| n.heading_path.as_slice()).collect();
+        assert!(gone.contains(&["A".to_owned(), "X".to_owned()].as_slice()), "{gone:?}");
+        assert!(!gone.contains(&["B".to_owned(), "X".to_owned()].as_slice()), "{gone:?}");
+        assert!(r.not_reviewed.iter().all(|n| n.reason == Skip::Deleted));
+    }
+
+    #[test]
+    fn an_edited_section_whose_old_text_was_copied_elsewhere_is_still_a_change() {
+        let before = "# A\n\n## X\n\nThe limit is 5.\n\n# B\n\nOther.\n";
+        let after = "# A\n\n## X\n\nThe limit is 9.\n\n# B\n\nOther.\n\n## Y\n\nThe limit is 5.\n";
+        let r = cmp(before, after);
+        let edited = r.changes.iter().find(|c| c.heading_path == ["A", "X"]).unwrap();
+        assert_eq!(edited.removed_lines, ["The limit is 5."], "the old wording stays with A/X");
+        assert!(edited.before.is_some());
+        assert!(
+            r.changes.iter().all(|c| c.before.is_some() || c.heading_path == ["B", "Y"]),
+            "{r:?}"
+        );
     }
 
     #[test]

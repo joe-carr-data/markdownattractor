@@ -145,3 +145,23 @@ fn a_crlf_working_file_against_an_lf_blob_is_no_change_and_a_rename_is_not_paire
     assert!(review.changes.is_empty());
     assert!(review.not_reviewed.iter().any(|n| n.reason == Skip::RenamedOrMoved));
 }
+
+#[cfg(unix)]
+#[test]
+fn a_program_named_by_the_repository_configuration_is_never_run() {
+    let (dir, first) = fixture();
+    let marker = dir.path().join("executed");
+    let hook = format!("touch '{}'; false #", marker.display());
+    git(dir.path(), &["config", "core.fsmonitor", &hook]);
+    git(dir.path(), &["config", "core.pager", &hook]);
+    git(dir.path(), &["config", "diff.external", &hook]);
+    write(dir.path(), "docs/guide.md", &GUIDE.replace("30 seconds", "60 seconds"));
+
+    let r = repo(&dir.path().join("docs"));
+    let changed = r.changed_since(&first).unwrap();
+    assert_eq!(changed, [(FileChange::Modified, "guide.md".to_owned())]);
+    let tree = r.tree(&first).unwrap();
+    r.blob(&tree["guide.md"]).unwrap();
+    r.resolve_commit("HEAD").unwrap();
+    assert!(!marker.exists(), "a configured fsmonitor, pager or external diff was started");
+}
