@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+- The plugin's launcher fetches a missing binary itself, once, instead of failing with "mda binary not found": on a first session the MCP server can start before the session-start hook has downloaded the binary. The download's messages go to stderr, so an MCP connection on stdout stays clean; `MDA_NO_FETCH=1` turns the fetch off.
+
 ## [0.2.3] — 2026-11-17
 
 For users: mda works before you set an API key. Search runs on the raw text from the first minute; cards are an upgrade you can add later.

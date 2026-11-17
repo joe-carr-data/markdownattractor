@@ -24,7 +24,8 @@ version_of() { "$1" --version 2>/dev/null | awk '{print $2}'; }
 # and returns in well under a second when the daemon already answers. Never blocks the session.
 ensure_daemon() {
   project="${CLAUDE_PROJECT_DIR:-$PWD}"
-  if [ -d "$project/.markdownattractor" ]; then
+  # The launcher calls this hook to fetch a missing binary; it starts no daemon from there.
+  if [ "${MDA_NO_DAEMON:-0}" != "1" ] && [ -d "$project/.markdownattractor" ]; then
     # Detached: the hook returns at once whatever `start` has to wait for.
     ( MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}" "$1" start --no-example --root "$project" >/dev/null 2>&1 </dev/null & ) 2>/dev/null
   fi

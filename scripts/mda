@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Launcher used by the skills and hooks: finds the right `mda` binary and execs it.
-# Same resolution order as bootstrap.sh. Prints a one-line hint if nothing is found.
+# Same resolution order as bootstrap.sh. When nothing is found it runs bootstrap.sh once to fetch
+# the binary, then prints a one-line hint if that failed too.
 set -u
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
@@ -19,5 +20,18 @@ if command -v mda >/dev/null 2>&1; then
   exec mda "$@"
 fi
 
-echo "mda binary not found. Start a new session to let the plugin fetch it, or run: cargo install --git https://github.com/joe-carr-data/markdownattractor mda-cli" >&2
+# Nothing found: the session-start hook has not run, has not finished, or ran against another
+# data directory (the MCP server can be started before the hook is done on a first session).
+# Fetch the binary now, once, and try again. Everything the hook prints goes to stderr: stdout
+# may be an MCP connection. The hook must not start a daemon from here (`MDA_NO_DAEMON`).
+if [ "${MDA_NO_FETCH:-0}" != "1" ] && [ -x "$ROOT/scripts/bootstrap.sh" ]; then
+  echo "markdownattractor: binary not found in $DATA/bin, fetching it once…" >&2
+  CLAUDE_PLUGIN_ROOT="$ROOT" CLAUDE_PLUGIN_DATA="$DATA" MDA_NO_DAEMON=1 \
+    "$ROOT/scripts/bootstrap.sh" </dev/null >&2 2>&1 || true
+  if [ -x "$DATA/bin/mda" ]; then
+    exec "$DATA/bin/mda" "$@"
+  fi
+fi
+
+echo "mda binary not found in $DATA/bin and it could not be fetched (see the line above). Run /mda doctor, or: cargo install --git https://github.com/joe-carr-data/markdownattractor mda-cli" >&2
 exit 127

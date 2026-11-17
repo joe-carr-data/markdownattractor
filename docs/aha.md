@@ -2,6 +2,7 @@
 
 Dated one-liners. Newest first. Pruned monthly: entries that became rules graduate to `.claude/rules/`, the rest go to `archive/aha-YYYY-MM.md`. Keep under 60 lines.
 
+- 2026-11-17 — A session-start hook is not a precondition: Claude Code can start a plugin's MCP server before the hook that downloads its binary has finished, and the owner's second session got "mda binary not found" on 0.2.3. Anything a launcher needs it must be able to fetch itself; the first-run gate script ran the hook first and so could not see this.
 - 2026-11-17 — A release can be blocked by news, not by code: `cargo deny` failed on a version-bump PR because `chrono` was declared unmaintained that week (RUSTSEC-2026-0543, through `rmcp`). Run `make check` before promising a release time; an unmaintained notice with no vulnerability goes in `deny.toml` with its reason.
 - 2026-11-15 — A grader's citation rule is part of the product contract: asking agents for `path.md:11-13` made 72 of 123 answers "no resolvable citation" under an extractor that wanted the token to end in `.md`. Test a new answer format against the grader before measuring it, and measure a wording change against a control arm in the same run, not against an old table.
 - 2026-11-15 — A chain of harness steps joined with `;` ran on after a refused run and started grading the wrong directory; nobody noticed until the owner asked. Join counted steps with `&&`, start a short waiter beside every long job that checks the first rows exist, and move a copied run set aside before running in a copied `$RUN`.
@@ -56,4 +57,3 @@ Dated one-liners. Newest first. Pruned monthly: entries that became rules gradua
 - 2026-09-22 — rmcp 3: `use crate::Result` in the module that carries `#[tool_handler]` breaks the macro (it expands `Result<_, ErrorData>` unqualified); keep the crate alias out of that file.
 - 2026-09-22 — Linux `notify` (inotify) reports every `open`. A daemon that parses files on hints will hint itself forever unless `EventKind::Access` is dropped at the source. macOS FSEvents never showed it, which is why the live run looked fine.
 - 2026-09-22 — SQLite WAL: a deferred transaction that reads, then writes after another connection committed, fails with `SQLITE_BUSY_SNAPSHOT` immediately; `busy_timeout` does not help. Every read-then-write transaction begins `IMMEDIATE`.
-- 2026-09-22 — A `BufReader` created per call over a socket read ahead and silently dropped the buffered lines after the first one; the watch stream lost events. Keep one framed reader per connection.

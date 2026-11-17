@@ -1,7 +1,7 @@
-.PHONY: check fmt lint test cov deny audit docs build release clean t2-tests
+.PHONY: check fmt lint test cov deny audit docs build release clean t2-tests launcher-test
 
 ## check: everything CI runs, in order. Run before every commit.
-check: fmt lint test deny docs t2-tests t6-tests page-blocks
+check: fmt lint test deny docs t2-tests t6-tests page-blocks launcher-test
 
 fmt:
 	cargo fmt --all -- --check
@@ -51,3 +51,8 @@ release:
 
 clean:
 	cargo clean
+
+## launcher-test: the plugin launcher fetches a missing binary once (offline, stubbed curl)
+launcher-test:
+	cargo build -q -p mda-cli
+	scripts/dev/launcher-test.sh target/debug/mda
