@@ -5,7 +5,11 @@
 # and `mda nudge off --global` (writes DATA/nudge.off).
 [ "${MARKDOWNATTRACTOR_WORKER:-0}" = "1" ] && exit 0
 set -u
-DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
+# As in scripts/mda: another plugin's CLAUDE_PLUGIN_DATA is not ours.
+DATA="$HOME/.claude/plugins/data/markdownattractor-markdownattractor"
+case "${CLAUDE_PLUGIN_DATA:-}" in
+  */markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;
+esac
 # Same precedence as the launcher and `mda nudge --global`.
 [ -f "${MDA_NUDGE_FILE:-$DATA/nudge.off}" ] && exit 0
 
