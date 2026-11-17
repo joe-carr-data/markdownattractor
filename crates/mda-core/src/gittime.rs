@@ -79,13 +79,22 @@ struct Output {
     stderr: String,
 }
 
-/// The base command: no optional locks, no prompts, a fixed locale, and none of the
-/// environment variables that redirect git to another repository or index.
+/// The base command: no optional locks, no prompts, no hook, pager or transport named by the
+/// repository's configuration, a fixed locale, and none of the environment variables that redirect git to another repository or index.
 fn base(dir: &Path) -> Command {
     let mut cmd = Command::new("git");
     cmd.arg("-C")
         .arg(dir)
         .args(["--no-optional-locks", "--literal-pathspecs", "-c", "core.quotepath=off"])
+        // A read must not start a program or a transfer that the repository's configuration
+        // names. This module makes no call that compares against the working tree through
+        // git (which would run clean filters); the settings below close what is left:
+        // the fsmonitor hook, the pager, and any transport (a partial clone fetches a missing
+        // object on demand, through whatever `core.sshCommand` or remote helper is set).
+        // `blame` additionally passes `--no-textconv`, `hash-object` `--no-filters`.
+        .args(["-c", "core.fsmonitor=false", "-c", "protocol.allow=never"])
+        .arg("--no-pager")
+        .env("GIT_NO_LAZY_FETCH", "1")
         .env("GIT_OPTIONAL_LOCKS", "0")
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("LC_ALL", "C")
@@ -231,6 +240,17 @@ fn output(cmd: Command, stdin: Option<Vec<u8>>, what: &str) -> Result<Vec<u8>> {
     }
 }
 
+/// How a file differs between a commit and the working tree.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileChange {
+    /// In the working tree, not in the commit.
+    Added,
+    /// In both, with different content (or a type change).
+    Modified,
+    /// In the commit, not in the working tree.
+    Deleted,
+}
+
 /// Look for a usable git work tree around `root`.
 ///
 /// Never an error: anything that prevents dating is reported as the reason it cannot happen.
@@ -299,6 +319,113 @@ impl Repo {
             return Err(Error::Git(format!("unexpected HEAD {id:?}")));
         }
         Ok(id)
+    }
+
+    /// Resolve a revision a user typed (`HEAD~3`, a branch, a tag, an id) to a full commit id.
+    ///
+    /// The text never reaches git as an option: a leading `-` is refused and the argument
+    /// follows `--end-of-options`. Revisions that make git search (`:/text`, `^{/text}`) or
+    /// that are longer than 200 bytes are refused. The name is resolved to an object id first
+    /// and that id is then peeled to a commit, so nothing in the user's text can stand in for
+    /// the `^{commit}` check.
+    pub fn resolve_commit(&self, revision: &str) -> Result<String> {
+        let rev = revision.trim();
+        let refused = rev.is_empty()
+            || rev.len() > 200
+            || rev.starts_with('-')
+            || rev.contains(['\0', '\n'])
+            || rev.contains(":/")
+            || rev.contains("^{/");
+        if refused {
+            return Err(Error::Git(format!("not a revision: {revision:?}")));
+        }
+        let unknown = || Error::Git(format!("unknown revision {revision:?}"));
+        let object = self.rev_parse(rev).ok_or_else(unknown)?;
+        self.rev_parse(&format!("{object}^{{commit}}")).ok_or_else(unknown)
+    }
+
+    /// `git rev-parse --verify` of one name: a full hexadecimal object id, or `None`.
+    fn rev_parse(&self, name: &str) -> Option<String> {
+        let mut cmd = self.git();
+        cmd.args(["rev-parse", "--verify", "--quiet", "--end-of-options", name]);
+        let out = run(cmd, None, "rev-parse").ok()??;
+        let id = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+        (out.success && id.len() >= 40 && id.bytes().all(|b| b.is_ascii_hexdigit())).then_some(id)
+    }
+
+    /// The blob ids git would give the working files at `rel_paths`, with no filter or
+    /// conversion, in one call. The files are read by git as they are on disk; the caller
+    /// passes regular files it has already validated. A path holding a newline is refused.
+    pub fn blobs_of_files(&self, rel_paths: &[String]) -> Result<Vec<String>> {
+        if rel_paths.is_empty() {
+            return Ok(Vec::new());
+        }
+        if let Some(bad) = rel_paths.iter().find(|p| p.contains('\n')) {
+            return Err(Error::Git(format!("a newline in the path {bad:?}")));
+        }
+        let mut stdin = String::new();
+        for p in rel_paths {
+            stdin.push_str(&self.full(p));
+            stdin.push('\n');
+        }
+        let mut cmd = self.git();
+        cmd.args(["hash-object", "--no-filters", "--stdin-paths"]);
+        let out = output(cmd, Some(stdin.into_bytes()), "hash-object --stdin-paths")?;
+        let ids: Vec<String> =
+            String::from_utf8_lossy(&out).lines().map(|l| l.trim().to_owned()).collect();
+        if ids.len() != rel_paths.len() {
+            return Err(Error::Git(format!(
+                "hash-object gave {} ids for {} files",
+                ids.len(),
+                rel_paths.len()
+            )));
+        }
+        Ok(ids)
+    }
+
+    /// How the working files differ from `commit`, without asking git to compare against the
+    /// working tree (that comparison runs the repository's clean filters). `working` holds the
+    /// root-relative paths of the files that exist now; each is hashed raw and compared with
+    /// the commit's tree. A file of the commit that is not in `working` and that `wanted`
+    /// accepts is a deletion. A rename is a deletion and an addition. Sorted by path.
+    ///
+    /// Only regular files with UTF-8 paths are in the tree this compares against
+    /// ([`Repo::tree`]); a symlink, a submodule or a path that is not UTF-8 is neither indexed
+    /// by mda nor reported here.
+    pub fn changed_since(
+        &self,
+        commit: &str,
+        working: &[String],
+        wanted: &dyn Fn(&str) -> bool,
+    ) -> Result<Vec<(FileChange, String)>> {
+        let tree = self.tree(commit)?;
+        let ids = self.blobs_of_files(working)?;
+        let mut changes = Vec::new();
+        for (path, id) in working.iter().zip(&ids) {
+            match tree.get(path) {
+                None => changes.push((FileChange::Added, path.clone())),
+                Some(old) if old != id => changes.push((FileChange::Modified, path.clone())),
+                Some(_) => {}
+            }
+        }
+        let present: std::collections::HashSet<&str> = working.iter().map(String::as_str).collect();
+        for path in tree.keys() {
+            if !present.contains(path.as_str()) && wanted(path) {
+                changes.push((FileChange::Deleted, path.clone()));
+            }
+        }
+        changes.sort_by(|a, b| a.1.cmp(&b.1));
+        Ok(changes)
+    }
+
+    /// The bytes of a blob, by the id [`Repo::tree`] gave.
+    pub fn blob(&self, id: &str) -> Result<Vec<u8>> {
+        if id.is_empty() || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(Error::Git(format!("not a blob id: {id:?}")));
+        }
+        let mut cmd = self.git();
+        cmd.args(["cat-file", "blob", id]);
+        output(cmd, None, "cat-file blob")
     }
 
     /// Is `old` an ancestor of `new`? `false` also when `old` no longer exists.
@@ -409,7 +536,8 @@ impl Repo {
         now: Timestamp,
     ) -> Result<Vec<Timestamp>> {
         let mut cmd = self.git();
-        cmd.args(["blame", "--line-porcelain", commit, "--"]).arg(self.full(rel_path));
+        cmd.args(["blame", "--no-textconv", "--line-porcelain", commit, "--"])
+            .arg(self.full(rel_path));
         let out = output(cmd, None, "blame")?;
         parse_line_porcelain(&out, now)
     }

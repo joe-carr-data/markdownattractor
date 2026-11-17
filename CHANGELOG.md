@@ -4,8 +4,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+- **Git calls start nothing the repository's configuration names.** The dating pass ran `git blame` without `--no-textconv`, so a textconv program configured for a file would be started during dating (0.2.0 to 0.2.4). Every git call now also turns off the fsmonitor hook and every transport (a partial clone no longer fetches a missing object on demand; such a file falls back to file times), and no call compares against the working tree through git, which would run clean filters. Found in review of the `mda check` groundwork; a repository's `.git/config` is local and is not set by cloning.
+
 ### Added
 - Internal: backends answer a second kind of call, a schema-constrained request with the caller's own system prompt (`Backend::structured`, ADR-0009), on `api`, `local`, `claude-cli`, the mock and the unavailable backend. Its result carries the usage the backend reported whatever the outcome. Nothing user-visible uses it yet; it is the first part of `mda check`.
+- Internal: the unit of a change-impact review (`mda_core::impact`): a file's sections paired before and after (unchanged content first, then unique heading paths; renamed, moved and repeated headings are reported as not reviewed, never guessed), the search terms of a change with the replaced wording first, and the git calls for a comparison against a revision (`resolve_commit`, `changed_since`, `blobs_of_files`, `blob`).
 
 ## [0.2.4] — 2026-11-17
 

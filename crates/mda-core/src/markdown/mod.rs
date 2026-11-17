@@ -394,6 +394,41 @@ fn options() -> Options<'static> {
     o
 }
 
+/// What a piece of one line is, for [`inline_pieces`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Piece {
+    /// Running text (also the content of a code block line, read on its own).
+    Text,
+    /// The content of an inline code span, delimiters removed.
+    Code,
+    /// The destination of a link or an image.
+    LinkTarget,
+}
+
+/// The inline pieces of one line of markdown, in order, as the parser reads them: text, code
+/// spans (any delimiter length, escapes honoured) and link destinations. The line is parsed
+/// on its own, so block context is lost: a line from inside a fenced block reads as text.
+#[must_use]
+pub fn inline_pieces(line: &str) -> Vec<(String, Piece)> {
+    let arena = Arena::new();
+    let root = parse_document(&arena, line.trim(), &options());
+    let mut out = Vec::new();
+    for n in root.descendants() {
+        match &n.data.borrow().value {
+            NodeValue::Text(t) => out.push((t.to_string(), Piece::Text)),
+            NodeValue::Code(c) => out.push((c.literal.clone(), Piece::Code)),
+            NodeValue::CodeBlock(cb) => out.push((cb.literal.clone(), Piece::Text)),
+            NodeValue::HtmlInline(h) => out.push((h.clone(), Piece::Text)),
+            NodeValue::HtmlBlock(b) => out.push((b.literal.clone(), Piece::Text)),
+            NodeValue::Link(l) | NodeValue::Image(l) => {
+                out.push((l.url.clone(), Piece::LinkTarget));
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
 fn normalize_newlines(text: &str) -> String {
     if text.contains('\r') {
         text.replace("\r\n", "\n").replace('\r', "\n")
