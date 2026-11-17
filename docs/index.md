@@ -36,6 +36,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |
 | 2026-11-17 | [reviews/codex/2026-11-17-change-impact-design.md](reviews/codex/2026-11-17-change-impact-design.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eae9-3c12-74c3-8f35-3f181d6510b1`, no write acc… |
 | 2026-11-16 | [reviews/codex/2026-11-16-first-run-no-key.md](reviews/codex/2026-11-16-first-run-no-key.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |
 | 2026-11-15 | [reviews/codex/2026-11-15-answer-contract.md](reviews/codex/2026-11-15-answer-contract.md) | Reviewer: Codex (`gpt-6-astra`, fresh read-only thread, through the `codex:codex-rescue` companio… |

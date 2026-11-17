@@ -268,8 +268,8 @@ pub(super) enum CliRun {
 
 impl ClaudeCli {
     /// A structured call through the CLI: the same isolation as a card call (no tools, no
-    /// settings, no MCP, no session file). The CLI has no output-token flag; the per-call
-    /// budget bounds the call instead.
+    /// settings, no MCP, no session file). The CLI has no output-token flag: the per-call
+    /// budget bounds the call, and an answer above the request's cap is rejected afterwards.
     async fn structured_once(
         &self,
         req: &StructuredRequest,
@@ -294,20 +294,25 @@ impl ClaudeCli {
             }
         };
         let guarded = super::parse::guardrails(&doc, wall_ms, model);
+        // The document reports usage only when it has a `usage` object or a cost; otherwise
+        // what the call used is unknown, not zero.
+        let reported = doc.get("usage").is_some_and(serde_json::Value::is_object)
+            || doc.get("total_cost_usd").is_some_and(serde_json::Value::is_number);
+        let usage = reported.then_some(guarded.usage);
         if let Err(outcome) = guarded.verdict {
-            return Ok(StructuredResult::failed(outcome, Some(guarded.usage)));
+            return Ok(StructuredResult::failed(outcome, usage));
         }
-        Ok(match doc.get("structured_output") {
-            Some(v) if v.is_object() => StructuredResult {
-                status: StructuredStatus::Ok { value: v.clone() },
-                usage: Some(guarded.usage),
-            },
+        let result = match doc.get("structured_output") {
+            Some(v) if v.is_object() => {
+                StructuredResult { status: StructuredStatus::Ok { value: v.clone() }, usage }
+            }
             _ => {
                 let text =
                     doc.get("result").and_then(serde_json::Value::as_str).unwrap_or_default();
-                StructuredResult::from_text(text, guarded.usage)
+                StructuredResult::from_text(text, usage)
             }
-        })
+        };
+        Ok(result.enforce_output_cap(req.max_output_tokens))
     }
 }
 

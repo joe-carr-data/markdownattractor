@@ -24,7 +24,9 @@ pub struct StructuredRequest {
     pub schema: Value,
     /// A short name for the schema (`[a-z_]+`), for backends that want one.
     pub schema_name: String,
-    /// The cap on output tokens for this call.
+    /// The cap on output tokens for this call. `api` and `local` send it to the model, which
+    /// stops there. `claude-cli` has no such flag: the call is bounded by the per-call dollar
+    /// budget, and an answer that reports more output than the cap is rejected after the fact.
     pub max_output_tokens: u32,
 }
 
@@ -96,7 +98,7 @@ impl StructuredResult {
 
     /// Parse the model's text as one JSON object, tolerating a code fence around it.
     #[must_use]
-    pub fn from_text(text: &str, usage: Usage) -> Self {
+    pub fn from_text(text: &str, usage: Option<Usage>) -> Self {
         let candidate = super::parse::strip_fences(text);
         let status = match serde_json::from_str::<Value>(candidate) {
             Ok(value) if value.is_object() => StructuredStatus::Ok { value },
@@ -113,19 +115,44 @@ impl StructuredResult {
                 raw: text.to_owned(),
             },
         };
-        Self { status, usage: Some(usage) }
+        Self { status, usage }
     }
 
     /// A truncated answer: the output cap was reached.
     #[must_use]
-    pub fn truncated(cap: u32, raw: String, usage: Usage) -> Self {
+    pub fn truncated(cap: u32, raw: String, usage: Option<Usage>) -> Self {
         Self {
             status: StructuredStatus::Malformed {
                 reason: format!("truncated at {cap} output tokens"),
                 raw,
             },
-            usage: Some(usage),
+            usage,
         }
+    }
+
+    /// A refusal or a content filter: never retried, usage kept.
+    #[must_use]
+    pub fn refused(reason: String, usage: Option<Usage>) -> Self {
+        Self { status: StructuredStatus::Fatal { reason }, usage }
+    }
+
+    /// Reject an answer whose reported output is above `cap`. For a backend that cannot pass
+    /// the cap to the model (`claude-cli`): the tokens are spent and stay in `usage`, but the
+    /// caller never receives an answer larger than it asked for.
+    #[must_use]
+    pub fn enforce_output_cap(self, cap: u32) -> Self {
+        let over = self.usage.as_ref().is_some_and(|u| u.output_tokens > u64::from(cap));
+        if over && matches!(self.status, StructuredStatus::Ok { .. }) {
+            let got = self.usage.as_ref().map_or(0, |u| u.output_tokens);
+            return Self {
+                status: StructuredStatus::Malformed {
+                    reason: format!("answer of {got} output tokens is above the cap of {cap}"),
+                    raw: String::new(),
+                },
+                usage: self.usage,
+            };
+        }
+        self
     }
 
     /// The JSON object, when the call succeeded.

@@ -263,7 +263,11 @@ impl ApiBackend {
         let wall_ms = http::millis_since(started);
         tracing::debug!(id = %req.id, status = resp.status, api_ms = resp.elapsed_ms, "messages api responded (structured)");
         if resp.status != 200 {
-            return Ok(StructuredResult::failed(classify_error(&resp, model), None));
+            // An error body may still say what the attempt used (a gateway, a compatible server).
+            let usage = serde_json::from_str::<Value>(resp.body.trim())
+                .ok()
+                .and_then(|d| reported_usage(&d, model, resp.elapsed_ms, wall_ms));
+            return Ok(StructuredResult::failed(classify_error(&resp, model), usage));
         }
         Ok(classify_structured(&resp.body, model, req.max_output_tokens, resp.elapsed_ms, wall_ms))
     }
@@ -290,7 +294,7 @@ fn classify_structured(
             };
         }
     };
-    let usage = usage_from(&doc, requested_model, api_ms, wall_ms);
+    let usage = reported_usage(&doc, requested_model, api_ms, wall_ms);
     let text = first_text_block(&doc);
     match doc.get("stop_reason").and_then(Value::as_str).unwrap_or_default() {
         "max_tokens" => StructuredResult::truncated(cap, text, usage),
@@ -299,12 +303,10 @@ fn classify_structured(
                 .pointer("/stop_details/category")
                 .and_then(Value::as_str)
                 .unwrap_or("unspecified");
-            StructuredResult {
-                status: StructuredStatus::Fatal {
-                    reason: format!("model refused (category {category}): {}", http::tail(&text)),
-                },
-                usage: Some(usage),
-            }
+            StructuredResult::refused(
+                format!("model refused (category {category}): {}", http::tail(&text)),
+                usage,
+            )
         }
         _ => StructuredResult::from_text(&text, usage),
     }
@@ -417,6 +419,13 @@ fn first_text_block(doc: &Value) -> String {
         .and_then(|b| b.get("text").and_then(Value::as_str))
         .unwrap_or_default()
         .to_owned()
+}
+
+/// The usage a body reports, or `None` when it has no `usage` object: unknown, not zero.
+fn reported_usage(doc: &Value, requested_model: &str, api_ms: u64, wall_ms: u64) -> Option<Usage> {
+    doc.get("usage")
+        .is_some_and(Value::is_object)
+        .then(|| usage_from(doc, requested_model, api_ms, wall_ms))
 }
 
 fn usage_from(doc: &Value, requested_model: &str, api_ms: u64, wall_ms: u64) -> Usage {

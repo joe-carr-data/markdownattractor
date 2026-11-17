@@ -1800,7 +1800,7 @@ mod structured_cli {
         )
         .unwrap();
         let body = format!(
-            "printf '%s\\n' \"$@\" > {} ; cat > {} ; cat {}",
+            "printf '%s\\n' \"$@\" > '{}' ; cat > '{}' ; cat '{}'",
             args.display(),
             stdin.display(),
             out_doc.display()
@@ -1827,7 +1827,7 @@ mod structured_cli {
         let dir = tempfile::tempdir().unwrap();
         let budget = dir.path().join("budget.json");
         std::fs::write(&budget, doc(&serde_json::json!({"is_error": true, "terminal_reason": "budget_exhausted", "result": "over"}))).unwrap();
-        let out = cli(dir.path(), &format!("cat > /dev/null ; cat {}", budget.display()))
+        let out = cli(dir.path(), &format!("cat > /dev/null ; cat '{}'", budget.display()))
             .structured(&sreq("c2"), "haiku")
             .await
             .unwrap();
@@ -1838,11 +1838,38 @@ mod structured_cli {
 
         let text = dir.path().join("text.json");
         std::fs::write(&text, doc(&serde_json::json!({"structured_output": null, "result": "{\"verdict\":\"unrelated\"}"}))).unwrap();
-        let out = cli(dir.path(), &format!("cat > /dev/null ; cat {}", text.display()))
+        let out = cli(dir.path(), &format!("cat > /dev/null ; cat '{}'", text.display()))
             .structured(&sreq("c3"), "haiku")
             .await
             .unwrap();
         assert_eq!(out.value().unwrap()["verdict"], "unrelated");
+
+        // The CLI cannot cap output: an answer above the cap is rejected, its usage kept.
+        let big = dir.path().join("big.json");
+        std::fs::write(&big, doc(&serde_json::json!({"structured_output": {"verdict": "related"}, "usage": {"input_tokens": 77, "output_tokens": 301}}))).unwrap();
+        let out = cli(dir.path(), &format!("cat > /dev/null ; cat '{}'", big.display()))
+            .structured(&sreq("c5"), "haiku")
+            .await
+            .unwrap();
+        assert!(
+            matches!(&out.status, StructuredStatus::Malformed { reason, .. } if reason.contains("above the cap of 300")),
+            "{out:?}"
+        );
+        assert_eq!(out.usage.unwrap().output_tokens, 301);
+
+        // A result document with no accounting at all: the usage is unknown, not zero.
+        let bare = dir.path().join("bare.json");
+        std::fs::write(
+            &bare,
+            r#"{"type":"result","is_error":false,"structured_output":{"verdict":"related"}}"#,
+        )
+        .unwrap();
+        let out = cli(dir.path(), &format!("cat > /dev/null ; cat '{}'", bare.display()))
+            .structured(&sreq("c6"), "haiku")
+            .await
+            .unwrap();
+        assert_eq!(out.kind(), "ok");
+        assert!(out.usage.is_none(), "no usage object and no cost: unknown");
 
         let crash = cli(dir.path(), "cat > /dev/null ; echo boom >&2 ; exit 3")
             .structured(&sreq("c4"), "haiku")
@@ -1851,4 +1878,92 @@ mod structured_cli {
         assert_eq!(crash.kind(), "retryable");
         assert!(crash.usage.is_none(), "a crash reports no usage: unknown");
     }
+}
+
+#[tokio::test]
+async fn structured_usage_is_unknown_when_the_body_reports_none_and_kept_from_error_bodies() {
+    // 200 with no `usage` object: an answer, cost unknown.
+    let no_usage = serde_json::json!({
+        "content": [{"type": "text", "text": "{\"verdict\":\"related\"}"}], "stop_reason": "end_turn"
+    })
+    .to_string();
+    // An error body that still reports usage (a gateway).
+    let err_with_usage = serde_json::json!({
+        "type": "error", "error": {"type": "api_error", "message": "boom"},
+        "usage": {"input_tokens": 12, "output_tokens": 0}
+    })
+    .to_string();
+    let zero = serde_json::json!({
+        "content": [{"type": "text", "text": "{\"verdict\":\"related\"}"}], "stop_reason": "end_turn",
+        "usage": {"input_tokens": 0, "output_tokens": 0}
+    })
+    .to_string();
+    let server = Server::start(vec![(200, no_usage), (500, err_with_usage), (200, zero)]).await;
+    let backend = api(&server.url);
+    let a = backend.structured(&sreq("u1"), "m").await.unwrap();
+    assert_eq!(a.kind(), "ok");
+    assert!(a.usage.is_none(), "no usage object: unknown, not zero");
+    let b = backend.structured(&sreq("u1"), "m").await.unwrap();
+    assert_eq!(b.kind(), "retryable");
+    assert_eq!(b.usage.unwrap().input_tokens, 12, "usage in an error body is kept");
+    let c = backend.structured(&sreq("u1"), "m").await.unwrap();
+    assert_eq!(c.usage.unwrap().input_tokens, 0, "an explicit zero is a report");
+}
+
+#[tokio::test]
+async fn local_structured_treats_a_refusal_and_a_content_filter_as_fatal_and_length_as_truncated() {
+    let choice = |message: serde_json::Value, finish: &str| {
+        serde_json::json!({
+            "choices": [{"message": message, "finish_reason": finish}],
+            "usage": {"prompt_tokens": 40, "completion_tokens": 9}
+        })
+        .to_string()
+    };
+    let server = Server::start(vec![
+        (200, choice(serde_json::json!({"content": null, "refusal": "I can't help with that"}), "stop")),
+        (200, choice(serde_json::json!({"content": "{\"verdict\":\"related\"}"}), "content_filter")),
+        (200, choice(serde_json::json!({"content": "{\"verd"}), "length")),
+        (200, choice(serde_json::json!({"content": ""}), "stop")),
+        (200, serde_json::json!({"choices": [{"message": {"content": "{\"verdict\":\"related\"}"}, "finish_reason": "stop"}]}).to_string()),
+    ])
+    .await;
+    let backend = local(&server.url);
+    let refused = backend.structured(&sreq("r"), "m").await.unwrap();
+    assert!(
+        matches!(&refused.status, StructuredStatus::Fatal { reason } if reason.contains("refused")),
+        "{refused:?}"
+    );
+    assert_eq!(refused.usage.as_ref().unwrap().input_tokens, 40);
+    let filtered = backend.structured(&sreq("r"), "m").await.unwrap();
+    assert!(
+        matches!(&filtered.status, StructuredStatus::Fatal { reason } if reason.contains("filtered")),
+        "object-shaped filtered content is not an answer: {filtered:?}"
+    );
+    let cut = backend.structured(&sreq("r"), "m").await.unwrap();
+    assert!(
+        matches!(&cut.status, StructuredStatus::Malformed { reason, .. } if reason.contains("truncated"))
+    );
+    let empty = backend.structured(&sreq("r"), "m").await.unwrap();
+    assert!(
+        matches!(&empty.status, StructuredStatus::Malformed { reason, .. } if reason.contains("empty output"))
+    );
+    let unknown = backend.structured(&sreq("r"), "m").await.unwrap();
+    assert_eq!(unknown.kind(), "ok");
+    assert!(unknown.usage.is_none());
+}
+
+#[test]
+fn a_failure_taken_from_the_card_path_keeps_the_usage_it_is_given_or_carries() {
+    let u = Mock::canned_usage("haiku");
+    let given = StructuredResult::failed(Outcome::Fatal { reason: "x".into() }, Some(u.clone()));
+    assert_eq!((given.kind(), given.usage.as_ref()), ("fatal", Some(&u)));
+    let carried = StructuredResult::failed(
+        Outcome::Malformed { reason: "x".into(), raw: "y".into(), usage: Some(u.clone()) },
+        None,
+    );
+    assert_eq!((carried.kind(), carried.usage.as_ref()), ("malformed", Some(&u)));
+    assert!(
+        StructuredResult::failed(Outcome::RateLimited { reason: "x".into() }, None).usage.is_none()
+    );
+    assert_eq!(StructuredResult::failed(Mock::ok_for("a", "haiku"), None).kind(), "malformed");
 }

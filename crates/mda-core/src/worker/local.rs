@@ -152,7 +152,10 @@ impl LocalBackend {
         };
         let wall_ms = http::millis_since(started);
         if resp.status != 200 {
-            return Ok(StructuredResult::failed(classify_error(&resp), None));
+            let usage = serde_json::from_str::<Value>(resp.body.trim())
+                .ok()
+                .and_then(|d| reported_usage(&d, &self.model, resp.elapsed_ms, wall_ms));
+            return Ok(StructuredResult::failed(classify_error(&resp), usage));
         }
         let doc: Value = match serde_json::from_str(resp.body.trim()) {
             Ok(v) => v,
@@ -166,14 +169,30 @@ impl LocalBackend {
                 });
             }
         };
-        let usage = usage_from(&doc, &self.model, resp.elapsed_ms, wall_ms);
+        let usage = reported_usage(&doc, &self.model, resp.elapsed_ms, wall_ms);
         let choice = doc.pointer("/choices/0");
         let text = choice
             .and_then(|c| c.pointer("/message/content"))
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_owned();
-        if choice.and_then(|c| c.get("finish_reason")).and_then(Value::as_str) == Some("length") {
+        let finish = choice.and_then(|c| c.get("finish_reason")).and_then(Value::as_str);
+        // A refusal or a filter is decided before the content is read: filtered content can
+        // still be object-shaped.
+        let refusal = choice.and_then(|c| c.pointer("/message/refusal")).and_then(Value::as_str);
+        if let Some(why) = refusal.filter(|r| !r.trim().is_empty()) {
+            return Ok(StructuredResult::refused(
+                format!("model refused: {}", http::tail(why)),
+                usage,
+            ));
+        }
+        if finish == Some("content_filter") {
+            return Ok(StructuredResult::refused(
+                "model output was filtered (finish_reason content_filter)".to_owned(),
+                usage,
+            ));
+        }
+        if finish == Some("length") {
             return Ok(StructuredResult::truncated(req.max_output_tokens, text, usage));
         }
         Ok(StructuredResult::from_text(&text, usage))
@@ -275,6 +294,13 @@ fn classify_success(body: &str, configured_model: &str, api_ms: u64, wall_ms: u6
         Ok(summary) => Outcome::Ok { summary, usage },
         Err(reason) => Outcome::Malformed { reason, raw: text, usage: Some(usage) },
     }
+}
+
+/// The usage a body reports, or `None` when it has no `usage` object: unknown, not zero.
+fn reported_usage(doc: &Value, configured_model: &str, api_ms: u64, wall_ms: u64) -> Option<Usage> {
+    doc.get("usage")
+        .is_some_and(Value::is_object)
+        .then(|| usage_from(doc, configured_model, api_ms, wall_ms))
 }
 
 fn usage_from(doc: &Value, configured_model: &str, api_ms: u64, wall_ms: u64) -> Usage {
