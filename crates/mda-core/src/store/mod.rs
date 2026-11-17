@@ -705,6 +705,23 @@ pub fn fts_escape(user_query: &str) -> String {
     out
 }
 
+/// One term as an FTS5 phrase: the whole of `term`, spaces included, in double quotes with
+/// inner quotes doubled, so nothing in it is read as an operator, a column filter or a prefix
+/// request. `None` when the term holds no letter or digit (FTS5 would see no token) or a
+/// control character.
+pub fn fts_literal(term: &str) -> Option<String> {
+    let term = term.trim();
+    if !term.chars().any(char::is_alphanumeric) || term.chars().any(char::is_control) {
+        return None;
+    }
+    Some(format!("\"{}\"", term.replace('"', "\"\"")))
+}
+
+/// `?n, ?n+1, …`: `count` numbered SQL placeholders starting at `first`.
+fn placeholders(count: usize, first: usize) -> String {
+    (first..first + count).map(|i| format!("?{i}")).collect::<Vec<_>>().join(", ")
+}
+
 /// Handle to the SQLite database. One connection, WAL mode, foreign keys on.
 ///
 /// `Store` is not `Sync`; give each thread its own by calling [`Store::open`] again.
@@ -1455,6 +1472,63 @@ impl Store {
         let rows = stmt.query_map(params![fts_expr, to_i64(k as u64)], |r| {
             Ok(FtsHit { section_id: r.get(0)?, bm25: -r.get::<_, f64>(1)? })
         })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// How many live sections match `fts_expr` in their raw text or heading path.
+    pub fn raw_match_count(&self, fts_expr: &str) -> Result<u64> {
+        if fts_expr.trim().is_empty() {
+            return Ok(0);
+        }
+        let n: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM sections_raw_fts WHERE sections_raw_fts MATCH ?1",
+            params![fts_expr],
+            |r| r.get(0),
+        )?;
+        Ok(u64::try_from(n).unwrap_or(0))
+    }
+
+    /// [`Store::search_raw`] over the sections of `doc_ids` only. Best hit first.
+    pub fn search_raw_in_docs(
+        &self,
+        fts_expr: &str,
+        doc_ids: &[String],
+        k: usize,
+    ) -> Result<Vec<FtsHit>> {
+        if fts_expr.trim().is_empty() || k == 0 || doc_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let sql = format!(
+            "SELECT f.section_id, {RAW_BM25} AS score FROM sections_raw_fts f
+             JOIN sections s ON s.rowid = f.rowid
+             WHERE sections_raw_fts MATCH ?1 AND s.doc_id IN ({})
+             ORDER BY score, f.section_id LIMIT ?2",
+            placeholders(doc_ids.len(), 3)
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let k = to_i64(k as u64);
+        let mut values: Vec<&dyn rusqlite::ToSql> = vec![&fts_expr, &k];
+        values.extend(doc_ids.iter().map(|d| d as &dyn rusqlite::ToSql));
+        let rows = stmt.query_map(values.as_slice(), |r| {
+            Ok(FtsHit { section_id: r.get(0)?, bm25: -r.get::<_, f64>(1)? })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
+    /// Which of `section_ids` match `fts_expr` in their raw text or heading path, sorted.
+    pub fn raw_matches_among(&self, fts_expr: &str, section_ids: &[String]) -> Result<Vec<String>> {
+        if fts_expr.trim().is_empty() || section_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let sql = format!(
+            "SELECT section_id FROM sections_raw_fts
+             WHERE sections_raw_fts MATCH ?1 AND section_id IN ({}) ORDER BY section_id",
+            placeholders(section_ids.len(), 2)
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let mut values: Vec<&dyn rusqlite::ToSql> = vec![&fts_expr];
+        values.extend(section_ids.iter().map(|d| d as &dyn rusqlite::ToSql));
+        let rows = stmt.query_map(values.as_slice(), |r| r.get(0))?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
