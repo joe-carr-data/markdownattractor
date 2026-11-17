@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 - Internal: backends answer a second kind of call, a schema-constrained request with the caller's own system prompt (`Backend::structured`, ADR-0009), on `api`, `local`, `claude-cli`, the mock and the unavailable backend. Its result carries the usage the backend reported whatever the outcome. Nothing user-visible uses it yet; it is the first part of `mda check`.
+- Internal: the unit of a change-impact review (`mda_core::impact`): a file's sections paired before and after (unchanged content first, then unique heading paths; renamed, moved and repeated headings are reported as not reviewed, never guessed), the search terms of a change with the replaced wording first, and the git calls for a comparison against a revision (`resolve_commit`, `changed_since`, `blob`).
 
 ## [0.2.4] — 2026-11-17
 

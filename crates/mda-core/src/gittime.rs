@@ -231,6 +231,17 @@ fn output(cmd: Command, stdin: Option<Vec<u8>>, what: &str) -> Result<Vec<u8>> {
     }
 }
 
+/// How a tracked file differs between a commit and the working tree.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileChange {
+    /// In the working tree, not in the commit.
+    Added,
+    /// In both, with different content (or a type change).
+    Modified,
+    /// In the commit, not in the working tree.
+    Deleted,
+}
+
 /// Look for a usable git work tree around `root`.
 ///
 /// Never an error: anything that prevents dating is reported as the reason it cannot happen.
@@ -299,6 +310,60 @@ impl Repo {
             return Err(Error::Git(format!("unexpected HEAD {id:?}")));
         }
         Ok(id)
+    }
+
+    /// Resolve a revision a user typed (`HEAD~3`, a branch, a tag, an id) to a full commit id.
+    /// The text never reaches git as an option: a leading `-` is refused and the argument
+    /// follows `--end-of-options`.
+    pub fn resolve_commit(&self, revision: &str) -> Result<String> {
+        let rev = revision.trim();
+        if rev.is_empty() || rev.starts_with('-') || rev.contains(['\0', '\n']) {
+            return Err(Error::Git(format!("not a revision: {revision:?}")));
+        }
+        let mut cmd = self.git();
+        cmd.args(["rev-parse", "--verify", "--quiet", "--end-of-options"])
+            .arg(format!("{rev}^{{commit}}"));
+        let out = run(cmd, None, "rev-parse")?
+            .ok_or_else(|| Error::Git("git rev-parse: no git binary".to_owned()))?;
+        let id = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+        if !out.success || id.is_empty() || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(Error::Git(format!("unknown revision {revision:?}")));
+        }
+        Ok(id)
+    }
+
+    /// Root-relative paths that differ between `commit` and the working tree, with how:
+    /// tracked files only (a file git has never seen is not listed), renames reported as a
+    /// deletion and an addition, paths outside the root dropped.
+    pub fn changed_since(&self, commit: &str) -> Result<Vec<(FileChange, String)>> {
+        let mut cmd = self.git();
+        cmd.args(["diff", "--name-status", "-z", "--no-renames", "--no-ext-diff", commit, "--"])
+            .arg(if self.prefix.is_empty() { "." } else { self.prefix.as_str() });
+        let out = output(cmd, None, "diff --name-status")?;
+        let mut fields = out.split(|b| *b == 0);
+        let mut changes = Vec::new();
+        while let (Some(status), Some(path)) = (fields.next(), fields.next()) {
+            let kind = match status.first() {
+                Some(b'A') => FileChange::Added,
+                Some(b'D') => FileChange::Deleted,
+                Some(_) => FileChange::Modified,
+                None => continue,
+            };
+            if let Some(rel) = std::str::from_utf8(path).ok().and_then(|p| self.rel(p)) {
+                changes.push((kind, rel.to_owned()));
+            }
+        }
+        Ok(changes)
+    }
+
+    /// The bytes of a blob, by the id [`Repo::tree`] gave.
+    pub fn blob(&self, id: &str) -> Result<Vec<u8>> {
+        if id.is_empty() || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(Error::Git(format!("not a blob id: {id:?}")));
+        }
+        let mut cmd = self.git();
+        cmd.args(["cat-file", "blob", id]);
+        output(cmd, None, "cat-file blob")
     }
 
     /// Is `old` an ancestor of `new`? `false` also when `old` no longer exists.
