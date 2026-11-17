@@ -333,6 +333,10 @@ impl McpServer {
         let hits = self
             .blocking(move |engine, embedder| {
                 // The root's tunables (config.toml) are read where the engine is available.
+                let path_prefix = match path_prefix {
+                    Some(p) => search::path_prefix_under(engine.root(), &p).map_err(internal)?,
+                    None => None,
+                };
                 let opts = SearchOptions {
                     k,
                     raw_only,
@@ -418,6 +422,10 @@ impl McpServer {
         let prefix = p.path_prefix.clone();
         let entries = self
             .blocking(move |engine, _| {
+                let prefix = match prefix {
+                    Some(p) => search::path_prefix_under(engine.root(), &p).map_err(internal)?,
+                    None => None,
+                };
                 engine.timeline(since, until, prefix.as_deref(), limit).map_err(internal)
             })
             .await?;

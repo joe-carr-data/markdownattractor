@@ -50,6 +50,20 @@ pub fn resolve_root(explicit: Option<&Path>) -> anyhow::Result<PathBuf> {
     Ok(cwd)
 }
 
+/// When the root was found above the current folder (no explicit root given), one phrase that
+/// says so: a command run inside a project is then working on a wider index than the user may
+/// think. `None` when the root is the current folder or was given explicitly.
+pub fn ancestor_note(root: &Path, explicit: bool) -> Option<String> {
+    if explicit {
+        return None;
+    }
+    let canon = |p: &Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    let cwd = canon(&std::env::current_dir().ok()?);
+    (canon(root) != cwd).then(|| {
+        "the index found above the current folder; `--root .` uses this folder instead".to_owned()
+    })
+}
+
 /// Run a short async operation (socket round-trips) on a fresh current-thread runtime.
 pub fn block_on<F: std::future::Future>(f: F) -> anyhow::Result<F::Output> {
     let rt = tokio::runtime::Builder::new_current_thread().enable_all().build()?;

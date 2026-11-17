@@ -197,6 +197,31 @@ pub struct Hit {
     pub via_or_fallback: bool,
 }
 
+/// Turn a path filter a user typed into the root-relative prefix the index stores.
+///
+/// A relative path is taken as relative to the root and returned as it is (without a leading
+/// `./`). An absolute path must be the root or below it and is made relative; one outside the
+/// root is an error, never an empty result. `None` means "the whole root": no filter.
+pub fn path_prefix_under(root: &std::path::Path, raw: &str) -> Result<Option<String>> {
+    let raw = raw.trim();
+    let path = std::path::Path::new(raw);
+    if !path.is_absolute() {
+        let rel = raw.trim_start_matches("./");
+        return Ok((!rel.is_empty() && rel != ".").then(|| rel.to_owned()));
+    }
+    let canon = |p: &std::path::Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    let (root_c, path_c) = (canon(root), canon(path));
+    let Ok(rel) = path_c.strip_prefix(&root_c) else {
+        return Err(crate::Error::Config(format!(
+            "{} is not under the indexed root {}",
+            path.display(),
+            root_c.display()
+        )));
+    };
+    let rel = rel.to_string_lossy().replace('\\', "/");
+    Ok((!rel.is_empty()).then_some(rel))
+}
+
 /// Run a lexical-only hybrid search (cards + raw text). See [`search_with`] for vectors.
 pub fn search(store: &Store, query: &str, opts: &SearchOptions) -> Result<Vec<Hit>> {
     search_with(store, query, opts, None)

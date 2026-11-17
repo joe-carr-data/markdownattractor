@@ -1552,3 +1552,89 @@ fn index_without_a_daemon_or_a_key_succeeds_and_says_cards_are_off() {
         .success()
         .stdout(predicate::str::contains("Rollback"));
 }
+
+#[test]
+fn search_in_takes_an_absolute_path_and_refuses_one_outside_the_root() {
+    let dir = root_with_docs();
+    let root = dir.path().canonicalize().unwrap();
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let search = |extra: &[&str]| {
+        let mut c = mda();
+        c.args(["search", "rollback", "--json", "--root"]).arg(&root).args(extra);
+        c
+    };
+    let hits = |v: &serde_json::Value| v["hits"].as_array().unwrap().len();
+
+    // Relative to the root, as before.
+    let rel = json_of(&search(&["--in", "docs"]).assert().success().get_output().stdout);
+    assert_eq!(hits(&rel), 1);
+    // The same folder as an absolute path gives the same hits, not zero.
+    let abs = root.join("docs");
+    let got =
+        json_of(&search(&["--in", abs.to_str().unwrap()]).assert().success().get_output().stdout);
+    assert_eq!(got["hits"], rel["hits"]);
+    // The root itself as an absolute path is no filter.
+    let all =
+        json_of(&search(&["--in", root.to_str().unwrap()]).assert().success().get_output().stdout);
+    assert_eq!(hits(&all), 1);
+    // A path outside the root is an error that names both, never an empty result.
+    let outside = tempfile::tempdir().unwrap();
+    search(&["--in", outside.path().to_str().unwrap()])
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("is not under the indexed root"));
+    // A path relative to the current folder, when it is not one relative to the root.
+    let got = json_of(
+        &mda()
+            .current_dir(root.join("docs"))
+            .args(["search", "rollback", "--json", "--in", "../docs"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout,
+    );
+    assert_eq!(hits(&got), 1);
+    // No hits under a filter: the output says what was searched.
+    mda()
+        .args(["search", "rollback", "--in", "notes", "--root"])
+        .arg(&root)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("only documents under notes/ were searched"));
+}
+
+#[test]
+fn doctor_and_start_use_the_index_above_a_subfolder_and_say_so() {
+    let dir = root_with_docs();
+    let root = dir.path().canonicalize().unwrap();
+    mda().args(["index", "--no-summarize", "--root"]).arg(&root).assert().success();
+    let sub = root.join("docs");
+
+    // From a subfolder, doctor checks the same root every other command uses.
+    let out =
+        mda().current_dir(&sub).args(["doctor", "--json"]).assert().get_output().stdout.clone();
+    let v = json_of(&out);
+    let check = |name: &str| {
+        v["checks"].as_array().unwrap().iter().find(|c| c["name"] == name).unwrap().clone()
+    };
+    let root_detail = check("root")["detail"].as_str().unwrap().to_owned();
+    assert!(root_detail.starts_with(root.to_str().unwrap()), "{root_detail}");
+    assert!(root_detail.contains("found above the current folder"), "{root_detail}");
+    assert_eq!(check("state dir")["status"], "ok", "not \"not initialised\": {v}");
+
+    // With --root . it looks at the subfolder itself, which has no index.
+    let out = mda()
+        .current_dir(&sub)
+        .args(["doctor", "--json", "--root", "."])
+        .assert()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    let state = v["checks"].as_array().unwrap().iter().find(|c| c["name"] == "state dir").unwrap();
+    assert_eq!(state["status"], "warn");
+    // At the root itself there is no note.
+    let out =
+        mda().current_dir(&root).args(["doctor", "--json"]).assert().get_output().stdout.clone();
+    assert!(!String::from_utf8_lossy(&out).contains("found above"));
+}
