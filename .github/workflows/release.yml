@@ -126,7 +126,7 @@ jobs:
       - name: bootstrap.sh installs the linux-x64 archive from this layout
         env:
           CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}
-          CLAUDE_PLUGIN_DATA: ${{ runner.temp }}/plugin-data
+          CLAUDE_PLUGIN_DATA: ${{ runner.temp }}/markdownattractor-plugin-data
         run: |
           set -euo pipefail
           # Serve dist/ the way GitHub Releases would, then point the hook at it.
