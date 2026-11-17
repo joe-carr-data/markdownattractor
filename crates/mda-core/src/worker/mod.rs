@@ -35,6 +35,7 @@ pub mod local;
 mod mock;
 mod parse;
 mod pool;
+mod structured;
 mod unavailable;
 
 pub use api::ApiBackend;
@@ -43,6 +44,7 @@ pub use local::LocalBackend;
 pub use mock::Mock;
 pub use parse::{parse_result, parse_result_with_model};
 pub use pool::{JobResult, POOL_STOPPED_PREFIX, Pool, PoolConfig, PoolStats};
+pub use structured::{StructuredRequest, StructuredResult, StructuredStatus};
 pub use unavailable::Unavailable;
 
 /// A backend chosen at runtime. [`Pool`] and [`crate::pipeline::Engine::summarize_pending`]
@@ -284,6 +286,14 @@ pub trait Backend: Send + Sync {
         req: &'a SummarizeRequest,
         model: &'a str,
     ) -> BoxFuture<'a, Result<Outcome>>;
+
+    /// One schema-constrained call with the caller's own system prompt (ADR-0009). The result
+    /// carries the usage the backend reported whatever the status. No retry happens here.
+    fn structured<'a>(
+        &'a self,
+        req: &'a StructuredRequest,
+        model: &'a str,
+    ) -> BoxFuture<'a, Result<StructuredResult>>;
 
     /// Backend name for provenance: `api`, `local`, `claude-cli`, `mock`.
     fn name(&self) -> &'static str;

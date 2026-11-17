@@ -32,7 +32,7 @@ use serde_json::{Value, json};
 use super::http::{self, Transport};
 use super::{
     Backend, BoxFuture, FATAL_BAD_MODEL, FATAL_NO_API_KEY, Outcome, SYSTEM_PROMPT,
-    SummarizeRequest, Usage,
+    StructuredRequest, StructuredResult, StructuredStatus, SummarizeRequest, Usage,
 };
 use crate::card::SectionSummary;
 use crate::config::Config;
@@ -223,7 +223,104 @@ impl ApiBackend {
     }
 }
 
+impl ApiBackend {
+    /// The exact JSON body posted for a structured call. No effort setting: the caller picks
+    /// the model.
+    pub fn structured_body(&self, req: &StructuredRequest, model: &str) -> Value {
+        json!({
+            "model": model,
+            "max_tokens": req.max_output_tokens,
+            "system": [{
+                "type": "text",
+                "text": req.system,
+                "cache_control": {"type": "ephemeral"},
+            }],
+            "messages": [{"role": "user", "content": req.user}],
+            "output_config": {"format": {"type": "json_schema", "schema": req.schema}},
+        })
+    }
+
+    async fn structured_once(
+        &self,
+        req: &StructuredRequest,
+        model: &str,
+    ) -> Result<StructuredResult> {
+        let started = Instant::now();
+        let body = self.structured_body(req, model);
+        let request = self.headers(self.client.post(format!("{}/v1/messages", self.base_url)));
+        let resp = match http::send(request.json(&body)).await {
+            Ok(r) => r,
+            Err(t) => {
+                let reason = match &t {
+                    Transport::Timeout(m) => {
+                        format!("timeout after {} s: {m}", self.timeout.as_secs())
+                    }
+                    Transport::Connect(m) | Transport::Other(m) => format!("api unreachable: {m}"),
+                };
+                return Ok(StructuredResult::failed(Outcome::Retryable { reason }, None));
+            }
+        };
+        let wall_ms = http::millis_since(started);
+        tracing::debug!(id = %req.id, status = resp.status, api_ms = resp.elapsed_ms, "messages api responded (structured)");
+        if resp.status != 200 {
+            // An error body may still say what the attempt used (a gateway, a compatible server).
+            let usage = serde_json::from_str::<Value>(resp.body.trim())
+                .ok()
+                .and_then(|d| reported_usage(&d, model, resp.elapsed_ms, wall_ms));
+            return Ok(StructuredResult::failed(classify_error(&resp, model), usage));
+        }
+        Ok(classify_structured(&resp.body, model, req.max_output_tokens, resp.elapsed_ms, wall_ms))
+    }
+}
+
+/// Classify a 200 response to a structured call. Usage is kept on every branch that has a
+/// parsed body, the refusal included.
+fn classify_structured(
+    body: &str,
+    requested_model: &str,
+    cap: u32,
+    api_ms: u64,
+    wall_ms: u64,
+) -> StructuredResult {
+    let doc: Value = match serde_json::from_str(body.trim()) {
+        Ok(v) => v,
+        Err(e) => {
+            return StructuredResult {
+                status: StructuredStatus::Malformed {
+                    reason: format!("HTTP 200 but body is not JSON: {e}"),
+                    raw: body.to_owned(),
+                },
+                usage: None,
+            };
+        }
+    };
+    let usage = reported_usage(&doc, requested_model, api_ms, wall_ms);
+    let text = first_text_block(&doc);
+    match doc.get("stop_reason").and_then(Value::as_str).unwrap_or_default() {
+        "max_tokens" => StructuredResult::truncated(cap, text, usage),
+        "refusal" => {
+            let category = doc
+                .pointer("/stop_details/category")
+                .and_then(Value::as_str)
+                .unwrap_or("unspecified");
+            StructuredResult::refused(
+                format!("model refused (category {category}): {}", http::tail(&text)),
+                usage,
+            )
+        }
+        _ => StructuredResult::from_text(&text, usage),
+    }
+}
+
 impl Backend for ApiBackend {
+    fn structured<'a>(
+        &'a self,
+        req: &'a StructuredRequest,
+        model: &'a str,
+    ) -> BoxFuture<'a, Result<StructuredResult>> {
+        Box::pin(self.structured_once(req, model))
+    }
+
     fn summarize<'a>(
         &'a self,
         req: &'a SummarizeRequest,
@@ -322,6 +419,13 @@ fn first_text_block(doc: &Value) -> String {
         .and_then(|b| b.get("text").and_then(Value::as_str))
         .unwrap_or_default()
         .to_owned()
+}
+
+/// The usage a body reports, or `None` when it has no `usage` object: unknown, not zero.
+fn reported_usage(doc: &Value, requested_model: &str, api_ms: u64, wall_ms: u64) -> Option<Usage> {
+    doc.get("usage")
+        .is_some_and(Value::is_object)
+        .then(|| usage_from(doc, requested_model, api_ms, wall_ms))
 }
 
 fn usage_from(doc: &Value, requested_model: &str, api_ms: u64, wall_ms: u64) -> Usage {

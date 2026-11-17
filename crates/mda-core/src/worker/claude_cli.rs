@@ -25,7 +25,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
 
 use super::{
-    Backend, BoxFuture, Outcome, SYSTEM_PROMPT, SummarizeRequest, parse_result_with_model,
+    Backend, BoxFuture, Outcome, SYSTEM_PROMPT, StructuredRequest, StructuredResult,
+    StructuredStatus, SummarizeRequest, parse_result_with_model,
 };
 use crate::card::SectionSummary;
 use crate::config::Config;
@@ -121,17 +122,23 @@ impl ClaudeCli {
     /// The exact argv that would be spawned for `model`, executable first. For `mda doctor`
     /// and debug output; the same list drives [`Backend::summarize`].
     pub fn command_line(&self, model: &str) -> Vec<String> {
+        self.argv(model, SYSTEM_PROMPT, &self.schema)
+    }
+
+    /// The argv for one call with a given system prompt and JSON schema: tools off, no
+    /// settings, no MCP, no session file, the per-call budget.
+    pub(super) fn argv(&self, model: &str, system: &str, schema: &str) -> Vec<String> {
         vec![
             self.binary.to_string_lossy().into_owned(),
             "-p".into(),
             "--model".into(),
             model.into(),
             "--system-prompt".into(),
-            SYSTEM_PROMPT.into(),
+            system.into(),
             "--output-format".into(),
             "json".into(),
             "--json-schema".into(),
-            self.schema.clone(),
+            schema.into(),
             "--tools".into(),
             String::new(),
             "--setting-sources".into(),
@@ -143,8 +150,7 @@ impl ClaudeCli {
         ]
     }
 
-    fn build_command(&self, model: &str) -> Command {
-        let argv = self.command_line(model);
+    fn build_command(&self, argv: &[String]) -> Command {
         let mut cmd = Command::new(&self.binary);
         cmd.args(&argv[1..])
             .env("MAX_THINKING_TOKENS", "0")
@@ -168,16 +174,25 @@ impl ClaudeCli {
         if req.text.trim().is_empty() {
             return Ok(Outcome::Fatal { reason: "empty input: chunk has no content".into() });
         }
+        let argv = self.command_line(model);
+        Ok(match self.run_cli(&req.id, &argv, super::user_message(req)).await? {
+            CliRun::Document { json, wall_ms } => parse_result_with_model(&json, wall_ms, model),
+            CliRun::Failed(outcome) => outcome,
+        })
+    }
+
+    /// Spawn the CLI with `argv`, feed it `input`, and return its result document, or the
+    /// outcome when it produced none (timeout, crash, not logged in).
+    pub(super) async fn run_cli(&self, id: &str, argv: &[String], input: String) -> Result<CliRun> {
         let started = Instant::now();
         let mut child = self
-            .build_command(model)
+            .build_command(argv)
             .spawn()
             .map_err(|e| Error::Worker(format!("cannot spawn {}: {e}", self.binary.display())))?;
         let stdin = child.stdin.take();
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
-        let text = super::user_message(req);
-
+        let text = input;
         // Write the chunk and close stdin straight away; a write error only means the child
         // exited early, which the exit status will explain.
         let feed = async {
@@ -203,39 +218,113 @@ impl ClaudeCli {
             if let Err(e) = child.kill().await {
                 tracing::debug!(error = %e, "kill after timeout failed");
             }
-            tracing::warn!(id = %req.id, timeout_s = self.timeout.as_secs(), "worker timed out");
-            return Ok(Outcome::Retryable {
+            tracing::warn!(id = %id, timeout_s = self.timeout.as_secs(), "worker timed out");
+            return Ok(CliRun::Failed(Outcome::Retryable {
                 reason: format!("timeout after {} s", self.timeout.as_secs()),
-            });
+            }));
         };
         let status = status.map_err(|e| Error::Worker(format!("wait failed: {e}")))?;
-        tracing::debug!(id = %req.id, %status, wall_ms, "claude -p exited");
+        tracing::debug!(id = %id, %status, wall_ms, "claude -p exited");
 
         if let Some(json) = json_document(&stdout) {
-            return Ok(parse_result_with_model(json, wall_ms, model));
+            return Ok(CliRun::Document { json: json.to_owned(), wall_ms });
         }
         if status.success() {
-            return Ok(Outcome::Malformed {
+            return Ok(CliRun::Failed(Outcome::Malformed {
                 reason: "exit 0 but stdout is not a result document".into(),
                 raw: stdout,
                 usage: None,
-            });
+            }));
         }
         let tail = tail(&stderr);
         let lower = tail.to_ascii_lowercase();
         if lower.contains("input must be provided") {
-            return Ok(Outcome::Fatal { reason: format!("empty input: {tail}") });
+            return Ok(CliRun::Failed(Outcome::Fatal { reason: format!("empty input: {tail}") }));
         }
         if lower.contains("not logged in") || lower.contains("authentication") {
-            return Ok(Outcome::Fatal {
+            return Ok(CliRun::Failed(Outcome::Fatal {
                 reason: format!("{} : {tail}", super::FATAL_NOT_LOGGED_IN),
-            });
+            }));
         }
-        Ok(Outcome::Retryable { reason: format!("claude exited with {status}: {tail}") })
+        Ok(CliRun::Failed(Outcome::Retryable {
+            reason: format!("claude exited with {status}: {tail}"),
+        }))
+    }
+}
+
+/// What one spawn of the CLI gave back.
+#[expect(clippy::large_enum_variant, reason = "short-lived, one per call")]
+pub(super) enum CliRun {
+    /// A result document on stdout, to be classified by the caller.
+    Document {
+        /// The JSON document.
+        json: String,
+        /// Wall-clock time of the call.
+        wall_ms: u64,
+    },
+    /// No result document: the outcome already decided (timeout, crash, not logged in).
+    Failed(Outcome),
+}
+
+impl ClaudeCli {
+    /// A structured call through the CLI: the same isolation as a card call (no tools, no
+    /// settings, no MCP, no session file). The CLI has no output-token flag: the per-call
+    /// budget bounds the call, and an answer above the request's cap is rejected afterwards.
+    async fn structured_once(
+        &self,
+        req: &StructuredRequest,
+        model: &str,
+    ) -> Result<StructuredResult> {
+        let schema = serde_json::to_string(&req.schema)?;
+        let argv = self.argv(model, &req.system, &schema);
+        let (json, wall_ms) = match self.run_cli(&req.id, &argv, req.user.clone()).await? {
+            CliRun::Document { json, wall_ms } => (json, wall_ms),
+            CliRun::Failed(outcome) => return Ok(StructuredResult::failed(outcome, None)),
+        };
+        let doc: serde_json::Value = match serde_json::from_str(json.trim()) {
+            Ok(v) => v,
+            Err(e) => {
+                return Ok(StructuredResult {
+                    status: StructuredStatus::Malformed {
+                        reason: format!("stdout is not JSON: {e}"),
+                        raw: json,
+                    },
+                    usage: None,
+                });
+            }
+        };
+        let guarded = super::parse::guardrails(&doc, wall_ms, model);
+        // The document reports usage only when it has a `usage` object or a cost; otherwise
+        // what the call used is unknown, not zero.
+        let reported = doc.get("usage").is_some_and(serde_json::Value::is_object)
+            || doc.get("total_cost_usd").is_some_and(serde_json::Value::is_number);
+        let usage = reported.then_some(guarded.usage);
+        if let Err(outcome) = guarded.verdict {
+            return Ok(StructuredResult::failed(outcome, usage));
+        }
+        let result = match doc.get("structured_output") {
+            Some(v) if v.is_object() => {
+                StructuredResult { status: StructuredStatus::Ok { value: v.clone() }, usage }
+            }
+            _ => {
+                let text =
+                    doc.get("result").and_then(serde_json::Value::as_str).unwrap_or_default();
+                StructuredResult::from_text(text, usage)
+            }
+        };
+        Ok(result.enforce_output_cap(req.max_output_tokens))
     }
 }
 
 impl Backend for ClaudeCli {
+    fn structured<'a>(
+        &'a self,
+        req: &'a StructuredRequest,
+        model: &'a str,
+    ) -> BoxFuture<'a, Result<StructuredResult>> {
+        Box::pin(self.structured_once(req, model))
+    }
+
     fn summarize<'a>(
         &'a self,
         req: &'a SummarizeRequest,

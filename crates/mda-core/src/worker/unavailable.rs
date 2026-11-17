@@ -7,7 +7,10 @@
 
 use std::future::ready;
 
-use super::{Backend, BoxFuture, FATAL_BACKEND_UNAVAILABLE, Outcome, SummarizeRequest};
+use super::{
+    Backend, BoxFuture, FATAL_BACKEND_UNAVAILABLE, Outcome, StructuredRequest, StructuredResult,
+    StructuredStatus, SummarizeRequest, Usage,
+};
 use crate::Result;
 
 /// Name reported by [`Backend::name`].
@@ -39,6 +42,20 @@ impl Backend for Unavailable {
     ) -> BoxFuture<'a, Result<Outcome>> {
         Box::pin(ready(Ok(Outcome::Fatal {
             reason: format!("{FATAL_BACKEND_UNAVAILABLE}: {}", self.reason),
+        })))
+    }
+
+    fn structured<'a>(
+        &'a self,
+        _req: &'a StructuredRequest,
+        _model: &'a str,
+    ) -> BoxFuture<'a, Result<StructuredResult>> {
+        // No call is made, so the usage is known: nothing.
+        Box::pin(ready(Ok(StructuredResult {
+            status: StructuredStatus::Fatal {
+                reason: format!("{FATAL_BACKEND_UNAVAILABLE}: {}", self.reason),
+            },
+            usage: Some(Usage::default()),
         })))
     }
 
