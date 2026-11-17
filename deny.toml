@@ -7,6 +7,10 @@ ignore = [
     # `paste` is unmaintained (macro crate, transitive through the search-layer deps of ADR-0004).
     # Not a vulnerability; revisit when its dependents move to `pastey`.
     { id = "RUSTSEC-2024-0436", reason = "unmaintained proc-macro crate pulled in transitively; no vulnerability" },
+    # `chrono` was declared unmaintained on 2026-11 (no vulnerability). It comes in only through
+    # `rmcp` (ADR-0004), which depends on it directly and turns on schemars' `chrono04`; our own
+    # code uses `jiff`. Revisit when `rmcp` moves off it.
+    { id = "RUSTSEC-2026-0543", reason = "unmaintained, no vulnerability; a hard dependency of rmcp, not used by our code" },
 ]
 
 [licenses]
