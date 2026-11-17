@@ -559,6 +559,13 @@ async fn backend_error_fails_only_that_job() {
                 }
             })
         }
+        fn structured<'a>(
+            &'a self,
+            _req: &'a StructuredRequest,
+            _model: &'a str,
+        ) -> BoxFuture<'a, crate::Result<StructuredResult>> {
+            Box::pin(async { Err(crate::Error::Worker("not used".into())) })
+        }
         fn name(&self) -> &'static str {
             "broken"
         }
@@ -1608,4 +1615,240 @@ async fn live_local_summarizes_chunk() {
     let Outcome::Ok { summary, usage } = out else { panic!("expected Ok, got {out:?}") };
     assert!(!summary.tldr.is_empty());
     assert!(usage.cost_usd.abs() < f64::EPSILON, "{}", usage.cost_usd);
+}
+
+// ---------------------------------------------------------------- structured calls (ADR-0009)
+
+fn sreq(id: &str) -> StructuredRequest {
+    StructuredRequest {
+        id: id.to_owned(),
+        system: "You compare two passages.".into(),
+        user: "<a>one</a><b>two</b>".into(),
+        schema: serde_json::json!({
+            "type": "object",
+            "properties": {"verdict": {"type": "string"}},
+            "required": ["verdict"],
+            "additionalProperties": false
+        }),
+        schema_name: "impact_judgment".into(),
+        max_output_tokens: 300,
+    }
+}
+
+#[tokio::test]
+async fn api_structured_sends_the_callers_prompt_and_schema_and_returns_the_object_with_usage() {
+    let server =
+        Server::start(vec![(200, api_message("end_turn", r#"{"verdict":"related"}"#))]).await;
+    let out = api(&server.url).structured(&sreq("j1"), "claude-haiku-4-5").await.unwrap();
+    assert_eq!(out.value().unwrap()["verdict"], "related");
+    let usage = out.usage.as_ref().unwrap();
+    assert_eq!(usage.input_tokens, 3500, "input + cache write + cache read");
+    assert_eq!(usage.output_tokens, 200);
+
+    let body = server.last().json();
+    assert_eq!(body["max_tokens"], 300);
+    assert_eq!(body["system"][0]["text"], "You compare two passages.");
+    assert_eq!(body["messages"][0]["content"], "<a>one</a><b>two</b>");
+    assert_eq!(body["output_config"]["format"]["schema"]["required"][0], "verdict");
+    assert!(!body.to_string().contains("questions_answered"), "the card schema is not sent");
+}
+
+#[tokio::test]
+async fn api_structured_keeps_usage_on_a_refusal_and_on_truncation() {
+    let server = Server::start(vec![
+        (200, api_message("refusal", "I cannot")),
+        (200, api_message("max_tokens", r#"{"verdict":"rel"#)),
+        (200, api_message("end_turn", "[1, 2]")),
+    ])
+    .await;
+    let backend = api(&server.url);
+    let refused = backend.structured(&sreq("j2"), "m").await.unwrap();
+    assert!(
+        matches!(&refused.status, StructuredStatus::Fatal { reason } if reason.contains("refused"))
+    );
+    assert_eq!(refused.usage.as_ref().unwrap().output_tokens, 200, "a refusal is still billed");
+    let cut = backend.structured(&sreq("j2"), "m").await.unwrap();
+    assert!(
+        matches!(&cut.status, StructuredStatus::Malformed { reason, .. } if reason.contains("truncated at 300"))
+    );
+    assert!(cut.usage.is_some());
+    let array = backend.structured(&sreq("j2"), "m").await.unwrap();
+    assert!(
+        matches!(&array.status, StructuredStatus::Malformed { reason, .. } if reason.contains("not an object"))
+    );
+    assert_eq!(array.kind(), "malformed");
+}
+
+#[tokio::test]
+async fn api_structured_classifies_http_errors_like_the_card_path_with_unknown_usage() {
+    let server = Server::start(vec![
+        (401, api_error("authentication_error", "invalid x-api-key")),
+        (429, api_error("rate_limit_error", "slow down")),
+        (500, api_error("api_error", "boom")),
+    ])
+    .await;
+    let backend = api(&server.url);
+    let kinds: Vec<&str> = [
+        backend.structured(&sreq("e"), "m").await.unwrap(),
+        backend.structured(&sreq("e"), "m").await.unwrap(),
+        backend.structured(&sreq("e"), "m").await.unwrap(),
+    ]
+    .iter()
+    .map(|r| {
+        assert!(r.usage.is_none(), "an HTTP error reports no usage: unknown, not zero");
+        r.kind()
+    })
+    .collect();
+    assert_eq!(kinds, ["fatal", "rate_limited", "retryable"]);
+
+    let dead = api(&fake_http::dead_url().await).structured(&sreq("e"), "m").await.unwrap();
+    assert_eq!(dead.kind(), "retryable");
+}
+
+#[tokio::test]
+async fn local_structured_uses_the_named_schema_and_reads_the_first_choice() {
+    let reply = serde_json::json!({
+        "model": "gpt-oss-20b",
+        "choices": [{"message": {"content": "```json\n{\"verdict\":\"abstain\"}\n```"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 40, "completion_tokens": 9}
+    })
+    .to_string();
+    let server = Server::start(vec![(200, reply)]).await;
+    let out = local(&server.url).structured(&sreq("l1"), "ignored").await.unwrap();
+    assert_eq!(out.value().unwrap()["verdict"], "abstain", "a code fence is tolerated");
+    assert_eq!(out.usage.as_ref().unwrap().input_tokens, 40);
+    let body = server.last().json();
+    assert_eq!(body["response_format"]["json_schema"]["name"], "impact_judgment");
+    assert_eq!(body["messages"][0]["content"], "You compare two passages.");
+    assert_eq!(body["max_tokens"], 300);
+
+    let down = local(&fake_http::dead_url().await).structured(&sreq("l2"), "m").await.unwrap();
+    assert!(
+        matches!(&down.status, StructuredStatus::Fatal { reason } if reason.starts_with(FATAL_LOCAL_DOWN))
+    );
+}
+
+#[tokio::test]
+async fn unavailable_and_mock_answer_structured_calls_without_a_model() {
+    let none = Unavailable::new("ANTHROPIC_API_KEY is not set");
+    let out = none.structured(&sreq("u"), "m").await.unwrap();
+    assert!(
+        matches!(&out.status, StructuredStatus::Fatal { reason } if reason.starts_with(FATAL_BACKEND_UNAVAILABLE))
+    );
+    assert_eq!(
+        out.usage,
+        Some(Usage::default()),
+        "no call was made: the usage is known to be zero"
+    );
+
+    let mock = Mock::new().on_structured(
+        "m1",
+        vec![
+            StructuredResult {
+                status: StructuredStatus::Retryable { reason: "x".into() },
+                usage: None,
+            },
+            Mock::structured_ok(serde_json::json!({"verdict": "related"}), "haiku"),
+        ],
+    );
+    assert_eq!(mock.structured(&sreq("m1"), "haiku").await.unwrap().kind(), "retryable");
+    assert_eq!(mock.structured(&sreq("m1"), "haiku").await.unwrap().kind(), "ok");
+    assert_eq!(
+        mock.structured(&sreq("m1"), "haiku").await.unwrap().kind(),
+        "ok",
+        "the last repeats"
+    );
+    assert_eq!(mock.structured(&sreq("other"), "haiku").await.unwrap().kind(), "fatal");
+    assert_eq!(mock.structured_calls().len(), 4);
+}
+
+#[cfg(unix)]
+mod structured_cli {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    fn cli(dir: &std::path::Path, body: &str) -> ClaudeCli {
+        let path = dir.join("claude");
+        std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        ClaudeCli::new(&Config::default()).unwrap().with_binary(path)
+    }
+
+    fn doc(extra: &serde_json::Value) -> String {
+        let mut d = serde_json::json!({
+            "type": "result", "is_error": false, "result": "",
+            "usage": {"input_tokens": 77, "output_tokens": 11},
+            "total_cost_usd": 0.0004, "duration_api_ms": 5, "num_turns": 1,
+            "modelUsage": {"claude-haiku-4-5-20251001": {}}
+        });
+        for (k, v) in extra.as_object().unwrap() {
+            d[k] = v.clone();
+        }
+        d.to_string()
+    }
+
+    #[tokio::test]
+    async fn cli_structured_passes_the_prompt_and_schema_with_tools_off_and_reads_structured_output()
+     {
+        let dir = tempfile::tempdir().unwrap();
+        let args = dir.path().join("args.txt");
+        let stdin = dir.path().join("stdin.txt");
+        let out_doc = dir.path().join("doc.json");
+        std::fs::write(
+            &out_doc,
+            doc(&serde_json::json!({"structured_output": {"verdict": "possible_conflict"}})),
+        )
+        .unwrap();
+        let body = format!(
+            "printf '%s\\n' \"$@\" > {} ; cat > {} ; cat {}",
+            args.display(),
+            stdin.display(),
+            out_doc.display()
+        );
+        let out = cli(dir.path(), &body).structured(&sreq("c1"), "haiku").await.unwrap();
+        assert_eq!(out.value().unwrap()["verdict"], "possible_conflict");
+        let usage = out.usage.unwrap();
+        assert_eq!((usage.input_tokens, usage.output_tokens), (77, 11));
+        assert!((usage.cost_usd - 0.0004).abs() < 1e-12);
+
+        let args = std::fs::read_to_string(&args).unwrap();
+        assert!(args.contains("You compare two passages."), "{args}");
+        assert!(args.contains("\"required\":[\"verdict\"]"), "{args}");
+        assert!(
+            args.contains("--tools\n\n--setting-sources\n\n--strict-mcp-config"),
+            "tools, settings and MCP stay off: {args}"
+        );
+        assert!(!args.contains("questions_answered"), "the card schema is not sent");
+        assert_eq!(std::fs::read_to_string(&stdin).unwrap(), "<a>one</a><b>two</b>");
+    }
+
+    #[tokio::test]
+    async fn cli_structured_keeps_usage_when_a_guardrail_fires_and_falls_back_to_result_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let budget = dir.path().join("budget.json");
+        std::fs::write(&budget, doc(&serde_json::json!({"is_error": true, "terminal_reason": "budget_exhausted", "result": "over"}))).unwrap();
+        let out = cli(dir.path(), &format!("cat > /dev/null ; cat {}", budget.display()))
+            .structured(&sreq("c2"), "haiku")
+            .await
+            .unwrap();
+        assert!(
+            matches!(&out.status, StructuredStatus::Fatal { reason } if reason.contains("budget exhausted"))
+        );
+        assert_eq!(out.usage.unwrap().input_tokens, 77, "a failed call still reports what it used");
+
+        let text = dir.path().join("text.json");
+        std::fs::write(&text, doc(&serde_json::json!({"structured_output": null, "result": "{\"verdict\":\"unrelated\"}"}))).unwrap();
+        let out = cli(dir.path(), &format!("cat > /dev/null ; cat {}", text.display()))
+            .structured(&sreq("c3"), "haiku")
+            .await
+            .unwrap();
+        assert_eq!(out.value().unwrap()["verdict"], "unrelated");
+
+        let crash = cli(dir.path(), "cat > /dev/null ; echo boom >&2 ; exit 3")
+            .structured(&sreq("c4"), "haiku")
+            .await
+            .unwrap();
+        assert_eq!(crash.kind(), "retryable");
+        assert!(crash.usage.is_none(), "a crash reports no usage: unknown");
+    }
 }

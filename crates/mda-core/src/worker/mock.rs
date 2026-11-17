@@ -5,7 +5,10 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
-use super::{Backend, BoxFuture, Outcome, SummarizeRequest, Usage};
+use super::{
+    Backend, BoxFuture, Outcome, StructuredRequest, StructuredResult, StructuredStatus,
+    SummarizeRequest, Usage,
+};
 use crate::Result;
 use crate::card::{Entities, SectionSummary};
 
@@ -24,6 +27,8 @@ pub struct Mock {
     default_ok: bool,
     latency: Option<Duration>,
     calls: Mutex<Vec<(String, String)>>,
+    structured_scripts: Mutex<HashMap<String, VecDeque<StructuredResult>>>,
+    structured_calls: Mutex<Vec<StructuredRequest>>,
     /// Per call, in call order: how many calls (this one included) were in flight when it
     /// started.
     in_flight_at_call: Mutex<Vec<usize>>,
@@ -48,6 +53,27 @@ impl Mock {
     pub fn on_sequence(self, id: impl Into<String>, outcomes: Vec<Outcome>) -> Self {
         lock(&self.scripts).insert(id.into(), outcomes.into());
         self
+    }
+
+    /// Answer `results` for structured request `id` in order; the last one repeats. A
+    /// structured request with no script is `Fatal` with zero usage.
+    #[must_use]
+    pub fn on_structured(self, id: impl Into<String>, results: Vec<StructuredResult>) -> Self {
+        lock(&self.structured_scripts).insert(id.into(), results.into());
+        self
+    }
+
+    /// A ready-made successful structured result carrying `value` and the canned usage.
+    pub fn structured_ok(value: serde_json::Value, model: &str) -> StructuredResult {
+        StructuredResult {
+            status: StructuredStatus::Ok { value },
+            usage: Some(Self::canned_usage(model)),
+        }
+    }
+
+    /// Every structured request made so far, in call order.
+    pub fn structured_calls(&self) -> Vec<StructuredRequest> {
+        lock(&self.structured_calls).clone()
     }
 
     /// Requests without a script get a canned valid card whose `tldr` names the request id.
@@ -148,6 +174,29 @@ impl Backend for Mock {
             }
             self.in_flight.fetch_sub(1, Ordering::SeqCst);
             Ok(self.next_outcome(&req.id, model))
+        })
+    }
+
+    fn structured<'a>(
+        &'a self,
+        req: &'a StructuredRequest,
+        _model: &'a str,
+    ) -> BoxFuture<'a, Result<StructuredResult>> {
+        Box::pin(async move {
+            lock(&self.structured_calls).push(req.clone());
+            if let Some(d) = self.latency {
+                tokio::time::sleep(d).await;
+            }
+            let mut scripts = lock(&self.structured_scripts);
+            let scripted = scripts
+                .get_mut(&req.id)
+                .and_then(|q| if q.len() > 1 { q.pop_front() } else { q.front().cloned() });
+            Ok(scripted.unwrap_or_else(|| StructuredResult {
+                status: StructuredStatus::Fatal {
+                    reason: format!("mock: no scripted structured result for {}", req.id),
+                },
+                usage: Some(Usage::default()),
+            }))
         })
     }
 

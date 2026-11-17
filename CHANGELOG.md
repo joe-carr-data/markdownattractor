@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Internal: backends answer a second kind of call, a schema-constrained request with the caller's own system prompt (`Backend::structured`, ADR-0009), on `api`, `local`, `claude-cli`, the mock and the unavailable backend. Its result carries the usage the backend reported whatever the outcome. Nothing user-visible uses it yet; it is the first part of `mda check`.
+
 ## [0.2.4] — 2026-11-17
 
 A fix release. For users: the plugin no longer fails with "mda binary not found" when its server starts before the download has finished.
