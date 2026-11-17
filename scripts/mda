@@ -4,7 +4,13 @@
 # the binary, then prints a one-line hint if that failed too.
 set -u
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
+# CLAUDE_PLUGIN_DATA is trusted only when it is this plugin's own directory. A shell started
+# by Claude Code's Bash tool can carry another plugin's value (seen: the codex plugin's), and
+# the binary and the models would then be looked for, and downloaded, in that plugin's folder.
+DATA="$HOME/.claude/plugins/data/markdownattractor-markdownattractor"
+case "${CLAUDE_PLUGIN_DATA:-}" in
+  */markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;
+esac
 # Embedding models and the global nudge switch live in the plugin's own data directory when
 # run through the plugin; the binary never reads CLAUDE_PLUGIN_DATA itself.
 export MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}"
