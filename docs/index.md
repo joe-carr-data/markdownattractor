@@ -69,11 +69,11 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
+| 2026-11-17 | [handoffs/2026-11-16-0349-auto.md](handoffs/2026-11-16-0349-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-16 | [handoffs/2026-11-16-0047-auto.md](handoffs/2026-11-16-0047-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-15 | [handoffs/2026-11-15-1920-auto.md](handoffs/2026-11-15-1920-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-10 | [handoffs/2026-11-10-1455-auto.md](handoffs/2026-11-10-1455-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-10 | [handoffs/2026-11-10-1123-auto.md](handoffs/2026-11-10-1123-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
-| 2026-11-10 | [handoffs/2026-11-10-1010-auto.md](handoffs/2026-11-10-1010-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-11-15 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-11-15 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
