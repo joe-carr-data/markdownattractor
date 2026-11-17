@@ -24,9 +24,9 @@ trap cleanup EXIT
 run() {
   env -i PATH="$PATH" TMPDIR="$T/tmp" LANG="${LANG:-C}" \
     HOME="$T/home" XDG_CONFIG_HOME="$T/home/.config" XDG_CACHE_HOME="$T/home/.cache" \
-    MDA_MODEL_DIR="$T/data/models" NO_COLOR=1 "$@"
+    MDA_MODEL_DIR="$T/markdownattractor-data/models" NO_COLOR=1 "$@"
 }
-mkdir -p "$T/home" "$T/data" "$T/tmp" "$T/plugin/scripts"
+mkdir -p "$T/home" "$T/markdownattractor-data" "$T/tmp" "$T/plugin/scripts"
 run python3 "$REPO/scripts/demo/make-corpus.py" "$T/corpus" >/dev/null
 WANTED="$(tr -d '[:space:]' < "$REPO/VERSION")"
 
@@ -39,9 +39,9 @@ else
   # It runs from a plugin layout that holds only the hook and VERSION, so its fallback to a
   # local `target/release/mda` cannot stand in for the download.
   cp "$REPO/scripts/bootstrap.sh" "$T/plugin/scripts/"; cp "$REPO/VERSION" "$T/plugin/"
-  run env CLAUDE_PLUGIN_ROOT="$T/plugin" CLAUDE_PLUGIN_DATA="$T/data" CLAUDE_PROJECT_DIR="$T/corpus" \
+  run env CLAUDE_PLUGIN_ROOT="$T/plugin" CLAUDE_PLUGIN_DATA="$T/markdownattractor-data" CLAUDE_PROJECT_DIR="$T/corpus" \
     bash "$T/plugin/scripts/bootstrap.sh"
-  MDA="$T/data/bin/mda"
+  MDA="$T/markdownattractor-data/bin/mda"
   how="the release binary for v$WANTED, downloaded by the bootstrap hook"
   [ -x "$MDA" ] || { echo "first-run: FAIL — the hook installed no binary (is v$WANTED released?)" >&2; exit 1; }
   got="$(run "$MDA" --version | awk '{print $2}')"

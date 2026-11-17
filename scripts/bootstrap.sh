@@ -11,7 +11,13 @@
 set -u
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugins/data/markdownattractor-markdownattractor}"
+# CLAUDE_PLUGIN_DATA is trusted only when it is this plugin's own directory. A shell started
+# by Claude Code's Bash tool can carry another plugin's value (seen: the codex plugin's), and
+# the binary and the models would then be looked for, and downloaded, in that plugin's folder.
+DATA="$HOME/.claude/plugins/data/markdownattractor-markdownattractor"
+case "${CLAUDE_PLUGIN_DATA:-}" in
+  */markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;
+esac
 WANTED="$(tr -d '[:space:]' < "$ROOT/VERSION" 2>/dev/null || echo unknown)"
 BIN="$DATA/bin/mda"
 REPO="joe-carr-data/markdownattractor"

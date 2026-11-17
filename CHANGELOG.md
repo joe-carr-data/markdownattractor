@@ -5,6 +5,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Fixed
+- The plugin's launcher and session-start hook use `CLAUDE_PLUGIN_DATA` only when it is this plugin's own directory. A shell started by Claude Code's Bash tool can carry another plugin's value; `mda` then looked for its binary there ("mda binary not found" on 0.2.3) and, since 0.2.4, downloaded the binary and the embedding model into that other plugin's folder.
 - **Git calls start nothing the repository's configuration names.** The dating pass ran `git blame` without `--no-textconv`, so a textconv program configured for a file would be started during dating (0.2.0 to 0.2.4). Every git call now also turns off the fsmonitor hook and every transport (a partial clone no longer fetches a missing object on demand; such a file falls back to file times), and no call compares against the working tree through git, which would run clean filters. Found in review of the `mda check` groundwork; a repository's `.git/config` is local and is not set by cloning.
 
 ### Added
