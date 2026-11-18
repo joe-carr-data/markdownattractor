@@ -1,0 +1,75 @@
+# Launch drafts (2026-11-18) — for the owner to edit and post
+
+Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every number below is on `docs/benchmarks.md` with its method and limits; if a number changes there, it changes here. Nothing claims what did not pass a gate.
+
+## What passed, and what did not (the source for every text below)
+
+| | Result | Where |
+|---|---|---|
+| Passed | A first search with no credentials, from nothing installed, in 8 to 21 seconds on one machine (8 s on v0.2.7; limit 120 s) | plan 2026-11-v0.3, Phase B; `scripts/dev/first-run.sh` |
+| Passed | Search without any model: the expected section is in the top 5 for 88 % of the golden questions (raw text only) | plan, Phase B |
+| Passed | Save to searchable: raw text p50 1.7 s, card p50 8.4 s (one machine, 20 edits) | benchmarks, T4 |
+| Passed, with limits | On the small golden corpus, against grep: +0.25 answer correctness, no saving in tokens read; against graphify: 3.18× fewer source tokens read | benchmarks, § The answer contract |
+| Passed on one set, missed on the other | Every claim cited to opened lines: 100 % of answers grounded on the golden set (control 87.5 %); on the project's own docs one answer below the control, so the trust claim is not the headline | benchmarks, § The answer contract |
+| Did not pass | No arm, mda included, passed the grounding gate on the four public documentation projects | benchmarks, § Where we lose |
+| Did not pass, not shipped | Change-impact review: right on 51 % of its alerts against 87 % for an agent with file search and git; stopped | benchmarks, § Change-impact review |
+
+## Show HN — title
+
+> Show HN: Markdownattractor – Claude Code answers from your docs and cites the exact lines
+
+Alternative, plainer:
+
+> Show HN: A local index of your markdown for Claude Code, with line-level citations
+
+## Show HN — first comment (draft)
+
+I keep ADRs, runbooks and notes in markdown, and Claude Code answers questions about them by grepping and reading whole files. It works, but I could not tell which lines an answer came from or how old they were.
+
+markdownattractor is a Claude Code plugin: one Rust binary that watches a folder, splits every markdown file into sections, and keeps a local index (SQLite full-text search, plus optional summaries and embeddings). Claude searches the index, opens only the lines it needs, and every claim in the answer carries the file, the line range, and when that section last changed (from git history when there is one).
+
+What I can show with numbers, all on the benchmark page with the method:
+
+- From nothing installed to a first useful search: 8 to 21 seconds, with no API key. Search runs on raw text; summaries are optional and use your own key or a local model.
+- A saved file is searchable in about 2 seconds.
+- On a small test corpus it answers more correctly than grep-and-read, at the same reading cost. On large public documentation sets it does not beat a good baseline on every axis, and the page says where.
+
+What did not work, also on the page: I built a feature that, after you change one document, names other documents the change left out of date. I evaluated it on real commits from public documentation repositories against a plain agent with file search and git. The plain agent was right 87 % of the time; my feature 51 %, at twice the cost. It is not shipped.
+
+It never writes to your files, has no telemetry, and the index stays on your machine. Apache-2.0.
+
+Install, inside Claude Code:
+
+    /plugin marketplace add joe-carr-data/markdownattractor
+    /plugin install markdownattractor@markdownattractor
+
+I would like to hear where the citations are wrong or the dates misleading: that is the part I most want to be right.
+
+## X thread (draft, 5 posts)
+
+1. Claude Code reads your docs by grepping and opening whole files. I wanted answers that say which lines they came from and how old those lines are. So I built a local index for markdown. [demo clip]
+2. One Rust binary watches the folder. Every section is searchable about 2 seconds after you save. No key needed to start: first useful search 8 to 21 seconds from nothing installed.
+3. Every claim in an answer is cited to a file and a line range, with when that section last changed (from git history when there is one).
+4. I benchmarked it against grep, qmd and graphify, with the gates written down before the runs. It does not win everywhere, and the page says where it loses.
+5. One feature did not make it: warning you when a change leaves another doc out of date. A plain agent with search and git beat it, 87 % to 51 %. Not shipped; the numbers are public. [link]
+
+## r/ClaudeAI — "Built with Claude" (draft)
+
+Title: I built a Claude Code plugin that cites the exact lines of your markdown it answered from
+
+Body: the first comment above, minus the Show HN framing, plus one paragraph on how it was built: the whole project was written with Claude Code, every change to the Rust code reviewed by a second model, and the benchmark runbook is in the repository so the numbers can be regenerated.
+
+## Launch write-up — outline (for the repository or a blog)
+
+1. The problem in one screen: a question, the grep-and-read session, what is missing (which lines, how old).
+2. What it does: the session excerpt from the README.
+3. How it works: sections, hash before summarise, raw text indexed first, cards optional, times from git.
+4. The benchmark method in five lines: preregistered gates, frozen samples, a model panel in place of human graders, what that cannot show.
+5. What passed (the table above), what did not, and the change-impact review story with its lesson: run the cheap baseline first.
+6. What is next, without promises.
+
+## Open before posting (owner)
+
+- The demo clip: the videos are paused since 2026-11-15; post 1 of the thread and the Show HN need either a clip or the README's session excerpt.
+- Account age and karma on HN and r/ClaudeAI (growth plan, Phase 0).
+- Whether "more correct than grep on a small corpus" goes in the title line or only in the body (owner decision 2026-11-16 allows the claim with its limits).
