@@ -86,6 +86,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-17 | [handoffs/2026-11-17-2054-auto.md](handoffs/2026-11-17-2054-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-17 | [handoffs/2026-11-17-2005-auto.md](handoffs/2026-11-17-2005-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
+| 2026-11-18 | [launch/2026-11-launch-drafts.md](launch/2026-11-launch-drafts.md) | Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every n… |
 | 2026-11-18 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-11-14 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
