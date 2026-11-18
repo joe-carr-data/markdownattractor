@@ -13,9 +13,9 @@ https://github.com/joe-carr-data/markdownattractor/releases/download/v<VERSION>/
 
 with `os ∈ {darwin, linux, windows}`, `arch ∈ {arm64, x64}`, the checksum verified before anything is moved, and the binary (`mda`, or `mda.exe` on Windows) extracted from the archive root into `${CLAUDE_PLUGIN_DATA}/bin/mda-<VERSION>`. The file name carries the version because every open session keeps the plugin copy it started with and runs its hook again after each compaction: with one shared `bin/mda` (up to 0.2.6) an older session put its older binary back over a newer one. Now each version installs and runs its own file; the hook marks its file as used and removes other versions' files unused for two weeks. The old shared `bin/mda` is left for sessions that still use it and can be deleted by hand. `VERSION` in the plugin root is the wanted version; the hook never blocks a session and points at `mda doctor` on any failure.
 
-## What a tag produces
+## What a release run produces
 
-`git tag vX.Y.Z && git push --tags` runs `.github/workflows/release.yml`:
+After the release PR is merged, `gh workflow run Release --ref main -f publish=true` runs `.github/workflows/release.yml` once: it builds, checks, and only then creates the tag `vX.Y.Z` and the release on the commit it built. A failed check publishes nothing and leaves no tag (0.2.5 was a tag with no binaries because the tag came first). Runs on `main` share one compile cache; a branch's or a tag's cache is visible to no other run, which made every release build cold. A pushed tag still builds and publishes, as before.
 
 | Job | Does |
 |---|---|
@@ -23,7 +23,7 @@ with `os ∈ {darwin, linux, windows}`, `arch ∈ {arm64, x64}`, the checksum ve
 | `build` (×5) | `cargo build --release -p mda-cli --target <triple>` on the native runner, `--version` smoke test, `mda-<os>-<arch>.tar.gz` with the binary, `LICENSE` and `README.md` at the root. |
 | `publish` | `SHA256SUMS`, then **the real `bootstrap.sh` installs the linux-x64 archive from a local mirror** of the layout and `--version` must match; then `gh release create` with generated notes. |
 
-`workflow_dispatch` runs the same jobs without publishing (dry run; artifacts stay on the workflow run).
+`workflow_dispatch` without `publish` runs the same jobs without publishing (dry run; artifacts stay on the workflow run). It is needed only when a change touches the workflow or the scripts it runs; a publishing run is its own check.
 
 | Archive | Runner | Features | Notes |
 |---|---|---|---|
