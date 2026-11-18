@@ -268,6 +268,25 @@ python3 -I scripts/eval/c_confirm.py tally $C/confirm                           
 
 No count from this step is a result. First run, 2026-11-18: 161 pairs asked, 42 confirmed (36 changes, 15 repositories), 119 dropped, none incomplete; the stop rule's first condition (plan, Phase C) is met; the case list, the split by repository and the review prompts are frozen before the first scored run, and this section is completed then.
 
+## 4h. Change-impact review — cases, split and runs (Phase C; in preparation, nothing published)
+
+`scripts/eval/c_run.py` (no provider key; `mda check` runs on the `claude-cli` backend through the owner's Claude Code login):
+
+```sh
+C=~/.cache/markdownattractor/bench/c
+python3 -I scripts/eval/c_run.py freeze $C/confirm evals/results/impact/C1          # cases.json: the confirmed cases and their half; no model
+cp target/release/mda $C/bin/mda-<commit>                                           # one binary for a run; never rebuilt during it
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY python3 -I scripts/eval/c_run.py run evals/results/impact/C1/cases.json $C/clones $C/<run> $C/bin/mda-<commit> --half dev --jobs 3
+python3 -I scripts/eval/c_run.py score evals/results/impact/C1/cases.json $C/<run> --half dev
+```
+
+- **Cases (`evals/results/impact/C1/cases.json`, committed 2026-11-18 before any run of the test half).** A case is one change: commit A's edit of file X, with the files Y the panel confirmed (§4g). 36 cases, 42 labelled documents, 15 repositories.
+- **Split.** Repositories ordered by the sha256 of their name, assigned dev, test, dev, …: 20 cases (23 labels, 8 repositories) for development, 16 cases (19 labels, 7 repositories) for the test. This was the first rule tried; the counts, not any outcome, were seen before it was kept.
+- **Per case, a closed repository.** Two commits and nothing else: the markdown files as they stood before A, then at A. `run` refuses a repository with any other commit, a remote, a tag or an alternate. Only markdown is exported (the product indexes nothing else); the two commits carry a fixed date, so the index's dates there mean nothing, and none is sent to the judge. Building a case may fetch a large blob the partial clone lacks; `mda check` itself never fetches.
+- **The run.** `mda backend claude-cli --i-accept-the-policy`, then `mda --json check --since HEAD~1` with its defaults (40 judgments, the configuration's default model). The JSON report is stored per case; a case with a report is not run again; a case that fails leaves `errors/<case>.txt` and counts as missed.
+- **`score`.** Mined-label recall = labelled (case, Y) pairs with a finding from X to Y, over all labels, cases without a report included. It also writes every alert with whether its document is labelled: alerts on unlabelled documents are **not** false positives until adjudicated blind by the panel.
+- **Development half:** at most two prompt iterations (the stop rule's second condition reads precision there). **Test half:** scored once, after `FROZEN.md` records the binary, the prompt version and the metrics; this section is completed then.
+
 ## 5. Answer quality on the golden corpus
 
 **5a. Regeneration (exact).** The archived observations are `evals/ab/results/<date>-*.md` with their `runs.jsonl` and `grades.jsonl` under `evals/results/` (from M5; the 2026-09-22 runs predate the archive rule and are exploratory). Recompute the table from the archived `grades.jsonl` with `scripts/eval/grade.sh --table-only <questions> <dir>` (M5) and diff against the published file: it must be byte-identical.
