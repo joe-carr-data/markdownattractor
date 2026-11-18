@@ -215,7 +215,7 @@ fn check_daemon(root: &std::path::Path) -> Check {
     match super::live_status(&root) {
         Some(l) => {
             // A daemon started by another version keeps running after an update.
-            let other_version = super::daemon_version_note(&l.version);
+            let other_version = super::daemon_version_note(&l.version, &root);
             let detail = format!(
                 "running · pid {} · up {} · {}{}",
                 l.pid,
@@ -223,12 +223,17 @@ fn check_daemon(root: &std::path::Path) -> Check {
                 l.watcher_error.as_deref().unwrap_or("watching"),
                 other_version.as_ref().map(|n| format!(" · {n}")).unwrap_or_default()
             );
-            let needs_restart = !l.watching || other_version.is_some();
+            // The note carries its own advice (restart, or not, by which is newer); a watcher
+            // that is down is its own reason to restart.
             Check {
                 name: "daemon",
-                status: if needs_restart { Status::Warn } else { Status::Ok },
+                status: if l.watching && other_version.is_none() {
+                    Status::Ok
+                } else {
+                    Status::Warn
+                },
                 detail,
-                fix: needs_restart.then_some("restart it: `mda restart`"),
+                fix: (!l.watching).then_some("restart it: `mda restart`"),
             }
         }
         None if mda_core::daemon::pid_path(&root).exists() => Check {

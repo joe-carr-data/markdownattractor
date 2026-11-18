@@ -290,7 +290,10 @@ fn print_example(ex: &mda_core::pipeline::Example, st: &Style) {
 
 fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result<ExitCode> {
     let info = DaemonInfo::read(root)?;
-    let note = info.as_ref().and_then(|i| super::daemon_version_note(&i.version));
+    // The version of the daemon that answers, not of a file that may be stale or gone.
+    let live = super::live_status(root).map(|l| l.version);
+    let version = live.or_else(|| info.as_ref().map(|i| i.version.clone()));
+    let note = version.and_then(|v| super::daemon_version_note(&v, root));
     if json {
         output::json(&serde_json::json!({
             "started": false, "running": true, "info": info, "version_note": note,

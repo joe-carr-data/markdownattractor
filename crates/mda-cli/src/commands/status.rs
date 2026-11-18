@@ -48,6 +48,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         None => None,
     };
 
+    let version_note = live.as_ref().and_then(|l| note_for(&l.version, engine.root()));
     if json {
         output::json(&serde_json::json!({
             "root": engine.root(),
@@ -56,6 +57,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             "schema_version": engine.store().schema_version()?,
             "git_times": engine.store().git_state_counts()?,
             "daemon": live,
+            "daemon_version_note": version_note,
             "embeddings": { "check": embed_check, "counts": embed_counts },
         }));
         return Ok(ExitCode::SUCCESS);
@@ -125,8 +127,10 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
             l.failures,
             l.cost_usd,
         );
-        if let Some(e) = &l.last_error {
-            println!("  {} {e}", st.warn("last error:"));
+        for (label, text) in [("last error:", &l.last_error), ("note:", &version_note)] {
+            if let Some(text) = text {
+                println!("  {} {text}", st.warn(label));
+            }
         }
     } else {
         println!("  daemon {} · `mda start` keeps the index live", st.dim("not running"));
@@ -135,4 +139,9 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         }
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// See [`super::daemon_version_note`].
+fn note_for(daemon_version: &str, root: &std::path::Path) -> Option<String> {
+    super::daemon_version_note(daemon_version, root)
 }
