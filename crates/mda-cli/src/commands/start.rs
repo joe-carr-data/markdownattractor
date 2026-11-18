@@ -290,8 +290,11 @@ fn print_example(ex: &mda_core::pipeline::Example, st: &Style) {
 
 fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result<ExitCode> {
     let info = DaemonInfo::read(root)?;
+    let note = info.as_ref().and_then(|i| super::daemon_version_note(&i.version));
     if json {
-        output::json(&serde_json::json!({ "started": false, "running": true, "info": info }));
+        output::json(&serde_json::json!({
+            "started": false, "running": true, "info": info, "version_note": note,
+        }));
     } else {
         let pid = info.map_or("?".to_owned(), |i| i.pid.to_string());
         println!(
@@ -299,6 +302,9 @@ fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result
             st.ok("mda"),
             st.dim(&root.display().to_string())
         );
+        if let Some(note) = &note {
+            println!("  {} {note}", st.warn("note:"));
+        }
         println!("  {} mda status · mda watch · mda stop", st.dim("next:"));
     }
     Ok(ExitCode::SUCCESS)

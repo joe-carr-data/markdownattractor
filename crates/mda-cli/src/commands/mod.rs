@@ -100,6 +100,19 @@ pub fn block_on<F: std::future::Future>(f: F) -> anyhow::Result<F::Output> {
     Ok(rt.block_on(f))
 }
 
+/// What to say when the daemon that answers was started by another version of mda than the
+/// one running this command (each plugin version has its own binary, and a daemon outlives
+/// an update until it is restarted). `None` when the versions are the same.
+#[must_use]
+pub fn daemon_version_note(daemon_version: &str) -> Option<String> {
+    (daemon_version != mda_core::VERSION).then(|| {
+        format!(
+            "the running daemon is version {daemon_version}, this command is {}: `mda restart` starts it on this version",
+            mda_core::VERSION
+        )
+    })
+}
+
 /// The live status of the daemon for `root`, if one answers.
 pub fn live_status(root: &Path) -> Option<mda_core::daemon::LiveStatus> {
     use mda_core::daemon::{Client, Request, Response};
@@ -179,5 +192,18 @@ mod tests {
         assert_eq!(humanize_age(now), "just now");
         assert_eq!(humanize_age(now - 90.minutes()), "1 hour ago");
         assert_eq!(humanize_age(now - (3 * 24).hours()), "3 days ago");
+    }
+}
+
+#[cfg(test)]
+mod version_note_tests {
+    use super::daemon_version_note;
+
+    #[test]
+    fn a_daemon_of_another_version_is_named_and_the_same_version_is_silent() {
+        assert_eq!(daemon_version_note(mda_core::VERSION), None);
+        let note = daemon_version_note("0.0.1").unwrap();
+        assert!(note.contains("0.0.1") && note.contains(mda_core::VERSION), "{note}");
+        assert!(note.contains("mda restart"), "{note}");
     }
 }

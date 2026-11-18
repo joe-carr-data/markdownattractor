@@ -213,17 +213,24 @@ fn check_embeddings(cfg: &mda_core::config::Config) -> Check {
 fn check_daemon(root: &std::path::Path) -> Check {
     let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
     match super::live_status(&root) {
-        Some(l) => Check {
-            name: "daemon",
-            status: if l.watching { Status::Ok } else { Status::Warn },
-            detail: format!(
-                "running · pid {} · up {} · {}",
+        Some(l) => {
+            // A daemon started by another version keeps running after an update.
+            let other_version = super::daemon_version_note(&l.version);
+            let detail = format!(
+                "running · pid {} · up {} · {}{}",
                 l.pid,
                 super::humanize_secs(l.uptime_secs),
-                l.watcher_error.as_deref().unwrap_or("watching")
-            ),
-            fix: (!l.watching).then_some("restart it: `mda restart`"),
-        },
+                l.watcher_error.as_deref().unwrap_or("watching"),
+                other_version.as_ref().map(|n| format!(" · {n}")).unwrap_or_default()
+            );
+            let needs_restart = !l.watching || other_version.is_some();
+            Check {
+                name: "daemon",
+                status: if needs_restart { Status::Warn } else { Status::Ok },
+                detail,
+                fix: needs_restart.then_some("restart it: `mda restart`"),
+            }
+        }
         None if mda_core::daemon::pid_path(&root).exists() => Check {
             name: "daemon",
             status: Status::Warn,

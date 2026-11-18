@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- **A daemon left running by an older version is now named.** `mda start` (when a daemon already answers) and `mda doctor` say when the running daemon is another version than the command, and that `mda restart` moves it to this one. Since 0.2.7 each plugin version has its own binary, so a daemon can outlive an update.
+
 ### Not shipped
 
 - **Change-impact review did not pass its evaluation and is not released.** On the development half of the evaluation `mda check` was right about 51 % of its alerts, against 87 % for a plain agent with file search and git, and found fewer of the labelled documents at a higher cost (`docs/benchmarks.md` § Change-impact review). The command remains in the binary, hidden from `--help` and unannounced.
