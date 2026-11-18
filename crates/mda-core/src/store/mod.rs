@@ -1580,6 +1580,22 @@ impl Store {
         Ok(u64::try_from(n).unwrap_or(0))
     }
 
+    /// `true` when at least one live section has a card a model wrote. Heading-only sections get
+    /// a deterministic card without any model, so a root with no backend has cards, and vectors
+    /// for them, that say nothing about its content.
+    pub fn has_model_cards(&self) -> Result<bool> {
+        let found: bool = self.conn.query_row(
+            "SELECT EXISTS(
+                 SELECT 1 FROM summaries s
+                 JOIN sections x ON x.section_hash = s.section_hash
+                 WHERE s.state = 'summarized'
+                   AND json_extract(s.provenance, '$.backend') IS NOT 'deterministic')",
+            [],
+            |r| r.get(0),
+        )?;
+        Ok(found)
+    }
+
     /// Every live document's path with its link targets that have no scheme, in path order.
     pub fn document_links(&self) -> Result<Vec<(String, Vec<String>)>> {
         let mut stmt = self.conn.prepare(
