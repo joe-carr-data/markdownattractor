@@ -10,7 +10,10 @@ use mda_core::impact::judgment::Verdict;
 use mda_core::impact::review::{Options, Report, pair_id, review};
 use mda_core::pipeline::Engine;
 use mda_core::store::{doc_id_for, section_id_for};
-use mda_core::worker::{Mock, StructuredResult, StructuredStatus};
+use mda_core::worker::{
+    Backend, BoxFuture, Mock, Outcome, StructuredRequest, StructuredResult, StructuredStatus,
+    SummarizeRequest,
+};
 use serde_json::json;
 
 fn git(dir: &Path, args: &[&str]) -> String {
@@ -45,11 +48,15 @@ const NOTES: &str = "# Notes\n\n## Gateway\n\nThe gateway sits in front of the A
 
 /// A repository with three committed pages, then the deploy page's timeout changed to 90.
 fn changed_repo() -> tempfile::TempDir {
+    changed_repo_with(FAQ)
+}
+
+fn changed_repo_with(faq: &str) -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     git(root, &["init", "-q"]);
     write(root, "deploy.md", DEPLOY);
-    write(root, "faq.md", FAQ);
+    write(root, "faq.md", faq);
     write(root, "notes.md", NOTES);
     write(root, ".gitignore", ".markdownattractor/\n");
     git(root, &["add", "-A"]);
@@ -233,4 +240,170 @@ async fn a_revision_that_is_not_an_ancestor_and_a_folder_without_git_are_refused
     let mut engine = Engine::open(plain.path()).unwrap();
     let err = review(&mut engine, None, &Options::new("m")).await.unwrap_err().to_string();
     assert!(err.contains("not usable here"), "{err}");
+}
+
+/// A backend that does something to the files, or fails, on its n-th structured call.
+struct Meddling<F: Fn() + Send + Sync> {
+    inner: Mock,
+    on_call: usize,
+    act: F,
+    fail: bool,
+    calls: std::sync::atomic::AtomicUsize,
+}
+
+impl<F: Fn() + Send + Sync> Backend for Meddling<F> {
+    fn summarize<'a>(
+        &'a self,
+        req: &'a SummarizeRequest,
+        model: &'a str,
+    ) -> BoxFuture<'a, mda_core::Result<Outcome>> {
+        self.inner.summarize(req, model)
+    }
+
+    fn structured<'a>(
+        &'a self,
+        req: &'a StructuredRequest,
+        model: &'a str,
+    ) -> BoxFuture<'a, mda_core::Result<StructuredResult>> {
+        let n = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+        if n == self.on_call {
+            (self.act)();
+            if self.fail {
+                return Box::pin(async { Err(mda_core::Error::Config("cannot start".into())) });
+            }
+        }
+        self.inner.structured(req, model)
+    }
+
+    fn name(&self) -> &'static str {
+        "mock"
+    }
+}
+
+fn both_scripted() -> Mock {
+    Mock::new()
+        .on_structured(id_for("faq.md"), vec![outdated()])
+        .on_structured(id_for("notes.md"), vec![verdict("related")])
+}
+
+#[tokio::test]
+async fn a_finding_whose_file_changes_during_a_later_call_is_withheld_not_printed() {
+    for delete in [false, true] {
+        let dir = changed_repo();
+        let root = dir.path().canonicalize().unwrap();
+        let faq = root.join("faq.md");
+        let backend = Meddling {
+            inner: both_scripted(),
+            on_call: 2,
+            act: || {
+                if delete {
+                    std::fs::remove_file(&faq).unwrap();
+                } else {
+                    std::fs::write(&faq, FAQ.replace("30 seconds", "90 seconds")).unwrap();
+                }
+            },
+            fail: false,
+            calls: 0.into(),
+        };
+        let mut engine = Engine::open(&root).unwrap();
+        let report = review(&mut engine, Some(&backend), &Options::new("m")).await.unwrap();
+        assert!(report.findings.is_empty(), "delete={delete}: {:?}", report.findings);
+        assert_eq!(report.stale_during_review, 1);
+        assert!(report.pairs.iter().any(|p| p.outcome == "stale_during_review"));
+    }
+}
+
+#[tokio::test]
+async fn a_status_added_to_the_other_file_s_front_matter_withholds_the_finding() {
+    let dir = changed_repo();
+    let root = dir.path().canonicalize().unwrap();
+    let faq = root.join("faq.md");
+    // The section and its heading are untouched; the document is now marked archived.
+    let backend = Meddling {
+        inner: both_scripted(),
+        on_call: 1,
+        act: || std::fs::write(&faq, format!("---\nstatus: archived\n---\n{FAQ}")).unwrap(),
+        fail: false,
+        calls: 0.into(),
+    };
+    let mut engine = Engine::open(&root).unwrap();
+    let report = review(&mut engine, Some(&backend), &Options::new("m")).await.unwrap();
+    assert!(report.findings.is_empty());
+    assert_eq!(report.stale_during_review, 1);
+}
+
+#[tokio::test]
+async fn a_backend_error_is_a_failed_pair_in_the_ledger_and_a_stopped_run() {
+    let dir = changed_repo();
+    let root = dir.path().canonicalize().unwrap();
+    let backend =
+        Meddling { inner: both_scripted(), on_call: 1, act: || {}, fail: true, calls: 0.into() };
+    let mut engine = Engine::open(&root).unwrap();
+    let report = review(&mut engine, Some(&backend), &Options::new("m")).await.unwrap();
+    assert_eq!((report.judged, report.failed, report.not_judged), (0, 1, 1));
+    assert!(report.stopped.as_deref().unwrap().starts_with("the backend failed"));
+    assert_eq!(report.usage_unknown, 1);
+    let days = engine.store().usage_by_day(None).unwrap();
+    assert!(days.iter().any(|d| d.outcome == "impact_error_usage_unknown"), "{days:?}");
+}
+
+#[tokio::test]
+async fn a_retry_does_not_go_past_the_daily_budget() {
+    let dir = changed_repo();
+    let root = dir.path().canonicalize().unwrap();
+    drop(Engine::open(&root).unwrap());
+    let cfg = root.join(".markdownattractor/config.toml");
+    let mut text = std::fs::read_to_string(&cfg).unwrap_or_default();
+    text.insert_str(0, "daily_token_budget = 100\n");
+    std::fs::write(&cfg, text).unwrap();
+    // A billed malformed answer (150 tokens) uses the budget up: no second attempt.
+    let billed_bad = StructuredResult {
+        status: StructuredStatus::Malformed { reason: "not JSON".into(), raw: String::new() },
+        usage: Some(Mock::canned_usage("m")),
+    };
+    let mock = Mock::new()
+        .on_structured(id_for("faq.md"), vec![billed_bad.clone(), outdated()])
+        .on_structured(id_for("notes.md"), vec![billed_bad, verdict("related")]);
+    let report = run(&root, Some(&mock), &Options::new("m")).await;
+    assert_eq!(mock.structured_calls().len(), 1, "one attempt, then the budget");
+    assert_eq!((report.judged, report.failed, report.not_judged), (0, 1, 1));
+    assert_eq!(report.stopped.as_deref(), Some("the daily token budget is used up"));
+    let failed = report.pairs.iter().find(|p| p.outcome == "failed").unwrap();
+    assert!(failed.detail.as_deref().unwrap().contains("not retried"));
+}
+
+#[tokio::test]
+async fn a_pair_too_large_to_send_uses_no_judgment_and_names_both_files() {
+    let big =
+        format!("# FAQ\n\n## Limits\n\nRequests end after 30 seconds. {}\n", "x ".repeat(30_000));
+    let dir = changed_repo_with(&big);
+    let root = dir.path().canonicalize().unwrap();
+    let mock = both_scripted();
+    let one = Options { max_judgments: 1, ..Options::new("m") };
+    let report = run(&root, Some(&mock), &one).await;
+    assert_eq!(mock.structured_calls().len(), 1, "the cap counts calls, not skipped pairs");
+    assert_eq!((report.judged, report.not_judged), (1, 0));
+    let large = report.not_reviewed.iter().find(|n| n.reason == "too_large").unwrap();
+    assert_eq!((large.rel_path.as_str(), large.with.as_deref()), ("deploy.md", Some("faq.md")));
+}
+
+#[tokio::test]
+async fn line_endings_alone_ignored_files_and_empty_searches_are_reported_for_what_they_are() {
+    let dir = changed_repo();
+    let root = dir.path().canonicalize().unwrap();
+    // CRLF only: not a changed file. An ignored file: not a deletion.
+    write(&root, "notes.md", &NOTES.replace('\n', "\r\n"));
+    write(&root, ".markdownattractorignore", "faq.md\n");
+    let report = run(&root, None, &Options::new("m")).await;
+    assert_eq!(report.files_changed, 1, "{:?}", report.not_reviewed);
+    let reasons: Vec<(&str, &str)> =
+        report.not_reviewed.iter().map(|n| (n.rel_path.as_str(), n.reason.as_str())).collect();
+    assert_eq!(reasons, [("faq.md", "not_indexed")]);
+
+    // A change that shares nothing with any other page is named, not silently clean.
+    write(&root, "deploy.md", &DEPLOY.replace("The gateway timeout is 30 seconds.", "Zyxwv."));
+    write(&root, ".markdownattractorignore", "faq.md\nnotes.md\n");
+    let report = run(&root, None, &Options::new("m")).await;
+    assert_eq!(report.candidates, 0);
+    assert_eq!(report.changes_without_candidates.len(), 1);
 }

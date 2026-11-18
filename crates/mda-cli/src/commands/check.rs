@@ -34,14 +34,19 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let root = super::resolve_root(args.root.as_deref())?;
     let mut engine = Engine::open(&root)?;
     let cfg = engine.config().clone();
-    // No backend is not an error: candidates are listed and nothing is judged.
-    let backend = backend_for(&cfg).ok();
+    // No backend is not an error: candidates are listed and nothing is judged. Why there is
+    // none is said, so that a broken setup does not read as "not configured".
+    let (backend, backend_note) = match backend_for(&cfg) {
+        Ok(b) => (Some(b), None),
+        Err(e) => (None, Some(e.to_string())),
+    };
     let opts = Options {
         since: args.since.clone(),
         max_judgments: usize::try_from(args.max_judgments).unwrap_or(usize::MAX),
         ..Options::new(cfg.summarization_model.clone())
     };
-    let report = super::block_on(review(&mut engine, backend.as_deref(), &opts))??;
+    let mut report = super::block_on(review(&mut engine, backend.as_deref(), &opts))??;
+    report.backend_note = backend_note;
     if json {
         output::json(&report);
         return Ok(ExitCode::SUCCESS);
@@ -50,7 +55,8 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     for finding in &report.findings {
         print_finding(finding, &st);
     }
-    if args.all {
+    // Without a backend the candidates are the result: they are always listed.
+    if args.all || report.backend.is_none() {
         for p in &report.pairs {
             let detail = p.detail.as_deref().map(|d| format!(" ({d})")).unwrap_or_default();
             println!(
@@ -108,9 +114,10 @@ fn print_finding(f: &ReportFinding, st: &Style) {
     }
 }
 
-/// A quote on one line, in quotation marks.
+/// A quote on one line, in quotation marks. The text is the file's own, spaces included; a
+/// line break inside it is shown as `⏎` (`--json` has the exact text).
 fn quoted(text: &str) -> String {
-    format!("“{}”", text.split_whitespace().collect::<Vec<_>>().join(" "))
+    format!("“{}”", text.replace('\n', " ⏎ "))
 }
 
 /// The one-line result.
@@ -124,7 +131,10 @@ fn summary(r: &Report, st: &Style) -> String {
     let found = if r.backend.is_some() {
         format!("{} possibly out of date", r.findings.len())
     } else {
-        "not judged (no summarization backend)".to_owned()
+        match &r.backend_note {
+            Some(why) => format!("not judged (no summarization backend: {why})"),
+            None => "not judged (no summarization backend)".to_owned(),
+        }
     };
     format!(
         "{head} since {short} · {} changed section(s) in {} file(s) · {} candidate pair(s) · {} judged · {found}",
@@ -160,6 +170,18 @@ fn coverage(r: &Report) -> Vec<String> {
         lines.push(format!(
             "{} finding(s) withheld: a file changed during the review",
             r.stale_during_review
+        ));
+    }
+    if !r.changes_without_candidates.is_empty() {
+        lines.push(format!(
+            "{} changed section(s) with no candidate: nothing else shares their wording",
+            r.changes_without_candidates.len()
+        ));
+    }
+    if r.cut_per_document > 0 {
+        lines.push(format!(
+            "{} section(s) passed over: their document already had two candidates",
+            r.cut_per_document
         ));
     }
     if r.searches_truncated > 0 {

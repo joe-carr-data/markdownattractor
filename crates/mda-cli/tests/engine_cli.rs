@@ -1752,8 +1752,11 @@ fn check_without_a_backend_lists_candidates_and_calls_nothing_a_finding() {
         .stdout
         .clone();
     let text = String::from_utf8_lossy(&text);
-    assert!(text.contains("not judged (no summarization backend)"), "{text}");
-    assert_eq!(text.lines().count(), 1, "{text}");
+    assert!(text.contains("not judged (no summarization backend"), "{text}");
+    assert!(text.contains("ANTHROPIC_API_KEY"), "why there is no backend: {text}");
+    // The candidate is the result here, so it is listed: one pair, then the summary.
+    assert!(text.lines().next().unwrap().contains("faq.md"), "{text}");
+    assert_eq!(text.lines().count(), 2, "{text}");
 
     // A revision that does not exist is an error, not an empty review.
     mda().args(["check", "--since", "no-such-rev", "--root"]).arg(&root).assert().failure();
