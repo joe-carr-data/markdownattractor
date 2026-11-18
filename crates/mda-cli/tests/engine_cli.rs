@@ -1771,3 +1771,26 @@ fn check_outside_a_git_repository_says_so() {
         format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
     assert!(said.contains("git history, which is not usable here"), "{said}");
 }
+
+#[cfg(unix)]
+#[test]
+fn a_reader_that_goes_away_is_not_a_crash() {
+    use std::process::{Command, Stdio};
+    let dir = root_with_docs();
+    mda().args(["index", "--no-summarize", "--root"]).arg(dir.path()).assert().success();
+    // The reader closes its end before the command prints anything.
+    let mut child = Command::new(assert_cmd::cargo::cargo_bin("mda"))
+        .args(["search", "deploy", "-k", "20", "--root"])
+        .arg(dir.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    drop(child.stdout.take());
+    let out = child.wait_with_output().unwrap();
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(!err.contains("panicked"), "{err}");
+    assert!(!err.contains("RUST_BACKTRACE"), "{err}");
+    // Either it lost the race and printed into the closed pipe (141), or it finished first.
+    assert!(matches!(out.status.code(), Some(141 | 0)), "{:?} {err}", out.status);
+}

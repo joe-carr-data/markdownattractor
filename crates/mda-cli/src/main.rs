@@ -93,7 +93,29 @@ enum Command {
     Daemon(commands::daemon::Args),
 }
 
+/// A reader that goes away (`mda status | head -1`) is not a crash. `println!` panics when
+/// stdout is closed; this turns that one panic into a silent exit with the status a shell
+/// expects of a process stopped by a closed pipe (141), and leaves every other panic as it is.
+fn quiet_on_closed_pipe() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let payload = info.payload();
+        let message = payload
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| payload.downcast_ref::<&str>().copied())
+            .unwrap_or_default();
+        let closed = message.starts_with("failed printing to stdout")
+            && (message.contains("Broken pipe") || message.contains("os error 232"));
+        if closed {
+            std::process::exit(141);
+        }
+        default(info);
+    }));
+}
+
 fn main() -> ExitCode {
+    quiet_on_closed_pipe();
     let cli = Cli::parse();
     match &cli.command {
         Command::Daemon(args) if args.log_dir.is_some() => {
