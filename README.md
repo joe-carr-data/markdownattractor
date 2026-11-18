@@ -17,6 +17,48 @@
   <a href="docs/benchmarks.md"><img alt="benchmarks: preregistered" src="https://img.shields.io/badge/benchmarks-preregistered-16a34a?style=flat-square"></a>
 </p>
 
+https://github.com/user-attachments/assets/f2769057-470d-4600-bd4f-fb7e8e863092
+
+<p align="center"><sub>A real Claude Code session on the demo corpus: Claude answers with its source, a teammate edits the runbook, and seconds later Claude reports what changed. Nobody ran a reindex. <a href="docs/demo/README.md">How it was recorded.</a></sub></p>
+
+### How it works, at a glance
+
+```mermaid
+flowchart LR
+  A["Your markdown<br/>any folder of .md files<br/>never modified"] -->|every save| B["Rust daemon<br/>splits files into sections<br/>skips unchanged sections"]
+  B --> C["SQLite index<br/>one local file<br/>lines + dates per section"]
+  C -->|MCP: search, card, open| D["Claude Code"]
+```
+
+```mermaid
+flowchart LR
+  Q["One query"] --> R1["Raw text · BM25<br/>searchable 1.7 s after a save<br/>works with no API key"]
+  Q --> R2["Cards · BM25<br/>a ~200-token summary per section"]
+  Q --> R3["Card vectors<br/>bge-small, on your machine"]
+  R1 --> F["Reciprocal rank fusion<br/>optional time filter"]
+  R2 --> F
+  R3 --> F
+  F --> H["Top 5 hits<br/>file · heading path · lines · last changed"]
+  H --> O["Claude opens only the lines it needs, and cites them"]
+```
+
+### Measured
+
+| | |
+|---|---|
+| **8 s** | install to first search hit, with no API key (7 to 21 s, one machine) |
+| **1.7 s** | save to searchable (median of 20 edits); the summary card is ready in 8.4 s |
+| **98 %** | right section in the top 5 over 60 golden questions (88 % with no model at all) |
+| **100 %** | answers fully grounded on the golden set: every claim cites lines Claude opened (87.5 % before the answer contract) |
+| **3.18×** | fewer source tokens read than a knowledge-graph tool (graphify), at the same answer quality (same questions, 3 runs each, graded 0–6, golden corpus) |
+| **60 ms** | per hybrid search (mean over the golden questions) |
+| **96 %+** | of extracted dates and names judged supported by two model auditors |
+| **$0.31** | to summarise a 32-file docs folder with Haiku (222K tokens); an edit redoes one section |
+
+Gates were named before the results, and only what passed is claimed. Method and every number: [benchmarks](docs/benchmarks.md).
+
+### Without a key
+
 ```
 acme-docs % mda search canary --raw
 no hits for "canary"
