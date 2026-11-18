@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.7] — 2026-11-18
+
 ### Fixed
 
 - **A session on an older copy of the plugin put its older binary back.** All plugin versions shared one file, `bin/mda`, and every session start (including the one after a compaction) installed the version of the plugin copy that session had loaded. An open session from before an update therefore replaced the new binary with the old one, and the updated plugin then ran it. The binary's file name now carries the version (`bin/mda-<version>`): each plugin version installs and runs its own, and binaries of other versions unused for two weeks are removed. The old `bin/mda` is left in place; it can be deleted.
