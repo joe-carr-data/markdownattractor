@@ -249,6 +249,25 @@ python3 -I scripts/eval/c_mine.py $C/clones/<owner>__<repo>.git > $C/mined/<owne
 
 A hypothesis is a commit A that replaces one to three tokens in markdown file X, and a commit B within 60 days that makes the same replacement in a file Y that A did not touch and that carried the old tokens at A. Replacements seen in more than 30 places and replacements of timestamps are skipped. Flags mark what the panel is not asked about: `locale_path`, `log_like`, `mirror_path`, `same_basename`, `words_only`, `link_only`. Only unflagged hypotheses go to the panel, which sees X before and after and Y at A, never B. No count from this step is a result; the case list, the split by repository and the prompts are frozen before the first scored run, and this section is completed then.
 
+## 4g. Change-impact review — panel confirmation of hypotheses (Phase C; in preparation, nothing published)
+
+A hypothesis becomes a case only when the panel confirms it from what existed at commit A. `scripts/eval/c_confirm.py` (no provider key; the owner's Claude Code and Codex logins):
+
+```sh
+C=~/.cache/markdownattractor/bench/c
+python3 -I scripts/eval/c_confirm.py select $C/mined $C/clones $C/confirm            # no model; writes pairs.jsonl, select-counts.json
+env -u OPENAI_API_KEY -u GEMINI_API_KEY -u ANTHROPIC_API_KEY python3 -I scripts/eval/c_confirm.py judge $C/confirm --jobs 4   # resumes; appends verdicts.jsonl
+python3 -I scripts/eval/c_confirm.py tally $C/confirm                                # tally.json and one line per repository
+```
+
+- **Selection (deterministic, no model).** A pair is (commit A, file X, replacement, file Y). Unflagged pairs are ordered by the sha256 of their identity (not by history), then taken up to 24 per repository, at most 2 per commit and 2 per replacement within a repository. A pair whose files or diff cannot be read at A without fetching is skipped and counted (`unreadable_at_A`).
+- **What a member sees.** The path and first lines of X at A, the hunks of A's diff of X that drop a replaced token, the path and first lines of Y at A, and up to three passages of Y at A around the lines carrying a replaced token. Nothing of commit B (no id, subject or delay) is in the prompt.
+- **Question.** Same referent, same scope (not a changelog, migration guide, archive, other version, translation or arbitrary example), and inconsistent once the change is made; verdict `confirm`, `reject` or `unsure`, by JSON schema. Thinking off, tools off.
+- **Members.** `opus` (`claude-opus-5-5`), `fable` (`claude-fable-5-2`), `astra` (`gpt-6.2-astra`; the Codex CLI's stream names no model id, so the requested alias is recorded). Earlier frozen tables used `gpt-6-astra` and are not affected.
+- **Rule.** Confirmed = at least two of three `confirm`. A missing or malformed answer is no answer. Rejected and split pairs are dropped and counted.
+
+No count from this step is a result. First run, 2026-11-18: 161 pairs asked, 42 confirmed (36 changes, 15 repositories), 119 dropped, none incomplete; the stop rule's first condition (plan, Phase C) is met; the case list, the split by repository and the review prompts are frozen before the first scored run, and this section is completed then.
+
 ## 5. Answer quality on the golden corpus
 
 **5a. Regeneration (exact).** The archived observations are `evals/ab/results/<date>-*.md` with their `runs.jsonl` and `grades.jsonl` under `evals/results/` (from M5; the 2026-09-22 runs predate the archive rule and are exploratory). Recompute the table from the archived `grades.jsonl` with `scripts/eval/grade.sh --table-only <questions> <dir>` (M5) and diff against the published file: it must be byte-identical.
