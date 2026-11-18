@@ -1,0 +1,40 @@
+# VHS tape for demo video 3, "ask, edit, ask again"; filled in by scripts/demo/record-live.sh (@WORK@).
+# Two panes in one window: Claude Code above, a second shell below. Everything on screen is typed
+# and run for real. The captions are added afterwards by record-live.sh and follow the fixed pauses
+# below: change a pause here and the caption times there move with it (see `at` in the script).
+Output out.mp4
+Set Shell zsh
+Set FontFamily "MesloLGS NF"
+Set FontSize 18
+Set Width 1600
+Set Height 900
+Set Padding 24
+Set Margin 64
+Set MarginFill "bg.png"
+Set BorderRadius 14
+Set WindowBar Colorful
+Set Theme "Catppuccin Mocha"
+Set TypingSpeed 30ms
+Set CursorBlink false
+Hide
+Type "@WORK@/start.sh"
+Enter
+Sleep 10s
+Show
+Sleep 1500ms
+Type "@Q1@"
+Sleep 500ms
+Enter
+Sleep 10s
+Ctrl+G
+Sleep 700ms
+Type "@EDIT@"
+Sleep 500ms
+Enter
+Sleep 1500ms
+Ctrl+G
+Sleep 500ms
+Type "@Q2@"
+Sleep 500ms
+Enter
+Sleep 12s
