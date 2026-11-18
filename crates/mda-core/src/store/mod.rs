@@ -707,14 +707,30 @@ pub fn fts_escape(user_query: &str) -> String {
 
 /// One term as an FTS5 phrase: the whole of `term`, spaces included, in double quotes with
 /// inner quotes doubled, so nothing in it is read as an operator, a column filter or a prefix
-/// request. `None` when the term holds no letter or digit (FTS5 would see no token) or a
-/// control character.
+/// request. `None` for an empty term or one with a control character. A phrase the tokenizer
+/// finds no token in (`---`) is valid and matches nothing.
 pub fn fts_literal(term: &str) -> Option<String> {
     let term = term.trim();
-    if !term.chars().any(char::is_alphanumeric) || term.chars().any(char::is_control) {
+    if term.is_empty() || term.chars().any(char::is_control) {
         return None;
     }
     Some(format!("\"{}\"", term.replace('"', "\"\"")))
+}
+
+/// The most values one `IN (…)` list of this module holds (far below SQLite's variable limit).
+pub const MAX_IN_LIST: usize = 500;
+
+/// A hit of [`Store::raw_hits`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawHit {
+    /// Matching section.
+    pub section_id: String,
+    /// Its document.
+    pub doc_id: String,
+    /// Its content hash.
+    pub section_hash: String,
+    /// Its heading path.
+    pub heading_path: Vec<String>,
 }
 
 /// `?n, ?n+1, …`: `count` numbered SQL placeholders starting at `first`.
@@ -1488,47 +1504,88 @@ impl Store {
         Ok(u64::try_from(n).unwrap_or(0))
     }
 
-    /// [`Store::search_raw`] over the sections of `doc_ids` only. Best hit first.
-    pub fn search_raw_in_docs(
+    /// Raw-index hits with what is needed to choose among them, best first, without loading
+    /// any section text. `only_docs` restricts the search to those documents (an empty list
+    /// matches nothing; more than [`MAX_IN_LIST`] ids is refused). `offset` skips that many
+    /// hits of the same ranking.
+    pub fn raw_hits(
         &self,
         fts_expr: &str,
-        doc_ids: &[String],
+        only_docs: Option<&[String]>,
         k: usize,
-    ) -> Result<Vec<FtsHit>> {
-        if fts_expr.trim().is_empty() || k == 0 || doc_ids.is_empty() {
+        offset: usize,
+    ) -> Result<Vec<RawHit>> {
+        let docs = only_docs.unwrap_or_default();
+        if fts_expr.trim().is_empty() || k == 0 || only_docs.is_some_and(<[String]>::is_empty) {
             return Ok(Vec::new());
         }
+        if docs.len() > MAX_IN_LIST {
+            return Err(Error::Config(format!(
+                "a raw search can be restricted to at most {MAX_IN_LIST} documents, not {}",
+                docs.len()
+            )));
+        }
+        let filter = if only_docs.is_some() {
+            format!("AND s.doc_id IN ({})", placeholders(docs.len(), 4))
+        } else {
+            String::new()
+        };
         let sql = format!(
-            "SELECT f.section_id, {RAW_BM25} AS score FROM sections_raw_fts f
-             JOIN sections s ON s.rowid = f.rowid
-             WHERE sections_raw_fts MATCH ?1 AND s.doc_id IN ({})
-             ORDER BY score, f.section_id LIMIT ?2",
-            placeholders(doc_ids.len(), 3)
+            "SELECT f.section_id, s.doc_id, s.section_hash, s.heading_path, {RAW_BM25} AS score
+             FROM sections_raw_fts f JOIN sections s ON s.rowid = f.rowid
+             WHERE sections_raw_fts MATCH ?1 {filter}
+             ORDER BY score, f.section_id LIMIT ?2 OFFSET ?3"
         );
         let mut stmt = self.conn.prepare(&sql)?;
-        let k = to_i64(k as u64);
-        let mut values: Vec<&dyn rusqlite::ToSql> = vec![&fts_expr, &k];
-        values.extend(doc_ids.iter().map(|d| d as &dyn rusqlite::ToSql));
+        let (k, offset) = (to_i64(k as u64), to_i64(offset as u64));
+        let mut values: Vec<&dyn rusqlite::ToSql> = vec![&fts_expr, &k, &offset];
+        values.extend(docs.iter().map(|d| d as &dyn rusqlite::ToSql));
         let rows = stmt.query_map(values.as_slice(), |r| {
-            Ok(FtsHit { section_id: r.get(0)?, bm25: -r.get::<_, f64>(1)? })
+            Ok(RawHit {
+                section_id: r.get(0)?,
+                doc_id: r.get(1)?,
+                section_hash: r.get(2)?,
+                heading_path: json_col(r, 3)?,
+            })
         })?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
     /// Which of `section_ids` match `fts_expr` in their raw text or heading path, sorted.
     pub fn raw_matches_among(&self, fts_expr: &str, section_ids: &[String]) -> Result<Vec<String>> {
-        if fts_expr.trim().is_empty() || section_ids.is_empty() {
-            return Ok(Vec::new());
+        let mut out: Vec<String> = Vec::new();
+        if fts_expr.trim().is_empty() {
+            return Ok(out);
         }
-        let sql = format!(
-            "SELECT section_id FROM sections_raw_fts
-             WHERE sections_raw_fts MATCH ?1 AND section_id IN ({}) ORDER BY section_id",
-            placeholders(section_ids.len(), 2)
-        );
-        let mut stmt = self.conn.prepare(&sql)?;
-        let mut values: Vec<&dyn rusqlite::ToSql> = vec![&fts_expr];
-        values.extend(section_ids.iter().map(|d| d as &dyn rusqlite::ToSql));
-        let rows = stmt.query_map(values.as_slice(), |r| r.get(0))?;
+        for chunk in section_ids.chunks(MAX_IN_LIST) {
+            let sql = format!(
+                "SELECT section_id FROM sections_raw_fts
+                 WHERE sections_raw_fts MATCH ?1 AND section_id IN ({})",
+                placeholders(chunk.len(), 2)
+            );
+            let mut stmt = self.conn.prepare(&sql)?;
+            let mut values: Vec<&dyn rusqlite::ToSql> = vec![&fts_expr];
+            values.extend(chunk.iter().map(|d| d as &dyn rusqlite::ToSql));
+            let rows = stmt.query_map(values.as_slice(), |r| r.get(0))?;
+            out.extend(rows.collect::<rusqlite::Result<Vec<String>>>()?);
+        }
+        out.sort_unstable();
+        out.dedup();
+        Ok(out)
+    }
+
+    /// How many sections the live documents have.
+    pub fn live_section_count(&self) -> Result<u64> {
+        let n: i64 = self.conn.query_row("SELECT COUNT(*) FROM sections", [], |r| r.get(0))?;
+        Ok(u64::try_from(n).unwrap_or(0))
+    }
+
+    /// Every live document's path with its link targets that have no scheme, in path order.
+    pub fn document_links(&self) -> Result<Vec<(String, Vec<String>)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT rel_path, links_internal FROM docs WHERE deleted_at IS NULL ORDER BY rel_path",
+        )?;
+        let rows = stmt.query_map([], |r| Ok((r.get(0)?, json_col(r, 1)?)))?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 

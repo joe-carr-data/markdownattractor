@@ -15,7 +15,12 @@
 //!   when there is any) come before sections that only share other terms; within each of
 //!   the two groups, sections of linked documents come first, then the rest by rank.
 //! - **Caps.** At most [`Limits::per_document`] sections of one document and
-//!   [`Limits::per_change`] in all.
+//!   [`Limits::per_change`] in all. Ranked hits are read page by page until the places are
+//!   filled or the hits run out, so one document with many matching sections cannot hide the
+//!   others; a search stopped by [`Limits::max_scanned`] is reported as truncated.
+//! - **Freshness is the caller's.** The index must hold the working files (the review syncs it
+//!   first): the changed section is recognised by its document and heading path or by its
+//!   new text, which an index older than the reviewed revision may not show.
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
@@ -24,15 +29,18 @@ use serde::Serialize;
 use super::changes::SectionChange;
 use super::terms::{Role, Term, TermKind, terms_for};
 use crate::Result;
-use crate::store::{Store, StoredSection, doc_id_for, fts_literal};
+use crate::store::{RawHit, Store, StoredSection, doc_id_for, fts_literal};
 
 /// The caps of the candidate step.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Limits {
     /// Terms in the query.
     pub max_terms: usize,
-    /// Terms of a change whose frequency is looked up before the best are chosen.
+    /// Terms of a change whose frequency is always looked up before the best are chosen.
     pub max_terms_examined: usize,
+    /// Past [`Limits::max_terms_examined`], lookups go on while fewer than
+    /// [`Limits::max_terms`] usable terms were found, up to this many in all.
+    pub max_term_lookups: usize,
     /// Longest term, in bytes; a longer one (a long URL) is left out.
     pub max_term_bytes: usize,
     /// A term carried by more than this share of all sections is dropped.
@@ -43,8 +51,10 @@ pub struct Limits {
     pub per_document: usize,
     /// Candidates of a change.
     pub per_change: usize,
-    /// Hits asked of the index per query, before the caps.
+    /// Hits read from the index per page.
     pub pool: usize,
+    /// Hits read from one ranked search at most.
+    pub max_scanned: usize,
     /// Linked documents searched for one change (in path order).
     pub max_linked_docs: usize,
 }
@@ -54,12 +64,14 @@ impl Default for Limits {
         Self {
             max_terms: 12,
             max_terms_examined: 48,
+            max_term_lookups: 400,
             max_term_bytes: 120,
             common_fraction: 0.20,
             common_floor: 10,
             per_document: 2,
             per_change: 8,
             pool: 50,
+            max_scanned: 400,
             max_linked_docs: 50,
         }
     }
@@ -108,11 +120,19 @@ pub struct Candidates {
     pub dropped_common: Vec<String>,
     /// The candidates, best first.
     pub kept: Vec<Candidate>,
-    /// Distinct sections the queries returned (each query is bounded by [`Limits::pool`]),
-    /// the changed section and exact copies of its new text left out.
-    pub retrieved: usize,
-    /// Of those, how many the caps cut.
-    pub cut_by_caps: usize,
+    /// Sections of the index that carry at least one query term (the changed section too,
+    /// when it does).
+    pub matching: u64,
+    /// Sections looked at, the changed section and exact copies of its new text left out.
+    pub examined: usize,
+    /// Of those, how many the per-document cap passed over.
+    pub cut_per_document: usize,
+    /// A ranked search was stopped by [`Limits::max_scanned`] with places still free: sections
+    /// that share a term were not looked at.
+    pub scan_truncated: bool,
+    /// Terms of the change whose frequency was never looked up
+    /// ([`Limits::max_term_lookups`]).
+    pub terms_unexamined: usize,
     /// Linked documents left unsearched by [`Limits::max_linked_docs`].
     pub linked_documents_cut: usize,
 }
@@ -130,24 +150,25 @@ pub struct Finder<'a> {
 impl<'a> Finder<'a> {
     /// Read what every change of a review shares.
     pub fn new(store: &'a Store, limits: Limits) -> Result<Self> {
-        let docs = store.documents()?;
-        let known: HashSet<&str> = docs.iter().map(|d| d.rel_path.as_str()).collect();
+        let docs = store.document_links()?;
+        let known: HashSet<&str> = docs.iter().map(|(path, _)| path.as_str()).collect();
         let mut neighbours: HashMap<String, BTreeSet<String>> = HashMap::new();
-        for doc in &docs {
-            for target in &doc.links_internal {
-                let Some(other) = resolve_link(&doc.rel_path, target, &known) else { continue };
-                if other == doc.rel_path {
+        for (path, links) in &docs {
+            for target in links {
+                let Some(other) = resolve_link(path, target, &known) else { continue };
+                if &other == path {
                     continue;
                 }
-                neighbours.entry(doc.rel_path.clone()).or_default().insert(other.clone());
-                neighbours.entry(other).or_default().insert(doc.rel_path.clone());
+                neighbours.entry(path.clone()).or_default().insert(other.clone());
+                neighbours.entry(other).or_default().insert(path.clone());
             }
         }
-        let total_sections = store.counts()?.sections;
+        let total_sections = store.live_section_count()?;
         Ok(Self { store, limits, total_sections, neighbours })
     }
 
-    /// The candidates for `change`, a change of the document at `rel_path`.
+    /// The candidates for `change`, a change of the document at `rel_path`. The index must
+    /// hold the working files (see the module docs).
     pub fn for_change(&self, rel_path: &str, change: &SectionChange) -> Result<Candidates> {
         let mut out = Candidates::default();
         let chosen = self.choose_terms(change, &mut out)?;
@@ -161,46 +182,107 @@ impl<'a> Finder<'a> {
         };
         let leading_expr = or(&|t| t.term.role == leading_role);
         let all_expr = or(&|_| true);
+        out.matching = self.store.raw_match_count(&all_expr)?;
 
         let linked = self.linked_doc_ids(rel_path, &mut out);
-        let pool = self.limits.pool;
+        let mut picked = Picked {
+            own_doc: doc_id_for(rel_path),
+            change,
+            seen: HashSet::new(),
+            per_doc: HashMap::new(),
+            hits: Vec::new(),
+        };
         // Leading group first; in each group the linked documents' sections, then the rest.
-        let lists = [
-            (self.store.search_raw_in_docs(&leading_expr, &linked, pool)?, Source::Linked, true),
-            (self.store.search_raw(&leading_expr, pool)?, Source::Lexical, true),
-            (self.store.search_raw_in_docs(&all_expr, &linked, pool)?, Source::Linked, false),
-            (self.store.search_raw(&all_expr, pool)?, Source::Lexical, false),
-        ];
-
-        let own_doc = doc_id_for(rel_path);
-        let mut seen: HashSet<String> = HashSet::new();
-        let mut per_doc: HashMap<String, usize> = HashMap::new();
-        for (hits, source, leading) in lists {
-            for hit in hits {
-                if !seen.insert(hit.section_id.clone()) {
-                    continue;
-                }
-                let Some(section) = self.store.section(&hit.section_id)? else { continue };
-                // The changed section itself, and any section that already reads as it does
-                // now, cannot be out of date with it.
-                if section.section_hash == change.after.hash
-                    || (section.doc_id == own_doc && section.heading_path == change.heading_path)
-                {
-                    continue;
-                }
-                out.retrieved += 1;
-                let of_doc = per_doc.entry(section.doc_id.clone()).or_default();
-                if out.kept.len() >= self.limits.per_change || *of_doc >= self.limits.per_document {
-                    out.cut_by_caps += 1;
-                    continue;
-                }
-                *of_doc += 1;
+        self.scan(
+            &leading_expr,
+            Some(&linked),
+            None,
+            (Source::Linked, true),
+            &mut picked,
+            &mut out,
+        )?;
+        self.scan(&leading_expr, None, None, (Source::Lexical, true), &mut picked, &mut out)?;
+        if all_expr != leading_expr {
+            let skip = Some(leading_expr.as_str());
+            self.scan(
+                &all_expr,
+                Some(&linked),
+                skip,
+                (Source::Linked, false),
+                &mut picked,
+                &mut out,
+            )?;
+            self.scan(&all_expr, None, skip, (Source::Lexical, false), &mut picked, &mut out)?;
+        }
+        // Only the winners' text is loaded.
+        for (hit, source, leading) in picked.hits {
+            if let Some(section) = self.store.section(&hit.section_id)? {
                 out.kept.push(Candidate { section, source, leading, shared_terms: Vec::new() });
             }
         }
         self.fill_shared_terms(&chosen, &mut out)?;
         out.terms = chosen.into_iter().map(|(t, _)| t).collect();
         Ok(out)
+    }
+
+    /// Read one ranked search page by page, taking sections until the places are filled, the
+    /// hits run out or [`Limits::max_scanned`] is reached. Hits that match `skip` belong to an
+    /// earlier group and are passed over.
+    fn scan(
+        &self,
+        expr: &str,
+        only_docs: Option<&[String]>,
+        skip: Option<&str>,
+        (source, leading): (Source, bool),
+        picked: &mut Picked<'_>,
+        out: &mut Candidates,
+    ) -> Result<()> {
+        let mut offset = 0;
+        while picked.hits.len() < self.limits.per_change {
+            if offset >= self.limits.max_scanned {
+                out.scan_truncated = true;
+                break;
+            }
+            let page = self.store.raw_hits(expr, only_docs, self.limits.pool, offset)?;
+            let full = page.len() == self.limits.pool;
+            offset += page.len();
+            let earlier: HashSet<String> = match skip {
+                Some(skip) => {
+                    let ids: Vec<String> = page.iter().map(|h| h.section_id.clone()).collect();
+                    self.store.raw_matches_among(skip, &ids)?.into_iter().collect()
+                }
+                None => HashSet::new(),
+            };
+            for hit in page {
+                if picked.hits.len() >= self.limits.per_change {
+                    break;
+                }
+                if earlier.contains(&hit.section_id) || !picked.seen.insert(hit.section_id.clone())
+                {
+                    continue;
+                }
+                // The changed section itself, and any section that already reads as it does
+                // now, cannot be out of date with it.
+                if hit.section_hash == picked.change.after.hash
+                    || (hit.doc_id == picked.own_doc
+                        && hit.heading_path == picked.change.heading_path)
+                {
+                    continue;
+                }
+                out.examined += 1;
+                let of_doc = picked.per_doc.entry(hit.doc_id.clone()).or_default();
+                if *of_doc >= self.limits.per_document {
+                    out.cut_per_document += 1;
+                    continue;
+                }
+                *of_doc += 1;
+                picked.hits.push((hit, source, leading));
+            }
+            if !full {
+                break;
+            }
+        }
+        Ok(())
     }
 
     /// The query terms of a change with their FTS literal, best first.
@@ -219,13 +301,23 @@ impl<'a> Finder<'a> {
         let common_above = share.max(self.limits.common_floor);
 
         let mut scored: Vec<(usize, QueryTerm, String)> = Vec::new();
-        let usable = terms_for(change).into_iter().filter_map(|t| {
-            if t.text.len() > self.limits.max_term_bytes {
-                return None;
+        let usable: Vec<(Term, String)> = terms_for(change)
+            .into_iter()
+            .filter(|t| t.text.len() <= self.limits.max_term_bytes)
+            .filter_map(|t| fts_literal(&t.text).map(|lit| (t, lit)))
+            .collect();
+        let total = usable.len();
+        for (order, (term, literal)) in usable.into_iter().enumerate() {
+            // Terms come best first. The first ones are always looked up; after that only
+            // while the query is short of terms, so that a change whose first wording is found
+            // nowhere still reaches the wording that is.
+            let enough = scored.len() >= self.limits.max_terms;
+            if order >= self.limits.max_term_lookups
+                || (order >= self.limits.max_terms_examined && enough)
+            {
+                out.terms_unexamined = total - order;
+                break;
             }
-            fts_literal(&t.text).map(|lit| (t, lit))
-        });
-        for (order, (term, literal)) in usable.take(self.limits.max_terms_examined).enumerate() {
             let sections = self.store.raw_match_count(&literal)?;
             if sections == 0 {
                 continue;
@@ -272,40 +364,95 @@ impl<'a> Finder<'a> {
     }
 }
 
-/// The indexed document a link in `from` points at, if any. Text only: the fragment and the
-/// query are cut, a leading `/` means the indexed root, `.` and `..` are resolved, and a
-/// target above the root is nothing. A target without an extension is tried as a page
-/// (`x.md`, `x.mdx`, `x/index.md`, `x/README.md`, `x/index.mdx`).
+/// The indexed document a link in `from` points at, if any. Text only, and the answer is
+/// always an indexed path.
+///
+/// The fragment and the query are cut; a target with an authority (`//host/…`) is not local;
+/// a leading `/` means the indexed root (a site mounted elsewhere is not known here: such a
+/// link is then simply not found, or found at the same path under the root); path segments
+/// are percent-decoded; `.` and `..` are resolved and a target above the root is nothing.
+/// Case and backslashes are taken as written. A target that names a folder (it ends with
+/// `/`, or is the root) is tried as that folder's page first; a target whose last segment has
+/// no extension is tried as a page (`x.md`, `x.mdx`, then the folder's page); a target with
+/// an extension is only ever itself.
 fn resolve_link(from: &str, target: &str, known: &HashSet<&str>) -> Option<String> {
     let target = target.split(['#', '?']).next().unwrap_or_default().trim();
-    if target.is_empty() {
+    if target.is_empty() || target.starts_with("//") {
         return None;
     }
-    let mut parts: Vec<&str> = Vec::new();
+    let mut parts: Vec<String> = Vec::new();
     if !target.starts_with('/') {
-        parts.extend(from.split('/'));
+        parts.extend(from.split('/').map(str::to_owned));
         parts.pop(); // the file name
     }
     for piece in target.split('/') {
-        match piece {
+        let piece = percent_decode(piece)?;
+        match piece.as_str() {
             "" | "." => {}
             ".." => {
                 parts.pop()?;
             }
-            name => parts.push(name),
+            name if name.contains(['/', '\0']) => return None,
+            _ => parts.push(piece),
         }
     }
     let path = parts.join("/");
-    if path.is_empty() {
-        return None;
+    let folder = target.ends_with('/') || path.is_empty();
+    let has_extension = parts.last().is_some_and(|last| last.contains('.'));
+    let join =
+        |name: &str| if path.is_empty() { name.to_owned() } else { format!("{path}/{name}") };
+    let folder_pages = [join("index.md"), join("README.md"), join("index.mdx")];
+    let file_pages = if path.is_empty() || has_extension {
+        Vec::new()
+    } else {
+        vec![format!("{path}.md"), format!("{path}.mdx")]
+    };
+    let mut tries: Vec<String> = Vec::new();
+    if folder {
+        tries.extend(folder_pages);
+        tries.extend(file_pages);
+    } else {
+        tries.push(path.clone());
+        tries.extend(file_pages);
+        if !has_extension {
+            tries.extend(folder_pages);
+        }
     }
-    if known.contains(path.as_str()) {
-        return Some(path);
+    tries.into_iter().find(|p| known.contains(p.as_str()))
+}
+
+/// `%41` → `A`. `None` when the result is not UTF-8. A `%` not followed by two hex digits is
+/// kept as written.
+fn percent_decode(piece: &str) -> Option<String> {
+    if !piece.contains('%') {
+        return Some(piece.to_owned());
     }
-    ["{}.md", "{}.mdx", "{}/index.md", "{}/README.md", "{}/index.mdx"]
-        .iter()
-        .map(|shape| shape.replace("{}", &path))
-        .find(|p| known.contains(p.as_str()))
+    let bytes = piece.as_bytes();
+    let hex = |b: u8| char::from(b).to_digit(16).and_then(|d| u8::try_from(d).ok());
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%'
+            && let (Some(hi), Some(lo)) =
+                (bytes.get(i + 1).copied().and_then(hex), bytes.get(i + 2).copied().and_then(hex))
+        {
+            out.push(hi * 16 + lo);
+            i += 3;
+        } else {
+            out.push(bytes[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).ok()
+}
+
+/// What a review of one change has taken so far.
+struct Picked<'c> {
+    own_doc: String,
+    change: &'c SectionChange,
+    seen: HashSet<String>,
+    per_doc: HashMap<String, usize>,
+    hits: Vec<(RawHit, Source, bool)>,
 }
 
 // `Role` orders the groups above; keep its order in step with this module's docs.
@@ -367,7 +514,8 @@ mod tests {
         assert!(!found.kept[1].leading);
         assert_eq!(found.terms[0].term.text, "30 seconds");
         assert_eq!(found.terms[0].term.role, Role::Replaced);
-        assert_eq!((found.retrieved, found.cut_by_caps), (2, 0));
+        assert_eq!((found.matching, found.examined, found.cut_per_document), (3, 2, 0));
+        assert!(!found.scan_truncated);
     }
 
     #[test]
@@ -379,7 +527,7 @@ mod tests {
         let finder = Finder::new(&store, Limits::default()).unwrap();
         let found = finder.for_change("deploy.md", &one_change(BEFORE, AFTER)).unwrap();
         assert!(found.kept.is_empty(), "{found:?}");
-        assert_eq!(found.retrieved, 0);
+        assert_eq!(found.examined, 0);
     }
 
     #[test]
@@ -407,7 +555,7 @@ mod tests {
     }
 
     #[test]
-    fn caps_hold_per_document_and_per_change_and_the_cut_is_counted() {
+    fn caps_hold_per_document_and_per_change_and_the_passed_over_are_counted() {
         let many = (0..5)
             .map(|i| format!("## Part {i}\n\nPart {i} waits 30 seconds for the gateway.\n\n"))
             .collect::<Vec<_>>()
@@ -419,15 +567,25 @@ mod tests {
             ("b.md", "# B\n\nAlso 30 seconds.\n"),
             ("c.md", "# C\n\nAlso 30 seconds.\n"),
         ]);
-        let limits = Limits { per_change: 3, ..Limits::default() };
-        let finder = Finder::new(&store, limits).unwrap();
-        let found = finder.for_change("deploy.md", &one_change(BEFORE, AFTER)).unwrap();
-
-        assert_eq!(found.kept.len(), 3);
+        // Room for five: b, c and two parts of big; its other three parts are passed over.
+        let roomy = Limits { per_change: 5, ..Limits::default() };
+        let found = Finder::new(&store, roomy)
+            .unwrap()
+            .for_change("deploy.md", &one_change(BEFORE, AFTER))
+            .unwrap();
+        assert_eq!(found.kept.len(), 4, "{:?}", paths(&found));
         let of_big = found.kept.iter().filter(|k| k.section.rel_path == "big.md").count();
-        assert!(of_big <= 2, "{:?}", paths(&found));
-        assert_eq!(found.retrieved, 7);
-        assert_eq!(found.cut_by_caps, 4);
+        assert_eq!(of_big, 2, "{:?}", paths(&found));
+        assert_eq!((found.examined, found.cut_per_document), (7, 3));
+
+        // Room for three: the search stops as soon as they are taken.
+        let tight = Limits { per_change: 3, ..Limits::default() };
+        let found = Finder::new(&store, tight)
+            .unwrap()
+            .for_change("deploy.md", &one_change(BEFORE, AFTER))
+            .unwrap();
+        assert_eq!(found.kept.len(), 3);
+        assert_eq!(found.matching, 8, "five parts, b, c and the changed section");
     }
 
     #[test]
@@ -501,5 +659,108 @@ mod tests {
         assert_eq!(r("docs/x.md", "#only-an-anchor"), None);
         assert_eq!(r("docs/x.md", "../../a.md"), None, "above the root");
         assert_eq!(r("docs/x.md", "missing.md"), None);
+    }
+
+    #[test]
+    fn one_document_with_many_matching_sections_cannot_hide_another() {
+        // Sixty short sections of one manual carry the replaced word and outrank the FAQ's
+        // longer one; a single page of fifty hits would never reach the FAQ.
+        let parts = (0..60).map(|i| format!("## P{i}\n\nlegacy_mode {i}\n\n")).collect::<Vec<_>>();
+        let manual = format!("# Manual\n\n{}", parts.concat());
+        let filler = (0..300)
+            .map(|i| (format!("f{i}.md"), format!("# Filler {i}\n\nNothing here {i}.\n")))
+            .collect::<Vec<_>>();
+        let faq = "# FAQ\n\nA long answer that goes on about many other things, settings, \
+                   options and current_mode, before it mentions legacy_mode at the very end.\n";
+        let before = "# Config\n\n## Mode\n\nSet legacy_mode to run.\n";
+        let after = "# Config\n\n## Mode\n\nSet current_mode to run.\n";
+        let mut files: Vec<(&str, &str)> =
+            vec![("config.md", after), ("manual.md", &manual), ("faq.md", faq)];
+        files.extend(filler.iter().map(|(p, t)| (p.as_str(), t.as_str())));
+        let store = store_of(&files);
+        let finder = Finder::new(&store, Limits::default()).unwrap();
+        let found = finder.for_change("config.md", &one_change(before, after)).unwrap();
+
+        let got = paths(&found);
+        assert_eq!(got.iter().filter(|(p, _)| *p == "manual.md").count(), 2, "{got:?}");
+        let faq_hit = found.kept.iter().find(|k| k.section.rel_path == "faq.md");
+        let faq_hit = faq_hit.unwrap_or_else(|| panic!("the FAQ was never reached: {got:?}"));
+        assert!(faq_hit.leading, "it carries the replaced word, whatever else it carries");
+        assert!(faq_hit.shared_terms.contains(&"legacy_mode".to_owned()));
+        assert!(found.cut_per_document >= 58, "{found:?}");
+        assert!(!found.scan_truncated);
+    }
+
+    #[test]
+    fn a_search_stopped_by_the_scan_limit_says_so() {
+        let parts = (0..30).map(|i| format!("## P{i}\n\nlegacy_mode {i}\n\n")).collect::<Vec<_>>();
+        let manual = format!("# Manual\n\n{}", parts.concat());
+        let before = "# Config\n\n## Mode\n\nSet legacy_mode to run.\n";
+        let after = "# Config\n\n## Mode\n\nSet current_mode to run.\n";
+        let store = store_of(&[("config.md", after), ("manual.md", &manual)]);
+        let limits = Limits { pool: 5, max_scanned: 10, common_floor: 100, ..Limits::default() };
+        let finder = Finder::new(&store, limits).unwrap();
+        let found = finder.for_change("config.md", &one_change(before, after)).unwrap();
+        assert_eq!(found.kept.len(), 2);
+        assert!(found.scan_truncated);
+    }
+
+    #[test]
+    fn wording_found_nowhere_does_not_use_up_the_term_lookups() {
+        let gone = (0..60).map(|i| format!("`old_{i:02}`")).collect::<Vec<_>>().join(" ");
+        let before = format!("# X\n\n## Flags\n\n{gone} `retired_flag`\n");
+        let after = "# X\n\n## Flags\n\n`current_flag`\n";
+        let store = store_of(&[("x.md", after), ("faq.md", "# FAQ\n\nPass retired_flag.\n")]);
+        let finder = Finder::new(&store, Limits::default()).unwrap();
+        let found = finder.for_change("x.md", &one_change(&before, after)).unwrap();
+        assert_eq!(paths(&found), [("faq.md", "FAQ")]);
+        assert_eq!(found.terms_unexamined, 0);
+
+        let tight = Limits { max_term_lookups: 10, ..Limits::default() };
+        let found = Finder::new(&store, tight)
+            .unwrap()
+            .for_change("x.md", &one_change(&before, after))
+            .unwrap();
+        assert!(found.kept.is_empty());
+        assert!(found.terms_unexamined > 0, "and it says what it did not look up");
+    }
+
+    #[test]
+    fn a_code_span_of_symbols_is_a_safe_term_that_matches_nothing() {
+        let before = "# X\n\n## Y\n\nUse `---` and `\u{e000}` here.\n";
+        let after = "# X\n\n## Y\n\nUse nothing here.\n";
+        let store =
+            store_of(&[("x.md", after), ("o.md", "# O\n\nA \u{e000} mark and --- rule.\n")]);
+        let finder = Finder::new(&store, Limits::default()).unwrap();
+        let found = finder.for_change("x.md", &one_change(before, after)).unwrap();
+        // The private-use character is a token to the index; the dashes are not.
+        assert_eq!(paths(&found), [("o.md", "O")]);
+        assert_eq!(found.kept[0].shared_terms, ["\u{e000}"]);
+    }
+
+    #[test]
+    fn links_keep_folder_intent_decode_percent_and_never_guess_past_an_extension() {
+        let known: HashSet<&str> = [
+            "guide.md",
+            "guide/index.md",
+            "index.md",
+            "Install Guide.md",
+            "manual.pdf.md",
+            "example.org/guide.md",
+            "sub/README.md",
+        ]
+        .into();
+        let r = |from: &str, to: &str| resolve_link(from, to, &known);
+        assert_eq!(r("a.md", "guide/").as_deref(), Some("guide/index.md"));
+        assert_eq!(r("a.md", "guide").as_deref(), Some("guide.md"));
+        assert_eq!(r("sub/a.md", "/").as_deref(), Some("index.md"));
+        assert_eq!(r("sub/a.md", "..").as_deref(), Some("index.md"));
+        assert_eq!(r("sub/a.md", ".").as_deref(), Some("sub/README.md"));
+        assert_eq!(r("a.md", "Install%20Guide.md#setup").as_deref(), Some("Install Guide.md"));
+        assert_eq!(r("a.md", "//example.org/guide"), None, "a host, not a folder");
+        assert_eq!(r("a.md", "manual.pdf"), None, "an extension is never added to");
+        assert_eq!(r("a.md", "%2e%2e/guide.md"), None, "above the root, however spelled");
+        assert_eq!(r("a.md", "sub%2Fa.md"), None, "an encoded separator is not a path");
+        assert_eq!(r("a.md", "GUIDE.md"), None, "case as written");
     }
 }
