@@ -1771,3 +1771,21 @@ fn check_outside_a_git_repository_says_so() {
         format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
     assert!(said.contains("git history, which is not usable here"), "{said}");
 }
+
+#[cfg(unix)]
+#[test]
+fn a_reader_that_goes_away_is_not_a_crash() {
+    use std::process::{Command, Stdio};
+    // The reader is gone before the command starts, so its first line meets a closed pipe.
+    // `schema section` always prints and needs no index.
+    let (reader, writer) = std::io::pipe().unwrap();
+    drop(reader);
+    let out = Command::new(assert_cmd::cargo::cargo_bin("mda"))
+        .args(["schema", "section"])
+        .stdout(writer)
+        .stderr(Stdio::piped())
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(141), "{:?}", out.status);
+    assert_eq!(String::from_utf8_lossy(&out.stderr), "", "nothing on stderr, no panic text");
+}

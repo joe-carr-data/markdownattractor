@@ -40,6 +40,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-judgment.md](reviews/codex/2026-11-18-impact-judgment.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex based on GPT-6", exact variant unav… |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-candidates.md](reviews/codex/2026-11-18-impact-candidates.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-daemon-version-note.md](reviews/codex/2026-11-18-daemon-version-note.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
+| 2026-11-18 | [reviews/codex/2026-11-18-closed-pipe.md](reviews/codex/2026-11-18-closed-pipe.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 (Codex)"; CLI 0.167.0; fresh thread… |
 | 2026-11-18 | [reviews/codex/2026-11-18-check-priority.md](reviews/codex/2026-11-18-check-priority.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-binary-per-version.md](reviews/codex/2026-11-18-binary-per-version.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |
