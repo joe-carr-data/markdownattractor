@@ -17,7 +17,7 @@
   <a href="docs/benchmarks.md"><img alt="benchmarks: preregistered" src="https://img.shields.io/badge/benchmarks-preregistered-16a34a?style=flat-square"></a>
 </p>
 
-<!-- launch clip (36 s): paste the github.com/user-attachments video link on its own line here -->
+https://github.com/user-attachments/assets/f2769057-470d-4600-bd4f-fb7e8e863092
 
 <p align="center"><sub>A real Claude Code session on the demo corpus: Claude answers with its source, a teammate edits the runbook, and seconds later Claude reports what changed. Nobody ran a reindex. <a href="docs/demo/README.md">How it was recorded.</a></sub></p>
 
