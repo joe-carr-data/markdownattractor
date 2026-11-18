@@ -4,7 +4,7 @@
     captions.py OUT_DIR BACKDROP.png CAPTION [CAPTION ...]
 
 Writes OUT_DIR/cap0.png … (transparent, the size of the backdrop, one pill of text at the bottom)
-OUT_DIR/tech.png (the pipeline and the three ranked lists) and OUT_DIR/end.png (the backdrop,
+OUT_DIR/tech.png (the pipeline and the three ranked lists), OUT_DIR/bench.png (the measured figures) and OUT_DIR/end.png (the backdrop,
 dimmed, with the name, three lines and the install commands).
 scripts/demo/record-live.sh overlays them with ffmpeg, whose Homebrew build has no text filter.
 """
@@ -63,6 +63,7 @@ def main():
          fill=(17, 17, 27, 240), ink=(205, 214, 244, 255))
     card.convert("RGB").save(out / "end.png")
     how_it_works(backdrop).save(out / "tech.png")
+    measured(backdrop).save(out / "bench.png")
 
 
 SUB = (186, 194, 222, 255)
@@ -130,6 +131,63 @@ def how_it_works(backdrop):
     arrow(draw, (w / 2, 726), (w / 2, 762))
     pill(draw, w / 2, 800, "Claude reads the card, then opens only the lines it needs, and cites them",
          small, fill=(17, 17, 27, 240))
+    return card.convert("RGB")
+
+
+
+def tile(draw, rect, figure, label, lines, accent, big, head, body):
+    """A panel with one large figure, what it measures, and its limits in smaller type."""
+    x0, y0, x1, _ = rect
+    draw.rounded_rectangle(rect, radius=16, fill=(17, 17, 27, 235))
+    draw.rounded_rectangle((x0, y0, x1, y0 + 8), radius=4, fill=accent)
+    draw.text((x0 + 24, y0 + 78), figure, font=big, fill=accent, anchor="lm")
+    draw.text((x0 + 24, y0 + 150), label, font=head, fill=INK, anchor="lm")
+    for n, text in enumerate(lines):
+        draw.text((x0 + 24, y0 + 190 + n * 30), text, font=body, fill=SUB, anchor="lm")
+
+
+def measured(backdrop):
+    """The benchmark card. Every figure is on docs/benchmarks.md or in the launch drafts' table of
+    what passed; change one there and change it here."""
+    w, h = backdrop.size
+    card = Image.alpha_composite(backdrop, Image.new("RGBA", (w, h), (17, 17, 27, 165)))
+    draw = ImageDraw.Draw(card)
+    title, big, head, body = font(SANS, 50, index=1), font(SANS, 76, index=1), font(SANS, 25, index=1), font(SANS, 22)
+    draw.text((60, 58), "Measured", font=title, fill=INK, anchor="lm")
+    draw.text((w - 60, 62), "gates named before the results; only what passed is claimed",
+              font=font(SANS, 23), fill=SUB, anchor="rm")
+
+    top, bottom = 110, 400
+    tile(draw, (60, top, 412, bottom), "8 s", "install to first search hit",
+         ["no API key, nothing installed", "7 to 21 s, one machine"], PEACH, big, head, body)
+    tile(draw, (436, top, 788, bottom), "1.7 s", "save to searchable",
+         ["median of 20 edits", "summary card ready in 8.4 s"], GREEN, big, head, body)
+    tile(draw, (812, top, 1164, bottom), "98 %", "right section in the top 5",
+         ["60 golden questions, full index", "88 % with no model at all"], BLUE, big, head, body)
+    tile(draw, (1188, top, 1540, bottom), "100 %", "answers fully grounded",
+         ["every claim cites opened lines", "golden set; 87.5 % before"], MAUVE, big, head, body)
+
+    top, bottom = 424, 584
+    for x0, x1, name, first, second in (
+            (60, 788, "Against grep", "+0.25 answer correctness on a 5-point scale",
+             "no saving in tokens read"),
+            (812, 1540, "Against a knowledge-graph tool (graphify)", "3.18x fewer source tokens read",
+             "at answer-quality parity")):
+        draw.rounded_rectangle((x0, top, x1, bottom), radius=16, fill=(17, 17, 27, 235))
+        draw.text((x0 + 24, top + 36), name, font=head, fill=INK, anchor="lm")
+        draw.text((x0 + 24, top + 82), first, font=font(SANS, 30, index=1), fill=GREEN, anchor="lm")
+        draw.text((x0 + 24, top + 124), second + " · small golden corpus", font=body, fill=SUB, anchor="lm")
+
+    top, bottom = 608, 768
+    draw.rounded_rectangle((60, top, 1540, bottom), radius=16, fill=(17, 17, 27, 235))
+    draw.rounded_rectangle((60, top, 68, bottom), radius=4, fill=(243, 139, 168, 255))
+    draw.text((92, top + 36), "Where it does not win", font=head, fill=(243, 139, 168, 255), anchor="lm")
+    draw.text((92, top + 80), "On four public documentation projects no tool, this one included, passed the grounding gate.",
+              font=body, fill=INK, anchor="lm")
+    draw.text((92, top + 114), "No token saving is claimed there. One machine, small corpora: read the limits before the numbers.",
+              font=body, fill=SUB, anchor="lm")
+    pill(draw, w / 2, 826, "method, limits and every number: docs/benchmarks.md", font(SANS, 24, index=1),
+         fill=(17, 17, 27, 240))
     return card.convert("RGB")
 
 
