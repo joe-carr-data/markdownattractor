@@ -993,7 +993,7 @@ struct Round {
 }
 
 /// Midnight UTC today. The daily budget resets on UTC days so it is the same everywhere.
-fn start_of_today() -> Timestamp {
+pub(crate) fn start_of_today() -> Timestamp {
     let now = crate::clock::now();
     let secs = now.as_second();
     Timestamp::from_second(secs - secs.rem_euclid(86_400)).unwrap_or(now)

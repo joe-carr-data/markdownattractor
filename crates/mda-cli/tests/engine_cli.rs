@@ -1708,3 +1708,63 @@ fn a_home_folder_holding_only_a_config_is_still_not_indexed_by_default() {
     assert!(said.contains("your home folder"), "{said}");
     assert!(!home_path.join(".markdownattractor/index.sqlite").exists());
 }
+
+#[test]
+fn check_without_a_backend_lists_candidates_and_calls_nothing_a_finding() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    git_in(&root, "2024-03-01T10:00:00Z", &["init", "-q"]);
+    let deploy = "# Deploy\n\n## Timeout\n\nThe gateway timeout is 30 seconds.\n";
+    std::fs::write(root.join("deploy.md"), deploy).unwrap();
+    std::fs::write(root.join("faq.md"), "# FAQ\n\n## Limits\n\nRequests end after 30 seconds.\n")
+        .unwrap();
+    std::fs::write(root.join(".gitignore"), ".markdownattractor/\n").unwrap();
+    git_in(&root, "2024-03-01T10:00:00Z", &["add", "-A"]);
+    git_in(&root, "2024-03-01T10:00:00Z", &["commit", "-q", "-m", "first"]);
+    std::fs::write(root.join("deploy.md"), deploy.replace("30 seconds", "90 seconds")).unwrap();
+
+    let out = mda()
+        .env_remove("ANTHROPIC_API_KEY")
+        .args(["--json", "check", "--root"])
+        .arg(&root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let v = json_of(&out);
+    assert_eq!(v["changes"], 1, "{v}");
+    assert_eq!(v["candidates"], 1);
+    assert_eq!(v["judged"], 0);
+    assert_eq!(v["findings"].as_array().unwrap().len(), 0);
+    assert_eq!(v["pairs"][0]["outcome"], "not_judged");
+    assert!(v["backend"].is_null());
+
+    // The human form says it did not judge, in one line, and exits 0.
+    let text = mda()
+        .env_remove("ANTHROPIC_API_KEY")
+        .env("NO_COLOR", "1")
+        .args(["check", "--root"])
+        .arg(&root)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let text = String::from_utf8_lossy(&text);
+    assert!(text.contains("not judged (no summarization backend)"), "{text}");
+    assert_eq!(text.lines().count(), 1, "{text}");
+
+    // A revision that does not exist is an error, not an empty review.
+    mda().args(["check", "--since", "no-such-rev", "--root"]).arg(&root).assert().failure();
+}
+
+#[test]
+fn check_outside_a_git_repository_says_so() {
+    let dir = root_with_docs();
+    let out =
+        mda().args(["check", "--root"]).arg(dir.path()).assert().failure().get_output().clone();
+    let said =
+        format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+    assert!(said.contains("git history, which is not usable here"), "{said}");
+}
