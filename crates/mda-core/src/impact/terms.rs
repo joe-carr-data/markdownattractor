@@ -58,13 +58,17 @@ const STOP: &[&str] = &[
 
 /// The terms of a change, best first, without duplicates (case-insensitive). For an addition
 /// every term has the role [`Role::Added`].
+///
+/// A term whose spelling changed only in its capitals (`db.user` to `db.User`) was replaced:
+/// it is [`Role::Replaced`], not context. The full-text index folds case, so its new spelling
+/// would find the same sections and is not a term of its own.
 #[must_use]
 pub fn terms_for(change: &SectionChange) -> Vec<Term> {
     let removed = extract(&change.removed_lines);
     let added = extract(&change.added_lines);
     let key = |t: &(String, TermKind)| t.0.to_lowercase();
     let removed_keys: HashSet<String> = removed.iter().map(key).collect();
-    let added_keys: HashSet<String> = added.iter().map(key).collect();
+    let added_exact: HashSet<&str> = added.iter().map(|t| t.0.as_str()).collect();
 
     let mut terms: Vec<Term> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
@@ -74,7 +78,7 @@ pub fn terms_for(change: &SectionChange) -> Vec<Term> {
         }
     };
     for t in &removed {
-        let role = if added_keys.contains(&key(t)) { Role::Context } else { Role::Replaced };
+        let role = if added_exact.contains(t.0.as_str()) { Role::Context } else { Role::Replaced };
         push(&t.0, t.1, role);
     }
     for t in &added {
@@ -325,5 +329,21 @@ mod tests {
         assert!(ts.iter().all(|t| t.role == Role::Added));
         assert_eq!(ts.iter().filter(|t| t.text.eq_ignore_ascii_case("limit")).count(), 1);
         assert!(ts.iter().any(|t| t.text == "10 requests"));
+    }
+
+    #[test]
+    fn a_change_of_capitals_only_is_a_replacement_not_context() {
+        let before = "# X\n\n## Y\n\nUse `db.sql.public.user` with the builder.\n";
+        let after = "# X\n\n## Y\n\nUse `db.sql.public.User` with the builder.\n";
+        let mut review = crate::impact::compare(before, after, crate::markdown::Flavor::Markdown);
+        let terms = terms_for(&review.changes.remove(0));
+        let found =
+            terms.iter().find(|t| t.text.eq_ignore_ascii_case("db.sql.public.user")).unwrap();
+        assert_eq!((found.text.as_str(), found.role), ("db.sql.public.user", Role::Replaced));
+        assert_eq!(
+            terms.iter().filter(|t| t.text.eq_ignore_ascii_case("db.sql.public.user")).count(),
+            1
+        );
+        assert!(terms.iter().any(|t| t.text == "builder" && t.role == Role::Context));
     }
 }

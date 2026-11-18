@@ -109,6 +109,11 @@ pub struct Candidate {
     pub leading: bool,
     /// The query terms it carries, in query order.
     pub shared_terms: Vec<String>,
+    /// Those of them that are of the change's leading role.
+    pub leading_terms: Vec<String>,
+    /// How telling the shared leading terms are: rare identifiers and numbers weigh most.
+    /// Used to decide which pairs are judged first when not all can be.
+    pub strength: u32,
 }
 
 /// The candidates of one change, and what happened on the way.
@@ -222,7 +227,14 @@ impl<'a> Finder<'a> {
                 && section.section_hash == hit.section_hash
                 && section.heading_path == hit.heading_path
             {
-                out.kept.push(Candidate { section, source, leading, shared_terms: Vec::new() });
+                out.kept.push(Candidate {
+                    section,
+                    source,
+                    leading,
+                    shared_terms: Vec::new(),
+                    leading_terms: Vec::new(),
+                    strength: 0,
+                });
             }
         }
         self.fill_shared_terms(&chosen, &mut out)?;
@@ -349,19 +361,42 @@ impl<'a> Finder<'a> {
         paths.iter().take(self.limits.max_linked_docs).map(|p| doc_id_for(p)).collect()
     }
 
-    /// Record which query terms each kept candidate carries.
+    /// How much a shared term says: the rarer the more, a plain word a third of an
+    /// identifier or a number, and anything but replaced wording a quarter. In thousandths.
+    fn weight(&self, term: &QueryTerm) -> u32 {
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "a small positive logarithm scaled to an integer"
+        )]
+        let rarity = (((self.total_sections + 1) as f64 / term.sections.max(1) as f64).ln()
+            * 1000.0)
+            .max(0.0) as u32;
+        let by_kind = if term.term.kind == TermKind::Word { rarity / 3 } else { rarity };
+        // Wording the change replaced is the signal of a stale copy. A shared term that is
+        // only new, or only context, says the passages are about the same thing: a quarter.
+        if term.term.role == Role::Replaced { by_kind } else { by_kind / 4 }
+    }
+
+    /// Record which query terms each kept candidate carries, and how telling they are.
     fn fill_shared_terms(
         &self,
         chosen: &[(QueryTerm, String)],
         out: &mut Candidates,
     ) -> Result<()> {
         let ids: Vec<String> = out.kept.iter().map(|c| c.section.section_id.clone()).collect();
+        let leading_role = chosen.iter().map(|(t, _)| t.term.role).min();
         for (term, literal) in chosen {
             let carrying: HashSet<String> =
                 self.store.raw_matches_among(literal, &ids)?.into_iter().collect();
             for candidate in &mut out.kept {
                 if carrying.contains(&candidate.section.section_id) {
                     candidate.shared_terms.push(term.term.text.clone());
+                    if Some(term.term.role) == leading_role {
+                        candidate.leading_terms.push(term.term.text.clone());
+                        candidate.strength = candidate.strength.saturating_add(self.weight(term));
+                    }
                 }
             }
         }

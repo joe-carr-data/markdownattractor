@@ -167,7 +167,9 @@ pub struct JudgmentLimits {
 
 impl Default for JudgmentLimits {
     fn default() -> Self {
-        Self { max_input_bytes: 48_000, max_context_bytes: 1_200, max_output_tokens: 700 }
+        // Output: three short quotes and a sentence need about 300 tokens; a backend that
+        // counts its reasoning in the output (claude-cli) was seen at 700 to 900.
+        Self { max_input_bytes: 48_000, max_context_bytes: 1_200, max_output_tokens: 1_500 }
     }
 }
 
@@ -296,15 +298,16 @@ pub fn assess(answer: &Answer, change: &SectionChange, candidate: &StoredSection
     }
     let verdict = answer.verdict;
     let dropped = |why: String| Assessed::DroppedUnquoted { verdict, why };
-    let find = |name: &str, text: &str, first_line: u32, quote: &str| {
-        quote_in(text, first_line, quote).map_err(|e| format!("{name}: {e}"))
+    let find = |name: &str, text: &str, first_line: u32, quote: &str, lines: &[String]| {
+        quote_in(text, first_line, quote, lines).map_err(|e| format!("{name}: {e}"))
     };
 
     let before = if verdict == Verdict::PossiblyOutdated {
         let Some(side) = change.before.as_ref() else {
             return dropped("before_quote: the changed section is new".to_owned());
         };
-        match find("before_quote", &side.text, side.line_start, &answer.before_quote) {
+        let quote = &answer.before_quote;
+        match find("before_quote", &side.text, side.line_start, quote, &change.removed_lines) {
             Ok(q) => Some(q),
             Err(why) => return dropped(why),
         }
@@ -312,12 +315,14 @@ pub fn assess(answer: &Answer, change: &SectionChange, candidate: &StoredSection
         None
     };
     let after = &change.after;
-    let after = match find("after_quote", &after.text, after.line_start, &answer.after_quote) {
+    let quote = &answer.after_quote;
+    let after = match find("after_quote", &after.text, after.line_start, quote, &change.added_lines)
+    {
         Ok(q) => q,
         Err(why) => return dropped(why),
     };
-    let found =
-        find("candidate_quote", &candidate.text, candidate.line_start, &answer.candidate_quote);
+    let quote = &answer.candidate_quote;
+    let found = find("candidate_quote", &candidate.text, candidate.line_start, quote, &[]);
     let candidate = match found {
         Ok(q) => q,
         Err(why) => return dropped(why),
@@ -342,12 +347,28 @@ fn about_the_change(
     after: &Quote,
     candidate: &Quote,
 ) -> std::result::Result<(), String> {
-    let removed = words(&change.removed_lines.join(" "));
-    let added = words(&change.added_lines.join(" "));
+    // Words as written. A word counts as replaced (or as new) by its exact spelling, and
+    // also whatever its capitals when the change did not merely change capitals: `db.user`
+    // to `db.User` replaces `user` by `User`, and the two must not pass for one word.
+    let removed = exact_words(&change.removed_lines.join(" "));
+    let added = exact_words(&change.added_lines.join(" "));
     let replaced: BTreeSet<&String> = removed.difference(&added).collect();
     let new: BTreeSet<&String> = added.difference(&removed).collect();
-    let (before_words, after_words, candidate_words) =
-        (before.map(|q| words(&q.text)), words(&after.text), words(&candidate.text));
+    let lower = |set: &BTreeSet<&String>| -> BTreeSet<String> {
+        set.iter().map(|w| w.to_lowercase()).collect()
+    };
+    let (replaced_lower, new_lower) = (lower(&replaced), lower(&new));
+    let has = |quote: &Quote,
+               exact: &BTreeSet<&String>,
+               folded: &BTreeSet<String>,
+               other: &BTreeSet<String>| {
+        exact_words(&quote.text).iter().any(|w| {
+            let low = w.to_lowercase();
+            exact.contains(w) || (folded.contains(&low) && !other.contains(&low))
+        })
+    };
+    let has_replaced = |q: &Quote| has(q, &replaced, &replaced_lower, &new_lower);
+    let has_new = |q: &Quote| has(q, &new, &new_lower, &replaced_lower);
 
     // Each change-side quote stands on a line the change touched, and carries a word the
     // change removed or brought in when there is one.
@@ -360,34 +381,48 @@ fn about_the_change(
     if change.before.is_some() && !on(after, &change.added_lines) {
         return Err("after_quote: not on a line the change added".to_owned());
     }
-    if !new.is_empty() && change.before.is_some() && !new.iter().any(|w| after_words.contains(*w)) {
+    if !new.is_empty() && change.before.is_some() && !has_new(after) {
         return Err("after_quote: none of the wording the change brought in".to_owned());
     }
-    if let (Some(quote), Some(quoted)) = (before, &before_words) {
+    if let Some(quote) = before {
         if !on(quote, &change.removed_lines) {
             return Err("before_quote: not on a line the change removed".to_owned());
         }
-        if !replaced.is_empty() && !replaced.iter().any(|w| quoted.contains(*w)) {
+        if !replaced.is_empty() && !has_replaced(quote) {
             return Err("before_quote: none of the wording the change replaced".to_owned());
         }
     }
-    // The candidate must say something the new text does not.
-    if candidate_words.is_subset(&after_words) {
+    // The candidate must say something the new text does not: a quote whose words, in
+    // order, are a run of the after quote's words is the same statement, whatever its
+    // punctuation. (`30 seconds` is not a run of `130 seconds`.)
+    let (said, now) = (word_run(&candidate.text), word_run(&after.text));
+    if said.is_empty() || now.windows(said.len()).any(|run| run == said.as_slice()) {
         return Err("candidate_quote: only words of after_quote".to_owned());
     }
     // A passage that carries the new wording and none of the old already says the new thing.
-    if new.iter().any(|w| candidate_words.contains(*w))
-        && !replaced.iter().any(|w| candidate_words.contains(*w))
-    {
+    if has_new(candidate) && !has_replaced(candidate) {
         return Err("candidate_quote: carries the new wording, none of the old".to_owned());
     }
-    if verdict == Verdict::PossiblyOutdated
-        && !replaced.is_empty()
-        && !replaced.iter().any(|w| candidate_words.contains(*w))
-    {
+    if verdict == Verdict::PossiblyOutdated && !replaced.is_empty() && !has_replaced(candidate) {
         return Err("candidate_quote: none of the wording the change replaced".to_owned());
     }
     Ok(())
+}
+
+/// The letters-and-digits words of a text, as written.
+fn exact_words(text: &str) -> BTreeSet<String> {
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The letters-and-digits words of a text in order, lower case.
+fn word_run(text: &str) -> Vec<String> {
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_lowercase)
+        .collect()
 }
 
 /// The letters-and-digits words of a text, lower case.
@@ -423,12 +458,54 @@ fn neutral_reading(reason: &str) -> Option<String> {
 
 /// Locate `quote` in `text` and render the exact slice with its lines. `first_line` is the
 /// line of `text`'s first line in its file.
-fn quote_in(text: &str, first_line: u32, quote: &str) -> std::result::Result<Quote, &'static str> {
-    let range = match locate(text, quote) {
-        Located::One(range) => range,
-        Located::Empty => return Err("empty"),
-        Located::Missing => return Err("not in the source"),
-        Located::Ambiguous => return Err("found in more than one place"),
+///
+/// A quote that stands in several places is settled, not refused, when that can be done
+/// without guessing what was meant: on the change's side, the single place that touches a
+/// line the change touched (`changed_lines`); elsewhere, the first place, when the quote is
+/// a phrase and every place stands on identical lines.
+fn quote_in(
+    text: &str,
+    first_line: u32,
+    quote: &str,
+    changed_lines: &[String],
+) -> std::result::Result<Quote, &'static str> {
+    const PHRASE: usize = 16;
+    if normalised(quote).is_empty() {
+        return Err("empty");
+    }
+    let places = locate_all(text, quote);
+    // The lines a place spans, normalised.
+    let lines_of = |r: &Range<usize>| -> Vec<String> {
+        let start = text[..r.start].rfind('\n').map_or(0, |i| i + 1);
+        let end = text[r.end..].find('\n').map_or(text.len(), |i| r.end + i);
+        text[start..end].lines().map(normalised).collect()
+    };
+    let range = match places.as_slice() {
+        [] => return Err("not in the source"),
+        [one] => one.clone(),
+        many if !changed_lines.is_empty() => {
+            // On the change's side: the one place that touches a changed line. Two such
+            // places (the same line text changed here and unchanged there) cannot be told
+            // apart, and are refused.
+            let touched: Vec<String> = changed_lines.iter().map(|l| normalised(l)).collect();
+            let on_changed: Vec<&Range<usize>> = many
+                .iter()
+                .filter(|r| lines_of(r).iter().any(|line| touched.contains(line)))
+                .collect();
+            match on_changed.as_slice() {
+                [only] => (*only).clone(),
+                _ => return Err("found in more than one place"),
+            }
+        }
+        // Elsewhere: the first place, when the quote is a phrase and every place stands in
+        // the same words (a repeated line), so that none can say something else.
+        [first, rest @ ..]
+            if normalised(quote).chars().count() >= PHRASE
+                && rest.iter().all(|r| lines_of(r) == lines_of(first)) =>
+        {
+            first.clone()
+        }
+        _ => return Err("found in more than one place"),
     };
     let lines_before = |end: usize| {
         u32::try_from(text[..end].bytes().filter(|b| *b == b'\n').count()).unwrap_or(u32::MAX)
@@ -458,38 +535,41 @@ pub enum Located {
 /// of the *source* text the match covers.
 #[must_use]
 pub fn locate(text: &str, quote: &str) -> Located {
-    let needle = normalised(quote);
-    if needle.is_empty() {
+    if normalised(quote).is_empty() {
         return Located::Empty;
     }
+    match locate_all(text, quote).as_slice() {
+        [] => Located::Missing,
+        [one] => Located::One(one.clone()),
+        _ => Located::Ambiguous,
+    }
+}
+
+/// Every place `quote` stands in `text`, overlapping ones too, as ranges of the source text.
+/// A match counts only when it begins and ends where a source character does: `..` is not
+/// found inside the three dots an ellipsis became.
+fn locate_all(text: &str, quote: &str) -> Vec<Range<usize>> {
+    let needle = normalised(quote);
+    let mut found = Vec::new();
+    if needle.is_empty() {
+        return found;
+    }
     let (hay, starts) = normalised_with_map(text);
-    // A match counts only when it begins and ends where a source character does: `..` is
-    // not found inside the three dots an ellipsis became.
-    let whole = |at: usize| {
-        let last = at + needle.len() - 1;
-        (at == 0 || starts[at - 1] != starts[at])
-            && (last + 1 == hay.len() || starts[last + 1] != starts[last])
-    };
-    let mut found: Option<usize> = None;
     let mut from = 0;
     while let Some(i) = hay[from..].find(&needle) {
         let at = from + i;
-        if whole(at) {
-            if found.is_some() {
-                return Located::Ambiguous;
-            }
-            found = Some(at);
+        let last = at + needle.len() - 1;
+        let whole = (at == 0 || starts[at - 1] != starts[at])
+            && (last + 1 == hay.len() || starts[last + 1] != starts[last]);
+        if whole {
+            // The end of the source character that produced the last normalised byte.
+            let last_src = starts[last];
+            let end = last_src + text[last_src..].chars().next().map_or(0, char::len_utf8);
+            found.push(starts[at]..end);
         }
-        // Any other place counts, overlapping ones too: go on from the next character.
         from = at + hay[at..].chars().next().map_or(1, char::len_utf8);
     }
-    let Some(at) = found else { return Located::Missing };
-    let start = starts[at];
-    let last = at + needle.len() - 1;
-    // The end of the source character that produced the last normalised byte.
-    let last_src = starts[last];
-    let end = last_src + text[last_src..].chars().next().map_or(0, char::len_utf8);
-    Located::One(start..end)
+    found
 }
 
 fn normalised(s: &str) -> String {
@@ -618,9 +698,28 @@ mod tests {
         assert_eq!(why(&invented), "candidate_quote: not in the source");
         let empty = answer(Verdict::PossiblyOutdated, "", "90 seconds", "30 seconds");
         assert_eq!(why(&empty), "before_quote: empty");
-        // `e` occurs many times in the after text.
+        // `e` occurs many times, also on the changed line: no single place, so it is refused.
         let vague = answer(Verdict::PossibleConflict, "", "e", "30 seconds");
         assert_eq!(why(&vague), "after_quote: found in more than one place");
+        // In the other section a short quote that stands twice is still refused; a phrase
+        // that stands twice on identical lines is taken at its first place.
+        let mut twice = section.clone();
+        twice.text =
+            "## Limits\n\nIt waits 30 seconds at the gateway.\nIt waits 30 seconds at the gateway."
+                .into();
+        let short = answer(Verdict::PossiblyOutdated, "30 seconds", "90 seconds", "30 seconds");
+        assert!(matches!(
+            assess(&short, &change(), &twice),
+            Assessed::DroppedUnquoted { why, .. } if why == "candidate_quote: found in more than one place"
+        ));
+        let phrase = answer(
+            Verdict::PossiblyOutdated,
+            "30 seconds",
+            "90 seconds",
+            "waits 30 seconds at the gateway",
+        );
+        let Assessed::Finding(f) = assess(&phrase, &change(), &twice) else { panic!() };
+        assert_eq!(f.candidate.line_start, twice.line_start + 2);
         // A sentence the change left alone is not evidence of anything.
         let untouched = answer(Verdict::PossibleConflict, "", "Retry twice.", "30 seconds");
         assert_eq!(why(&untouched), "after_quote: not on a line the change added");
@@ -695,6 +794,100 @@ mod tests {
             assess(&a, &change(), &faq_section()),
             Assessed::DroppedUnquoted { why, .. } if why == "candidate_quote: none of the wording the change replaced"
         ));
+    }
+
+    #[test]
+    fn a_stale_copy_that_only_lacks_the_word_the_change_added_is_a_finding() {
+        // "release" became "pre-release": the old sentence has only words of the new one.
+        let before = "# Install\n\n## Steps\n\nInstall the latest Helm 4 release today.\n";
+        let after = "# Install\n\n## Steps\n\nInstall the latest Helm 4 pre-release today.\n";
+        let mut review = compare(before, after, Flavor::Markdown);
+        let change = review.changes.remove(0);
+        let mut other = faq_section();
+        other.text = "## Plugins\n\nFirst install the latest Helm 4 release and a plugin.".into();
+        let a = answer(
+            Verdict::PossiblyOutdated,
+            "Install the latest Helm 4 release today.",
+            "Install the latest Helm 4 pre-release today.",
+            "install the latest Helm 4 release",
+        );
+        let got = assess(&a, &change, &other);
+        assert!(matches!(got, Assessed::Finding(_)), "{got:?}");
+    }
+
+    fn change_of(before: &str, after: &str) -> SectionChange {
+        let mut review = compare(before, after, Flavor::Markdown);
+        assert_eq!(review.changes.len(), 1, "{review:?}");
+        review.changes.remove(0)
+    }
+
+    fn other(text: &str) -> StoredSection {
+        let mut section = faq_section();
+        section.text = text.to_owned();
+        section
+    }
+
+    fn dropped(a: &Answer, change: &SectionChange, section: &StoredSection) -> String {
+        match assess(a, change, section) {
+            Assessed::DroppedUnquoted { why, .. } => why,
+            other => panic!("expected a drop, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_rename_of_capitals_only_tells_the_old_spelling_from_the_new() {
+        let change =
+            change_of("# X\n\n## Y\n\nUse db.user here.\n", "# X\n\n## Y\n\nUse db.User here.\n");
+        let a = answer(Verdict::PossiblyOutdated, "db.user", "db.User", "Call db.User");
+        let why = dropped(&a, &change, &other("## Z\n\nCall db.User first."));
+        assert_eq!(why, "candidate_quote: carries the new wording, none of the old");
+        let a = answer(Verdict::PossiblyOutdated, "db.user", "db.User", "Call db.user");
+        let got = assess(&a, &change, &other("## Z\n\nCall db.user first."));
+        assert!(matches!(got, Assessed::Finding(_)), "{got:?}");
+    }
+
+    #[test]
+    fn a_repeated_phrase_on_lines_that_differ_is_refused_not_guessed() {
+        let text = "## Limits\n\nThe client never waits 30 seconds at the gateway.\nThe client waits 30 seconds at the gateway.";
+        let a = answer(
+            Verdict::PossiblyOutdated,
+            "30 seconds",
+            "90 seconds",
+            "waits 30 seconds at the gateway",
+        );
+        assert_eq!(
+            dropped(&a, &change(), &other(text)),
+            "candidate_quote: found in more than one place"
+        );
+    }
+
+    #[test]
+    fn a_change_side_quote_that_also_stands_on_an_unchanged_line_is_refused() {
+        let before = "# T\n\n## Timeouts\n\nClient:\n90 seconds.\nServer:\n30 seconds.\n";
+        let after = "# T\n\n## Timeouts\n\nClient:\n90 seconds.\nServer:\n90 seconds.\n";
+        let change = change_of(before, after);
+        let a = answer(Verdict::PossiblyOutdated, "30 seconds.", "90 seconds.", "waits 30 seconds");
+        let why = dropped(&a, &change, &other("## Z\n\nThe server waits 30 seconds."));
+        assert_eq!(why, "after_quote: found in more than one place");
+    }
+
+    #[test]
+    fn same_words_means_a_run_of_whole_words_whatever_the_punctuation() {
+        // `30 seconds` is not part of `130 seconds`.
+        let change = change_of(
+            "# T\n\n## W\n\nIt waits 30 seconds.\n",
+            "# T\n\n## W\n\nIt waits 130 seconds.\n",
+        );
+        let a = answer(Verdict::PossiblyOutdated, "30 seconds", "130 seconds", "30 seconds");
+        let got = assess(&a, &change, &other("## Z\n\nThe server waits 30 seconds."));
+        assert!(matches!(got, Assessed::Finding(_)), "{got:?}");
+
+        // Reordered words leave nothing replaced; punctuation must not pass for a difference.
+        let change = change_of("# R\n\n## W\n\nRoute A to B.\n", "# R\n\n## W\n\nRoute B to A.\n");
+        let a =
+            answer(Verdict::PossiblyOutdated, "Route A to B.", "Route B to A.", "Route B to A!");
+        let why = dropped(&a, &change, &other("## Z\n\nRoute B to A! Always."));
+        assert_eq!(why, "candidate_quote: only words of after_quote");
     }
 
     #[test]

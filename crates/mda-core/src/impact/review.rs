@@ -6,8 +6,9 @@
 //! 2. **Changes.** Every markdown file that differs from the commit is compared section by
 //!    section ([`super::changes`]). A new file, a deleted file and a section that cannot be
 //!    paired are listed as not reviewed, with the reason.
-//! 3. **Candidates** for every change ([`super::candidates`]), then judgments dealt one per
-//!    change in turn up to the cap, one call at a time ([`super::judgment`]).
+//! 3. **Candidates** for every change ([`super::candidates`]), then judgments up to the cap,
+//!    one call at a time ([`super::judgment`]): one pair per change in turn, the most telling
+//!    pairs first, repeats of an earlier pair last.
 //! 4. **Spend.** The daily budget is read before each call; each pair gets one retry; every
 //!    attempt is written to the usage ledger whatever its outcome.
 //! 5. **Before reporting**, after the last call, every file that takes part in a finding is
@@ -88,7 +89,7 @@ pub struct Unreviewed {
 }
 
 /// A section named in a report.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct SectionRef {
     /// The file.
     pub rel_path: String,
@@ -152,6 +153,11 @@ pub struct Report {
     pub matching: u64,
     /// Pairs kept after the caps.
     pub candidates: usize,
+    /// Pairs that repeat an earlier one (the same other section for the same replaced
+    /// wording of another change); they are judged last, if the cap leaves room.
+    pub duplicate_pairs: usize,
+    /// Changes that have candidates and got no judgment at all.
+    pub changes_without_judgment: usize,
     /// Changes whose candidate search was cut short (scan, term-lookup or linked-document
     /// limit).
     pub searches_truncated: usize,
@@ -237,11 +243,7 @@ pub async fn review(
 
     // Candidates, then pairs dealt one per change in turn.
     let per_change = gather(engine, &changed, opts, &mut report)?;
-    let deepest = per_change.iter().map(Vec::len).max().unwrap_or(0);
-    let mut queue: Vec<(usize, usize)> = Vec::new();
-    for rank in 0..deepest {
-        queue.extend((0..changed.len()).filter(|c| rank < per_change[*c].len()).map(|c| (c, rank)));
-    }
+    let queue = order(&per_change, &mut report);
     report.candidates = queue.len();
 
     let mut provisional: Vec<Provisional> = Vec::new();
@@ -285,6 +287,14 @@ pub async fn review(
         report.pairs.push(pair);
     }
     settle(engine, &changed, provisional, &mut report);
+    // Answered: the model gave a verdict for the pair, whatever became of it. A failed call
+    // and a pair too large to send are not answers.
+    let answered =
+        |o: &&PairOutcome| !matches!(o.outcome.as_str(), "not_judged" | "too_large" | "failed");
+    let judged: HashSet<&SectionRef> =
+        report.pairs.iter().filter(answered).map(|o| &o.change).collect();
+    let paired: HashSet<&SectionRef> = report.pairs.iter().map(|o| &o.change).collect();
+    report.changes_without_judgment = paired.len() - judged.len();
     Ok(report)
 }
 
@@ -335,6 +345,59 @@ fn gather(
         }
     }
     Ok(per_change)
+}
+
+/// The order in which pairs are judged, since not every pair can be.
+///
+/// Round by round, every change gets one pair before any gets another: its own strongest
+/// first (the shared replaced wording that is rarest), and within a round the changes whose
+/// next pair is strongest come first. A pair that repeats an earlier one (the same other
+/// section for the same replaced wording, as when one commit makes one replacement in many
+/// places) waits behind all the distinct pairs: it is judged only if the cap leaves room.
+fn order(per_change: &[Vec<Candidate>], report: &mut Report) -> Vec<(usize, usize)> {
+    let ranked: Vec<Vec<usize>> = per_change
+        .iter()
+        .map(|candidates| {
+            let mut ranks: Vec<usize> = (0..candidates.len()).collect();
+            ranks.sort_by_key(|r| std::cmp::Reverse(candidates[*r].strength));
+            ranks
+        })
+        .collect();
+    let mut distinct: Vec<(usize, usize)> = Vec::new();
+    let mut repeats: Vec<(usize, usize)> = Vec::new();
+    let mut seen: HashSet<(String, Vec<String>)> = HashSet::new();
+    // How far each change has got in its own list.
+    let mut cursor = vec![0usize; per_change.len()];
+    loop {
+        let strength_of_next = |c: &usize| per_change[*c][ranked[*c][cursor[*c]]].strength;
+        let mut turn: Vec<usize> =
+            (0..per_change.len()).filter(|c| cursor[*c] < ranked[*c].len()).collect();
+        if turn.is_empty() {
+            break;
+        }
+        turn.sort_by_key(|c| std::cmp::Reverse(strength_of_next(c)));
+        for c in turn {
+            // A repeat does not use up the change's turn: it is set aside and the change
+            // goes on to its next pair.
+            while cursor[c] < ranked[c].len() {
+                let r = ranked[c][cursor[c]];
+                cursor[c] += 1;
+                let candidate = &per_change[c][r];
+                let mut wording = candidate.leading_terms.clone();
+                wording.sort_unstable();
+                if wording.is_empty()
+                    || seen.insert((candidate.section.section_id.clone(), wording))
+                {
+                    distinct.push((c, r));
+                    break;
+                }
+                report.duplicate_pairs += 1;
+                repeats.push((c, r));
+            }
+        }
+    }
+    distinct.extend(repeats);
+    distinct
 }
 
 /// The last look, after the last call: a finding is reported only when both of its files

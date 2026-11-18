@@ -19,6 +19,12 @@
 - Ask when the plan is ambiguous and the choice changes the design (new crate, new schema, new public API).
 - Otherwise do not ask. Make the smaller, reversible choice and record it in `docs/aha.md` or an ADR.
 
+## Autonomy and idle time (owner's rule, 2026-11-18)
+- Do not wait when something can advance: run what the next step needs ahead of it, and run independent steps in parallel. Quality first; where quality is not affected, optimise for time.
+- While work runs in the background, keep a recurring wake-up (about every 10 minutes) and use it to move the project.
+- Claude and Codex have authority to take the project to its goals under these rules. Stop for the owner only on a major or irreversible decision.
+- Any action with a real expense above $10 waits for the owner's approval.
+
 ## Session hygiene
 - Start with `/resume`. End with `/handoff`.
 - Hooks under `scripts/dev/` exit 0 fast; if one breaks, fix it before continuing.
