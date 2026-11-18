@@ -34,10 +34,11 @@ pub struct Args {
 }
 
 /// A first index is never started on the home folder or the filesystem root by default: that
-/// is the folder a shell happens to be in, not a project someone chose.
+/// is the folder a shell happens to be in, not a project someone chose. "First" is about the
+/// index file: a state folder holding only a configuration (`mda nudge off`) does not count.
 fn refuse_too_broad(root: &Path, explicit: bool) -> anyhow::Result<()> {
     if !explicit
-        && !root.join(STATE_DIR).is_dir()
+        && !root.join(STATE_DIR).join(mda_core::pipeline::INDEX_FILE).is_file()
         && let Some(what) = too_broad(root)
     {
         anyhow::bail!(

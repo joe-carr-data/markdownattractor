@@ -5,7 +5,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | Date | Doc | What it is |
 |---|---|---|
 | 2026-11-17 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
-| 2026-11-17 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-11-18 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
 | 2026-11-17 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-15 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
 | 2026-11-10 | [plans/2026-11-git-times.md](plans/2026-11-git-times.md) | Date: 2026-11-10. Owner go: "go git times" (2026-11-10), with the requirement "not everything is … |
@@ -20,13 +20,13 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [plans/2026-09-phase1-engine.md](plans/2026-09-phase1-engine.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1 |
 | 2026-09-22 | [plans/2026-09-phase1-daemon.md](plans/2026-09-phase1-daemon.md) | Status: **in progress** · started 2026-09-22 · plan §8 Phase 1, row 13 of `2026-09-phase1-engi… |
 | 2026-09-22 | [plans/2026-09-phase0-spike.md](plans/2026-09-phase0-spike.md) | Status: **done (measurements)** · one exit criterion open (login policy) · 2026-09-21 |
-| 2026-11-17 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
+| 2026-11-18 | [design/distribution.md](design/distribution.md) | As built in Phase 4 (2026-09-22). Decisions: ADR-0005. This document describes *what the pipeline… |
+| 2026-11-18 | [design/commands.md](design/commands.md) | As built through Phase 4 (2026-09-22). One line per command: what it does, what `--json` returns,… |
 | 2026-11-16 | [design/daemon.md](design/daemon.md) | As built at the end of Phase 1 (2026-09-22). Decisions and their reasons: ADR-0003. This document… |
 | 2026-11-15 | [design/mcp.md](design/mcp.md) | As built in Phase 2 (2026-09-22). Decisions: ADR-0004. This document describes *what the code doe… |
 | 2026-11-10 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
-| 2026-09-22 | [design/distribution.md](design/distribution.md) | As built in Phase 4 (2026-09-22). Decisions: ADR-0005. This document describes *what the pipeline… |
 | 2026-11-17 | [adr/0009-change-impact-review.md](adr/0009-change-impact-review.md) | Date: 2026-11-17 |
 | 2026-11-10 | [adr/0008-time-sources-git-with-filesystem-fallback.md](adr/0008-time-sources-git-with-filesystem-fallback.md) | Date: 2026-11-10 |
 | 2026-11-10 | [adr/0007-recency-prior-off-by-default.md](adr/0007-recency-prior-off-by-default.md) | Date: 2026-11-10 |
@@ -36,6 +36,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-11-18 | [reviews/codex/2026-11-18-binary-per-version.md](reviews/codex/2026-11-18-binary-per-version.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |
 | 2026-11-17 | [reviews/codex/2026-11-17-in-path-and-doctor-root.md](reviews/codex/2026-11-17-in-path-and-doctor-root.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb77-946c-7aa0-9ba5-8fb7a4b4fc6a`, read-only, s… |
 | 2026-11-17 | [reviews/codex/2026-11-17-change-unit.md](reviews/codex/2026-11-17-change-unit.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb52-6572-7543-bc6d-36e3a357237f`, read-only, t… |
