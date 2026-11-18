@@ -97,7 +97,9 @@ fn extract(lines: &[String]) -> Vec<(String, TermKind)> {
             match what {
                 // A code span is an identifier whatever its length or spelling: `on`, `from`.
                 Piece::Code => {
-                    for t in piece.split_whitespace().filter(|t| usable(t)) {
+                    // Any spelling counts, symbols included: the index says whether it is
+                    // found anywhere.
+                    for t in piece.split_whitespace().filter(|t| t.chars().count() <= 80) {
                         out.push((t.to_owned(), TermKind::Identifier));
                     }
                 }

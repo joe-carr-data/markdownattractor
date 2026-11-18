@@ -6,7 +6,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 |---|---|---|
 | 2026-11-17 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-17 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
-| 2026-11-17 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
+| 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-15 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
 | 2026-11-10 | [plans/2026-11-git-times.md](plans/2026-11-git-times.md) | Date: 2026-11-10. Owner go: "go git times" (2026-11-10), with the requirement "not everything is … |
 | 2026-10-27 | [plans/2026-10-m9-t6-page-readme.md](plans/2026-10-m9-t6-page-readme.md) | Milestone M9 of the execution plan (`2026-09-benchmark-execution.md` §4 T6, §5 M9, §7): the la… |
@@ -36,6 +36,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-11-18 | [reviews/codex/2026-11-18-impact-candidates.md](reviews/codex/2026-11-18-impact-candidates.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |
 | 2026-11-17 | [reviews/codex/2026-11-17-in-path-and-doctor-root.md](reviews/codex/2026-11-17-in-path-and-doctor-root.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb77-946c-7aa0-9ba5-8fb7a4b4fc6a`, read-only, s… |
 | 2026-11-17 | [reviews/codex/2026-11-17-change-unit.md](reviews/codex/2026-11-17-change-unit.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb52-6572-7543-bc6d-36e3a357237f`, read-only, t… |
@@ -74,11 +75,11 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
+| 2026-11-18 | [handoffs/2026-11-18-0041-auto.md](handoffs/2026-11-18-0041-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-11-18 | [handoffs/2026-11-17-2346-auto.md](handoffs/2026-11-17-2346-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-17 | [handoffs/2026-11-17-2054-auto.md](handoffs/2026-11-17-2054-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-17 | [handoffs/2026-11-17-2005-auto.md](handoffs/2026-11-17-2005-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-17 | [handoffs/2026-11-17-1956-auto.md](handoffs/2026-11-17-1956-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
-| 2026-11-17 | [handoffs/2026-11-16-0349-auto.md](handoffs/2026-11-16-0349-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
-| 2026-11-16 | [handoffs/2026-11-16-0047-auto.md](handoffs/2026-11-16-0047-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-11-15 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-11-15 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |

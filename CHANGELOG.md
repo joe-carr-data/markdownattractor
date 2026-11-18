@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Internal
+
+- Groundwork for change-impact review (ADR-0009, not yet a command): the step that picks which other sections a change is compared against, from the raw full-text index and the documents' links, with caps and counts. No schema change.
+
 ## [0.2.6] — 2026-11-17
 
 The fixes of 0.2.5, published. 0.2.5 was tagged, but its release build stopped at its own install check and published no binaries: the check ran the session-start hook with a data folder whose name the 0.2.5 hook no longer trusts (the fix for the wrong data folder). The check now uses a folder named for the plugin. Nothing else changed.
