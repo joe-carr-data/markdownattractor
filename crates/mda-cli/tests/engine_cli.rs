@@ -1666,3 +1666,45 @@ fn doctor_uses_the_index_above_a_subfolder_and_says_so() {
         mda().current_dir(&root).args(["doctor", "--json"]).assert().get_output().stdout.clone();
     assert!(!String::from_utf8_lossy(&out).contains("found above"));
 }
+
+#[cfg(unix)]
+#[test]
+fn start_does_not_index_the_home_folder_unless_it_is_named() {
+    let home = tempfile::tempdir().unwrap();
+    let home_path = home.path().canonicalize().unwrap();
+    let out = mda()
+        .current_dir(&home_path)
+        .env("HOME", &home_path)
+        .args(["start", "--no-example"])
+        .assert()
+        .failure()
+        .get_output()
+        .clone();
+    let said =
+        format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+    assert!(said.contains("your home folder"), "{said}");
+    assert!(said.contains("mda start <path>"), "{said}");
+    assert!(!home_path.join(".markdownattractor").exists(), "nothing was created");
+}
+
+#[cfg(unix)]
+#[test]
+fn a_home_folder_holding_only_a_config_is_still_not_indexed_by_default() {
+    let home = tempfile::tempdir().unwrap();
+    let home_path = home.path().canonicalize().unwrap();
+    // `mda nudge off` writes a per-root config and so creates the state folder, with no index.
+    mda().current_dir(&home_path).env("HOME", &home_path).args(["nudge", "off"]).assert().success();
+    assert!(home_path.join(".markdownattractor").is_dir());
+    let out = mda()
+        .current_dir(&home_path)
+        .env("HOME", &home_path)
+        .args(["start", "--no-example"])
+        .assert()
+        .failure()
+        .get_output()
+        .clone();
+    let said =
+        format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+    assert!(said.contains("your home folder"), "{said}");
+    assert!(!home_path.join(".markdownattractor/index.sqlite").exists());
+}

@@ -6,7 +6,7 @@ As built through Phase 4 (2026-09-22). One line per command: what it does, what 
 
 | Command | Does | Never |
 |---|---|---|
-| `start [path] [--foreground] [--no-example]` | Spawns the daemon for the root (idempotent). On a **first run** (no cards yet, working backend) it waits up to 60 s for the first 10 cards, picks a question from one of them and prints the top hit with its line range and `mda open` id; JSON `example` / `example_skipped`. The SessionStart hook passes `--no-example`. | Blocks a session: the hook's call is detached and skips the example. |
+| `start [path] [--foreground] [--no-example]` | Spawns the daemon for the root (idempotent). On a **first run** (no cards yet, working backend) it waits up to 60 s for the first 10 cards, picks a question from one of them and prints the top hit with its line range and `mda open` id; JSON `example` / `example_skipped`. The SessionStart hook passes `--no-example`. With no path given and no index there yet, it refuses the home folder and the top of the filesystem (one line; name the folder to index it anyway). | Blocks a session: the hook's call is detached and skips the example. |
 | `stop` · `restart` | Graceful stop over the socket; unfinished sections stay pending. `restart` never waits for an example. | Sends signals. |
 | `status` | Store counts, config, embedding coverage, and the daemon's live block when one answers. | Talks to a model. |
 | `watch [--count n]` | Streams daemon events (JSON lines with `--json`). | |

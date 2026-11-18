@@ -33,6 +33,32 @@ pub struct Args {
     pub example_timeout: u64,
 }
 
+/// A first index is never started on the home folder or the filesystem root by default: that
+/// is the folder a shell happens to be in, not a project someone chose. "First" is about the
+/// index file: a state folder holding only a configuration (`mda nudge off`) does not count.
+fn refuse_too_broad(root: &Path, explicit: bool) -> anyhow::Result<()> {
+    if !explicit
+        && !root.join(STATE_DIR).join(mda_core::pipeline::INDEX_FILE).is_file()
+        && let Some(what) = too_broad(root)
+    {
+        anyhow::bail!(
+            "not indexing {} ({what}) by default: run `mda start` inside a project, or name the folder with `mda start <path>`",
+            root.display()
+        );
+    }
+    Ok(())
+}
+
+/// Why `root` is too broad to index without being named: the home folder, or the top of the
+/// filesystem.
+fn too_broad(root: &Path) -> Option<&'static str> {
+    if root.parent().is_none() {
+        return Some("the top of the filesystem");
+    }
+    let home = std::env::home_dir().and_then(|h| h.canonicalize().ok());
+    (home.as_deref() == Some(root)).then_some("your home folder")
+}
+
 /// How long `start` waits for the daemon to answer its socket.
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(8);
 /// Cards to wait for before running the example query (or every section when fewer).
@@ -47,6 +73,8 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     if !json && let Some(note) = super::ancestor_note(&root, explicit) {
         println!("{} using {} — {note}", st.dim("note:"), root.display());
     }
+
+    refuse_too_broad(&root, explicit)?;
 
     if super::block_on(is_running(&root))? {
         return report_already_running(&root, json, &st);
