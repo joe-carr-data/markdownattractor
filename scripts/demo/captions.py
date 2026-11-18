@@ -4,7 +4,7 @@
     captions.py OUT_DIR BACKDROP.png CAPTION [CAPTION ...]
 
 Writes OUT_DIR/cap0.png … (transparent, the size of the backdrop, one pill of text at the bottom)
-and OUT_DIR/end.png (the backdrop, dimmed, with the name, two lines and the install commands).
+and OUT_DIR/end.png (the backdrop, dimmed, with the name, three lines and the install commands).
 scripts/demo/record-live.sh overlays them with ffmpeg, whose Homebrew build has no text filter.
 """
 import sys
@@ -53,11 +53,12 @@ def main():
     draw.text((w / 2, 250), "markdownattractor", font=title, fill=INK, anchor="mm")
     draw.text((w / 2, 380), "Claude answers from your markdown, with file, lines and date.",
               font=line, fill=INK, anchor="mm")
-    draw.text((w / 2, 436), "An edit is in the answer seconds after the save.",
+    draw.text((w / 2, 436), "A Rust daemon watches the folder and indexes every save within seconds.",
               font=line, fill=INK, anchor="mm")
-    pill(draw, w / 2, 590, "/plugin marketplace add joe-carr-data/markdownattractor", mono,
+    draw.text((w / 2, 492), "You never run a reindex.", font=line, fill=INK, anchor="mm")
+    pill(draw, w / 2, 620, "/plugin marketplace add joe-carr-data/markdownattractor", mono,
          fill=(17, 17, 27, 240), ink=(205, 214, 244, 255))
-    pill(draw, w / 2, 660, "/plugin install markdownattractor@markdownattractor", mono,
+    pill(draw, w / 2, 690, "/plugin install markdownattractor@markdownattractor", mono,
          fill=(17, 17, 27, 240), ink=(205, 214, 244, 255))
     card.convert("RGB").save(out / "end.png")
 
