@@ -1,0 +1,103 @@
+{
+ "note": "Development half only (20 cases, 23 labelled documents). The test half (16 cases) was never run. Costs are list prices reported by the Claude Code CLI; every call went through the owner's login.",
+ "cases_file": "cases.json",
+ "panel": {
+  "opus": "claude-opus-5-5",
+  "fable": "claude-fable-5-2",
+  "astra": "gpt-6.2-astra (requested alias; the Codex CLI names no model id)"
+ },
+ "model_under_test": "claude-haiku-4-5 (both arms)",
+ "mda_iteration_0": {
+  "binary_commit": "dc5da35",
+  "score": {
+   "half": "dev",
+   "cases": 20,
+   "cases_without_report": [],
+   "labels": 23,
+   "labels_alerted": 8,
+   "mined_label_recall": 0.348,
+   "labels_alerted_from_x_itself": 5,
+   "why_missed": {
+    "dropped_unquoted": 1,
+    "not_judged": 7,
+    "not a candidate": 6,
+    "abstain": 1
+   },
+   "alerts": 64,
+   "alerts_on_labelled_documents": 17,
+   "alerts_to_adjudicate": 47,
+   "judged": 716,
+   "usage": {
+    "input_tokens": 1393548,
+    "output_tokens": 405350,
+    "cost_usd": 7.478540999999999
+   }
+  },
+  "precision_partial": {
+   "alerts": 34,
+   "confirmed": 22,
+   "not_fully_answered": 0,
+   "precision": 0.647,
+   "on_labelled_documents": 10,
+   "labelled_but_not_confirmed": 4
+  },
+  "precision_note": "adjudicated on the 34 alerts that existed when the adjudication started, of 64 findings"
+ },
+ "mda_final": {
+  "binary_commit": "5218e16",
+  "score": {
+   "half": "dev",
+   "cases": 20,
+   "cases_without_report": [],
+   "labels": 23,
+   "labels_alerted": 9,
+   "mined_label_recall": 0.391,
+   "labels_alerted_from_x_itself": 7,
+   "why_missed": {
+    "not_judged": 7,
+    "not a candidate": 6,
+    "abstain": 1
+   },
+   "alerts": 61,
+   "alerts_on_labelled_documents": 15,
+   "alerts_to_adjudicate": 46,
+   "judged": 728,
+   "usage": {
+    "input_tokens": 1265562,
+    "output_tokens": 393025,
+    "cost_usd": 7.621722999999999
+   }
+  },
+  "precision": {
+   "alerts": 53,
+   "confirmed": 27,
+   "not_fully_answered": 2,
+   "precision": 0.509,
+   "on_labelled_documents": 11,
+   "labelled_but_not_confirmed": 2
+  }
+ },
+ "baseline": {
+  "arm": "Claude headless with Read, Grep, Glob and read-only git in the same closed repository",
+  "labels": 23,
+  "labels_alerted": 11,
+  "mined_label_recall": 0.478,
+  "cost_usd": 4.12,
+  "cases_without_answer": 1,
+  "documents_listed": 58,
+  "precision": {
+   "alerts": 52,
+   "confirmed": 45,
+   "not_fully_answered": 0,
+   "precision": 0.865,
+   "on_labelled_documents": 11,
+   "labelled_but_not_confirmed": 1
+  }
+ },
+ "stop_rule": {
+  "condition": "precision below 80 % on the development half after two iterations",
+  "mda_final_precision": 0.509,
+  "fired": true,
+  "date": "2026-11-18"
+ }
+}

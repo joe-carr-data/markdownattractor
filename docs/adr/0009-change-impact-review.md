@@ -1,7 +1,7 @@
 # ADR 0009: Change-impact review — `mda check`, verdicts and findings
 
 Date: 2026-11-17
-Status: Proposed
+Status: Proposed — not accepted. On 2026-11-18 the evaluation's stop rule fired on the development half (precision 51 % against 87 % for an agent with file search and git; `docs/benchmarks.md` § Change-impact review). The command stays hidden and unannounced; C2 (the MCP tool, review by the daemon, stored findings) is not built.
 
 ## Context
 

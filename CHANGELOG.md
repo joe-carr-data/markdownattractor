@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Not shipped
+
+- **Change-impact review did not pass its evaluation and is not released.** On the development half of the evaluation `mda check` was right about 51 % of its alerts, against 87 % for a plain agent with file search and git, and found fewer of the labelled documents at a higher cost (`docs/benchmarks.md` § Change-impact review). The command remains in the binary, hidden from `--help` and unannounced.
+
 ### Internal
 
 - `mda check` (experimental, hidden): when not every pair can be judged, every change gets one pair before any gets a second, the pairs whose shared replaced wording is rarest first, and a pair that repeats an earlier one (the same other section for the same replaced wording) last. A replacement that only changes capitals counts as a replacement; a quote that stands several times is settled on the changed line or, for a phrase, at its first place. The output cap of a judgment is 1,500 tokens (700 rejected valid answers on `claude-cli`). From the first development-half run of the evaluation.
