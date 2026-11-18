@@ -494,3 +494,79 @@ async fn the_most_telling_pair_is_judged_first_and_a_repeated_pair_only_once() {
     assert_eq!(report.findings.len(), 1, "{:?}", report.pairs);
     assert_eq!(report.findings[0].change.heading_path.last().unwrap(), "Gamma");
 }
+
+/// A backend whose every structured call returns the same result.
+struct AlwaysBad(Mock, StructuredResult);
+impl Backend for AlwaysBad {
+    fn summarize<'a>(
+        &'a self,
+        req: &'a SummarizeRequest,
+        model: &'a str,
+    ) -> BoxFuture<'a, mda_core::Result<Outcome>> {
+        self.0.summarize(req, model)
+    }
+    fn structured<'a>(
+        &'a self,
+        _req: &'a StructuredRequest,
+        _model: &'a str,
+    ) -> BoxFuture<'a, mda_core::Result<StructuredResult>> {
+        let out = self.1.clone();
+        Box::pin(async move { Ok(out) })
+    }
+    fn name(&self) -> &'static str {
+        "mock"
+    }
+}
+
+#[tokio::test]
+async fn a_repeat_does_not_cost_a_change_its_turn_and_a_failed_call_is_not_an_answer() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    git(&root, &["init", "-q"]);
+    // A and B both replace `shared_old_flag` (the same other section, X, for both) and each
+    // replaces a flag of its own, found in Y and in Z.
+    let guide = "# Guide\n\n## A\n\nSet `shared_old_flag` and `a_only_flag`.\n\n## B\n\nSet `shared_old_flag` and `b_only_flag`.\n";
+    write(&root, "guide.md", guide);
+    write(
+        &root,
+        "x.md",
+        "# X\n\n## Shared\n\nThe `shared_old_flag` is set here, `shared_old_flag` twice.\n",
+    );
+    write(&root, "y.md", "# Y\n\n## Mine\n\nThe `a_only_flag` is set here.\n");
+    write(&root, "z.md", "# Z\n\n## Mine\n\nThe `b_only_flag` is set here.\n");
+    write(&root, ".gitignore", ".markdownattractor/\n");
+    git(&root, &["add", "-A"]);
+    git(&root, &["commit", "-q", "-m", "first"]);
+    write(
+        &root,
+        "guide.md",
+        &guide
+            .replace("shared_old_flag", "shared_new_flag")
+            .replace("a_only_flag", "a_new_flag")
+            .replace("b_only_flag", "b_new_flag"),
+    );
+    let bad = StructuredResult {
+        status: StructuredStatus::Malformed { reason: "not JSON".into(), raw: String::new() },
+        usage: None,
+    };
+    // Every call fails twice: two pairs sent under a cap of two, none answered.
+    let backend = AlwaysBad(Mock::new(), bad);
+    let two = Options { max_judgments: 2, ..Options::new("m") };
+    let mut engine = Engine::open(&root).unwrap();
+    let report = review(&mut engine, Some(&backend), &two).await.unwrap();
+
+    let sent: Vec<(&str, &str)> = report
+        .pairs
+        .iter()
+        .filter(|p| p.outcome == "failed")
+        .map(|p| (p.change.heading_path.last().unwrap().as_str(), p.candidate.rel_path.as_str()))
+        .collect();
+    // Each change got one pair: B's first pair repeats A's (the same section of x.md for the
+    // same replaced flag), so B went on to its own.
+    assert_eq!(sent.len(), 2, "{:?}", report.pairs);
+    assert_eq!(sent.iter().filter(|(h, _)| *h == "A").count(), 1, "{sent:?}");
+    assert_eq!(sent.iter().filter(|(h, _)| *h == "B").count(), 1, "{sent:?}");
+    assert_eq!(report.duplicate_pairs, 1);
+    assert_eq!((report.judged, report.failed), (0, 2));
+    assert_eq!(report.changes_without_judgment, 2, "a failed call is not a judgment");
+}

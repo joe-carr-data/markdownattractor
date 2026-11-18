@@ -287,7 +287,10 @@ pub async fn review(
         report.pairs.push(pair);
     }
     settle(engine, &changed, provisional, &mut report);
-    let answered = |o: &&PairOutcome| !matches!(o.outcome.as_str(), "not_judged" | "too_large");
+    // Answered: the model gave a verdict for the pair, whatever became of it. A failed call
+    // and a pair too large to send are not answers.
+    let answered =
+        |o: &&PairOutcome| !matches!(o.outcome.as_str(), "not_judged" | "too_large" | "failed");
     let judged: HashSet<&SectionRef> =
         report.pairs.iter().filter(answered).map(|o| &o.change).collect();
     let paired: HashSet<&SectionRef> = report.pairs.iter().map(|o| &o.change).collect();
@@ -360,25 +363,34 @@ fn order(per_change: &[Vec<Candidate>], report: &mut Report) -> Vec<(usize, usiz
             ranks
         })
         .collect();
-    let deepest = ranked.iter().map(Vec::len).max().unwrap_or(0);
     let mut distinct: Vec<(usize, usize)> = Vec::new();
     let mut repeats: Vec<(usize, usize)> = Vec::new();
     let mut seen: HashSet<(String, Vec<String>)> = HashSet::new();
-    for round in 0..deepest {
-        let mut turn: Vec<(usize, usize)> = (0..per_change.len())
-            .filter(|c| round < ranked[*c].len())
-            .map(|c| (c, ranked[c][round]))
-            .collect();
-        turn.sort_by_key(|(c, r)| std::cmp::Reverse(per_change[*c][*r].strength));
-        for (c, r) in turn {
-            let candidate = &per_change[c][r];
-            let mut wording = candidate.leading_terms.clone();
-            wording.sort_unstable();
-            let first =
-                wording.is_empty() || seen.insert((candidate.section.section_id.clone(), wording));
-            if first {
-                distinct.push((c, r));
-            } else {
+    // How far each change has got in its own list.
+    let mut cursor = vec![0usize; per_change.len()];
+    loop {
+        let strength_of_next = |c: &usize| per_change[*c][ranked[*c][cursor[*c]]].strength;
+        let mut turn: Vec<usize> =
+            (0..per_change.len()).filter(|c| cursor[*c] < ranked[*c].len()).collect();
+        if turn.is_empty() {
+            break;
+        }
+        turn.sort_by_key(|c| std::cmp::Reverse(strength_of_next(c)));
+        for c in turn {
+            // A repeat does not use up the change's turn: it is set aside and the change
+            // goes on to its next pair.
+            while cursor[c] < ranked[c].len() {
+                let r = ranked[c][cursor[c]];
+                cursor[c] += 1;
+                let candidate = &per_change[c][r];
+                let mut wording = candidate.leading_terms.clone();
+                wording.sort_unstable();
+                if wording.is_empty()
+                    || seen.insert((candidate.section.section_id.clone(), wording))
+                {
+                    distinct.push((c, r));
+                    break;
+                }
                 report.duplicate_pairs += 1;
                 repeats.push((c, r));
             }
