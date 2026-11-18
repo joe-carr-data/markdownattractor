@@ -169,8 +169,8 @@ def measured(backdrop):
 
     top, bottom = 424, 584
     for x0, x1, name, first, second in (
-            (60, 788, "Against grep", "+0.25 answer correctness on a 5-point scale",
-             "same questions, paired runs"),
+            (60, 788, "Against grep", "Better on 4 of 16 questions, worse on none",
+             "same questions, 3 runs each, graded on 0-6"),
             (812, 1540, "Against a knowledge-graph tool (graphify)", "3.18x fewer source tokens read",
              "at answer-quality parity")):
         draw.rounded_rectangle((x0, top, x1, bottom), radius=16, fill=(17, 17, 27, 235))
