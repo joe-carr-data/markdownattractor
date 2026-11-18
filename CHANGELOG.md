@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
-- **Search without a key ranked empty headings above real matches.** A folder with no model has cards only for its heading-only sections (written without a model), and the default search fused their card and vector lists at full weight with the raw text at half. On the 60 questions of the demo corpus the expected section was in the top five for 20 of them, against 49 with `--raw`. A folder in which no model has written a card is now searched on its raw text alone, so the default equals `--raw` there (49 of 60 by the same count); `mda explain` says so. Folders with model-written cards are unaffected.
+- **Search without a key ranked empty headings above real matches.** A folder with no model has cards only for its heading-only sections (written without a model), and the default search fused their card and vector lists with the raw text, so an empty heading could collect two contributions where a real match in a body got one. On the 60 questions of the demo corpus the expected section was in the top five for 20 of them, against 49 with `--raw`. A folder in which no model has written a card is now searched on its raw text alone, so the default equals `--raw` there (49 of 60 by the same count); `mda explain` says so. Folders with model-written cards are unaffected.
 
 ## [0.2.8] — 2026-11-18
 

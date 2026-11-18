@@ -333,6 +333,8 @@ pub fn search_with(
 /// Their card and vector lists say nothing about content, and fused at full weight they push
 /// real raw-text matches out of the top hits: such a root is searched on its raw text alone.
 fn raw_text_alone(store: &Store, opts: &SearchOptions) -> Result<Option<SearchOptions>> {
+    // The probe is one indexed query; a root without model cards pays a scan of its summaries
+    // (about 5 ms at 100,000 sections), which a schema change could remove.
     if opts.raw_only || store.has_model_cards()? {
         return Ok(None);
     }
@@ -896,6 +898,18 @@ mod tests {
         assert!(
             search_with(&store, "undo", &SearchOptions::default(), Some(&e)).unwrap().is_empty()
         );
+        // A word in a body is found exactly as `--raw` finds it, and is labelled raw.
+        let default =
+            search_with(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        let raw = SearchOptions { raw_only: true, ..SearchOptions::default() };
+        let ids = |hits: &[Hit]| hits.iter().map(|h| h.section_id.clone()).collect::<Vec<_>>();
+        assert_eq!(default.len(), 1);
+        assert_eq!(ids(&default), ids(&search(&store, "deployctl", &raw).unwrap()));
+        assert_eq!(default[0].matched, Matched::Raw);
+        assert!(!default[0].vector);
+        let shown = explain(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        assert_eq!(ids(&shown.fused), ids(&default));
+        assert_eq!(shown.raw.len(), 1);
         // "revert" is only in a card: the card list is out too, and explain says why.
         assert!(search(&store, "revert", &SearchOptions::default()).unwrap().is_empty());
         let shown = explain(&store, "revert", &SearchOptions::default(), Some(&e)).unwrap();

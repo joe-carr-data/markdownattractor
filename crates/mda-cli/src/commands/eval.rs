@@ -259,8 +259,11 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         if let Some(e) = &embedder {
             vectors = engine.embed_pending(&**e, usize::MAX)?.embedded;
         }
-        runs.push(evaluate("lexical (cards + raw)", &engine, &queries, args.k, None, false)?);
-        if embedder.is_some() {
+        let modelled = engine.store().has_model_cards()?;
+        if modelled {
+            runs.push(evaluate("lexical (cards + raw)", &engine, &queries, args.k, None, false)?);
+        }
+        if modelled && embedder.is_some() {
             runs.push(evaluate(
                 "hybrid (cards + raw + vectors)",
                 &engine,
@@ -806,7 +809,9 @@ fn run_docsqa(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         let raw = opts("lexical (raw only)", true);
         runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &raw)?);
     }
-    if args.arm_output.is_none() && engine.store().counts()?.summarized > 0 {
+    // The card and vector runs exist only where a model wrote a card: without one the search
+    // narrows itself to raw text, and the same ranking would be reported under three names.
+    if args.arm_output.is_none() && engine.store().has_model_cards()? {
         let lex = opts("lexical (cards + raw)", false);
         runs.push(docsqa::evaluate(engine.store(), None, &dataset, &splits, split, &lex)?);
         if embedder.is_some() {
