@@ -4,7 +4,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 
 | Date | Doc | What it is |
 |---|---|---|
-| 2026-11-17 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
+| 2026-11-18 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-18 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
 | 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-15 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
@@ -36,6 +36,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-11-18 | [reviews/codex/2026-11-18-impact-judgment.md](reviews/codex/2026-11-18-impact-judgment.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex based on GPT-6", exact variant unav… |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-candidates.md](reviews/codex/2026-11-18-impact-candidates.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-binary-per-version.md](reviews/codex/2026-11-18-binary-per-version.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |

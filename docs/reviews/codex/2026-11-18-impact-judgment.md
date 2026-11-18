@@ -1,0 +1,18 @@
+# Codex review — the judgment of a (change, candidate) pair (2026-11-18, PR #101)
+
+Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex based on GPT-6", exact variant unavailable; CLI 0.167.0; fresh thread `01a1ec23-482f-7f72-ab3c-f194481c560f`, read-only, by reading — no test was run — through the `codex:codex-rescue` companion; no nested `codex exec`). Pinned to `891b949`. Triaged by Claude.
+
+**Verdict:** "merge after fixes." Six findings (2 high, 3 medium, 1 low) and four qualifications. Normalisation, line numbers, source selection, schema fields and the input cap were found clean.
+
+| # | Sev | Finding | Triage |
+|---|---|---|---|
+| 1 | High | An alert could cite a sentence the change never touched (`Retry twice.` against `30 seconds`); my own test asserted that it passed. | **Fixed.** A change-side quote must stand on a line the change removed or added and carry a word the change replaced or brought in (when there is one). The test now asserts the drop, with the surviving-before case and a same-line case. |
+| 2 | High | Unequal quote lengths defeated the "same words" check: a candidate that already says the new value produced `possibly_outdated`. | **Fixed.** The candidate's quote is dropped when it has only words of the after quote, when it carries the new wording and none of the old, and, for `possibly_outdated`, when it carries none of the replaced wording. Regression with unequal lengths. **Cost, recorded in the plan:** a stale copy that paraphrases the old statement is lost; the evaluation counts it. |
+| 3 | Medium | `locate("x…", "x..")` matched part of what the ellipsis became and rendered the whole `x…`; a partial match beside a real one read as ambiguous. | **Fixed.** A match counts only when both ends fall on source-character boundaries; uniqueness is judged among those. Tests for both ends and for a partial match beside a valid one. |
+| 4 | Medium | `parse_answer` accepted a positional JSON array. | **Fixed.** A non-object is refused first. Test. |
+| 5 | Medium | The prompt told the judge the change "did not touch" the other section, which is not verified (one revision can edit both). | **Fixed.** "One other section as it reads now." |
+| 6 | Low | The model's reason could say which passage is right or ask for an edit, and was copied into the finding. | **Fixed, by omission.** The field is `model_reading`, optional, and is left out when it contains a word that takes a side or asks for an edit (a word list: crude, and it also drops some neutral sentences; nothing is lost but the sentence). A finding rendered only from the verified quotes needs no reason at all. |
+| q1 | — | The delimiter: "no file can hold" claimed more than a 48-bit code warrants, and boundary recognition was left to the model. | **Fixed.** The code is checked to be absent from every part (re-hashed until it is), and the prompt says a block ends only at the line repeating its name and code. |
+| q2 | — | Front matter can hold an authored date although "dates are not sent". | **Recorded.** The contract is "no index dates"; in the module docs and the plan; the test sends an authored date and checks the index's is absent. |
+| q3 | — | The cap is in bytes of the user message, not tokens, and excludes the system prompt and schema. | **Accepted as is.** The output cap and the per-call budget bound the spend; documented on `JudgmentLimits`. |
+| q4 | — | A multi-line quote is rendered from the stored section text (`a  \r\nb` is stored as `a\nb`), with correct file lines. | **Accepted.** The command re-reads the files before printing (design, the snapshot); its PR decides whether to print the file's bytes. |
