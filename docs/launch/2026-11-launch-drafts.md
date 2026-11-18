@@ -70,7 +70,7 @@ Body: the first comment above, minus the Show HN framing, plus one paragraph on 
 
 ## Open before posting (owner)
 
-- **The launch clip is the second recording** (2026-11-18, v0.2.9, 37 s, captioned): Claude answers with its source, a teammate's terminal edits the runbook, Claude is asked what changed and reports the section, the time and the new text (`docs/demo/README.md`, video 3). The owner found the first clip had no hook (it looks like grep); it stays as the clip for the post about working without a key.
+- **The launch clip is the second recording** (2026-11-18, v0.2.9, 45 s, captioned, ending on a "How it works" card): Claude answers with its source, a teammate's terminal edits the runbook, Claude is asked what changed and reports the section, the time and the new text (`docs/demo/README.md`, video 3). The owner found the first clip had no hook (it looks like grep); it stays as the clip for the post about working without a key.
 - The first demo clip is recorded (2026-11-18, v0.2.8): an mp4 for the X thread and a GIF, kept outside the repository (the commit gate refuses binary files; `docs/demo/README.md` says how to record it again); the README shows the same session as text. Watch it once before posting. It shows the freshness loop in a terminal, not a Claude session; post 3 of the thread (citations) has no clip and can use the README's session excerpt as an image.
 - Account age and karma on HN and r/ClaudeAI (growth plan, Phase 0).
 - Whether "more correct than grep on a small corpus" goes in the title line or only in the body (owner decision 2026-11-16 allows the claim with its limits).
