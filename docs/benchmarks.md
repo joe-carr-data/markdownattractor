@@ -822,6 +822,28 @@ Each table's own reading carries the numbers; this section says where they point
 - **Axis E.** mda's first build costs money (Haiku cards per section) where qmd's is free local compute; a build-cost comparison across arms is fair only at matched models and outputs, and the table says so.
 - **Corpus size.** The small-corpus end is where grep-and-read is cheapest, and T6 shows it: on the golden set (32 files) mda's median run read 1,240 source tokens against grep's 672 and cost a tenth of a cent more; on `docs/` (73 files) it read 1,948 against 3,259 and cost less. Quality is at parity or above on both (every gate-(a) lower bound ≥ −0.25, mda vs grep on `docs/` +0.28 with an interval excluding zero), and nothing is claimed because the grounding gate fails: on the golden set mda's own embellished claims (0.90 against the comparators' 0.98); on `docs/` unresolved bare-token citations (a mentioned file extension, a file named outside the corpus) explain most failures for every arm alike, unsupported claims and answers without a resolvable citation the rest — counting every unresolved-only row as grounded would still leave three of four arms below 95%.
 
+## Change-impact review: tried, measured on a development half, stopped (2026-11-18)
+
+Not a benchmark axis and not a claim: a feature that did not earn its release, recorded here because the plan said a negative result would be published (`docs/plans/2026-11-v0.3-clear-advantage.md`, Phase C; runbook §4f–§4h; ADR-0009).
+
+**What was tried.** `mda check --since <revision>`: for each markdown section a change touched, find other sections that share the replaced wording (the raw full-text index and the documents' links, no model), then ask the summarization model about each pair, and report a pair only when its quotes stand in both files.
+
+**Cases.** Mined from the git history of 37 public documentation repositories: a commit replaces a few tokens in one file, and a later commit makes the same replacement in another file that still carried the old wording. A panel of three models (Opus 5.5, Fable 5.2, Astra 6.2) saw only what existed at the first commit and confirmed 42 of 161 such pairs: 36 cases in 15 repositories, split by repository into 20 for development and 16 for a test.
+
+**Development half** (20 cases, 23 labelled documents, both arms on Claude Haiku 4.5, every alert of both arms adjudicated by the same panel without the arm's name):
+
+| Arm | Labelled documents alerted | Alerts (per case and file pair) | Confirmed by the panel | Precision | Cost at list price |
+|---|---|---|---|---|---|
+| `mda check`, first version | 8 of 23 | 64 findings; 34 adjudicated | 22 of the 34 | 65 % (partial) | $7.48 |
+| `mda check`, after two iterations | 9 of 23 | 53 | 27 | 51 % | $7.62 |
+| Claude with file search and read-only git, no index | 11 of 23 | 52 | 45 | 87 % | $4.12 |
+
+**Reading.** The stop rule set before the work (precision below 80 % on the development half after two iterations) fired, so the test half was never run and there is no test result. On the development half the plain agent found more of the labelled documents, was right far more often, and cost about half. The reasons are structural, not a prompt detail. Real commits in these repositories change 9 to 304 sections each; a fixed budget of 40 judgments per review spent most of them on pairs that share a word and nothing else, and 7 labelled pairs were never judged. 6 labelled documents were never candidates: the changed heading was renamed (not paired, by design), the file sits in a hidden folder the index does not read, or the replaced identifier is still in a hundred files and only eight candidates are kept per change. The agent, by contrast, reads the diff, picks the one term that matters, searches for it, and reads around each hit before it answers.
+
+**Limits of this reading.** One development half of 20 cases; labels of one kind (a replacement later repeated elsewhere), which favours a lexical search and says nothing about paraphrases; three models as the panel, no human; 2 of the 53 `mda` alerts lack one panel answer and count as not confirmed; the first version's precision was adjudicated on a part of its alerts; the models may know these public repositories. Two labelled documents the panel had confirmed at mining were not confirmed when shown again as an `mda` alert (one for the baseline): the panel is not perfectly consistent with itself.
+
+**What stays.** The command exists in the binary, hidden from `--help` and unannounced; nothing in the README or the plugin's skills mentions it. The numbers are in `evals/results/impact/C1/development.json` and the cases in `cases.json` beside it.
+
 ## What the model already knew (rule 0.6)
 
 The answering and grading models are Claude models; what they already know contributes to every arm alike and is described per corpus, never asserted absent.
