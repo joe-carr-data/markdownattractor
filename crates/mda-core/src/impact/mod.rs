@@ -18,6 +18,7 @@
 pub mod candidates;
 pub mod changes;
 pub mod judgment;
+pub mod review;
 pub mod terms;
 
 pub use candidates::{Candidate, Candidates, Finder, Limits, QueryTerm, Source};

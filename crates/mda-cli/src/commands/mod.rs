@@ -3,6 +3,7 @@
 
 pub mod backend;
 pub mod card;
+pub mod check;
 pub mod cost;
 pub mod daemon;
 pub mod diagnostics;

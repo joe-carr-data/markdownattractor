@@ -216,7 +216,12 @@ impl<'a> Finder<'a> {
         }
         // Only the winners' text is loaded.
         for (hit, source, leading) in picked.hits {
-            if let Some(section) = self.store.section(&hit.section_id)? {
+            // A section id is a position in its document: if the index was rewritten since
+            // the search, the id may name another section now. Keep only what was chosen.
+            if let Some(section) = self.store.section(&hit.section_id)?
+                && section.section_hash == hit.section_hash
+                && section.heading_path == hit.heading_path
+            {
                 out.kept.push(Candidate { section, source, leading, shared_terms: Vec::new() });
             }
         }
