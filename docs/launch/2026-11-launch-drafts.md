@@ -1,12 +1,12 @@
 # Launch drafts (2026-11-18) — for the owner to edit and post
 
-Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every number below is on `docs/benchmarks.md` with its method and limits; if a number changes there, it changes here. Nothing claims what did not pass a gate.
+Status: **drafts**; the owner decided on 2026-11-18 to launch with the product of Phases A and B. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every number below is on `docs/benchmarks.md` with its method and limits; if a number changes there, it changes here. Nothing claims what did not pass a gate.
 
 ## What passed, and what did not (the source for every text below)
 
 | | Result | Where |
 |---|---|---|
-| Passed | A first search with no credentials, from nothing installed, in 8 to 21 seconds on one machine (8 s on v0.2.7; limit 120 s) | plan 2026-11-v0.3, Phase B; `scripts/dev/first-run.sh` |
+| Passed | A first search with no credentials, from nothing installed, in 7 to 21 seconds on one machine (7 s on v0.2.8; limit 120 s) | plan 2026-11-v0.3, Phase B; `scripts/dev/first-run.sh` |
 | Passed | Search without any model: the expected section is in the top 5 for 88 % of the golden questions (raw text only) | plan, Phase B |
 | Passed | Save to searchable: raw text p50 1.7 s, card p50 8.4 s (one machine, 20 edits) | benchmarks, T4 |
 | Passed, with limits | On the small golden corpus, against grep: +0.25 answer correctness, no saving in tokens read; against graphify: 3.18× fewer source tokens read | benchmarks, § The answer contract |
@@ -30,7 +30,7 @@ markdownattractor is a Claude Code plugin: one Rust binary that watches a folder
 
 What I can show with numbers, all on the benchmark page with the method:
 
-- From nothing installed to a first useful search: 8 to 21 seconds, with no API key. Search runs on raw text; summaries are optional and use your own key or a local model.
+- From nothing installed to a first useful search: 7 to 21 seconds, with no API key. Search runs on raw text; summaries are optional and use your own key or a local model.
 - A saved file is searchable in about 2 seconds.
 - On a small test corpus it answers more correctly than grep-and-read, at the same reading cost. On large public documentation sets it does not beat a good baseline on every axis, and the page says where.
 
@@ -48,7 +48,7 @@ I would like to hear where the citations are wrong or the dates misleading: that
 ## X thread (draft, 5 posts)
 
 1. Claude Code reads your docs by grepping and opening whole files. I wanted answers that say which lines they came from and how old those lines are. So I built a local index for markdown. [demo clip]
-2. One Rust binary watches the folder. Every section is searchable about 2 seconds after you save. No key needed to start: first useful search 8 to 21 seconds from nothing installed.
+2. [the clip belongs here if post 1 carries the session image instead] One Rust binary watches the folder. Every section is searchable about 2 seconds after you save. No key needed to start: first useful search 7 to 21 seconds from nothing installed.
 3. Every claim in an answer is cited to a file and a line range, with when that section last changed (from git history when there is one).
 4. I benchmarked it against grep, qmd and graphify, with the gates written down before the runs. It does not win everywhere, and the page says where it loses.
 5. One feature did not make it: warning you when a change leaves another doc out of date. A plain agent with search and git beat it, 87 % to 51 %. Not shipped; the numbers are public. [link]
@@ -70,6 +70,6 @@ Body: the first comment above, minus the Show HN framing, plus one paragraph on 
 
 ## Open before posting (owner)
 
-- The demo clip: the videos are paused since 2026-11-15; post 1 of the thread and the Show HN need either a clip or the README's session excerpt.
+- The demo clip is recorded (2026-11-18, v0.2.8): an mp4 for the X thread and a GIF, kept outside the repository (the commit gate refuses binary files; `docs/demo/README.md` says how to record it again); the README shows the same session as text. Watch it once before posting. It shows the freshness loop in a terminal, not a Claude session; post 3 of the thread (citations) has no clip and can use the README's session excerpt as an image.
 - Account age and karma on HN and r/ClaudeAI (growth plan, Phase 0).
 - Whether "more correct than grep on a small corpus" goes in the title line or only in the body (owner decision 2026-11-16 allows the claim with its limits).

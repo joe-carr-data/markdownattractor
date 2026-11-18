@@ -17,6 +17,18 @@
   <a href="docs/benchmarks.md"><img alt="benchmarks: preregistered" src="https://img.shields.io/badge/benchmarks-preregistered-16a34a?style=flat-square"></a>
 </p>
 
+```
+acme-docs % mda search canary --raw
+no hits for "canary"
+acme-docs % echo '## Canary' >> runbooks/deploy.md
+acme-docs % echo 'Every release goes to 5% of traffic first.' >> runbooks/deploy.md
+acme-docs % mda search canary --raw
+ 1. runbooks/deploy.md › Deploy runbook › Canary   L18–19 · ~13 tok · just now · raw (pending)
+    Every release goes to 5% of traffic first.
+```
+
+<p align="center"><sub>A real terminal session on the demo corpus with no key set (the hint line and the <code>mda open</code> line trimmed): a saved section is searchable a second or two later. <a href="docs/demo/README.md">How it was recorded.</a></sub></p>
+
 ---
 
 ## The problem

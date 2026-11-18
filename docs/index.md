@@ -82,17 +82,17 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
+| 2026-11-18 | [handoffs/2026-11-18-0938-auto.md](handoffs/2026-11-18-0938-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [handoffs/2026-11-18-0528-auto.md](handoffs/2026-11-18-0528-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [handoffs/2026-11-18-0143-auto.md](handoffs/2026-11-18-0143-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [handoffs/2026-11-18-0041-auto.md](handoffs/2026-11-18-0041-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [handoffs/2026-11-17-2346-auto.md](handoffs/2026-11-17-2346-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
-| 2026-11-17 | [handoffs/2026-11-17-2054-auto.md](handoffs/2026-11-17-2054-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-11-18 | [launch/2026-11-launch-drafts.md](launch/2026-11-launch-drafts.md) | Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every n… |
+| 2026-11-18 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-11-18 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-11-14 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
-| 2026-11-10 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 
 ## Not yet written
