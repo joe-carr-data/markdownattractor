@@ -4,7 +4,8 @@
     captions.py OUT_DIR BACKDROP.png CAPTION [CAPTION ...]
 
 Writes OUT_DIR/cap0.png … (transparent, the size of the backdrop, one pill of text at the bottom)
-and OUT_DIR/end.png (the backdrop, dimmed, with the name, three lines and the install commands).
+OUT_DIR/tech.png (the pipeline and the three ranked lists) and OUT_DIR/end.png (the backdrop,
+dimmed, with the name, three lines and the install commands).
 scripts/demo/record-live.sh overlays them with ffmpeg, whose Homebrew build has no text filter.
 """
 import sys
@@ -61,6 +62,75 @@ def main():
     pill(draw, w / 2, 690, "/plugin install markdownattractor@markdownattractor", mono,
          fill=(17, 17, 27, 240), ink=(205, 214, 244, 255))
     card.convert("RGB").save(out / "end.png")
+    how_it_works(backdrop).save(out / "tech.png")
+
+
+SUB = (186, 194, 222, 255)
+GREEN, MAUVE, BLUE, PEACH = (166, 227, 161, 255), (203, 166, 247, 255), (137, 180, 250, 255), (250, 179, 135, 255)
+
+
+def box(draw, rect, title, lines, accent, head, body):
+    """A dark panel with a coloured top edge, a bold title and a few lines under it."""
+    x0, y0, x1, _ = rect
+    draw.rounded_rectangle(rect, radius=16, fill=(17, 17, 27, 235))
+    draw.rounded_rectangle((x0, y0, x1, y0 + 8), radius=4, fill=accent)
+    draw.text((x0 + 22, y0 + 24), title, font=head, fill=accent)
+    for n, text in enumerate(lines):
+        draw.text((x0 + 22, y0 + 68 + n * 32), text, font=body, fill=SUB if n else INK)
+
+
+def arrow(draw, start, end, width=5):
+    """A straight arrow, to the right or downwards."""
+    (x0, y0), (x1, y1) = start, end
+    draw.line((x0, y0, x1, y1), fill=INK, width=width)
+    if y0 == y1:
+        draw.polygon([(x1 + 2, y1), (x1 - 14, y1 - 10), (x1 - 14, y1 + 10)], fill=INK)
+    else:
+        draw.polygon([(x1, y1 + 2), (x1 - 10, y1 - 14), (x1 + 10, y1 - 14)], fill=INK)
+
+
+def how_it_works(backdrop):
+    """The technical card: the pipeline on one row, the three ranked lists and their fusion below."""
+    w, h = backdrop.size
+    card = Image.alpha_composite(backdrop, Image.new("RGBA", (w, h), (17, 17, 27, 165)))
+    draw = ImageDraw.Draw(card)
+    title, head, body, small = font(SANS, 50, index=1), font(SANS, 28, index=1), font(SANS, 23), font(SANS, 24, index=1)
+    draw.text((60, 58), "How it works", font=title, fill=INK, anchor="lm")
+    draw.text((w - 60, 62), "one Rust binary: watcher, index, MCP server, CLI", font=body, fill=SUB, anchor="rm")
+
+    top, bottom = 110, 290
+    box(draw, (60, top, 370, bottom), "Your markdown", ["any folder of .md files", "never modified"], PEACH, head, body)
+    box(draw, (440, top, 800, bottom), "Rust daemon",
+        ["watches every save", "splits files into sections", "skips unchanged sections"], PEACH, head, body)
+    box(draw, (870, top, 1190, bottom), "SQLite index",
+        ["one local file", "each section: lines + dates"], PEACH, head, body)
+    box(draw, (1260, top, 1540, bottom), "Claude Code",
+        ["over MCP", "search, card, open"], PEACH, head, body)
+    for x0, x1 in ((370, 440), (800, 870), (1190, 1260)):
+        arrow(draw, (x0 + 8, 200), (x1 - 8, 200))
+
+    draw.text((60, 338), "One query, three ranked lists", font=small, fill=INK, anchor="lm")
+    top, bottom = 365, 570
+    box(draw, (60, top, 530, bottom), "Raw text · BM25",
+        ["SQLite FTS5, built at parse time", "searchable 1.7 s after a save (p50)", "works with no API key"],
+        GREEN, head, body)
+    box(draw, (565, top, 1035, bottom), "Cards · BM25",
+        ["a ~200-token summary per section", "written by a small model, in ~8 s", "dates and names need evidence"],
+        MAUVE, head, body)
+    box(draw, (1070, top, 1540, bottom), "Card vectors",
+        ["embeddings computed locally", "bge-small, on your machine", "matches meaning, not only words"],
+        BLUE, head, body)
+    for x in (295, 800, 1305):
+        arrow(draw, (x, bottom + 6), (x, 612))
+
+    draw.rounded_rectangle((60, 620, 1540, 720), radius=16, fill=(17, 17, 27, 235))
+    draw.text((w / 2, 652), "Reciprocal rank fusion, with an optional time filter", font=head, fill=INK, anchor="mm")
+    draw.text((w / 2, 692), "top 5 hits, each with file · heading path · line range · last changed",
+              font=body, fill=SUB, anchor="mm")
+    arrow(draw, (w / 2, 726), (w / 2, 762))
+    pill(draw, w / 2, 800, "Claude reads the card, then opens only the lines it needs, and cites them",
+         small, fill=(17, 17, 27, 240))
+    return card.convert("RGB")
 
 
 if __name__ == "__main__":

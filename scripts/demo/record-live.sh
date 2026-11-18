@@ -111,9 +111,12 @@ ffmpeg -loglevel error -y -i "$work/out.mp4" \
   -c:v libx264 -pix_fmt yuv420p -crf 18 "$work/captioned.mp4"
 ffmpeg -loglevel error -y -loop 1 -t 3.5 -r 25 -i "$work/end.png" \
   -c:v libx264 -pix_fmt yuv420p -crf 18 "$work/end.mp4"
+ffmpeg -loglevel error -y -loop 1 -t 9 -r 25 -i "$work/tech.png" \
+  -c:v libx264 -pix_fmt yuv420p -crf 18 "$work/tech.mp4"
 
 fps="$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "$work/captioned.mp4")"
-ffmpeg -loglevel error -y -i "$work/captioned.mp4" -i "$work/end.mp4" -filter_complex \
-  "[1:v]fps=$fps,format=yuv420p[e];[0:v]format=yuv420p[m];[m][e]concat=n=2:v=1:a=0" \
+# The take, the install card (3.5 s), then the technical card (9 s: it is the one to pause on).
+ffmpeg -loglevel error -y -i "$work/captioned.mp4" -i "$work/end.mp4" -i "$work/tech.mp4" -filter_complex \
+  "[1:v]fps=$fps,format=yuv420p[e];[2:v]fps=$fps,format=yuv420p[t];[0:v]format=yuv420p[m];[m][e][t]concat=n=3:v=1:a=0" \
   -c:v libx264 -pix_fmt yuv420p -crf 18 -movflags +faststart "$OUT"
 echo "record: $OUT ($(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | cut -d. -f1) s) — watch it before using it"
