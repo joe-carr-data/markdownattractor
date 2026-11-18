@@ -6,7 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Internal
 
-- Groundwork for change-impact review (ADR-0009, not yet a command): the judgment of one pair — the prompt, the answer's schema, and the rule that an alert is shown only when each of its quotes is found in exactly one place of its source, rendered as the source's own text.
+- `mda check [--since <revision>]` exists as an experimental command, hidden from `--help` and not announced: it has not been evaluated yet (ADR-0009; plan 2026-11-v0.3, Phase C). It compares the working files with a commit, and names other sections that are possibly out of date, with both passages.
+- Groundwork for change-impact review (ADR-0009): the judgment of one pair — the prompt, the answer's schema, and the rule that an alert is shown only when each of its quotes is found in exactly one place of its source, rendered as the source's own text.
 
 ## [0.2.7] — 2026-11-18
 

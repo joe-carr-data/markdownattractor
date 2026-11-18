@@ -67,6 +67,11 @@ enum Command {
     Timeline(commands::timeline::Args),
     /// The most recently updated documents.
     Recent(commands::recent::Args),
+    /// After a change, which other sections are possibly out of date? Read-only.
+    /// Experimental and hidden from `--help` until its evaluation gate has passed
+    /// (plan 2026-11-v0.3, Phase C).
+    #[command(hide = true)]
+    Check(commands::check::Args),
     /// Documents whose index is not final (should print nothing).
     Stale(commands::stale::Args),
     /// Regenerate derived artefacts (`--embeddings`).
@@ -121,6 +126,7 @@ fn main() -> ExitCode {
         Command::Explain(args) => commands::explain::run(&args, cli.json),
         Command::Timeline(args) => commands::timeline::run(&args, cli.json),
         Command::Recent(args) => commands::recent::run(&args, cli.json),
+        Command::Check(args) => commands::check::run(&args, cli.json),
         Command::Stale(args) => commands::stale::run(&args, cli.json),
         Command::Rebuild(args) => commands::rebuild::run(&args, cli.json),
         Command::Embeddings(args) => commands::embeddings::run(&args, cli.json),
