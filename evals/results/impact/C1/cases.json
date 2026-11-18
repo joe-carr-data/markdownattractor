@@ -1,0 +1,938 @@
+{
+ "split_rule": "repositories ordered by sha256(name), alternately dev and test",
+ "pairs_asked": 161,
+ "pairs_confirmed": 42,
+ "cases": [
+  {
+   "case_id": "ea413fcf822d",
+   "half": "dev",
+   "repo": "astral-sh__uv",
+   "change_commit": "5a3826d9ff6478718a9c7721968fba1ce3792480",
+   "x": "docs/reference/cli.md",
+   "affected": [
+    {
+     "y": "docs/configuration/indexes.md",
+     "removed": [
+      "first-match"
+     ],
+     "added": [
+      "first-index"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    },
+    {
+     "y": "docs/pip/compatibility.md",
+     "removed": [
+      "first-match"
+     ],
+     "added": [
+      "first-index"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "43a2e87fa87b",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "2193178ef5ab19cf26b5ec9fdf1711d5323bbbaa",
+   "x": "docs/quickstarts/ios.mdx",
+   "affected": [
+    {
+     "y": "docs/custom-flows/sign-out.mdx",
+     "removed": [
+      "@ObservedObject",
+      "Clerk.shared"
+     ],
+     "added": [
+      "@Environment",
+      "Clerk.self"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "b1d094b1c096",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "2d42714ebfe6d089a28dcd538bc8848b261f1328",
+   "x": "docs/guides/configure/auth-strategies/enterprise-connections/custom-attribute-mapping.mdx",
+   "affected": [
+    {
+     "y": "docs/guides/configure/auth-strategies/enterprise-connections/directory-sync.mdx",
+     "removed": [
+      "urn:clerk:scim:schemas:extension:custom:2.0:User"
+     ],
+     "added": [
+      "urn:ietf:params:scim:schemas:extension:clerk:2.0:User"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "88b034f3efdc",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "33c2605e4f88b18dc3b39fb0391849c05aae21eb",
+   "x": "docs/guides/development/custom-sign-in-or-up-page.mdx",
+   "affected": [
+    {
+     "y": "prompts/nextjs-quickstart.md",
+     "removed": [
+      "middleware.ts"
+     ],
+     "added": [
+      "proxy.ts"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "a9762faeffa6",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "5d35887d70508bb953f054b12c1cb6cb129aedf1",
+   "x": "clerk-typedoc/nextjs/create-async-get-auth.mdx",
+   "affected": [
+    {
+     "y": "docs/references/backend/authenticate-request.mdx",
+     "removed": [
+      "machine_token"
+     ],
+     "added": [
+      "m2m_token"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    },
+    {
+     "y": "docs/references/nextjs/clerk-middleware.mdx",
+     "removed": [
+      "machine_token"
+     ],
+     "added": [
+      "m2m_token"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "d5933699f0d5",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "8ad5038e0ca6660791a44c544cc387211514a568",
+   "x": "docs/references/nextjs/route-handlers.mdx",
+   "affected": [
+    {
+     "y": "docs/guides/add-onboarding-flow.mdx",
+     "removed": [
+      "clerkClient.users.updateUser"
+     ],
+     "added": [
+      "clerkClient",
+      "users.updateUser"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "332e83c6bb95",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "d7c436522ce28ab1f58c283841e099f96224990c",
+   "x": "docs/guides/basic-rbac.mdx",
+   "affected": [
+    {
+     "y": "docs/guides/add-onboarding-flow.mdx",
+     "removed": [
+      "clerkClient",
+      "users.updateUser"
+     ],
+     "added": [
+      "client.users.updateUser"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "7aff8768f1d5",
+   "half": "test",
+   "repo": "clerk__clerk-docs",
+   "change_commit": "d8375560c6bf89cdefc817decef49f707ef44c91",
+   "x": "docs/quickstarts/react.mdx",
+   "affected": [
+    {
+     "y": "prompts/react-vite-quickstart.md",
+     "removed": [
+      "React.StrictMode"
+     ],
+     "added": [
+      "StrictMode"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    },
+    {
+     "y": "prompts/react-vite-quickstart.md",
+     "removed": [
+      "React.StrictMode",
+      "ReactDOM.createRoot"
+     ],
+     "added": [
+      "StrictMode",
+      "createRoot"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "ca822352e35c",
+   "half": "test",
+   "repo": "denoland__docs",
+   "change_commit": "317cd0658349f20eb2ef0dba3b4a4e6b6f4e881b",
+   "x": "runtime/reference/deploying_and_embedding.md",
+   "affected": [
+    {
+     "y": "runtime/help.md",
+     "removed": [
+      "old_url"
+     ],
+     "added": [
+      "oldUrl"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "a611d34bacd6",
+   "half": "dev",
+   "repo": "helm__helm-www",
+   "change_commit": "5260bcfd99384a925dcfc5860da4077bc7374ca5",
+   "x": "docs/plugins/developer/tutorial-cli-plugin.mdx",
+   "affected": [
+    {
+     "y": "docs/plugins/developer/tutorial-getter-plugin.mdx",
+     "removed": [
+      "release"
+     ],
+     "added": [
+      "pre-release"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "834923e71495",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "16ee1cf46f26d1b9fcef48a8ad0eaf238fe13423",
+   "x": "apps/docs/content/docs/orm/reference/error-reference.mdx",
+   "affected": [
+    {
+     "y": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+     "removed": [
+      "temporal.updatedAt"
+     ],
+     "added": [
+      "temporal.UpdatedAt"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    },
+    {
+     "y": "apps/docs/content/docs/orm/reference/orm-client.mdx",
+     "removed": [
+      "temporal.createdAt"
+     ],
+     "added": [
+      "temporal.CreatedAt"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "ebbfde9d8b0d",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "220a3d7f287087a61b30a091cd4e4fb592a5ba7a",
+   "x": "apps/docs/content/docs/cli/v8/configuration.mdx",
+   "affected": [
+    {
+     "y": "apps/blog/content/blog/you-dont-need-a-vector-database-postgres-already-has-pgvector/index.mdx",
+     "removed": [
+      "prisma-next.config.ts"
+     ],
+     "added": [
+      "prisma.config.ts"
+     ],
+     "votes": {
+      "opus": "unsure",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "8c3c87a82fb0",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "46e6dd869871580b67e46d7f062d344673a7726a",
+   "x": "content/800-guides/080-turborepo.mdx",
+   "affected": [
+    {
+     "y": "content/800-guides/140-use-prisma-in-pnpm-workspaces.mdx",
+     "removed": [
+      "prisma-client-js"
+     ],
+     "added": [
+      "prisma-client"
+     ],
+     "votes": {
+      "opus": "reject",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "bc502316708a",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "6058c9fa11553d447075660aec975d945f22feb0",
+   "x": "apps/docs/content/docs/orm/middleware/built-in-cache.mdx",
+   "affected": [
+    {
+     "y": ".claude/skills/docs-writer/references/prisma-8.md",
+     "removed": [
+      "db.sql.public.user"
+     ],
+     "added": [
+      "db.sql.public.User"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "137e0b477bc0",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "64d91ebd64a8d284cbdbdfbc9ee8bbc204c1d36f",
+   "x": "apps/blog/content/blog/choosing-hosting-and-postgres-after-your-first-100-users/index.mdx",
+   "affected": [
+    {
+     "y": "apps/docs/content/docs/(index)/full-stack-tutorial.mdx",
+     "removed": [
+      "prisma-composer.config.ts"
+     ],
+     "added": [
+      "composer",
+      "prisma.config.ts",
+      "section"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "d4482d5c5342",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "6f9a5264680ed5e11bc939fad1e8b23c427dd1ab",
+   "x": "apps/docs/content/docs/local-development/postgres.mdx",
+   "affected": [
+    {
+     "y": "apps/blog/content/blog/from-local-to-production-with-prisma-postgres/index.mdx",
+     "removed": [
+      "prisma"
+     ],
+     "added": [
+      "prisma@7"
+     ],
+     "votes": {
+      "opus": "reject",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "4e729c92a120",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "7452f9cbed9eec4200ae58664eca8feef9a36579",
+   "x": "apps/docs/content/docs/composer/getting-started.mdx",
+   "affected": [
+    {
+     "y": "apps/docs/content/docs/(index)/full-stack-tutorial.mdx",
+     "removed": [
+      "prisma-composer.config.ts"
+     ],
+     "added": [
+      "composer",
+      "prisma.config.ts",
+      "section"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "c2d04a560bc1",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "8ae77a7c94c131be1ca47f7e63fc137f00f7278d",
+   "x": "apps/blog/content/blog/nestjs-prisma-error-handling-7D056s1kOop2/index.mdx",
+   "affected": [
+    {
+     "y": "apps/blog/content/blog/nestjs-prisma-rest-api-7D056s1BmOL0/index.mdx",
+     "removed": [
+      "@prisma/client"
+     ],
+     "added": [
+      "generated/prisma/client"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "2fd92d106041",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "c16c13681645d42d1d971005984d40fdedc302d6",
+   "x": "apps/blog/content/blog/ship-risky-schema-changes-without-a-shared-staging-database/index.mdx",
+   "affected": [
+    {
+     "y": "apps/blog/content/blog/choosing-hosting-and-postgres-after-your-first-100-users/index.mdx",
+     "removed": [
+      "module.ts",
+      "stage"
+     ],
+     "added": [
+      "environment"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "db86fa0d0424",
+   "half": "dev",
+   "repo": "prisma__docs",
+   "change_commit": "cca527b39608b6cabb67d0c32ca0e088c7e86b89",
+   "x": "apps/docs/content/docs/orm/next/reference/error-reference.mdx",
+   "affected": [
+    {
+     "y": "apps/blog/content/blog/prisma-next-call-for-extension-authors/index.mdx",
+     "removed": [
+      "prisma-next.config.ts"
+     ],
+     "added": [
+      "prisma.config.ts"
+     ],
+     "votes": {
+      "opus": "reject",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "5c2ea291edeb",
+   "half": "dev",
+   "repo": "redis__docs",
+   "change_commit": "e1a0a09947fdf4c1a407fda0c3d0482589bd696b",
+   "x": "content/develop/clients/lettuce/_index.md",
+   "affected": [
+    {
+     "y": "content/develop/use-cases/leaderboard/java-lettuce/_index.md",
+     "removed": [
+      "6.7.1.RELEASE"
+     ],
+     "added": [
+      "7.9.0.RELEASE"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "013800715efd",
+   "half": "dev",
+   "repo": "remix-run__react-router",
+   "change_commit": "426e5caec0d130c1dbf064f58818ff47910c06fd",
+   "x": "docs/how-to/middleware.md",
+   "affected": [
+    {
+     "y": "docs/api/data-routers/createHashRouter.md",
+     "removed": [
+      "unstable_RouterContextProvider",
+      "unstable_getContext"
+     ],
+     "added": [
+      "RouterContextProvider",
+      "getContext"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    },
+    {
+     "y": "docs/api/data-routers/createMemoryRouter.md",
+     "removed": [
+      "unstable_RouterContextProvider"
+     ],
+     "added": [
+      "RouterContextProvider"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "05ed0a7ceeeb",
+   "half": "dev",
+   "repo": "remix-run__react-router",
+   "change_commit": "f3023cc943740e2eb6f5f0c49fbcd032c324d0e0",
+   "x": "docs/upgrading/remix.md",
+   "affected": [
+    {
+     "y": "docs/upgrading/component-routes.md",
+     "removed": [
+      "vite.config.ts"
+     ],
+     "added": [
+      "react-router.config.ts"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "cc0db522b98d",
+   "half": "test",
+   "repo": "rust-lang__book",
+   "change_commit": "13e27c4a35705c4bd473bd90a3d3a8f87ef9ae58",
+   "x": "src/ch09-02-recoverable-errors-with-result.md",
+   "affected": [
+    {
+     "y": "src/ch15-01-box.md",
+     "removed": [
+      "using-trait-objects-that-allow-for-values-of-different-types"
+     ],
+     "added": [
+      "using-trait-objects-to-abstract-over-shared-behavior"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "03052f205e05",
+   "half": "test",
+   "repo": "rust-lang__book",
+   "change_commit": "573a6ca4bafb8f72ab867a2071ccece6478b8600",
+   "x": "src/ch17-03-more-futures.md",
+   "affected": [
+    {
+     "y": "src/ch17-05-traits-for-async.md",
+     "removed": [
+      "listings/ch17-async-await/listing-17-18"
+     ],
+     "added": [
+      "listings/ch17-async-await/listing-17-17"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "0d1127877530",
+   "half": "test",
+   "repo": "rust-lang__book",
+   "change_commit": "678ace3ca683c0a305d2c75f63547ce6bb62915f",
+   "x": "nostarch/chapter21.md",
+   "affected": [
+    {
+     "y": "nostarch/chapter06.md",
+     "removed": [
+      "18"
+     ],
+     "added": [
+      "19"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "02299b710ec8",
+   "half": "test",
+   "repo": "rust-lang__cargo",
+   "change_commit": "594c96ad51d61340dd0a724bdb0fbb74fda0bd22",
+   "x": "src/doc/man/cargo-metadata.md",
+   "affected": [
+    {
+     "y": "src/doc/src/reference/external-tools.md",
+     "removed": [
+      "my-package",
+      "path+file:///path/to/my-package"
+     ],
+     "added": [
+      "file:///path/to/my-package"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "3b0a612d6504",
+   "half": "dev",
+   "repo": "sveltejs__kit",
+   "change_commit": "ab12cb6a07269e2a18c0a3867e608e9838c592f3",
+   "x": "documentation/docs/10-getting-started/30-project-structure.md",
+   "affected": [
+    {
+     "y": "documentation/docs/25-build-and-deploy/70-adapter-cloudflare-workers.md",
+     "removed": [
+      "svelte.config.js"
+     ],
+     "added": [
+      "vite.config.js"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "391f10418185",
+   "half": "test",
+   "repo": "tauri-apps__tauri-docs",
+   "change_commit": "2937b09b2cf6a715e5b6ba1aa933a886766365f4",
+   "x": "src/content/docs/develop/Plugins/develop-mobile.mdx",
+   "affected": [
+    {
+     "y": "src/content/docs/develop/Plugins/index.mdx",
+     "removed": [
+      "@tauri-apps/api/tauri"
+     ],
+     "added": [
+      "@tauri-apps/api/core"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    },
+    {
+     "y": "src/content/docs/develop/Tests/mocking.md",
+     "removed": [
+      "@tauri-apps/api/tauri"
+     ],
+     "added": [
+      "@tauri-apps/api/core"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "53f0064f2f8c",
+   "half": "dev",
+   "repo": "temporalio__documentation",
+   "change_commit": "0aa9e97697c91c57c9c35ece39c63deb62096f3b",
+   "x": "docs/production-deployment/cloud/high-availability/how-to/failovers.mdx",
+   "affected": [
+    {
+     "y": "COMPONENTS.md",
+     "removed": [
+      "Components.ToolTipTerm"
+     ],
+     "added": [
+      "ToolTipTerm"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "unsure",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "dcb8014b9ae3",
+   "half": "dev",
+   "repo": "temporalio__documentation",
+   "change_commit": "4f4d72822b102b05b1fe721a6585f83d9fec6853",
+   "x": "docs/cli/command-reference/activity.mdx",
+   "affected": [
+    {
+     "y": "docs/encyclopedia/activities/activity-operations.mdx",
+     "removed": [
+      "reset-heartbeats"
+     ],
+     "added": [
+      "clear-heartbeat-details"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "1b35eda9b438",
+   "half": "dev",
+   "repo": "temporalio__documentation",
+   "change_commit": "ff1ad1d137f19c2899e3d20e9491934517ed3192",
+   "x": "docs/develop/python/client/temporal-client.mdx",
+   "affected": [
+    {
+     "y": "docs/develop/ruby/client/temporal-client.mdx",
+     "removed": [
+      "tls_client_cert_data",
+      "tls_client_key_path"
+     ],
+     "added": [
+      "client_cert_data",
+      "client_key_path",
+      "profile.staging.tls"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "08f7b6ea8a14",
+   "half": "test",
+   "repo": "traefik__traefik",
+   "change_commit": "7e703742cb19b46d57286cc7293491d4a6ad20da",
+   "x": "docs/content/setup/swarm.md",
+   "affected": [
+    {
+     "y": "docs/content/setup/docker.md",
+     "removed": [
+      "traefik:v3.4"
+     ],
+     "added": [
+      "traefik:v3.6"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "reject"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "5e4a70093ba1",
+   "half": "test",
+   "repo": "vitest-dev__vitest",
+   "change_commit": "a941d35808f7a3b0c1aec740202b94af899fa3dc",
+   "x": "docs/advanced/api/test-suite.md",
+   "affected": [
+    {
+     "y": "docs/advanced/api/test-module.md",
+     "removed": [
+      "this.vitest.getReportedEntity"
+     ],
+     "added": [
+      "this.vitest.state.getReportedEntity"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "230607efae19",
+   "half": "test",
+   "repo": "vitest-dev__vitest",
+   "change_commit": "e191e658d5052cb335ffe163a045ed294238d341",
+   "x": "docs/guide/ide.md",
+   "affected": [
+    {
+     "y": "docs/guide/index.md",
+     "removed": [
+      "ZixuanChen.vitest-explorer"
+     ],
+     "added": [
+      "vitest.explorer"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  },
+  {
+   "case_id": "52dd7c311419",
+   "half": "dev",
+   "repo": "vuejs__docs",
+   "change_commit": "2e0dbe0175532da9fb0fa27817a9355a24dd825e",
+   "x": "src/guide/extras/rendering-mechanism.md",
+   "affected": [
+    {
+     "y": "src/glossary/index.md",
+     "removed": [
+      "Hoisting",
+      "static-hoisting"
+     ],
+     "added": [
+      "Cache",
+      "cache-static"
+     ],
+     "votes": {
+      "opus": "confirm",
+      "fable": "confirm",
+      "astra": "confirm"
+     }
+    }
+   ]
+  }
+ ]
+}
