@@ -6,7 +6,7 @@ Status: **drafts**; the owner decided on 2026-11-18 to launch with the product o
 
 | | Result | Where |
 |---|---|---|
-| Passed | A first search with no credentials, from nothing installed, in 7 to 21 seconds on one machine (7 s on v0.2.8; limit 120 s) | plan 2026-11-v0.3, Phase B; `scripts/dev/first-run.sh` |
+| Passed | A first search with no credentials, from nothing installed, in 7 to 21 seconds on one machine (8 s on v0.2.9; limit 120 s) | plan 2026-11-v0.3, Phase B; `scripts/dev/first-run.sh` |
 | Passed | Search without any model: the expected section is in the top 5 for 88 % of the golden questions (raw text only) | plan, Phase B |
 | Passed | Save to searchable: raw text p50 1.7 s, card p50 8.4 s (one machine, 20 edits) | benchmarks, T4 |
 | Passed, with limits | On the small golden corpus, against grep: +0.25 answer correctness, no saving in tokens read; against graphify: 3.18× fewer source tokens read | benchmarks, § The answer contract |
