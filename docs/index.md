@@ -27,7 +27,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-10 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
-| 2026-11-17 | [adr/0009-change-impact-review.md](adr/0009-change-impact-review.md) | Date: 2026-11-17 |
+| 2026-11-18 | [adr/0009-change-impact-review.md](adr/0009-change-impact-review.md) | Date: 2026-11-17 |
 | 2026-11-10 | [adr/0008-time-sources-git-with-filesystem-fallback.md](adr/0008-time-sources-git-with-filesystem-fallback.md) | Date: 2026-11-10 |
 | 2026-11-10 | [adr/0007-recency-prior-off-by-default.md](adr/0007-recency-prior-off-by-default.md) | Date: 2026-11-10 |
 | 2026-10-15 | [adr/0006-mda-now-clock-override-for-the-historical-replay.md](adr/0006-mda-now-clock-override-for-the-historical-replay.md) | Date: 2026-10-15 |
@@ -39,6 +39,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-18 | [reviews/codex/2026-11-18-mda-check-command.md](reviews/codex/2026-11-18-mda-check-command.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-judgment.md](reviews/codex/2026-11-18-impact-judgment.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex based on GPT-6", exact variant unav… |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-candidates.md](reviews/codex/2026-11-18-impact-candidates.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
+| 2026-11-18 | [reviews/codex/2026-11-18-closed-pipe.md](reviews/codex/2026-11-18-closed-pipe.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 (Codex)"; CLI 0.167.0; fresh thread… |
 | 2026-11-18 | [reviews/codex/2026-11-18-check-priority.md](reviews/codex/2026-11-18-check-priority.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-binary-per-version.md](reviews/codex/2026-11-18-binary-per-version.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |
@@ -85,8 +86,8 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-17 | [handoffs/2026-11-17-2054-auto.md](handoffs/2026-11-17-2054-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-17 | [handoffs/2026-11-17-2005-auto.md](handoffs/2026-11-17-2005-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
+| 2026-11-18 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
-| 2026-11-15 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-14 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
 | 2026-11-10 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
