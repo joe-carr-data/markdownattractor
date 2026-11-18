@@ -20,4 +20,4 @@ rm -f .claude-plugin/plugin.json.bak .claude-plugin/marketplace.json.bak Cargo.t
 # Refresh Cargo.lock for the workspace members without touching other pins.
 cargo metadata --format-version 1 --offline >/dev/null 2>&1 || cargo metadata --format-version 1 >/dev/null
 scripts/dev/check-version.sh
-echo "bumped $old -> $new; now: git commit -am \"chore(release): v$new\" && git tag v$new"
+echo "bumped $old -> $new; now: commit, merge the release PR, then: gh workflow run Release --ref main -f publish=true"
