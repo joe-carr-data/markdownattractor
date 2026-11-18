@@ -4,14 +4,14 @@ As built in Phase 4 (2026-09-22). Decisions: ADR-0005. This document describes *
 
 ## The contract between the hook and the release
 
-`scripts/bootstrap.sh` (SessionStart) resolves the binary in this order: `$MDA_BIN`, `${CLAUDE_PLUGIN_DATA}/bin/mda` at the wanted version, `${CLAUDE_PLUGIN_ROOT}/target/release/mda` (contributors), then a download from
+`scripts/bootstrap.sh` (SessionStart) resolves the binary in this order: `$MDA_BIN`, `${CLAUDE_PLUGIN_DATA}/bin/mda-<VERSION>` reporting that version, `${CLAUDE_PLUGIN_ROOT}/target/release/mda` (contributors), then a download from
 
 ```
 https://github.com/joe-carr-data/markdownattractor/releases/download/v<VERSION>/mda-<os>-<arch>.tar.gz
 https://github.com/joe-carr-data/markdownattractor/releases/download/v<VERSION>/SHA256SUMS
 ```
 
-with `os ∈ {darwin, linux, windows}`, `arch ∈ {arm64, x64}`, the checksum verified before anything is moved, and the binary (`mda`, or `mda.exe` on Windows) extracted from the archive root into `${CLAUDE_PLUGIN_DATA}/bin/mda`. `VERSION` in the plugin root is the wanted version; the hook never blocks a session and points at `mda doctor` on any failure.
+with `os ∈ {darwin, linux, windows}`, `arch ∈ {arm64, x64}`, the checksum verified before anything is moved, and the binary (`mda`, or `mda.exe` on Windows) extracted from the archive root into `${CLAUDE_PLUGIN_DATA}/bin/mda-<VERSION>`. The file name carries the version because every open session keeps the plugin copy it started with and runs its hook again after each compaction: with one shared `bin/mda` (up to 0.2.6) an older session put its older binary back over a newer one. Now each version installs and runs its own file; the hook marks its file as used and removes other versions' files unused for two weeks. The old shared `bin/mda` is left for sessions that still use it and can be deleted by hand. `VERSION` in the plugin root is the wanted version; the hook never blocks a session and points at `mda doctor` on any failure.
 
 ## What a tag produces
 

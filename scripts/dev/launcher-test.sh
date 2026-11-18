@@ -39,12 +39,12 @@ run() { # run <data-dir> <extra env…> -- <launcher args…>
     CLAUDE_PLUGIN_ROOT="$T/plugin" CLAUDE_PLUGIN_DATA="$data" CLAUDE_PROJECT_DIR="$T/home" \
     ${envs[@]+"${envs[@]}"} "$T/plugin/scripts/mda" "$@"
 }
-want="mda $(tr -d '[:space:]' < "$REPO/VERSION")"
+ver="$(tr -d '[:space:]' < "$REPO/VERSION")"; want="mda $ver"
 
 # 1. Missing binary: fetched once, stdout holds only the command's own output.
 out="$(run "$T/markdownattractor-1" -- --version 2>"$T/err1")" || fail "launcher failed with a fetchable binary: $(cat "$T/err1")"
 [ "$out" = "$want" ] || fail "stdout was '$out', wanted exactly '$want'"
-[ -x "$T/markdownattractor-1/bin/mda" ] || fail "the binary was not installed"
+[ -x "$T/markdownattractor-1/bin/mda-$ver" ] || fail "the binary was not installed"
 grep -q "fetching it once" "$T/err1" || fail "no note on stderr about the fetch"
 # 2. Second call: the fast path, silent.
 out="$(run "$T/markdownattractor-1" -- --version 2>"$T/err2")"; if [ "$out" != "$want" ] || [ -s "$T/err2" ]; then fail "second call was not silent"; fi
@@ -58,11 +58,23 @@ if [ "$code" != 127 ] || grep -q "fetching it once" "$T/err4"; then fail "MDA_NO
 # 5. The fetch starts no daemon, even in an indexed project.
 mkdir -p "$T/home/.markdownattractor"
 run "$T/markdownattractor-4" -- --version >/dev/null 2>&1; sleep 1
-if [ -e "$T/home/.markdownattractor/daemon.sock" ] || pgrep -f "$T/markdownattractor-4/bin/mda daemon" >/dev/null; then fail "the fetch started a daemon"; fi
+if [ -e "$T/home/.markdownattractor/daemon.sock" ] || pgrep -f "$T/markdownattractor-4/bin/mda-$ver daemon" >/dev/null; then fail "the fetch started a daemon"; fi
 # 6. Another plugin's data directory in CLAUDE_PLUGIN_DATA is ignored: the launcher uses the
 #    default directory under HOME and writes nothing into the foreign one.
 mkdir -p "$T/data/codex-openai-codex"
 run "$T/data/codex-openai-codex" -- --version >/dev/null 2>"$T/err6" || fail "launcher failed with a foreign data dir: $(cat "$T/err6")"
-[ -x "$T/home/.claude/plugins/data/markdownattractor-markdownattractor/bin/mda" ] || fail "the binary was not installed in the plugin's own directory"
+[ -x "$T/home/.claude/plugins/data/markdownattractor-markdownattractor/bin/mda-$ver" ] || fail "the binary was not installed in the plugin's own directory"
 if [ -e "$T/data/codex-openai-codex/bin" ]; then fail "the launcher wrote into another plugin's data directory"; fi
-echo "launcher-test: a missing binary is fetched once with a clean stdout; a failed fetch exits 127 with a hint; no daemon is started; another plugin's data directory is never used"
+# 7. A binary another plugin version left under the old shared name is neither run nor replaced:
+#    an older session's hook (which installs `bin/mda`) cannot change what this version runs.
+mkdir -p "$T/markdownattractor-7/bin"; printf '#!/bin/sh\necho "mda 0.0.1"\n' > "$T/markdownattractor-7/bin/mda"; chmod +x "$T/markdownattractor-7/bin/mda"
+out="$(run "$T/markdownattractor-7" -- --version 2>/dev/null)"; [ "$out" = "$want" ] || fail "ran another version's binary: '$out'"
+[ "$("$T/markdownattractor-7/bin/mda" --version)" = "mda 0.0.1" ] || fail "the other version's binary was replaced"
+# 8. The hook of a plugin copy at another version installs its own file and leaves this one.
+mkdir -p "$T/old/scripts"; cp "$REPO/scripts/bootstrap.sh" "$T/old/scripts/"; echo 0.0.2 > "$T/old/VERSION"
+before="$(shasum "$T/markdownattractor-7/bin/mda-$ver" | awk '{print $1}')"
+env -i HOME="$T/home" PATH="$T/stub:/usr/bin:/bin" STUB_SERVE="$T/serve" CLAUDE_PLUGIN_ROOT="$T/old" CLAUDE_PLUGIN_DATA="$T/markdownattractor-7" MDA_NO_DAEMON=1 bash "$T/old/scripts/bootstrap.sh" >/dev/null 2>&1 || true
+[ -x "$T/markdownattractor-7/bin/mda-0.0.2" ] || fail "the other version's hook installed nothing of its own"
+[ "$(shasum "$T/markdownattractor-7/bin/mda-$ver" | awk '{print $1}')" = "$before" ] || fail "another version's hook touched this version's binary"
+out="$(run "$T/markdownattractor-7" -- --version 2>/dev/null)"; [ "$out" = "$want" ] || fail "after the other hook: '$out'"
+echo "launcher-test: a missing binary is fetched once with a clean stdout; a failed fetch exits 127 with a hint; no daemon is started; another plugin's data directory is never used; another plugin version's binary is never run or replaced"

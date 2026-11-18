@@ -134,7 +134,8 @@ jobs:
           sleep 1
           sed "s|https://github.com/\$REPO/releases/download/v\${WANTED}|http://127.0.0.1:8765|" scripts/bootstrap.sh > /tmp/bootstrap-local.sh
           bash /tmp/bootstrap-local.sh
-          "$CLAUDE_PLUGIN_DATA/bin/mda" --version | grep -q "$(tr -d '[:space:]' < VERSION)"
+          v="$(tr -d '[:space:]' < VERSION)"
+          "$CLAUDE_PLUGIN_DATA/bin/mda-$v" --version | grep -q "$v"
       - uses: actions/upload-artifact@v4
         with:
           name: SHA256SUMS

@@ -4,9 +4,15 @@
 #
 # Resolution order:
 #   1. MDA_BIN env var (developer override)
-#   2. ${CLAUDE_PLUGIN_DATA}/bin/mda with a matching version   (fast path, < 20 ms)
+#   2. ${CLAUDE_PLUGIN_DATA}/bin/mda-<version> reporting that version   (fast path, < 20 ms)
 #   3. ${CLAUDE_PLUGIN_ROOT}/target/release/mda                (contributors using --plugin-dir)
 #   4. download the prebuilt archive for this OS/arch from GitHub Releases, verify SHA-256
+#
+# The binary's file name carries the plugin version. Sessions that still run an older copy of
+# the plugin (every open session keeps the copy it started with, and runs this hook again
+# after each compaction) therefore install and run their own file and can never put an older
+# binary in the place of a newer one. Up to 0.2.6 all versions shared `bin/mda`; that file is
+# left alone for the sessions that still use it.
 [ "${MARKDOWNATTRACTOR_WORKER:-0}" = "1" ] && exit 0
 set -u
 
@@ -19,7 +25,7 @@ case "${CLAUDE_PLUGIN_DATA:-}" in
   */markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;
 esac
 WANTED="$(tr -d '[:space:]' < "$ROOT/VERSION" 2>/dev/null || echo unknown)"
-BIN="$DATA/bin/mda"
+BIN="$DATA/bin/mda-$WANTED"
 REPO="joe-carr-data/markdownattractor"
 
 say() { printf 'markdownattractor: %s\n' "$*"; }
@@ -29,6 +35,12 @@ version_of() { "$1" --version 2>/dev/null | awk '{print $2}'; }
 # When this project was indexed before, make sure its daemon is up. `mda start` is idempotent
 # and returns in well under a second when the daemon already answers. Never blocks the session.
 ensure_daemon() {
+  if [ "$1" = "$BIN" ]; then
+    # Mark this version as in use, and drop other versions' binaries nothing has used for two
+    # weeks (an archive keeps its build date, hence the mark).
+    touch "$BIN" 2>/dev/null
+    find "$DATA/bin" -maxdepth 1 -type f -name 'mda-*' ! -name "mda-$WANTED" -mtime +14 -exec rm -f {} + 2>/dev/null
+  fi
   project="${CLAUDE_PROJECT_DIR:-$PWD}"
   # The launcher calls this hook to fetch a missing binary; it starts no daemon from there.
   if [ "${MDA_NO_DAEMON:-0}" != "1" ] && [ -d "$project/.markdownattractor" ]; then
