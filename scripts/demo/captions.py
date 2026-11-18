@@ -182,7 +182,7 @@ def measured(backdrop):
     for x0, x1, figure, label, note, accent in (
             (60, 537, "60 ms", "per hybrid search", "mean over the golden questions", PEACH),
             (561, 1039, "96 %+", "of extracted dates and names", "judged supported by two model auditors", MAUVE),
-            (1063, 1540, "$0.31", "to index a 32-file docs folder", "then only edited sections are redone", GREEN)):
+            (1063, 1540, "$0.31", "to index a 32-file docs folder", "222K tokens on Haiku; edits redo one section", GREEN)):
         draw.rounded_rectangle((x0, top, x1, bottom), radius=16, fill=(17, 17, 27, 235))
         draw.text((x0 + 24, top + 50), figure, font=mid, fill=accent, anchor="lm")
         draw.text((x0 + 24, top + 100), label, font=head, fill=INK, anchor="lm")
