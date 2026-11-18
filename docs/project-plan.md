@@ -482,16 +482,16 @@ Plugins are copied into `~/.claude/plugins/cache/<marketplace>/<plugin>/<version
 ```
 SessionStart hook → scripts/bootstrap.sh
   1. read wanted version from ${CLAUDE_PLUGIN_ROOT}/VERSION
-  2. if ${CLAUDE_PLUGIN_DATA}/bin/mda --version == wanted → exit 0 (fast path, <20 ms)
+  2. if ${CLAUDE_PLUGIN_DATA}/bin/mda-<ver> --version == wanted → exit 0 (fast path, <20 ms)
   3. detect os/arch (darwin-arm64, darwin-x64, linux-x64, linux-arm64, windows-x64)
   4. download https://github.com/joe-carr-data/markdownattractor/releases/download/v<ver>/mda-<target>.tar.gz
-     + SHA256SUMS; verify checksum; extract to ${CLAUDE_PLUGIN_DATA}/bin/mda
+     + SHA256SUMS; verify checksum and version; install as ${CLAUDE_PLUGIN_DATA}/bin/mda-<ver>
   5. on failure: print one line telling the user to run `/mda doctor` — never block the session
 ```
 
-- Hook and MCP config reference `${CLAUDE_PLUGIN_DATA}/bin/mda`, so the path is stable across plugin updates.
+- Hook and MCP config go through the launcher `scripts/mda`, which runs `${CLAUDE_PLUGIN_DATA}/bin/mda-<ver>`: one file per plugin version since 0.2.7, because open sessions keep their plugin copy and an older one put its binary back over a newer one (`docs/design/distribution.md`).
 - Checksums are published per release and generated in CI (`cargo-dist` or a release workflow with cross builds via `cross`); binaries are signed on macOS (notarised) so Gatekeeper doesn't block them.
-- Air-gapped or download-blocked machines: `/mda doctor` prints the manual install steps (drop the binary in `${CLAUDE_PLUGIN_DATA}/bin/`, or `cargo install`).
+- Air-gapped or download-blocked machines: `/mda doctor` prints the manual install steps (put the binary at `${CLAUDE_PLUGIN_DATA}/bin/mda-<ver>`, or `cargo install`).
 - No top-level `bin/` directory in the plugin: claude.ai organisation distribution rejects plugins that have one. Everything lives under `scripts/` and `${CLAUDE_PLUGIN_DATA}`.
 - Worker guard: `bootstrap.sh` exits immediately when `MARKDOWNATTRACTOR_WORKER=1`.
 

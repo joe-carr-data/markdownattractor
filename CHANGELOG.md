@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- **A session on an older copy of the plugin put its older binary back.** All plugin versions shared one file, `bin/mda`, and every session start (including the one after a compaction) installed the version of the plugin copy that session had loaded. An open session from before an update therefore replaced the new binary with the old one, and the updated plugin then ran it. The binary's file name now carries the version (`bin/mda-<version>`): each plugin version installs and runs its own, and binaries of other versions unused for two weeks are removed. The old `bin/mda` is left in place; it can be deleted.
+- **`mda start` no longer starts a first index on the home folder (or the top of the filesystem) just because the shell was there.** It says so and asks for a project folder or an explicit `mda start <path>`. An index that already exists there keeps working.
+
 ### Internal
 
 - Groundwork for change-impact review (ADR-0009, not yet a command): the step that picks which other sections a change is compared against, from the raw full-text index and the documents' links, with caps and counts. No schema change.

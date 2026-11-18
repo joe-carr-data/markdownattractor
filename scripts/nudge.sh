@@ -7,8 +7,8 @@
 set -u
 # As in scripts/mda: another plugin's CLAUDE_PLUGIN_DATA is not ours.
 DATA="$HOME/.claude/plugins/data/markdownattractor-markdownattractor"
-case "${CLAUDE_PLUGIN_DATA:-}" in
-  */markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;
+case "$(basename "${CLAUDE_PLUGIN_DATA:-}")" in
+  markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;   # the folder's own name, not an ancestor's
 esac
 # Same precedence as the launcher and `mda nudge --global`.
 [ -f "${MDA_NUDGE_FILE:-$DATA/nudge.off}" ] && exit 0

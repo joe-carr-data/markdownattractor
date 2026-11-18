@@ -1,0 +1,16 @@
+# Codex review — one binary per plugin version, `start` and the home folder (2026-11-18, PR #97)
+
+Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; CLI 0.167.0; fresh thread `01a1ebf6-80a3-7e11-9c9a-56e0101a445b`, read-only, static review plus `bash -n`, through the `codex:codex-rescue` companion; no nested `codex exec`). Pinned to `c5e6c19`. Triaged by Claude.
+
+**Verdict:** "merge after fixes." Seven findings (1 high, 3 medium, 3 low) and one note.
+
+| # | Sev | Finding | Triage |
+|---|---|---|---|
+| 1 | High | A home folder holding only a configuration (`mda nudge off` creates `.markdownattractor/` with no index) passed the guard, and the session-start hook started a daemon there. | **Fixed.** Both the guard and the hook look for the index file, as the nudge hook already did. `mda start .` and an existing index stay allowed. Tests: CLI (config-only home refused), launcher test case 13 (the hook starts nothing for a config-only folder). An indexed home with an explicit start is not tested (it would start a daemon on the test's home). |
+| 2 | Medium | The hook moved the downloaded binary to its final name before checking its version, and the new test passed because of that. | **Fixed.** The version is checked on the extracted file; a mismatch installs nothing and says so. The contributor path (`target/release/mda`) is used only when it reports the wanted version. The test now serves a second release whose binary reports its own version, runs both launchers, and checks that a mismatched release leaves no file (cases 8, 9). |
+| 3 | Medium | Pruning matched any `mda-*` file (a hand-kept `mda-backup`), and the data-folder rule accepted a foreign folder below one named for the plugin. | **Fixed.** Only `mda-<release number>` files are pruned; the data folder's own name must start with the plugin's (hook, launcher, nudge hook). Cases 10, 11. |
+| 4 | Medium | Only a session start marked a binary as used; a session searching daily for two weeks could lose its binary to another version's hook. | **Fixed.** The launcher marks the installed binary on every run (`touch -c`). Case 10. |
+| 5 | Low | `VERSION` went into a file name and a `find` pattern unchecked. | **Fixed.** First line only, release-number characters only; anything else is "unknown": the hook says so and installs nothing, the launcher runs no cached file. Case 12. |
+| 6 | Low | The manual-install hints named the folder, not the file name now needed. | **Fixed** in the hook's and the launcher's messages and in `docs/project-plan.md`. `mda doctor` has no plugin-binary step (it is that binary), so nothing changes there. |
+| 7 | Low | Windows CI never runs the archive through the hook and the launcher. | **Deferred** (as before this change): the install check runs on Linux only. Backlog: run it on the Windows job. Until then the versioned name on Git Bash is unverified, and the changelog does not claim it. |
+| note | — | A newer client accepts an older daemon for the same root (`start` decides on liveness; `daemon.json` records the version). Unchanged by this PR; no wire difference found between 0.2.3 and this commit. | **Deferred.** Backlog: `start` and `status` say when the running daemon's version differs and offer `mda restart`. |

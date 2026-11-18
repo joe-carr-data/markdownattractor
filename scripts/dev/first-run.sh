@@ -41,7 +41,7 @@ else
   cp "$REPO/scripts/bootstrap.sh" "$T/plugin/scripts/"; cp "$REPO/VERSION" "$T/plugin/"
   run env CLAUDE_PLUGIN_ROOT="$T/plugin" CLAUDE_PLUGIN_DATA="$T/markdownattractor-data" CLAUDE_PROJECT_DIR="$T/corpus" \
     bash "$T/plugin/scripts/bootstrap.sh"
-  MDA="$T/markdownattractor-data/bin/mda"
+  MDA="$T/markdownattractor-data/bin/mda-$WANTED"
   how="the release binary for v$WANTED, downloaded by the bootstrap hook"
   [ -x "$MDA" ] || { echo "first-run: FAIL — the hook installed no binary (is v$WANTED released?)" >&2; exit 1; }
   got="$(run "$MDA" --version | awk '{print $2}')"

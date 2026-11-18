@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Launcher used by the skills and hooks: finds the right `mda` binary and execs it.
-# Same resolution order as bootstrap.sh. When nothing is found it runs bootstrap.sh once to fetch
+# Same resolution order as bootstrap.sh: the binary is `bin/mda-<this plugin's version>`, so a
+# session on another plugin version never runs, or replaces, this one's. When nothing is found it runs bootstrap.sh once to fetch
 # the binary, then prints a one-line hint if that failed too.
 set -u
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
@@ -8,16 +9,22 @@ ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 # by Claude Code's Bash tool can carry another plugin's value (seen: the codex plugin's), and
 # the binary and the models would then be looked for, and downloaded, in that plugin's folder.
 DATA="$HOME/.claude/plugins/data/markdownattractor-markdownattractor"
-case "${CLAUDE_PLUGIN_DATA:-}" in
-  */markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;
+case "$(basename "${CLAUDE_PLUGIN_DATA:-}")" in
+  markdownattractor*) DATA="$CLAUDE_PLUGIN_DATA" ;;   # the folder's own name, not an ancestor's
 esac
 # Embedding models and the global nudge switch live in the plugin's own data directory when
 # run through the plugin; the binary never reads CLAUDE_PLUGIN_DATA itself.
+# The version becomes part of a file name: first line only, and nothing but a release number.
+WANTED="$(head -n 1 "$ROOT/VERSION" 2>/dev/null | tr -d '[:space:]')"
+case "$WANTED" in ''|*[!0-9A-Za-z.+-]*) WANTED=unknown ;; esac
+BIN="$DATA/bin/mda-$WANTED"
 export MDA_MODEL_DIR="${MDA_MODEL_DIR:-$DATA/models}"
 export MDA_NUDGE_FILE="${MDA_NUDGE_FILE:-$DATA/nudge.off}"
 
-for candidate in "${MDA_BIN:-}" "$DATA/bin/mda" "$ROOT/target/release/mda" "$ROOT/target/debug/mda"; do
+for candidate in "${MDA_BIN:-}" "$BIN" "$ROOT/target/release/mda" "$ROOT/target/debug/mda"; do
   if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    # Mark the installed binary as in use: the hook removes versions unused for two weeks.
+    [ "$candidate" = "$BIN" ] && touch -c "$BIN" 2>/dev/null
     exec "$candidate" "$@"
   fi
 done
@@ -31,13 +38,13 @@ fi
 # Fetch the binary now, once, and try again. Everything the hook prints goes to stderr: stdout
 # may be an MCP connection. The hook must not start a daemon from here (`MDA_NO_DAEMON`).
 if [ "${MDA_NO_FETCH:-0}" != "1" ] && [ -x "$ROOT/scripts/bootstrap.sh" ]; then
-  echo "markdownattractor: binary not found in $DATA/bin, fetching it once…" >&2
+  echo "markdownattractor: binary $WANTED not found in $DATA/bin, fetching it once…" >&2
   CLAUDE_PLUGIN_ROOT="$ROOT" CLAUDE_PLUGIN_DATA="$DATA" MDA_NO_DAEMON=1 \
     "$ROOT/scripts/bootstrap.sh" </dev/null >&2 2>&1 || true
-  if [ -x "$DATA/bin/mda" ]; then
-    exec "$DATA/bin/mda" "$@"
+  if [ "$WANTED" != unknown ] && [ -x "$BIN" ]; then
+    exec "$BIN" "$@"
   fi
 fi
 
-echo "mda binary not found in $DATA/bin and it could not be fetched (see the line above). Run /mda doctor, or: cargo install --git https://github.com/joe-carr-data/markdownattractor mda-cli" >&2
+echo "mda $WANTED not found at $BIN and it could not be fetched (see the line above). Put the release binary there under that name, or: cargo install --git https://github.com/joe-carr-data/markdownattractor mda-cli" >&2
 exit 127
