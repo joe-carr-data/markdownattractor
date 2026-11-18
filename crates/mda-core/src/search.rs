@@ -305,6 +305,8 @@ pub fn search_with(
     let fetch =
         if filtered { opts.k.saturating_mul(4).max(200) } else { opts.k.saturating_mul(4).max(16) };
 
+    let narrowed = raw_text_alone(store, opts)?;
+    let opts = narrowed.as_ref().unwrap_or(opts);
     let vector_hits = vector_list(store, query, fetch, opts, embedder)?;
     let (lexical, via_or) = lexical_lists(store, query, fetch, opts)?;
     let fused = fuse(store, &lexical, &vector_hits, opts)?;
@@ -322,6 +324,21 @@ pub fn search_with(
         .sort_by(|a, b| b.score.total_cmp(&a.score).then_with(|| a.section_id.cmp(&b.section_id)));
     scored.truncate(opts.k);
     Ok(scored)
+}
+
+/// The options narrowed to raw text, when the root has no card written by a model; `None` when
+/// the options stand as given.
+///
+/// Without such a card the only cards are the deterministic ones of heading-only sections.
+/// Their card and vector lists say nothing about content, and fused at full weight they push
+/// real raw-text matches out of the top hits: such a root is searched on its raw text alone.
+fn raw_text_alone(store: &Store, opts: &SearchOptions) -> Result<Option<SearchOptions>> {
+    // The probe is one indexed query; a root without model cards pays a scan of its summaries
+    // (about 5 ms at 100,000 sections), which a schema change could remove.
+    if opts.raw_only || store.has_model_cards()? {
+        return Ok(None);
+    }
+    Ok(Some(SearchOptions { raw_only: true, ..opts.clone() }))
 }
 
 /// The two BM25 lists for a query, with the OR fallback applied when the AND form is empty.
@@ -650,8 +667,12 @@ pub fn explain(
     let filtered = opts.since.is_some() || opts.until.is_some() || opts.path_prefix.is_some();
     let k =
         if filtered { opts.k.saturating_mul(4).max(200) } else { opts.k.saturating_mul(4).max(16) };
+    let narrowed = raw_text_alone(store, opts)?;
+    let no_model_cards = narrowed.is_some();
+    let opts = narrowed.as_ref().unwrap_or(opts);
     let (lexical, via_or_fallback) = lexical_lists(store, query, k, opts)?;
     let vector_note = match embedder {
+        _ if no_model_cards => Some("no card written by a model yet: raw text only".to_owned()),
         _ if !opts.vectors => Some("vectors disabled for this query".to_owned()),
         None => Some("embeddings are off".to_owned()),
         Some(e) if !e.ready() => Some(format!("model {} not downloaded yet", e.model())),
@@ -816,6 +837,11 @@ mod tests {
     }
 
     fn carded_store() -> (Store, String, String) {
+        carded_store_by("mock")
+    }
+
+    /// The same store, its two cards written by `backend`.
+    fn carded_store_by(backend: &str) -> (Store, String, String) {
         use crate::card::{Entities, Provenance, SCHEMA_VERSION, SectionSummary};
         use crate::markdown::parse_str;
         use crate::store::{DocTimes, Usage};
@@ -845,7 +871,7 @@ mod tests {
             model: "m".into(),
             prompt_version: "p".into(),
             schema_version: SCHEMA_VERSION,
-            backend: "mock".into(),
+            backend: backend.into(),
             summarized_at: t,
             truncated: false,
         };
@@ -860,6 +886,40 @@ mod tests {
         store.put_embedding(&h_cake, "fixed", &[0.0, 1.0]).unwrap();
         let doc_id = crate::store::doc_id_for("ops.md");
         (store, format!("{doc_id}#1"), format!("{doc_id}#2"))
+    }
+
+    #[test]
+    fn a_root_without_model_cards_is_searched_on_raw_text_alone() {
+        // The cards a root without a backend has: deterministic ones, for heading-only sections.
+        let (store, _, _) = carded_store_by("deterministic");
+        let e = Fixed(vec![1.0, 0.0]);
+        assert!(!store.has_model_cards().unwrap());
+        // "undo" matches no text, and vectors of such cards do not answer.
+        assert!(
+            search_with(&store, "undo", &SearchOptions::default(), Some(&e)).unwrap().is_empty()
+        );
+        // A word in a body is found exactly as `--raw` finds it, and is labelled raw.
+        let default =
+            search_with(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        let raw = SearchOptions { raw_only: true, ..SearchOptions::default() };
+        let ids = |hits: &[Hit]| hits.iter().map(|h| h.section_id.clone()).collect::<Vec<_>>();
+        assert_eq!(default.len(), 1);
+        assert_eq!(ids(&default), ids(&search(&store, "deployctl", &raw).unwrap()));
+        assert_eq!(default[0].matched, Matched::Raw);
+        assert!(!default[0].vector);
+        let shown = explain(&store, "deployctl", &SearchOptions::default(), Some(&e)).unwrap();
+        assert_eq!(ids(&shown.fused), ids(&default));
+        assert_eq!(shown.raw.len(), 1);
+        // "revert" is only in a card: the card list is out too, and explain says why.
+        assert!(search(&store, "revert", &SearchOptions::default()).unwrap().is_empty());
+        let shown = explain(&store, "revert", &SearchOptions::default(), Some(&e)).unwrap();
+        assert!(shown.cards.is_empty() && shown.vector.is_empty());
+        assert!(shown.vector_note.unwrap().contains("raw text only"));
+        // The same word is found through a card a model wrote.
+        let (modelled, rollback_id, _) = carded_store();
+        assert!(modelled.has_model_cards().unwrap());
+        let hits = search(&modelled, "revert", &SearchOptions::default()).unwrap();
+        assert_eq!(hits.first().map(|h| h.section_id.as_str()), Some(rollback_id.as_str()));
     }
 
     #[test]

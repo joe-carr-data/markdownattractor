@@ -64,7 +64,16 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let st = Style::auto();
     if hits.is_empty() {
         println!("{} for {:?}", st.warn("no hits"), query);
-        println!("  {} try fewer words, `--raw` for exact identifiers, or `grep`", st.dim("hint:"));
+        // `--raw` is no advice when the search was on raw text already: asked for, or because
+        // no model has written a card in this folder.
+        if opts.raw_only || !engine.store().has_model_cards()? {
+            println!("  {} try fewer words, or `grep`", st.dim("hint:"));
+        } else {
+            println!(
+                "  {} try fewer words, `--raw` for exact identifiers, or `grep`",
+                st.dim("hint:")
+            );
+        }
         if let Some(prefix) = &path_prefix {
             println!(
                 "  {} only documents under {prefix}/ were searched, a path relative to the index root {}",

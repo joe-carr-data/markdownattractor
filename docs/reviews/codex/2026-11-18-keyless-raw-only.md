@@ -1,0 +1,17 @@
+# Codex review — a root without model-written cards is searched on raw text alone (2026-11-18, PR #112)
+
+Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex, GPT-6", exact variant not echoed; fresh thread, read-only, source inspection and in-memory SQLite checks, no Cargo run, through the `codex:codex-rescue` companion; no nested `codex exec`). Pinned to `0c1e071`. Triaged by Claude.
+
+**Verdict:** "Request changes." Seven findings (2 medium, 5 low). Found fine: tombstones and renames remove sections in the same transaction, so the join follows live sections; pending and failed rows are excluded; hit fields (`matched`, `vector`, `via_or_fallback`) are right under the narrowed options; MCP inherits the behaviour through `search_with`; roots with a model-written card rank as before.
+
+| # | Sev | Finding | Triage |
+|---|---|---|---|
+| 1 | Medium | `mda eval --dataset docsqa` on a root with only deterministic cards would report "lexical (cards + raw)" and "hybrid" runs that are the raw-only ranking under other names; the golden evaluation has the same edge when `cards.json` attaches nothing. | **Fixed.** Both evaluations add the card and vector runs only when `Store::has_model_cards()`. The golden set's three runs are unchanged (0.883 / 0.900 / 0.983). |
+| 2 | Medium | The probe scans `summaries` on every default search of a keyless root: 5.1 ms median at 100,000 sections in the reviewer's in-memory measurement. A partial index would remove it. | **Deferred.** An index is a schema change (migration, ADR). 5 ms once per search on a root of that size is accepted for now; a comment at the call site names the cost. Backlog: partial index on summaries with a model backend, with the next schema version. |
+| 3 | Low | Provenance that is not JSON made the query fail, and with it every default search; `NULL` or a missing backend counted as a model card. | **Fixed.** The query checks `json_valid` and that `backend` is text before comparing; anything else is not a model card and not an error. Test with four broken values. |
+| 4 | Low | The no-hit hint suggests `--raw` when the search was already on raw text (asked for, or narrowed). | **Fixed.** The hint leaves `--raw` out in both cases. |
+| 5 | Low | The changelog gave the raw list's default weight as one half; it is 1. | **Fixed.** The entry now says a heading could collect two contributions (card and vector lists) where a body match got one. The first commit's message keeps the wrong figure (history is not rewritten). |
+| 6 | Low | The test would pass if narrowing dropped the raw list: every keyless assertion expected nothing. | **Fixed.** The test asserts that a body word is found by default exactly as with `raw_only`, labelled raw, and that `explain` agrees; a store test covers pending-only, deterministic, unreadable provenance, a model card, and the tombstone of the last carded section. |
+| 7 | Low | `mda eval --record` then replay stamps every attached card `golden`, so a corpus of heading-only sections would be raw-only when recorded and hybrid when replayed. | **Deferred.** It needs a corpus with no bodied section; recorded cards carry no per-card provenance today. Backlog with the recorded-cards format. |
+
+Not a finding, recorded: the gate is for the whole root. The first model-written card anywhere switches every query back to the fused search, as before this change, including for folders whose sections are still pending.
