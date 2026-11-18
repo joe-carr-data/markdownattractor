@@ -150,8 +150,11 @@ pub struct Report {
     pub not_reviewed: Vec<Unreviewed>,
     /// Sections of the index that share a term with some change (summed over changes).
     pub matching: u64,
-    /// Pairs kept after the caps.
+    /// Pairs kept after the caps, repeats left out.
     pub candidates: usize,
+    /// Pairs left out because the same other section was already paired with the same
+    /// replaced wording of another change.
+    pub duplicate_pairs: usize,
     /// Changes whose candidate search was cut short (scan, term-lookup or linked-document
     /// limit).
     pub searches_truncated: usize,
@@ -242,6 +245,23 @@ pub async fn review(
     for rank in 0..deepest {
         queue.extend((0..changed.len()).filter(|c| rank < per_change[*c].len()).map(|c| (c, rank)));
     }
+    // Not every pair can be judged, so the telling ones go first: the pairs whose shared
+    // replaced wording is rare. The order above (one per change in turn) breaks ties. A pair
+    // that repeats an earlier one (the same other section for the same replaced wording, as
+    // when one commit makes one replacement in many places) is not judged twice.
+    queue.sort_by_key(|(c, rank)| std::cmp::Reverse(per_change[*c][*rank].strength));
+    let mut seen: HashSet<(String, Vec<String>)> = HashSet::new();
+    queue.retain(|(c, rank)| {
+        let candidate = &per_change[*c][*rank];
+        let mut wording = candidate.leading_terms.clone();
+        wording.sort_unstable();
+        let first =
+            wording.is_empty() || seen.insert((candidate.section.section_id.clone(), wording));
+        if !first {
+            report.duplicate_pairs += 1;
+        }
+        first
+    });
     report.candidates = queue.len();
 
     let mut provisional: Vec<Provisional> = Vec::new();

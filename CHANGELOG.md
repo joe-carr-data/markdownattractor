@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Internal
 
+- `mda check` (experimental, hidden): when not every pair can be judged, the pairs whose shared replaced wording is rarest are judged first, and a pair that repeats an earlier one (the same other section for the same replaced wording) is judged once. The output cap of a judgment is 1,500 tokens (700 rejected valid answers on `claude-cli`). From the first development-half run of the evaluation.
 - `mda check [--since <revision>]` exists as an experimental command, hidden from `--help` and not announced: it has not been evaluated yet (ADR-0009; plan 2026-11-v0.3, Phase C). It compares the working files with a commit, and names other sections that are possibly out of date, with both passages.
 - Groundwork for change-impact review (ADR-0009): the judgment of one pair — the prompt, the answer's schema, and the rule that an alert is shown only when each of its quotes is found in exactly one place of its source, rendered as the source's own text.
 

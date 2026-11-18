@@ -407,3 +407,56 @@ async fn line_endings_alone_ignored_files_and_empty_searches_are_reported_for_wh
     assert_eq!(report.candidates, 0);
     assert_eq!(report.changes_without_candidates.len(), 1);
 }
+
+#[tokio::test]
+async fn the_most_telling_pair_is_judged_first_and_a_repeated_pair_only_once() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    git(&root, &["init", "-q"]);
+    // Two sections change: one swaps a plain word, one swaps a rare identifier, twice.
+    let guide = "# Guide\n\n## Alpha\n\nPlease restart the service gently.\n\n## Beta\n\nSet `legacy_mode_flag` first.\n\n## Gamma\n\nAgain set `legacy_mode_flag` here.\n";
+    write(&root, "guide.md", guide);
+    write(&root, "words.md", "# Words\n\n## Service\n\nRestart the service gently when asked.\n");
+    write(&root, "flags.md", "# Flags\n\n## Old\n\nThe `legacy_mode_flag` switch is required.\n");
+    for i in 0..12 {
+        write(
+            &root,
+            &format!("pad{i}.md"),
+            &format!("# Pad {i}\n\nThe service is mentioned in pad {i}.\n"),
+        );
+    }
+    write(&root, ".gitignore", ".markdownattractor/\n");
+    git(&root, &["add", "-A"]);
+    git(&root, &["commit", "-q", "-m", "first"]);
+    write(
+        &root,
+        "guide.md",
+        &guide.replace("gently", "quickly").replace("legacy_mode_flag", "current_mode_flag"),
+    );
+
+    let flags = section_id_for(&doc_id_for("flags.md"), 1);
+    let beta = pair_id("guide.md", &["Guide".into(), "Beta".into()], &flags);
+    let gamma = pair_id("guide.md", &["Guide".into(), "Gamma".into()], &flags);
+    let mock = Mock::new()
+        .on_structured(beta.clone(), vec![verdict("related")])
+        .on_structured(gamma.clone(), vec![verdict("related")]);
+    let one = Options { max_judgments: 1, ..Options::new("m") };
+    let report = run(&root, Some(&mock), &one).await;
+
+    let sent = mock.structured_calls();
+    assert_eq!(sent.len(), 1);
+    assert!(
+        sent[0].id == beta || sent[0].id == gamma,
+        "the identifier first, not the word: {}",
+        sent[0].id
+    );
+    assert_eq!(report.duplicate_pairs, 1, "Beta and Gamma replace the same wording");
+    let about_flags = report.pairs.iter().filter(|p| p.candidate.rel_path == "flags.md").count();
+    assert_eq!(about_flags, 1);
+    assert!(
+        report
+            .pairs
+            .iter()
+            .any(|p| p.candidate.rel_path == "words.md" && p.outcome == "not_judged")
+    );
+}

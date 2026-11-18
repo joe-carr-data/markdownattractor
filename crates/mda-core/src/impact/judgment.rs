@@ -167,7 +167,9 @@ pub struct JudgmentLimits {
 
 impl Default for JudgmentLimits {
     fn default() -> Self {
-        Self { max_input_bytes: 48_000, max_context_bytes: 1_200, max_output_tokens: 700 }
+        // Output: three short quotes and a sentence need about 300 tokens; a backend that
+        // counts its reasoning in the output (claude-cli) was seen at 700 to 900.
+        Self { max_input_bytes: 48_000, max_context_bytes: 1_200, max_output_tokens: 1_500 }
     }
 }
 
