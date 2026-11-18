@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- **A daemon left running by an older version is now named.** `mda start` (when a daemon already answers), `mda status` and `mda doctor` say when the running daemon is another version than the command. An older daemon gets the restart command, spelled with its folder; a newer one gets the advice to update instead, so an old session does not put an old daemon back. Since 0.2.7 each plugin version has its own binary, so a daemon can outlive an update.
 - **`mda status | head -1` printed a panic.** When the reader of a command's output goes away, the command now stops quietly (exit status 141, as a shell expects) instead of reporting "failed printing to stdout: Broken pipe" with a backtrace hint.
 
 ### Not shipped

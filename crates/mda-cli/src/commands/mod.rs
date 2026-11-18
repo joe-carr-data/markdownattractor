@@ -100,6 +100,39 @@ pub fn block_on<F: std::future::Future>(f: F) -> anyhow::Result<F::Output> {
     Ok(rt.block_on(f))
 }
 
+/// What to say when the daemon that answers was started by another version of mda than the
+/// one running this command (each plugin version has its own binary, and a daemon outlives
+/// an update until it is restarted). `None` when the versions are the same.
+///
+/// The advice depends on which is newer. An older daemon should be restarted, and the
+/// command is spelled with the root so it cannot hit another project. A newer daemon must
+/// not be restarted from here: that would put the older version back.
+#[must_use]
+pub fn daemon_version_note(daemon_version: &str, root: &Path) -> Option<String> {
+    let ours = mda_core::VERSION;
+    if daemon_version == ours {
+        return None;
+    }
+    let parts = |v: &str| -> Option<Vec<u64>> {
+        v.split('.').map(|p| p.parse::<u64>().ok()).collect::<Option<Vec<u64>>>()
+    };
+    let daemon_is_newer = match (parts(daemon_version), parts(ours)) {
+        (Some(d), Some(o)) => d > o,
+        // An unreadable version cannot be ordered: say the difference, advise nothing risky.
+        _ => true,
+    };
+    Some(if daemon_is_newer {
+        format!(
+            "the running daemon is version {daemon_version}, newer than this command ({ours}): update the plugin or use a newer session; do not restart it from here"
+        )
+    } else {
+        let quoted = root.display().to_string().replace('\'', "'\\''");
+        format!(
+            "the running daemon is version {daemon_version}, older than this command ({ours}): `mda restart --root '{quoted}'` starts it on this version"
+        )
+    })
+}
+
 /// The live status of the daemon for `root`, if one answers.
 pub fn live_status(root: &Path) -> Option<mda_core::daemon::LiveStatus> {
     use mda_core::daemon::{Client, Request, Response};
@@ -179,5 +212,32 @@ mod tests {
         assert_eq!(humanize_age(now), "just now");
         assert_eq!(humanize_age(now - 90.minutes()), "1 hour ago");
         assert_eq!(humanize_age(now - (3 * 24).hours()), "3 days ago");
+    }
+}
+
+#[cfg(test)]
+mod version_note_tests {
+    use std::path::Path;
+
+    use super::daemon_version_note;
+
+    #[test]
+    fn the_advice_depends_on_which_version_is_newer() {
+        let root = Path::new("/work/my project");
+        assert_eq!(daemon_version_note(mda_core::VERSION, root), None);
+
+        let older = daemon_version_note("0.0.1", root).unwrap();
+        assert!(older.contains("0.0.1") && older.contains("older"), "{older}");
+        assert!(older.contains("mda restart --root '/work/my project'"), "{older}");
+
+        // 999 > any real minor, and 0.10.0 > 0.9.0: numbers, not text.
+        let newer = daemon_version_note("999.0.0", root).unwrap();
+        assert!(newer.contains("newer") && newer.contains("do not restart"), "{newer}");
+        assert!(!newer.contains("mda restart --root"), "{newer}");
+        let odd = daemon_version_note("1.x", root).unwrap();
+        assert!(odd.contains("do not restart"), "an unreadable version is never restarted: {odd}");
+
+        let quoted = daemon_version_note("0.0.1", Path::new("/it's here")).unwrap();
+        assert!(quoted.contains("--root '/it'\\''s here'"), "{quoted}");
     }
 }

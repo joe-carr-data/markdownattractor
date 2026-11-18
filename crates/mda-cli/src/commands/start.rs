@@ -290,8 +290,14 @@ fn print_example(ex: &mda_core::pipeline::Example, st: &Style) {
 
 fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result<ExitCode> {
     let info = DaemonInfo::read(root)?;
+    // The version of the daemon that answers, not of a file that may be stale or gone.
+    let live = super::live_status(root).map(|l| l.version);
+    let version = live.or_else(|| info.as_ref().map(|i| i.version.clone()));
+    let note = version.and_then(|v| super::daemon_version_note(&v, root));
     if json {
-        output::json(&serde_json::json!({ "started": false, "running": true, "info": info }));
+        output::json(&serde_json::json!({
+            "started": false, "running": true, "info": info, "version_note": note,
+        }));
     } else {
         let pid = info.map_or("?".to_owned(), |i| i.pid.to_string());
         println!(
@@ -299,6 +305,9 @@ fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result
             st.ok("mda"),
             st.dim(&root.display().to_string())
         );
+        if let Some(note) = &note {
+            println!("  {} {note}", st.warn("note:"));
+        }
         println!("  {} mda status · mda watch · mda stop", st.dim("next:"));
     }
     Ok(ExitCode::SUCCESS)
