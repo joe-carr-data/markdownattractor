@@ -7,7 +7,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-18 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-18 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
 | 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
-| 2026-11-15 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
+| 2026-11-18 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
 | 2026-11-10 | [plans/2026-11-git-times.md](plans/2026-11-git-times.md) | Date: 2026-11-10. Owner go: "go git times" (2026-11-10), with the requirement "not everything is … |
 | 2026-10-27 | [plans/2026-10-m9-t6-page-readme.md](plans/2026-10-m9-t6-page-readme.md) | Milestone M9 of the execution plan (`2026-09-benchmark-execution.md` §4 T6, §5 M9, §7): the la… |
 | 2026-10-27 | [plans/2026-09-benchmarks.md](plans/2026-09-benchmarks.md) | Status: **draft for review** · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchma… |
