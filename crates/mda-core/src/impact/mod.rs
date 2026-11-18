@@ -11,9 +11,13 @@
 //!
 //! - [`candidates`]: the other sections a change is compared against, from the raw full-text
 //!   index and the documents' links, capped and counted.
+//! - [`judgment`]: the request for one (change, candidate) pair, the answer's schema, and the
+//!   rule that turns an answer into a finding only when its quotes stand in the sources. It
+//!   builds and reads; the caller makes the call.
 
 pub mod candidates;
 pub mod changes;
+pub mod judgment;
 pub mod terms;
 
 pub use candidates::{Candidate, Candidates, Finder, Limits, QueryTerm, Source};
