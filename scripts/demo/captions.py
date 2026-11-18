@@ -168,15 +168,12 @@ def measured(backdrop):
          ["every claim cites opened lines", "golden set; 87.5 % before"], MAUVE, big, head, body)
 
     top, bottom = 424, 584
-    for x0, x1, name, first, second in (
-            (60, 788, "Against grep", "Better on 4 of 16 questions, worse on none",
-             "same questions, 3 runs each, graded on 0-6"),
-            (812, 1540, "Against a knowledge-graph tool (graphify)", "3.18x fewer source tokens read",
-             "at answer-quality parity")):
-        draw.rounded_rectangle((x0, top, x1, bottom), radius=16, fill=(17, 17, 27, 235))
-        draw.text((x0 + 24, top + 36), name, font=head, fill=INK, anchor="lm")
-        draw.text((x0 + 24, top + 82), first, font=font(SANS, 30, index=1), fill=GREEN, anchor="lm")
-        draw.text((x0 + 24, top + 124), second + " · golden corpus", font=body, fill=SUB, anchor="lm")
+    draw.rounded_rectangle((60, top, 1540, bottom), radius=16, fill=(17, 17, 27, 235))
+    draw.text((84, top + 36), "Against a knowledge-graph tool (graphify)", font=head, fill=INK, anchor="lm")
+    draw.text((84, top + 86), "3.18x fewer source tokens read, at the same answer quality",
+              font=font(SANS, 36, index=1), fill=GREEN, anchor="lm")
+    draw.text((84, top + 128), "same questions, 3 runs each, graded 0-6 · golden corpus",
+              font=body, fill=SUB, anchor="lm")
 
     top, bottom, mid = 608, 768, font(SANS, 46, index=1)
     for x0, x1, figure, label, note, accent in (
