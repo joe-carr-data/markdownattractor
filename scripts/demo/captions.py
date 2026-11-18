@@ -170,23 +170,24 @@ def measured(backdrop):
     top, bottom = 424, 584
     for x0, x1, name, first, second in (
             (60, 788, "Against grep", "+0.25 answer correctness on a 5-point scale",
-             "no saving in tokens read"),
+             "same questions, paired runs"),
             (812, 1540, "Against a knowledge-graph tool (graphify)", "3.18x fewer source tokens read",
              "at answer-quality parity")):
         draw.rounded_rectangle((x0, top, x1, bottom), radius=16, fill=(17, 17, 27, 235))
         draw.text((x0 + 24, top + 36), name, font=head, fill=INK, anchor="lm")
         draw.text((x0 + 24, top + 82), first, font=font(SANS, 30, index=1), fill=GREEN, anchor="lm")
-        draw.text((x0 + 24, top + 124), second + " · small golden corpus", font=body, fill=SUB, anchor="lm")
+        draw.text((x0 + 24, top + 124), second + " · golden corpus", font=body, fill=SUB, anchor="lm")
 
-    top, bottom = 608, 768
-    draw.rounded_rectangle((60, top, 1540, bottom), radius=16, fill=(17, 17, 27, 235))
-    draw.rounded_rectangle((60, top, 68, bottom), radius=4, fill=(243, 139, 168, 255))
-    draw.text((92, top + 36), "Where it does not win", font=head, fill=(243, 139, 168, 255), anchor="lm")
-    draw.text((92, top + 80), "On four public documentation projects no tool, this one included, passed the grounding gate.",
-              font=body, fill=INK, anchor="lm")
-    draw.text((92, top + 114), "No token saving is claimed there. One machine, small corpora: read the limits before the numbers.",
-              font=body, fill=SUB, anchor="lm")
-    pill(draw, w / 2, 826, "method, limits and every number: docs/benchmarks.md", font(SANS, 24, index=1),
+    top, bottom, mid = 608, 768, font(SANS, 46, index=1)
+    for x0, x1, figure, label, note, accent in (
+            (60, 537, "60 ms", "per hybrid search", "mean over the golden questions", PEACH),
+            (561, 1039, "96 %+", "of extracted dates and names", "judged supported by two model auditors", MAUVE),
+            (1063, 1540, "$0.31", "to index a 32-file docs folder", "then only edited sections are redone", GREEN)):
+        draw.rounded_rectangle((x0, top, x1, bottom), radius=16, fill=(17, 17, 27, 235))
+        draw.text((x0 + 24, top + 50), figure, font=mid, fill=accent, anchor="lm")
+        draw.text((x0 + 24, top + 100), label, font=head, fill=INK, anchor="lm")
+        draw.text((x0 + 24, top + 134), note, font=body, fill=SUB, anchor="lm")
+    pill(draw, w / 2, 826, "method and every number: docs/benchmarks.md", font(SANS, 24, index=1),
          fill=(17, 17, 27, 240))
     return card.convert("RGB")
 
