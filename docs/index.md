@@ -7,7 +7,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-18 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-18 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
 | 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
-| 2026-11-15 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
+| 2026-11-18 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
 | 2026-11-10 | [plans/2026-11-git-times.md](plans/2026-11-git-times.md) | Date: 2026-11-10. Owner go: "go git times" (2026-11-10), with the requirement "not everything is … |
 | 2026-10-27 | [plans/2026-10-m9-t6-page-readme.md](plans/2026-10-m9-t6-page-readme.md) | Milestone M9 of the execution plan (`2026-09-benchmark-execution.md` §4 T6, §5 M9, §7): the la… |
 | 2026-10-27 | [plans/2026-09-benchmarks.md](plans/2026-09-benchmarks.md) | Status: **draft for review** · 2026-09-22 · plan §11, §2.3, §2.4 · owner intent: "a benchma… |
@@ -39,6 +39,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-18 | [reviews/codex/2026-11-18-mda-check-command.md](reviews/codex/2026-11-18-mda-check-command.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-judgment.md](reviews/codex/2026-11-18-impact-judgment.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex based on GPT-6", exact variant unav… |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-candidates.md](reviews/codex/2026-11-18-impact-candidates.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
+| 2026-11-18 | [reviews/codex/2026-11-18-closed-pipe.md](reviews/codex/2026-11-18-closed-pipe.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 (Codex)"; CLI 0.167.0; fresh thread… |
 | 2026-11-18 | [reviews/codex/2026-11-18-check-priority.md](reviews/codex/2026-11-18-check-priority.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-binary-per-version.md](reviews/codex/2026-11-18-binary-per-version.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-17 | [reviews/codex/2026-11-17-structured-backend-call.md](reviews/codex/2026-11-17-structured-backend-call.md) | Reviewer: Codex (`gpt-6-astra`, fresh thread `01a1eb3f-5535-7563-8c2d-c549dee86d55`, read-only, s… |

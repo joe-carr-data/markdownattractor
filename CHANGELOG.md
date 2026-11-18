@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- **`mda status | head -1` printed a panic.** When the reader of a command's output goes away, the command now stops quietly (exit status 141, as a shell expects) instead of reporting "failed printing to stdout: Broken pipe" with a backtrace hint.
+
 ### Not shipped
 
 - **Change-impact review did not pass its evaluation and is not released.** On the development half of the evaluation `mda check` was right about 51 % of its alerts, against 87 % for a plain agent with file search and git, and found fewer of the labelled documents at a higher cost (`docs/benchmarks.md` § Change-impact review). The command remains in the binary, hidden from `--help` and unannounced.
