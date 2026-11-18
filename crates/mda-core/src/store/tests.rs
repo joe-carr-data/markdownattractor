@@ -409,6 +409,43 @@ fn mark_failed_then_retry_failed() {
 }
 
 #[test]
+fn model_cards_are_live_cards_with_a_backend_other_than_deterministic() {
+    let (mut store, out) = store_with_doc_a();
+    let hash = store.sections_of(&out.doc_id).unwrap()[1].section_hash.clone();
+    assert!(!store.has_model_cards().unwrap(), "pending only");
+
+    let deterministic = Provenance { backend: "deterministic".into(), ..provenance(5) };
+    store.attach_summary(&hash, &summary("ships it", "body"), &deterministic, &usage()).unwrap();
+    assert!(!store.has_model_cards().unwrap());
+
+    // Provenance that cannot be read is not a model's, and is not an error either.
+    for broken in [Some("{not json"), Some("{}"), Some(r#"{"backend": 7}"#), None] {
+        store
+            .conn
+            .execute(
+                "UPDATE summaries SET provenance = ?2 WHERE section_hash = ?1",
+                rusqlite::params![hash, broken],
+            )
+            .unwrap();
+        assert!(!store.has_model_cards().unwrap(), "{broken:?}");
+    }
+
+    // A written card is not attached twice, so the model's provenance is set in place.
+    store
+        .conn
+        .execute(
+            "UPDATE summaries SET provenance = ?2 WHERE section_hash = ?1",
+            rusqlite::params![hash, serde_json::to_string(&provenance(6)).unwrap()],
+        )
+        .unwrap();
+    assert!(store.has_model_cards().unwrap());
+
+    // The summary row outlives its last section; the answer follows the live sections.
+    assert!(store.tombstone("a.md", ts(50)).unwrap());
+    assert!(!store.has_model_cards().unwrap());
+}
+
+#[test]
 fn tombstone_removes_sections_and_fts_rows_but_keeps_summaries() {
     let (mut store, out) = store_with_doc_a();
     let hash = store.sections_of(&out.doc_id).unwrap()[1].section_hash.clone();

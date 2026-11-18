@@ -37,6 +37,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
 | 2026-11-18 | [reviews/codex/2026-11-18-mda-check-command.md](reviews/codex/2026-11-18-mda-check-command.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
+| 2026-11-18 | [reviews/codex/2026-11-18-keyless-raw-only.md](reviews/codex/2026-11-18-keyless-raw-only.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex, GPT-6", exact variant not echoed; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-judgment.md](reviews/codex/2026-11-18-impact-judgment.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex based on GPT-6", exact variant unav… |
 | 2026-11-18 | [reviews/codex/2026-11-18-impact-candidates.md](reviews/codex/2026-11-18-impact-candidates.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-daemon-version-note.md](reviews/codex/2026-11-18-daemon-version-note.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
@@ -88,10 +89,10 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-18 | [handoffs/2026-11-17-2346-auto.md](handoffs/2026-11-17-2346-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-18 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
 | 2026-11-18 | [launch/2026-11-launch-drafts.md](launch/2026-11-launch-drafts.md) | Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every n… |
+| 2026-11-18 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-11-18 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-11-14 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
-| 2026-11-10 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 
 ## Not yet written
