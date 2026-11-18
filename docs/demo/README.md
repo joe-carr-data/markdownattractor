@@ -28,9 +28,16 @@ What a good take shows (draft take, 2026-11-10: answered in 8 s after 3 tool cal
 
 Still to add in the edit: three captions (the question; "file, lines and date on every claim"; the install line as the end card) and a trim to under 30 s. For the final take, record in a short path such as `~/acme-docs` so the header reads cleanly, and check that the status line shows nothing personal.
 
-## Video 2 — "Edit, searchable in 8 s" (15–20 s, split screen) — not recorded yet
+## Video 2 — "Saved, then searchable" (16 s, silent) — recorded 2026-11-18 on v0.2.8
 
-Left pane: an editor saving a new section in `runbooks/deploy.md`. Right pane: `mda watch`, then `mda search` finding the new text. A timer between save and hit. Caption: "p50 8.4 s in our benchmark" (T4; the only speed claim that passed its gate).
+```bash
+scripts/demo/make-corpus.py ~/acme-docs && (cd ~/acme-docs && mda start)   # no key needed
+scripts/demo/record-fresh.sh ~/acme-docs fresh.mp4
+```
+
+One terminal, nothing off camera but the prompt setup: `mda search canary --raw` finds nothing; two `echo` lines append a "Canary" section to `runbooks/deploy.md`; the same search finds it with file, heading path and line range, marked "just now". No key is set, so the hit is raw text ("pending": no card yet). In a timed run of the same steps the section was found 1.0 s after the save (one machine, one run; the benchmark figure is T4's p50 of 1.7 s over 20 edits on Prisma). The README shows the session as text. The recording itself (an mp4 and a 960 px GIF) is not in the repository: the commit gate refuses binary files, so the owner keeps it and attaches it to posts. This is the launch demo (plan 2026-11-v0.3, Phase D): change-impact review did not pass, so the demo is the freshness loop.
+
+The split-screen version with a visible timer and "p50 8.4 s" for the card is not recorded; it needs a key and adds little to this take.
 
 ## Demo questions
 
