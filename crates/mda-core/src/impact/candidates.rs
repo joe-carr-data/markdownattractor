@@ -361,8 +361,8 @@ impl<'a> Finder<'a> {
         paths.iter().take(self.limits.max_linked_docs).map(|p| doc_id_for(p)).collect()
     }
 
-    /// How much a shared term says: the rarer the more, and a plain word a third of an
-    /// identifier or a number. In thousandths.
+    /// How much a shared term says: the rarer the more, a plain word a third of an
+    /// identifier or a number, and anything but replaced wording a quarter. In thousandths.
     fn weight(&self, term: &QueryTerm) -> u32 {
         #[allow(
             clippy::cast_precision_loss,
@@ -373,7 +373,10 @@ impl<'a> Finder<'a> {
         let rarity = (((self.total_sections + 1) as f64 / term.sections.max(1) as f64).ln()
             * 1000.0)
             .max(0.0) as u32;
-        if term.term.kind == TermKind::Word { rarity / 3 } else { rarity }
+        let by_kind = if term.term.kind == TermKind::Word { rarity / 3 } else { rarity };
+        // Wording the change replaced is the signal of a stale copy. A shared term that is
+        // only new, or only context, says the passages are about the same thing: a quarter.
+        if term.term.role == Role::Replaced { by_kind } else { by_kind / 4 }
     }
 
     /// Record which query terms each kept candidate carries, and how telling they are.

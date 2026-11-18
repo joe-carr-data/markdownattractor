@@ -157,6 +157,12 @@ fn coverage(r: &Report) -> Vec<String> {
         let why = r.stopped.as_deref().unwrap_or("above --max-judgments");
         lines.push(format!("{} pair(s) not judged: {why}", r.not_judged));
     }
+    if r.changes_without_judgment > 0 && r.backend.is_some() {
+        lines.push(format!(
+            "{} changed section(s) with candidates and no judgment at all",
+            r.changes_without_judgment
+        ));
+    }
     if r.failed > 0 {
         lines.push(format!("{} pair(s) whose call failed", r.failed));
     }

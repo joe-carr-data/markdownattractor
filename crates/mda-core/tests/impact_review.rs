@@ -445,18 +445,52 @@ async fn the_most_telling_pair_is_judged_first_and_a_repeated_pair_only_once() {
 
     let sent = mock.structured_calls();
     assert_eq!(sent.len(), 1);
-    assert!(
-        sent[0].id == beta || sent[0].id == gamma,
-        "the identifier first, not the word: {}",
-        sent[0].id
-    );
+    assert_eq!(sent[0].id, beta, "the identifier first, not the word; Beta before Gamma");
     assert_eq!(report.duplicate_pairs, 1, "Beta and Gamma replace the same wording");
-    let about_flags = report.pairs.iter().filter(|p| p.candidate.rel_path == "flags.md").count();
-    assert_eq!(about_flags, 1);
+    // The repeat is not lost: it waits behind every distinct pair.
+    let about_flags: Vec<&str> = report
+        .pairs
+        .iter()
+        .filter(|p| p.candidate.rel_path == "flags.md")
+        .map(|p| p.outcome.as_str())
+        .collect();
+    assert_eq!(about_flags, ["related", "not_judged"]);
+    let last = report.pairs.last().unwrap();
+    assert_eq!(
+        (last.change.heading_path.last().unwrap().as_str(), last.candidate.rel_path.as_str()),
+        ("Gamma", "flags.md")
+    );
     assert!(
         report
             .pairs
             .iter()
             .any(|p| p.candidate.rel_path == "words.md" && p.outcome == "not_judged")
     );
+    assert_eq!(report.changes_without_judgment, 2, "Alpha and Gamma");
+
+    // With room for every pair the repeat is judged too, and can be the one with the finding.
+    let found = Mock::structured_ok(
+        json!({"verdict": "possibly_outdated", "before_quote": "Again set `legacy_mode_flag` here.",
+               "after_quote": "Again set `current_mode_flag` here.",
+               "candidate_quote": "The `legacy_mode_flag` switch is required.", "reason": "x"}),
+        "m",
+    );
+    let guide_section = |n| section_id_for(&doc_id_for("guide.md"), n);
+    let words = section_id_for(&doc_id_for("words.md"), 1);
+    let heading = |h: &str| vec!["Guide".to_owned(), h.to_owned()];
+    let mock = Mock::new()
+        .on_structured(beta, vec![verdict("related")])
+        .on_structured(gamma, vec![found])
+        .on_structured(pair_id("guide.md", &heading("Alpha"), &words), vec![verdict("unrelated")])
+        .on_structured(
+            pair_id("guide.md", &heading("Beta"), &guide_section(3)),
+            vec![verdict("related")],
+        )
+        .on_structured(
+            pair_id("guide.md", &heading("Gamma"), &guide_section(2)),
+            vec![verdict("related")],
+        );
+    let report = run(&root, Some(&mock), &Options::new("m")).await;
+    assert_eq!(report.findings.len(), 1, "{:?}", report.pairs);
+    assert_eq!(report.findings[0].change.heading_path.last().unwrap(), "Gamma");
 }

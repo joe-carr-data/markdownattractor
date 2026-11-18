@@ -298,15 +298,16 @@ pub fn assess(answer: &Answer, change: &SectionChange, candidate: &StoredSection
     }
     let verdict = answer.verdict;
     let dropped = |why: String| Assessed::DroppedUnquoted { verdict, why };
-    let find = |name: &str, text: &str, first_line: u32, quote: &str| {
-        quote_in(text, first_line, quote).map_err(|e| format!("{name}: {e}"))
+    let find = |name: &str, text: &str, first_line: u32, quote: &str, lines: &[String]| {
+        quote_in(text, first_line, quote, lines).map_err(|e| format!("{name}: {e}"))
     };
 
     let before = if verdict == Verdict::PossiblyOutdated {
         let Some(side) = change.before.as_ref() else {
             return dropped("before_quote: the changed section is new".to_owned());
         };
-        match find("before_quote", &side.text, side.line_start, &answer.before_quote) {
+        let quote = &answer.before_quote;
+        match find("before_quote", &side.text, side.line_start, quote, &change.removed_lines) {
             Ok(q) => Some(q),
             Err(why) => return dropped(why),
         }
@@ -314,12 +315,14 @@ pub fn assess(answer: &Answer, change: &SectionChange, candidate: &StoredSection
         None
     };
     let after = &change.after;
-    let after = match find("after_quote", &after.text, after.line_start, &answer.after_quote) {
+    let quote = &answer.after_quote;
+    let after = match find("after_quote", &after.text, after.line_start, quote, &change.added_lines)
+    {
         Ok(q) => q,
         Err(why) => return dropped(why),
     };
-    let found =
-        find("candidate_quote", &candidate.text, candidate.line_start, &answer.candidate_quote);
+    let quote = &answer.candidate_quote;
+    let found = find("candidate_quote", &candidate.text, candidate.line_start, quote, &[]);
     let candidate = match found {
         Ok(q) => q,
         Err(why) => return dropped(why),
@@ -373,8 +376,11 @@ fn about_the_change(
             return Err("before_quote: none of the wording the change replaced".to_owned());
         }
     }
-    // The candidate must say something the new text does not.
-    if candidate_words.is_subset(&after_words) {
+    // The candidate must say something the new text does not: a quote that is a part of the
+    // after quote word for word is the same statement. (A quote made of the same words in
+    // another arrangement, or lacking a word the change brought in, is not.)
+    let flat = |q: &Quote| normalised(&q.text).to_lowercase();
+    if flat(after).contains(&flat(candidate)) || candidate_words.is_empty() {
         return Err("candidate_quote: only words of after_quote".to_owned());
     }
     // A passage that carries the new wording and none of the old already says the new thing.
@@ -425,12 +431,41 @@ fn neutral_reading(reason: &str) -> Option<String> {
 
 /// Locate `quote` in `text` and render the exact slice with its lines. `first_line` is the
 /// line of `text`'s first line in its file.
-fn quote_in(text: &str, first_line: u32, quote: &str) -> std::result::Result<Quote, &'static str> {
-    let range = match locate(text, quote) {
-        Located::One(range) => range,
-        Located::Empty => return Err("empty"),
-        Located::Missing => return Err("not in the source"),
-        Located::Ambiguous => return Err("found in more than one place"),
+///
+/// A quote that stands in several places is settled, not refused, when that can be done
+/// without guessing what was meant: on the change's side, the place on a line the change
+/// touched (`changed_lines`); elsewhere, the first place, when the quote is long enough
+/// (a phrase, not a word) that every place says the same thing.
+fn quote_in(
+    text: &str,
+    first_line: u32,
+    quote: &str,
+    changed_lines: &[String],
+) -> std::result::Result<Quote, &'static str> {
+    const PHRASE: usize = 16;
+    if normalised(quote).is_empty() {
+        return Err("empty");
+    }
+    let places = locate_all(text, quote);
+    let line_of = |r: &Range<usize>| {
+        let start = text[..r.start].rfind('\n').map_or(0, |i| i + 1);
+        let end = text[r.start..].find('\n').map_or(text.len(), |i| r.start + i);
+        normalised(&text[start..end])
+    };
+    let range = match places.as_slice() {
+        [] => return Err("not in the source"),
+        [one] => one.clone(),
+        many if !changed_lines.is_empty() => {
+            let touched: Vec<String> = changed_lines.iter().map(|l| normalised(l)).collect();
+            let on_changed: Vec<&Range<usize>> =
+                many.iter().filter(|r| touched.contains(&line_of(r))).collect();
+            match on_changed.as_slice() {
+                [first, ..] => (*first).clone(),
+                [] => return Err("found in more than one place"),
+            }
+        }
+        [first, ..] if normalised(quote).chars().count() >= PHRASE => first.clone(),
+        _ => return Err("found in more than one place"),
     };
     let lines_before = |end: usize| {
         u32::try_from(text[..end].bytes().filter(|b| *b == b'\n').count()).unwrap_or(u32::MAX)
@@ -460,38 +495,41 @@ pub enum Located {
 /// of the *source* text the match covers.
 #[must_use]
 pub fn locate(text: &str, quote: &str) -> Located {
-    let needle = normalised(quote);
-    if needle.is_empty() {
+    if normalised(quote).is_empty() {
         return Located::Empty;
     }
+    match locate_all(text, quote).as_slice() {
+        [] => Located::Missing,
+        [one] => Located::One(one.clone()),
+        _ => Located::Ambiguous,
+    }
+}
+
+/// Every place `quote` stands in `text`, overlapping ones too, as ranges of the source text.
+/// A match counts only when it begins and ends where a source character does: `..` is not
+/// found inside the three dots an ellipsis became.
+fn locate_all(text: &str, quote: &str) -> Vec<Range<usize>> {
+    let needle = normalised(quote);
+    let mut found = Vec::new();
+    if needle.is_empty() {
+        return found;
+    }
     let (hay, starts) = normalised_with_map(text);
-    // A match counts only when it begins and ends where a source character does: `..` is
-    // not found inside the three dots an ellipsis became.
-    let whole = |at: usize| {
-        let last = at + needle.len() - 1;
-        (at == 0 || starts[at - 1] != starts[at])
-            && (last + 1 == hay.len() || starts[last + 1] != starts[last])
-    };
-    let mut found: Option<usize> = None;
     let mut from = 0;
     while let Some(i) = hay[from..].find(&needle) {
         let at = from + i;
-        if whole(at) {
-            if found.is_some() {
-                return Located::Ambiguous;
-            }
-            found = Some(at);
+        let last = at + needle.len() - 1;
+        let whole = (at == 0 || starts[at - 1] != starts[at])
+            && (last + 1 == hay.len() || starts[last + 1] != starts[last]);
+        if whole {
+            // The end of the source character that produced the last normalised byte.
+            let last_src = starts[last];
+            let end = last_src + text[last_src..].chars().next().map_or(0, char::len_utf8);
+            found.push(starts[at]..end);
         }
-        // Any other place counts, overlapping ones too: go on from the next character.
         from = at + hay[at..].chars().next().map_or(1, char::len_utf8);
     }
-    let Some(at) = found else { return Located::Missing };
-    let start = starts[at];
-    let last = at + needle.len() - 1;
-    // The end of the source character that produced the last normalised byte.
-    let last_src = starts[last];
-    let end = last_src + text[last_src..].chars().next().map_or(0, char::len_utf8);
-    Located::One(start..end)
+    found
 }
 
 fn normalised(s: &str) -> String {
@@ -620,9 +658,29 @@ mod tests {
         assert_eq!(why(&invented), "candidate_quote: not in the source");
         let empty = answer(Verdict::PossiblyOutdated, "", "90 seconds", "30 seconds");
         assert_eq!(why(&empty), "before_quote: empty");
-        // `e` occurs many times in the after text.
+        // `e` occurs many times in the after text; the place on the changed line is taken,
+        // and it carries nothing the change brought in.
         let vague = answer(Verdict::PossibleConflict, "", "e", "30 seconds");
-        assert_eq!(why(&vague), "after_quote: found in more than one place");
+        assert_eq!(why(&vague), "after_quote: none of the wording the change brought in");
+        // In the other section a short quote that stands twice is still refused; a phrase
+        // that stands twice is taken at its first place.
+        let mut twice = section.clone();
+        twice.text =
+            "## Limits\n\nIt waits 30 seconds at the gateway.\nLater: it waits 30 seconds at the gateway."
+                .into();
+        let short = answer(Verdict::PossiblyOutdated, "30 seconds", "90 seconds", "30 seconds");
+        assert!(matches!(
+            assess(&short, &change(), &twice),
+            Assessed::DroppedUnquoted { why, .. } if why == "candidate_quote: found in more than one place"
+        ));
+        let phrase = answer(
+            Verdict::PossiblyOutdated,
+            "30 seconds",
+            "90 seconds",
+            "waits 30 seconds at the gateway",
+        );
+        let Assessed::Finding(f) = assess(&phrase, &change(), &twice) else { panic!() };
+        assert_eq!(f.candidate.line_start, twice.line_start + 2);
         // A sentence the change left alone is not evidence of anything.
         let untouched = answer(Verdict::PossibleConflict, "", "Retry twice.", "30 seconds");
         assert_eq!(why(&untouched), "after_quote: not on a line the change added");
@@ -697,6 +755,25 @@ mod tests {
             assess(&a, &change(), &faq_section()),
             Assessed::DroppedUnquoted { why, .. } if why == "candidate_quote: none of the wording the change replaced"
         ));
+    }
+
+    #[test]
+    fn a_stale_copy_that_only_lacks_the_word_the_change_added_is_a_finding() {
+        // "release" became "pre-release": the old sentence has only words of the new one.
+        let before = "# Install\n\n## Steps\n\nInstall the latest Helm 4 release today.\n";
+        let after = "# Install\n\n## Steps\n\nInstall the latest Helm 4 pre-release today.\n";
+        let mut review = compare(before, after, Flavor::Markdown);
+        let change = review.changes.remove(0);
+        let mut other = faq_section();
+        other.text = "## Plugins\n\nFirst install the latest Helm 4 release and a plugin.".into();
+        let a = answer(
+            Verdict::PossiblyOutdated,
+            "Install the latest Helm 4 release today.",
+            "Install the latest Helm 4 pre-release today.",
+            "install the latest Helm 4 release",
+        );
+        let got = assess(&a, &change, &other);
+        assert!(matches!(got, Assessed::Finding(_)), "{got:?}");
     }
 
     #[test]
