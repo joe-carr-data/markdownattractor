@@ -39,6 +39,23 @@ One terminal, nothing off camera but the prompt setup: `mda search canary --raw`
 
 The split-screen version with a visible timer and "p50 8.4 s" for the card is not recorded; it needs a key and adds little to this take.
 
+## Video 3 — "Ask, edit, ask again" (37 s, silent, captioned) — recorded 2026-11-18 on v0.2.9 — the launch clip
+
+```bash
+scripts/demo/make-corpus.py ~/acme-docs && (cd ~/acme-docs && mda index && mda start)   # cards: about $0.30
+scripts/demo/record-live.sh ~/acme-docs live.mp4
+```
+
+One window, two panes (tmux): Claude Code above, "a teammate's terminal" below.
+
+1. Claude is asked how long the error rate is watched after a release. It answers in about 4 s after two tool calls: ten minutes, with `runbooks/deploy.md:5-9`.
+2. In the lower pane a `sed` line changes "ten minutes" to "thirty minutes" in the runbook.
+3. Claude is asked whether any runbook changed in the last hour. It names the section, the index's last-changed time and the new text, and says its earlier answer is out of date.
+
+Five captions (rendered by `scripts/demo/captions.py`, overlaid at times that follow the tape's fixed pauses) and an end card with the install commands are added after the take; nothing in the terminal is edited, cut or sped up. The script puts the runbook back afterwards. The model is Sonnet (`DEMO_MODEL`), the default login; `DEMO_KEEP_RAW=path` keeps the take without captions and `DEMO_RAW=path` captions an earlier take again.
+
+What the take does not show: the second question is a different one on purpose. Asked the same question twice, Claude answers from its own earlier answer without searching (`docs/aha.md`, 2026-11-18). The first video's recording (video 2) is kept as the clip for "works without a key". The mp4 and a 960 px GIF are with the owner, outside the repository (the commit gate refuses binary files).
+
 ## Demo questions
 
 | # | Question | Shows | Status |
