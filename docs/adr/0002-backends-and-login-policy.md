@@ -1,6 +1,6 @@
 # ADR-0002 — Summarization backends: API key by default, local model second, CLI spawn opt-in only
 
-Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision
+Status: **Accepted**; decision 3 superseded by ADR-0010 · 2026-09-22 · Amends ADR-0001 · Owner decision
 
 ## Context
 

@@ -100,11 +100,13 @@ pub fn set_global_nudge_at(path: &Path, on: bool) -> Result<()> {
 }
 
 /// Shown whenever `backend = "claude-cli"` is selected without the acknowledgement.
-pub const CLAUDE_CLI_POLICY: &str = "backend \"claude-cli\" routes requests through your Claude \
-subscription. Anthropic's terms do not permit third-party tools to do that on your behalf \
-(see docs/adr/0002-backends-and-login-policy.md). Use the default `api` backend with an \
-API key, or `local` with a llama.cpp server. To run claude-cli anyway for personal use, set \
-`claude_cli_policy_ack = true` in .markdownattractor/config.toml.";
+pub const CLAUDE_CLI_POLICY: &str = "backend \"claude-cli\" runs your own signed-in `claude` \
+for the summaries; mda never sees your login. They count against your Claude plan's usage \
+limits, which Anthropic sets for ordinary individual use and may enforce without notice \
+(docs/adr/0010-claude-subscription-backend-documented.md). The default `api` backend uses an \
+API key; `local` uses a llama.cpp server. To use your subscription, run \
+`mda backend claude-cli --i-accept-the-policy` or set `claude_cli_policy_ack = true` in \
+.markdownattractor/config.toml.";
 
 /// Which process produces summaries. See ADR-0002 for why the API is the default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -116,9 +118,8 @@ pub enum Backend {
     /// An OpenAI-compatible local server (llama.cpp, LM Studio, Ollama) at `local_base_url`.
     /// No key, no cost, no policy question; slower per call.
     Local,
-    /// Spawn the user's own `claude -p`. Anthropic's terms do not permit third-party tools to
-    /// route requests through Pro/Max plan credentials, so this is opt-in only and requires
-    /// `claude_cli_policy_ack = true`.
+    /// Spawn the user's own signed-in `claude -p` (their Claude plan). Opt-in only: it counts
+    /// against the plan's usage limits, so it requires `claude_cli_policy_ack = true` (ADR-0010).
     ClaudeCli,
 }
 
