@@ -231,7 +231,7 @@ The rows above are the T1–T6 runs. The later answer-contract run (2026-11-15, 
 | Retrieval | graph traversal | BM25, vectors, rerank | BM25, vectors |
 | Runtime | Python | Bun | **one Rust binary** |
 
-All three are measured side by side, with grep, on the [benchmarks page](docs/benchmarks.md). We don't compete on scope: a code index covers the code, markdownattractor covers the prose around it.
+All three are measured side by side, with grep, on the [benchmarks page](docs/benchmarks.md). Head to head on docs: [markdownattractor vs graphify](docs/compare/graphify.md). We don't compete on scope: a code index covers the code, markdownattractor covers the prose around it.
 
 ## Status
 

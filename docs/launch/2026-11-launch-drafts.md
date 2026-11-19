@@ -73,6 +73,8 @@ Body: the first comment above, minus the Show HN framing, plus one paragraph on 
 - **Show HN:** title "Show HN: Markdownattractor lets Claude Code cite the runbook lines behind an answer". In the first comment, paste the real question, tool calls and cited answer (the README session), then the no-key install so readers can try it on their own docs.
 - **X:** open with "My teammate just changed the runbook. Watch what Claude says when I ask what changed." Upload the full 54 s clip natively; end with the repo link and "Star it for your next on-call shift."
 - **r/ClaudeAI ("Built with Claude"):** post the rollback example and invite readers to try a question their agent routinely gets wrong and share the hit; with permission, quote a reader's result in a follow-up.
+- **The graphify crowd:** lead with "use it next to graphify: graphify for the code, markdownattractor for the docs", and link [the comparison page](../compare/graphify.md) when someone asks why (on docs: 3.18× fewer tokens, edits live in 1.7 s, success@5 0.41–0.70 against 0.02–0.10). No unsolicited messages to its stargazers; answer real questions in threads, and one open note to its maintainer suggesting a "works well with" mention.
+- GitHub topics set 2026-11-19: claude-code, mcp, knowledge-graph, markdown, rag.
 - README hook (live): "Edit the runbook. Ask Claude what changed." over the 36 s clip.
 
 ## Open before posting (owner)
