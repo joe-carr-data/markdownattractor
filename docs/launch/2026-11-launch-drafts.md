@@ -68,6 +68,13 @@ Body: the first comment above, minus the Show HN framing, plus one paragraph on 
 5. What passed (the table above), what did not, and the change-impact review story with its lesson: run the cheap baseline first.
 6. What is next, without promises.
 
+## Launch tactics (Codex marketing pass, 2026-11-19)
+
+- **Show HN:** title "Show HN: Markdownattractor lets Claude Code cite the runbook lines behind an answer". In the first comment, paste the real question, tool calls and cited answer (the README session), then the no-key install so readers can try it on their own docs.
+- **X:** open with "My teammate just changed the runbook. Watch what Claude says when I ask what changed." Upload the full 54 s clip natively; end with the repo link and "Star it for your next on-call shift."
+- **r/ClaudeAI ("Built with Claude"):** post the rollback example and invite readers to try a question their agent routinely gets wrong and share the hit; with permission, quote a reader's result in a follow-up.
+- README hook (live): "Edit the runbook. Ask Claude what changed." over the 36 s clip.
+
 ## Open before posting (owner)
 
 - **The launch clip is the second recording** (2026-11-18, v0.2.9, 54 s, captioned, ending on a "How it works" card and a "Measured" card with the figures of the table above): Claude answers with its source, a teammate's terminal edits the runbook, Claude is asked what changed and reports the section, the time and the new text (`docs/demo/README.md`, video 3). The owner found the first clip had no hook (it looks like grep); it stays as the clip for the post about working without a key.
