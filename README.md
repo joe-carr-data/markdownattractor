@@ -2,7 +2,9 @@
   <img src="logo/mda_logo.jpg" alt="markdownattractor" width="320">
 </p>
 
-<h3 align="center">Claude answers from your ADRs and runbooks, and shows you the exact lines it used and when each section last changed.</h3>
+<h2 align="center">Edit the runbook. Ask Claude what changed.</h2>
+
+<p align="center"><b>markdownattractor gives Claude Code a live index of your markdown. Saved text is searchable in 1.7 s, and every answer points to the file, the lines, and when that section last changed.</b></p>
 
 <p align="center">
   A Claude Code plugin that keeps a live, searchable index of the markdown in your project.<br>
@@ -75,7 +77,9 @@ acme-docs % mda search canary --raw
 
 ## The problem
 
-Claude Code reads files whole. On a real project, *"how do we roll back a deploy?"* means grepping, opening several runbooks end to end, and reading hundreds of lines to find one paragraph. And it can't tell you whether that paragraph was written last week or two years ago.
+The pager goes off. You ask Claude how to roll back. It greps the repo, reads runbook after runbook, and gives you a confident command. Then comes the question that matters before you hit Enter: **where is that written, and when did someone last change it?** Now you're reading the runbook yourself.
+
+markdownattractor answers that question for you, on every answer.
 
 ## What markdownattractor does
 
