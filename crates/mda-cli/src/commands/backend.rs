@@ -53,7 +53,8 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
     let mut cfg = match Config::load(&root) {
         Ok(c) => c,
         Err(mda_core::Error::Config(msg)) if msg.contains("claude_cli_policy_ack") => {
-            Config { backend: Backend::ClaudeCli, ..Config::default() }
+            // Keep every other setting (budget, models, concurrency): only the backend changes.
+            Config::load_unvalidated(&root)?
         }
         Err(e) => return Err(e.into()),
     };

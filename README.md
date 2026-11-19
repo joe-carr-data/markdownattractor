@@ -8,7 +8,7 @@
 
 <p align="center">
   A Claude Code plugin that keeps a live, searchable index of the markdown in your project.<br>
-  One Rust binary. Search works with no key; summaries use your own Anthropic API key or a free local model. The index stays on your machine, no telemetry, never writes to your files.
+  One Rust binary. Search works with no key; summaries use your own Anthropic API key, a free local model, or your Claude subscription. The index stays on your machine, no telemetry, never writes to your files.
 </p>
 
 <p align="center">
@@ -152,8 +152,18 @@ export ANTHROPIC_API_KEY=…      # before launching Claude Code; or use a local
 | none | nothing | $0 | raw-text search only, no cards |
 | **api** (default) | an [Anthropic API key](https://console.anthropic.com/) | Haiku list price; the 117-section demo corpus cost $0.31 | about 1 section/s at 16 workers |
 | **local** | `brew install llama.cpp` and one command ([guide](docs/guides/local-model.md)) | $0 | depends on your machine |
+| **claude-cli** (opt-in) | your Claude plan, signed in to Claude Code ([below](#use-your-claude-subscription-instead)) | your plan's usage limits | 4 workers, up to 16 |
 
-Why not your Claude subscription? Anthropic's terms don't allow third-party tools to route requests through Pro or Max plan credentials on a user's behalf, so this project doesn't ship that as a supported path. Details in [ADR-0002](docs/adr/0002-backends-and-login-policy.md).
+### Use your Claude subscription instead
+
+Have a Claude Pro, Max or Ultra plan and no API key? Let your own Claude Code write the cards:
+
+```
+/mda backend claude-cli --i-accept-the-policy
+/mda restart
+```
+
+mda runs your own signed-in `claude` for the summaries and never sees, stores or passes on your login. The summaries count against your plan's usage limits, which Anthropic sets for ordinary individual use and may enforce without notice; a large folder is a lot of summaries. It is opt-in for that reason. If `ANTHROPIC_API_KEY` is set when Claude Code starts, `claude` bills that key instead of your plan: unset it to use the subscription. Details and the terms as quoted: [ADR-0010](docs/adr/0010-claude-subscription-backend-documented.md).
 
 ## What it does differently
 

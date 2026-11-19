@@ -36,7 +36,7 @@ As built through Phase 4 (2026-09-22). One line per command: what it does, what 
 
 | Command | Does |
 |---|---|
-| `backend [api\|local\|claude-cli]` | Show or switch; `claude-cli` needs `--i-accept-the-policy` (ADR-0002). |
+| `backend [api\|local\|claude-cli]` | Show or switch; `claude-cli` (your Claude subscription) needs `--i-accept-the-policy` (ADR-0002, ADR-0010). |
 | `embeddings [local-small\|off]` | Show or switch; a running daemon keeps its setting until `restart`. |
 | `nudge [on\|off] [--global]` | Per root: `nudge` in `config.toml`. `--global`: the marker at `$MDA_NUDGE_FILE` (the plugin launcher sets it to `${CLAUDE_PLUGIN_DATA}/nudge.off`). The `PreToolUse` hook checks the marker, then the root's config. |
 

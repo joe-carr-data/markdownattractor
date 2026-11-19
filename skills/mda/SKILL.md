@@ -27,7 +27,7 @@ Arguments: `$ARGUMENTS`
    - `nudge` → one line: effective state, this root, everywhere.
    - `timeline`, `recent`, `stale` → a compact table.
    - anything else → the one-line result the binary printed.
-4. If the binary exits non-zero, show the `error` field and, when it mentions `doctor`, offer to run `/mda doctor`. If it says the API key is not set, explain the two options in one line each: `export ANTHROPIC_API_KEY=…` (console.anthropic.com) or `/mda backend local` with a llama.cpp server (link `docs/guides/local-model.md`). Never suggest `claude-cli` unprompted; if the user asks for it, show the policy text the binary prints.
+4. If the binary exits non-zero, show the `error` field and, when it mentions `doctor`, offer to run `/mda doctor`. If it says the API key is not set, explain the three options in one line each: `export ANTHROPIC_API_KEY=…` (console.anthropic.com), `/mda backend local` with a llama.cpp server (link `docs/guides/local-model.md`), or `/mda backend claude-cli --i-accept-the-policy` to use their own Claude plan (it counts against the plan's usage limits; ADR-0010). Never pass `--i-accept-the-policy` without the user choosing that option.
 5. If the launcher prints "mda binary not found", tell the user to start a new session (the plugin fetches the binary at session start) or run the `cargo install` line it prints.
 
 ## Commands (short reference)
