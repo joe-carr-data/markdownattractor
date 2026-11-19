@@ -2,6 +2,14 @@
 
 Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we already know, and the exit criterion that would move it into a phase plan. Newest first.
 
+## B-0004 — Dependency refresh after the launch (added 2026-11-19)
+
+**What.** Take the minor and patch updates Dependabot grouped in PR #78 (13 crates, among them `rmcp` 3.10, `fastembed` 7.7, `notify` 8.2.2) and move `actions/upload-artifact` and `actions/download-artifact` together from v4 (PR #38 proposed `download-artifact` v8 alone). Both PRs were closed in the pre-launch cleanup.
+
+**Why not now.** None is a security fix (`cargo audit`: no vulnerabilities on 2026-11-19); #78 no longer builds on `main` (clippy, tests, MSRV and rustdoc fail); `fastembed` can change vectors, which the benchmarks depend on; the artifact pair is exercised only by a release run.
+
+**Exit criterion to schedule it.** After the launch posts, or at once if `cargo audit` reports a vulnerability. Done when the updates build green, the golden `mda eval` is unchanged within its noise, and a release dry run (`gh workflow run Release` without `publish`) passes with the new artifact actions.
+
 ## B-0003 — Daemon socket: response size limit, finite costs, a round-trip test per event (added 2026-11-14)
 
 **What.** Three hardening items from the Codex review of PR #68 (`docs/reviews/codex/2026-11-14-watch-embedded-event.md`): the socket reader applies the 64 KiB request limit to responses, while `IndexReport.errors` is unbounded; `cost_usd` fields would not read back if a cost were ever NaN or infinite; only one `DaemonEvent` variant has a wire round-trip test.

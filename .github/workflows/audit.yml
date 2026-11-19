@@ -23,5 +23,6 @@ jobs:
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # paste is unmaintained (transitive via tokenizers); tracked in deny.toml with a reason.
-          ignore: RUSTSEC-2024-0436
+          # Unmaintained, no vulnerability; both are tracked in deny.toml with a reason: paste
+          # (transitive via tokenizers) and chrono (a hard dependency of rmcp, not used by our code).
+          ignore: RUSTSEC-2024-0436,RUSTSEC-2026-0543
