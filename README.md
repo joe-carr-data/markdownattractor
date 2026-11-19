@@ -52,7 +52,7 @@ flowchart LR
 | **1.7 s** | save to searchable (median of 20 edits); the summary card is ready in 8.4 s |
 | **98 %** | right section in the top 5 over 60 golden questions (88 % with no model at all) |
 | **100 %** | answers fully grounded on the golden set: every claim cites lines Claude opened (87.5 % before the answer contract) |
-| **3.18×** | fewer source tokens read than a knowledge-graph tool (graphify), at the same answer quality (same questions, 3 runs each, graded 0–6, golden corpus) |
+| **3.18×** | fewer source tokens read than a knowledge-graph tool (graphify), at the same answer quality (the answer-contract run: same questions, 3 runs each, graded 0–6, golden corpus) |
 | **60 ms** | per hybrid search (mean over the golden questions) |
 | **96 %+** | of extracted dates and names judged supported by two model auditors |
 | **$0.31** | to summarise a 32-file docs folder with Haiku (222K tokens); an edit redoes one section |
@@ -217,6 +217,8 @@ Full design: [`docs/project-plan.md`](docs/project-plan.md).
 | Time questions correct with less effort at equal evidence (T5) | No pair met the correctness-and-effort criterion. |
 | Retrieval: match qmd full (T1) | Hybrid point estimates met or exceeded qmd full on all 4 projects; all paired intervals included zero. |
 <!-- benchmark-row:end -->
+
+The rows above are the T1–T6 runs. The later answer-contract run (2026-11-15, golden corpus, 16 questions × 3 runs) is the first in which pairs pass all three gates: against graphify, **3.18× fewer source tokens** at the same answer quality; against grep, +0.25 answer correctness ([benchmarks § The answer contract](docs/benchmarks.md)).
 
 ## How it compares
 
