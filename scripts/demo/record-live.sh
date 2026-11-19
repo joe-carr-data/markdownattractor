@@ -21,8 +21,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 RUNBOOK="$DEST/runbooks/deploy.md"
 BEFORE="for ten minutes"
 AFTER="for thirty minutes"
-Q1="How long do we watch the error rate after a release? One line, with its source."
-Q2="Has any runbook changed in the last hour? What does it say now? Two lines."
+Q1="How long do we watch the error rate after a release? Keep it short."
+Q2="Has the runbook changed since your answer? What does it say now?"
 EDIT="sed -i '' 's/$BEFORE/$AFTER/' runbooks/deploy.md"
 
 for tool in vhs ffmpeg tmux claude; do
@@ -54,6 +54,7 @@ printf '{ "mcpServers": { "markdownattractor": { "command": "%s", "args": ["mcp"
 cat >"$work/tmux.conf" <<'EOF'
 set -g status off
 set -g escape-time 0
+set -g focus-events on
 set -g default-terminal "tmux-256color"
 set -ga terminal-overrides ",*:Tc"
 set -g pane-border-status top
