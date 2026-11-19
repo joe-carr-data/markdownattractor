@@ -38,7 +38,7 @@ Every section knows when it was created and last changed, from git history (or f
   <a href="docs/benchmarks.md"><img alt="benchmarks: preregistered" src="https://img.shields.io/badge/benchmarks-preregistered-16a34a?style=flat-square"></a>
 </p>
 
-https://github.com/user-attachments/assets/f2769057-470d-4600-bd4f-fb7e8e863092
+https://github.com/user-attachments/assets/4979c76f-49c3-4d24-8ca6-95a66738ce88
 
 <p align="center"><sub>A real Claude Code session on the demo corpus: Claude answers with its source, a teammate edits the runbook, and seconds later Claude reports what changed. Nobody ran a reindex. <a href="docs/demo/README.md">How it was recorded.</a></sub></p>
 
