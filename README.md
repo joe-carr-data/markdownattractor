@@ -256,7 +256,7 @@ All three are measured side by side, with grep, on the [benchmarks page](docs/be
 
 ## Status
 
-**Released** (the badge above shows the current version; [changelog](CHANGELOG.md)). The engine, daemon, hybrid search, git-aware times, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). Relationships between documents (`supersedes`, `relates_to`) are not built yet.
+**Released** (the badge above shows the current version; [changelog](CHANGELOG.md)). The engine, daemon, hybrid search, git-aware times, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). **Next:** links between documents (`supersedes`, `relates_to`), so Claude is told outright which decision replaced which.
 
 Progress lives in [`docs/STATUS.md`](docs/STATUS.md). Lessons learned in [`docs/aha.md`](docs/aha.md).
 
