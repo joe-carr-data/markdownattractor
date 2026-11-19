@@ -31,7 +31,7 @@ Sleep 700ms
 Type "@EDIT@"
 Sleep 500ms
 Enter
-Sleep 1500ms
+Sleep 3s
 Ctrl+G
 Sleep 500ms
 Type "@Q2@"
