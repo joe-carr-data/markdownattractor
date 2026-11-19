@@ -13,7 +13,7 @@ The owner asked on 2026-11-19 whether that is still true. Anthropic's *Legal and
 - "Advertised usage limits for Pro, Max, and Ultra plans assume ordinary, individual usage of Claude Code and the Agent SDK";
 - Anthropic may enforce these restrictions without prior notice.
 
-`claude-cli` runs the user's own, unmodified `claude` binary, signed in by the user through Anthropic's flow; mda never sees, stores or passes on the login (golden rule 7). That is the case the new allowance names. What remains open is volume: a background daemon summarising many sections is arguably more than ordinary individual use, and the plan's limits and Anthropic's enforcement fall on the user.
+`claude-cli` runs the user's own, unmodified `claude` binary, signed in by the user through Anthropic's flow; mda never sees, stores or passes on the login (golden rule 7), so it meets the credential conditions. The page does not say whether automated background calls made by a third-party tool through that binary count as the permitted sign-in or as the restricted routing; that question stays open, together with volume: a daemon summarising many sections is arguably more than ordinary individual use, and the plan's limits and Anthropic's enforcement fall on the user. Documenting the backend is this project's decision on that reading, not a statement that Anthropic approves it.
 
 ## Decision
 
@@ -22,7 +22,8 @@ We document the `claude-cli` backend in the README, next to `api` and `local`, a
 ## Consequences
 
 - Positive: users with a Claude plan and no API key can get cards without a second bill; the README no longer states a reading of the terms that the page no longer supports.
-- Negative: users who choose it may hit their plan's limits or Anthropic's enforcement; the README says so plainly. Launch readers may still raise the terms; the answer is this ADR and the quoted page.
+- Negative: users who choose it may hit their plan's limits or Anthropic's enforcement; the README says so plainly. If `ANTHROPIC_API_KEY` is set, the spawned `claude` bills the key, not the plan; the README says to unset it. Launch readers may still raise the terms; the answer is this ADR and the quoted page.
+- Also (Codex review of PR #122): `mda backend` repairing a config that names `claude-cli` without the acknowledgement used to save the defaults over the user's other settings; it now keeps them (`Config::load_unvalidated`).
 - Follow-ups: re-read the terms page before each release that touches this backend; if Anthropic narrows the allowance, revert the README section by a new ADR.
 
 ## Alternatives considered

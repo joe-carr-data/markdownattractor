@@ -152,18 +152,18 @@ export ANTHROPIC_API_KEY=…      # before launching Claude Code; or use a local
 | none | nothing | $0 | raw-text search only, no cards |
 | **api** (default) | an [Anthropic API key](https://console.anthropic.com/) | Haiku list price; the 117-section demo corpus cost $0.31 | about 1 section/s at 16 workers |
 | **local** | `brew install llama.cpp` and one command ([guide](docs/guides/local-model.md)) | $0 | depends on your machine |
-| **claude-cli** (opt-in) | your Claude plan, signed in to Claude Code ([below](#use-your-claude-subscription-instead)) | no extra bill; uses your plan's limits | 4 workers |
+| **claude-cli** (opt-in) | your Claude plan, signed in to Claude Code ([below](#use-your-claude-subscription-instead)) | your plan's usage limits | 4 workers, up to 16 |
 
 ### Use your Claude subscription instead
 
 Have a Claude Pro, Max or Ultra plan and no API key? Let your own Claude Code write the cards:
 
 ```
-mda backend claude-cli --i-accept-the-policy
+/mda backend claude-cli --i-accept-the-policy
 /mda restart
 ```
 
-mda runs your own signed-in `claude` for the summaries and never sees, stores or passes on your login. The summaries count against your plan's usage limits, which Anthropic sets for ordinary individual use and may enforce without notice; a large folder is a lot of summaries. It is opt-in for that reason, and slower than the API key (4 workers). Details and the terms as quoted: [ADR-0010](docs/adr/0010-claude-subscription-backend-documented.md).
+mda runs your own signed-in `claude` for the summaries and never sees, stores or passes on your login. The summaries count against your plan's usage limits, which Anthropic sets for ordinary individual use and may enforce without notice; a large folder is a lot of summaries. It is opt-in for that reason. If `ANTHROPIC_API_KEY` is set when Claude Code starts, `claude` bills that key instead of your plan: unset it to use the subscription. Details and the terms as quoted: [ADR-0010](docs/adr/0010-claude-subscription-backend-documented.md).
 
 ## What it does differently
 

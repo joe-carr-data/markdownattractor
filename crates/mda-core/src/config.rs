@@ -384,6 +384,18 @@ impl Config {
         }
     }
 
+    /// Read the configuration without validating it, so a command can repair a config that
+    /// `load` refuses (a `claude-cli` backend without the acknowledgement) and keep every other
+    /// setting. Validate before using the result for anything but a repair.
+    pub fn load_unvalidated(root: &Path) -> Result<Self> {
+        let path = state_dir(root)?.join(CONFIG_FILE);
+        match std::fs::read_to_string(&path) {
+            Ok(text) => toml::from_str(&text).map_err(|e| Error::Config(e.to_string())),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
+            Err(e) => Err(Error::io(path, e)),
+        }
+    }
+
     /// Parse from TOML text.
     pub fn from_toml(text: &str) -> Result<Self> {
         let cfg: Self = toml::from_str(text).map_err(|e| Error::Config(e.to_string()))?;

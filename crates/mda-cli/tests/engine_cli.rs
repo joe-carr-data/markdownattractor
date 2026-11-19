@@ -397,6 +397,22 @@ fn backend_command_switches_and_guards_claude_cli() {
     let cfg = std::fs::read_to_string(root.join(".markdownattractor/config.toml")).unwrap();
     assert!(cfg.contains("backend = \"api\""));
     assert!(cfg.contains("claude_cli_policy_ack = false"));
+
+    // a hand-edited claude-cli config without the acknowledgement is repaired in place: the
+    // other settings (here a daily budget) survive the switch
+    let path = root.join(".markdownattractor/config.toml");
+    let edited = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("backend = \"api\"", "backend = \"claude-cli\"");
+    std::fs::write(&path, format!("daily_token_budget = 12345\n{edited}")).unwrap();
+    mda()
+        .args(["backend", "claude-cli", "--i-accept-the-policy", "--root"])
+        .arg(root)
+        .assert()
+        .success();
+    let cfg = std::fs::read_to_string(&path).unwrap();
+    assert!(cfg.contains("claude_cli_policy_ack = true"), "{cfg}");
+    assert!(cfg.contains("12345"), "the budget was lost: {cfg}");
 }
 
 #[test]
