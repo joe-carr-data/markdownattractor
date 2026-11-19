@@ -48,6 +48,8 @@ def main():
         pill(ImageDraw.Draw(strip), w / 2, h - 33, text, bold)
         strip.save(out / f"cap{n}.png")
 
+    edited(w, h).save(out / "edit.png")
+
     card = Image.alpha_composite(backdrop, Image.new("RGBA", (w, h), (17, 17, 27, 150)))
     draw = ImageDraw.Draw(card)
     title, line, mono = font(SANS, 92, index=1), font(SANS, 40), font(MONO, 30)
@@ -68,6 +70,20 @@ def main():
 
 SUB = (186, 194, 222, 255)
 GREEN, MAUVE, BLUE, PEACH = (166, 227, 161, 255), (203, 166, 247, 255), (137, 180, 250, 255), (250, 179, 135, 255)
+
+
+def edited(w, h):
+    """The badge shown beside the teammate's pane at the moment of the save: who can edit, and what changed."""
+    strip = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(strip)
+    head, body, bold = font(SANS, 26, index=1), font(SANS, 23), font(SANS, 24, index=1)
+    x0, y0, x1, y1 = 1005, 630, 1530, 790
+    draw.rounded_rectangle((x0, y0, x1, y1), radius=18, fill=(17, 17, 27, 240), outline=PEACH, width=3)
+    draw.ellipse((x0 + 26, y0 + 28, x0 + 44, y0 + 46), fill=PEACH)            # a live dot
+    draw.text((x0 + 58, y0 + 37), "runbooks/deploy.md just changed", font=head, fill=PEACH, anchor="lm")
+    draw.text((x0 + 26, y0 + 88), "saved by a teammate, or by Claude itself", font=body, fill=SUB, anchor="lm")
+    draw.text((x0 + 26, y0 + 128), "ten minutes is now thirty minutes", font=bold, fill=INK, anchor="lm")
+    return strip
 
 
 def box(draw, rect, title, lines, accent, head, body):

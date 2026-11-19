@@ -22,7 +22,7 @@ RUNBOOK="$DEST/runbooks/deploy.md"
 BEFORE="for ten minutes"
 AFTER="for thirty minutes"
 Q1="How long do we watch the error rate after a release? Keep it short."
-Q2="Has the runbook changed since your answer? What does it say now?"
+Q2="Can you double-check?"
 EDIT="sed -i '' 's/$BEFORE/$AFTER/' runbooks/deploy.md"
 
 for tool in vhs ffmpeg tmux claude; do
@@ -93,22 +93,25 @@ fi
 # 30 ms a character plus its pauses.
 t_a1=$(awk -v n="${#Q1}" 'BEGIN{print 1.5 + n*0.03 + 0.5}')                  # Enter on question 1
 t_edit=$(awk -v t="$t_a1" 'BEGIN{print t + 10}')                             # focus moves below
-t_q2=$(awk -v t="$t_edit" -v n="${#EDIT}" 'BEGIN{print t + 0.7 + n*0.03 + 0.5 + 1.5}')
+t_q2=$(awk -v t="$t_edit" -v n="${#EDIT}" 'BEGIN{print t + 0.7 + n*0.03 + 0.5 + 3}')
 t_a2=$(awk -v t="$t_q2" -v n="${#Q2}" 'BEGIN{print t + 0.5 + n*0.03 + 0.5}') # Enter on question 2
+t_c5=$(awk -v t="$t_a2" 'BEGIN{print t + 4}')                                # the answer is on screen
+t_saved=$(awk -v t="$t_edit" -v n="${#EDIT}" 'BEGIN{print t + 0.7 + n*0.03 + 0.5}') # Enter on the edit
 python3 "$HERE/captions.py" "$work" "$work/bg.png" \
   "1 · Ask Claude Code about your team's docs" \
   "The answer comes from the index, with its file and lines" \
-  "2 · Meanwhile, a teammate edits the runbook: ten minutes becomes thirty" \
-  "3 · Seconds later, ask what changed" \
-  "Claude sees the edit: section, lines and time. Nobody ran a reindex."
+  "2 · Meanwhile the runbook changes: a teammate, or Claude itself, saves an edit" \
+  "3 · Seconds later, ask Claude to double-check" \
+  "Claude finds the edit itself: new text, lines and time. Nobody ran a reindex."
 ffmpeg -loglevel error -y -i "$work/out.mp4" \
-  -i "$work/cap0.png" -i "$work/cap1.png" -i "$work/cap2.png" -i "$work/cap3.png" -i "$work/cap4.png" \
+  -i "$work/cap0.png" -i "$work/cap1.png" -i "$work/cap2.png" -i "$work/cap3.png" -i "$work/cap4.png" -i "$work/edit.png" \
   -filter_complex "\
 [0:v][1:v]overlay=enable='between(t,0.2,$t_a1)'[a];\
 [a][2:v]overlay=enable='between(t,$t_a1,$t_edit)'[b];\
 [b][3:v]overlay=enable='between(t,$t_edit,$t_q2)'[c];\
-[c][4:v]overlay=enable='between(t,$t_q2,$t_a2)'[d];\
-[d][5:v]overlay=enable='gte(t,$t_a2)'" \
+[c][4:v]overlay=enable='between(t,$t_q2,$t_c5)'[d];\
+[d][5:v]overlay=enable='gte(t,$t_c5)'[e];\
+[e][6:v]overlay=enable='between(t,$t_saved,$t_c5)'" \
   -c:v libx264 -pix_fmt yuv420p -crf 18 "$work/captioned.mp4"
 ffmpeg -loglevel error -y -loop 1 -t 3.5 -r 25 -i "$work/end.png" \
   -c:v libx264 -pix_fmt yuv420p -crf 18 "$work/end.mp4"
