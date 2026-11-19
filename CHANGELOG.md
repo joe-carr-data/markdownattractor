@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.10] — 2026-11-19
+
 ### Changed
 
 - **The Claude subscription backend is documented.** `mda backend claude-cli --i-accept-the-policy` (your own signed-in `claude` writes the cards) is now in the README next to `api` and `local`, and its message states Anthropic's current terms: your own unmodified Claude Code with your own plan, counted against the plan's usage limits, which assume ordinary individual use. Still opt-in; `api` stays the default (ADR-0010).
