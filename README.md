@@ -6,6 +6,25 @@
 
 <p align="center"><b>markdownattractor gives Claude Code a live index of your markdown. Saved text is searchable in 1.7 s, and every answer points to the file, the lines, and when that section last changed.</b></p>
 
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### ⚡ Indexed as it's written
+
+A Rust daemon watches your folder. Every markdown file, whether you, a teammate or **Claude itself** wrote it (docs, reports, plans, notes), is searchable about **2 seconds after it's saved**. You never run an indexer, and Claude finds today's report in the next session without being told where it is.
+
+</td>
+<td width="50%" valign="top">
+
+### 🕒 Never lost in stale docs
+
+Every section knows when it was created and last changed, from git history (or file times outside git). Claude sees those dates on every hit, can search just the last week (`--since 7d`), and can ask for a timeline of what changed. So it can tell the current runbook from last year's, and the new decision from the one it replaced, instead of mixing them.
+
+</td>
+</tr>
+</table>
+
 <p align="center">
   A Claude Code plugin that keeps a live, searchable index of the markdown in your project.<br>
   One Rust binary. Search works with no key; summaries use your own Anthropic API key, a free local model, or your Claude subscription. The index stays on your machine, no telemetry, never writes to your files.
@@ -79,7 +98,9 @@ acme-docs % mda search canary --raw
 
 The pager goes off. You ask Claude how to roll back. It greps the repo, reads runbook after runbook, and gives you a confident command. Then comes the question that matters before you hit Enter: **where is that written, and when did someone last change it?** Now you're reading the runbook yourself.
 
-markdownattractor answers that question for you, on every answer.
+And the pile grows every day: Claude writes plans, reports and notes in markdown, so last month's plan and today's sit side by side, and nothing tells it which one is current.
+
+markdownattractor answers both: where it is written, and how recent it is, on every answer.
 
 ## What markdownattractor does
 
@@ -235,7 +256,7 @@ All three are measured side by side, with grep, on the [benchmarks page](docs/be
 
 ## Status
 
-**Released** (the badge above shows the current version; [changelog](CHANGELOG.md)). The engine, daemon, hybrid search, git-aware times, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). Relationships between documents (`supersedes`, `relates_to`) are not built yet.
+**Released** (the badge above shows the current version; [changelog](CHANGELOG.md)). The engine, daemon, hybrid search, git-aware times, MCP server, search-first skill and release pipeline are shipped. Six benchmark tables are published (T1–T6). **Next:** links between documents (`supersedes`, `relates_to`), so Claude is told outright which decision replaced which.
 
 Progress lives in [`docs/STATUS.md`](docs/STATUS.md). Lessons learned in [`docs/aha.md`](docs/aha.md).
 

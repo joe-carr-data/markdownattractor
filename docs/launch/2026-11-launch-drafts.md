@@ -68,6 +68,13 @@ Body: the first comment above, minus the Show HN framing, plus one paragraph on 
 5. What passed (the table above), what did not, and the change-impact review story with its lesson: run the cheap baseline first.
 6. What is next, without promises.
 
+## The two points every post leads with (owner, 2026-11-19)
+
+1. **Indexed as it's written.** A Rust daemon indexes every markdown file the moment it is saved, including the docs, reports and plans Claude writes itself: searchable in about 2 seconds, no indexer to run.
+2. **Never lost in stale docs.** Every section carries when it was created and last changed (git history, or file times); Claude sees the dates, can search the last week and ask for a timeline, so it tells the current runbook from last year's and the new decision from the one it replaced.
+
+How to say it: let the dates do the work. "Claude sees which version is newer" lands harder than any feature name, and it is exactly what the demo shows. If someone asks for explicit links between documents, the answer is "next on the roadmap": `supersedes` and `relates_to` are already designed.
+
 ## Launch tactics (Codex marketing pass, 2026-11-19)
 
 - **Show HN:** title "Show HN: Markdownattractor lets Claude Code cite the runbook lines behind an answer". In the first comment, paste the real question, tool calls and cited answer (the README session), then the no-key install so readers can try it on their own docs.
