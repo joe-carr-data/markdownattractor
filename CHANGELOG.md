@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- **README: the benchmark guarantee shows the highlights.** The generated headline-claims table (`scripts/eval/t6.sh readme-row`, checked by `make check`) now lives on `docs/benchmarks.md` only; the README bullet names the 3.18×, 1.7 s and 98 % results and links the page. Every number and its method are unchanged.
+
 ## [0.2.10] — 2026-11-19
 
 ### Changed

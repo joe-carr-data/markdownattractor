@@ -610,7 +610,7 @@ for c in golden docs private; do scripts/eval/t6.sh preflight "$c"; done        
 for c in golden docs private; do scripts/eval/t6.sh run "$c"; scripts/eval/t6.sh status "$c"; done
 for c in golden docs private; do scripts/eval/t6.sh grade "$c"; scripts/eval/t6.sh panel "$c"; scripts/eval/t6.sh analysis "$c"; done
 for c in golden docs; do scripts/eval/t6.sh archive "$c"; done; scripts/eval/t6.sh export-private; scripts/eval/t6.sh leak-scan
-scripts/eval/t6.sh table; scripts/eval/t6_report.py; scripts/eval/t6.sh readme-row       # the page tables and the README rows, never retyped
+scripts/eval/t6.sh table; scripts/eval/t6_report.py; scripts/eval/t6.sh readme-row       # the page tables and the headline rows (on docs/benchmarks.md since 2026-11-22, no longer in the README), never retyped
 ```
 
 A counted run (`run`) refuses to start unless the public freeze checks, the corpus's preflight passed and is bound to the live store, inventory and freeze, the binary rebuilt `--locked` equals the frozen one, no runner override is set, and (private) the private freeze re-checks against its published digest; it takes the arm set the preflight certified. **The preflight** also compares each copy — and graphify's serving copy — with `git archive` of the source commit, reconstructs the store from the committed cards (same section identities, identical card texts, every section embedded), checks the committed question file (texts, or digests against the private texts), the calibration record, and runs three activation probes per arm; every attempt is kept (`preflight/T6-<corpus>.attempt-N.json` and its probe traces).
