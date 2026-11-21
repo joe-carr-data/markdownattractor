@@ -4,7 +4,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 
 | Date | Doc | What it is |
 |---|---|---|
-| 2026-11-21 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
+| 2026-11-22 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-19 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
 | 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-18 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
@@ -27,6 +27,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-10 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
+| 2026-11-22 | [adr/0011-license-apache-2-0.md](adr/0011-license-apache-2-0.md) | Status: **Accepted** · 2026-11-22 · Owner decision |
 | 2026-11-19 | [adr/0010-claude-subscription-backend-documented.md](adr/0010-claude-subscription-backend-documented.md) | Status: **Accepted** · 2026-11-19 · Supersedes decision 3 of ADR-0002 · Owner decision |
 | 2026-11-19 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
 | 2026-11-18 | [adr/0009-change-impact-review.md](adr/0009-change-impact-review.md) | Date: 2026-11-17 |
@@ -84,17 +85,17 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [reviews/codex/2026-09-22-crates.md](reviews/codex/2026-09-22-crates.md) | \ |
 | 2026-09-22 | [reviews/codex/2026-09-22-benchmark-plan.md](reviews/codex/2026-09-22-benchmark-plan.md) | \ |
 | 2026-09-21 | [reviews/codex/2026-09-21-pre-mortem.md](reviews/codex/2026-09-21-pre-mortem.md) | **T2.** Codex (gpt-6-astra) pre-mortem on the plan: 11 findings, triage, resulting plan edits. |
-| 2026-11-21 | [handoffs/2026-11-21-2322-auto.md](handoffs/2026-11-21-2322-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-11-22 | [handoffs/2026-11-21-2322-auto.md](handoffs/2026-11-21-2322-auto.md) | Written by scripts/dev/pre-compact.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-19 | [handoffs/2026-11-19-1739-auto.md](handoffs/2026-11-19-1739-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-19 | [handoffs/2026-11-19-1718-auto.md](handoffs/2026-11-19-1718-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-19 | [handoffs/2026-11-19-1626-auto.md](handoffs/2026-11-19-1626-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-19 | [handoffs/2026-11-19-1604-auto.md](handoffs/2026-11-19-1604-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-11-22 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-21 | [launch/2026-11-launch-drafts.md](launch/2026-11-launch-drafts.md) | Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every n… |
 | 2026-11-19 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-11-19 | [compare/graphify.md](compare/graphify.md) | [graphify](https://github.com/safishamsi/graphify) turns code, docs and media into a knowledge gr… |
 | 2026-11-19 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
 | 2026-11-18 | [project-plan.md](project-plan.md) | **T2.** The full design: goals, landscape, architecture, summarization, search, commands, roadmap, distribution, SDLC. |
-| 2026-11-18 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
 | 2026-11-16 | [guides/mcp-clients.md](guides/mcp-clients.md) | The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`md… |
 | 2026-09-22 | [guides/local-model.md](guides/local-model.md) | The `local` backend talks to any OpenAI-compatible chat server (llama.cpp, LM Studio, Ollama). It… |
 
