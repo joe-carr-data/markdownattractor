@@ -84,11 +84,11 @@ case "$cmd" in
     fi
     echo "page-blocks: all $(grep -c . "$baseline") baseline blocks present and unchanged across ${#pages[@]} page(s) ($(grep -c . "$tmp/now.sha") blocks now)" ;;
   readme)
-    # the README's numbers row is exactly the renderer's output (never retyped): the block between
-    # the benchmark-row markers equals `scripts/eval/t6.sh readme-row` on the committed artifacts
+    # the headline-claims row is exactly the renderer's output (never retyped): the block between
+    # the benchmark-row markers on docs/benchmarks.md equals `scripts/eval/t6.sh readme-row` on the committed artifacts
     want="$("$repo/scripts/eval/t6.sh" readme-row)"
-    have="$(sed -n '/<!-- benchmark-row:start -->/,/<!-- benchmark-row:end -->/p' "$repo/README.md" | sed '1d;$d')"
-    [ -n "$have" ] || { echo "readme: no benchmark-row markers in README.md" >&2; exit 1; }
+    have="$(sed -n '/<!-- benchmark-row:start -->/,/<!-- benchmark-row:end -->/p' "$repo/docs/benchmarks.md" | sed '1d;$d')"
+    [ -n "$have" ] || { echo "readme: no benchmark-row markers in docs/benchmarks.md" >&2; exit 1; }
     if [ "$want" = "$have" ]; then echo "readme: the numbers row equals the renderer's output ($(printf '%s\n' "$have" | grep -c '^| ' ) lines)"; else echo "readme: the numbers row differs from scripts/eval/t6.sh readme-row:" >&2; diff <(printf '%s\n' "$want") <(printf '%s\n' "$have") >&2 || true; exit 1; fi ;;
   selftest)
     # mutation fixtures: a copy of the baseline page with one table deleted, one caption changed,
