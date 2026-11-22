@@ -8,15 +8,25 @@ use std::process::ExitCode;
 pub struct Args {
     /// Watched root. Defaults to `$MDA_ROOT`, then the nearest indexed ancestor of the
     /// working directory.
-    #[arg(long, env = "MDA_ROOT")]
+    #[arg(long)]
     pub root: Option<PathBuf>,
+    /// Start the daemon for the root first if none is running, so the index is built and kept
+    /// fresh (for MCP clients outside Claude Code, where the plugin's hooks do not run).
+    #[arg(long)]
+    pub start: bool,
 }
 
 /// Run the server until the client disconnects. stdout is the protocol channel: nothing
 /// else may print there (logs go to stderr).
 pub fn run(args: &Args, _json: bool) -> anyhow::Result<ExitCode> {
-    let root = super::resolve_root(args.root.as_deref())?;
+    // `$MDA_ROOT` is a fallback, not a choice made on this command line: `--start` refuses
+    // the home folder or the filesystem root from it, as `mda start` does for an implied root.
+    let from_env = std::env::var_os("MDA_ROOT").filter(|v| !v.is_empty()).map(PathBuf::from);
+    let root = super::resolve_root(args.root.as_deref().or(from_env.as_deref()))?;
     let root = root.canonicalize()?;
+    if args.start && super::start::ensure_running(&root, args.root.is_some())? {
+        tracing::info!(root = %root.display(), "started the daemon before serving");
+    }
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
     rt.block_on(mda_core::mcp::serve_stdio(&root))?;
     Ok(ExitCode::SUCCESS)

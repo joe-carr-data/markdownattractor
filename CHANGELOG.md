@@ -4,8 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Security
+
+- **A repository can no longer choose where your API key goes.** A `.markdownattractor/config.toml` inside a checked-out folder could set `api_base_url` or `api_key_env` and have the daemon send your key, or another environment variable, to its own server. A non-default value is now refused unless your own environment names it (`MDA_API_BASE_URL`, `MDA_API_KEY_ENV`). Found by the Codex review of ADR-0012.
+- `url` 2.5.9 (stack overflow in `Url::origin` on nested `blob:` URLs).
+
 ### Added
 
+- **`mda mcp --start`**: starts the indexer for the folder before serving, for MCP clients outside Claude Code. Each release also carries an MCP bundle (`markdownattractor-mcp-<version>.mcpb`) and is listed in the official MCP Registry as `io.github.joe-carr-data/markdownattractor` (ADR-0012).
 - A code of conduct (Contributor Covenant 2.1), a feature-request issue template, and a link from new issues to GitHub Discussions for questions.
 
 ### Changed

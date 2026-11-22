@@ -132,9 +132,59 @@ jobs:
           path: dist/mda-${{ matrix.name }}.tar.gz
           if-no-files-found: error
 
+  # The MCP bundle (ADR-0012): every build plus a launcher that picks the one for the machine,
+  # validated and packed with the MCPB tool. Its URL must contain "mcp" for the MCP Registry.
+  bundle:
+    name: MCP bundle
+    needs: build
+    runs-on: ubuntu-latest
+    # Runs third-party npm code: no write token, and checkout keeps no credential.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: mda-*
+          merge-multiple: true
+      - name: lay out the bundle
+        run: |
+          set -euo pipefail
+          v="$(tr -d '[:space:]' < VERSION)"
+          b="$RUNNER_TEMP/bundle"
+          mkdir -p "$b/server"
+          for n in darwin-arm64 darwin-x64 linux-x64 linux-arm64; do
+            mkdir -p "$RUNNER_TEMP/x/$n"
+            tar -xzf "dist/mda-$n.tar.gz" -C "$RUNNER_TEMP/x/$n"
+            install -m 0755 "$RUNNER_TEMP/x/$n/mda" "$b/server/mda-$n"
+          done
+          mkdir -p "$RUNNER_TEMP/x/windows-x64"
+          tar -xzf dist/mda-windows-x64.tar.gz -C "$RUNNER_TEMP/x/windows-x64"
+          install -m 0755 "$RUNNER_TEMP/x/windows-x64/mda.exe" "$b/server/mda.exe"
+          install -m 0755 packaging/mcpb/mda-launch "$b/server/mda-launch"
+          cp LICENSE "$b/"
+          jq --arg v "$v" '.version = $v' packaging/mcpb/manifest.json > "$b/manifest.json"
+          echo "BUNDLE_DIR=$b" >> "$GITHUB_ENV"
+          echo "BUNDLE_FILE=markdownattractor-mcp-$v.mcpb" >> "$GITHUB_ENV"
+      - name: validate and pack (MCPB CLI, pinned)
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          npx --yes @anthropic-ai/mcpb@2.1.2 validate "$BUNDLE_DIR/manifest.json"
+          npx --yes @anthropic-ai/mcpb@2.1.2 pack "$BUNDLE_DIR" "out/$BUNDLE_FILE"
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mcpb
+          path: out/*.mcpb
+          if-no-files-found: error
+
   publish:
     name: checksums and release
-    needs: build
+    needs: [build, bundle]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -145,7 +195,7 @@ jobs:
       - name: SHA256SUMS
         run: |
           cd dist
-          sha256sum mda-*.tar.gz > SHA256SUMS
+          sha256sum mda-*.tar.gz markdownattractor-mcp-*.mcpb > SHA256SUMS
           cat SHA256SUMS
       - name: bootstrap.sh installs the linux-x64 archive from this layout
         env:
@@ -165,11 +215,11 @@ jobs:
           name: SHA256SUMS
           path: dist/SHA256SUMS
       - name: publish the GitHub Release
-        if: github.ref_type == 'tag'
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/mda-*.tar.gz dist/SHA256SUMS \
+          gh release create "${{ github.ref_name }}" dist/mda-*.tar.gz dist/markdownattractor-mcp-*.mcpb dist/SHA256SUMS \
             --title "${{ github.ref_name }}" --generate-notes --verify-tag
       - name: create the tag and publish the GitHub Release (a publishing run on main)
         if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
@@ -180,5 +230,49 @@ jobs:
           v="v$(tr -d '[:space:]' < VERSION)"
           # The tag is created here, on the commit that was built and checked. A tag made with
           # the workflow's token starts no second run.
-          gh release create "$v" dist/mda-*.tar.gz dist/SHA256SUMS \
+          gh release create "$v" dist/mda-*.tar.gz dist/markdownattractor-mcp-*.mcpb dist/SHA256SUMS \
             --target "${{ github.sha }}" --title "$v" --generate-notes
+
+  # The MCP Registry entry (ADR-0012), after the release is live, on publishing runs only.
+  # GitHub OIDC proves the io.github.joe-carr-data namespace: no stored token.
+  registry:
+    name: MCP Registry
+    needs: publish
+    if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mcpb
+          path: out
+      - name: mcp-publisher (pinned, checksum verified)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o mcp-publisher.tar.gz https://github.com/modelcontextprotocol/registry/releases/download/v1.8.9/mcp-publisher_linux_amd64.tar.gz
+          echo "4d527ca8f1ced0394c962dc925c2a4a4addef441cbefd62501c875e9481823a8  mcp-publisher.tar.gz" | sha256sum -c -
+          tar -xzf mcp-publisher.tar.gz mcp-publisher
+      - name: server.json for this release
+        run: |
+          set -euo pipefail
+          v="$(tr -d '[:space:]' < VERSION)"
+          f="markdownattractor-mcp-$v.mcpb"
+          sha="$(sha256sum "out/$f" | awk '{print $1}')"
+          url="https://github.com/${{ github.repository }}/releases/download/v$v/$f"
+          # The public asset is the file we built: the registry records this digest and
+          # installers check it.
+          curl -fsSL -o public.mcpb "$url"
+          [ "$(sha256sum public.mcpb | awk '{print $1}')" = "$sha" ] || { echo "the released $f differs from the built one" >&2; exit 1; }
+          jq --arg v "$v" --arg url "$url" --arg sha "$sha" \
+            '.version = $v | .packages[0].identifier = $url | .packages[0].fileSha256 = $sha' \
+            server.json > server.release.json
+          cat server.release.json
+      - name: publish
+        run: |
+          set -euo pipefail
+          ./mcp-publisher login github-oidc
+          cp server.release.json server.json
+          ./mcp-publisher publish

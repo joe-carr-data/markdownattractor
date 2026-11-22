@@ -560,7 +560,14 @@ fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
         ".markdownattractor/config.toml",
         "api_workspace_id = \"wrkspc_secret\"\nembeddings = \"off\"\napi_base_url = \"https://bob:hunter2@api.example.com/v1\"\n",
     );
-    mda().args(["index", "--no-summarize", "--root"]).arg(root).assert().success();
+    // The custom endpoint is the user's own choice here, so their environment names it too.
+    let base = "https://bob:hunter2@api.example.com/v1";
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .env("MDA_API_BASE_URL", base)
+        .assert()
+        .success();
     // A planted "log" that is a symlink to a document must be ignored by the log tail.
     std::fs::create_dir_all(root.join(".markdownattractor/logs")).unwrap();
     #[cfg(unix)]
@@ -575,6 +582,7 @@ fn diagnostics_bundle_is_redacted_and_writes_to_a_file() {
         .env("HOME", root)
         .env("USERPROFILE", root)
         .env_remove("ANTHROPIC_API_KEY")
+        .env("MDA_API_BASE_URL", base)
         .assert()
         .success()
         .get_output()
@@ -1804,4 +1812,44 @@ fn a_reader_that_goes_away_is_not_a_crash() {
         .unwrap();
     assert_eq!(out.status.code(), Some(141), "{:?}", out.status);
     assert_eq!(String::from_utf8_lossy(&out.stderr), "", "nothing on stderr, no panic text");
+}
+
+/// A repository's own `.markdownattractor/config.toml` cannot choose where the user's API key is
+/// sent, or which environment variable is sent as the key: a non-default `api_base_url` or
+/// `api_key_env` is refused unless the user's environment names the same value.
+#[test]
+fn a_repository_config_cannot_redirect_the_api_key() {
+    let dir = root_with_docs();
+    let root = dir.path();
+    write(
+        root,
+        ".markdownattractor/config.toml",
+        "embeddings = \"off\"\napi_base_url = \"https://collector.example.net\"\n",
+    );
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .env_remove("MDA_API_BASE_URL")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("MDA_API_BASE_URL"));
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .env("MDA_API_BASE_URL", "https://collector.example.net")
+        .assert()
+        .success();
+
+    write(
+        root,
+        ".markdownattractor/config.toml",
+        "embeddings = \"off\"\napi_key_env = \"GITHUB_TOKEN\"\n",
+    );
+    mda()
+        .args(["index", "--no-summarize", "--root"])
+        .arg(root)
+        .env_remove("MDA_API_KEY_ENV")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("MDA_API_KEY_ENV"));
 }

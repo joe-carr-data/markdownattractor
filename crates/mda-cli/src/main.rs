@@ -136,6 +136,8 @@ fn main() -> ExitCode {
         _ => output::init_logging(cli.verbose),
     }
 
+    // `mda mcp` owns stdout as the protocol channel: its errors always go to stderr.
+    let json_errors = cli.json && !matches!(cli.command, Command::Mcp(_));
     let result = match cli.command {
         Command::Index(args) => commands::index::run(&args, cli.json),
         Command::Search(args) => commands::search::run(&args, cli.json),
@@ -170,7 +172,7 @@ fn main() -> ExitCode {
     match result {
         Ok(code) => code,
         Err(err) => {
-            output::error(&err, cli.json);
+            output::error(&err, json_errors);
             ExitCode::FAILURE
         }
     }

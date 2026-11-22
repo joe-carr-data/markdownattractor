@@ -1,6 +1,6 @@
 # Use markdownattractor from other MCP clients
 
-The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`mda mcp`, stdio), so any MCP client can use it. Outside Claude Code nothing is automatic: you install the binary, index the folder and add the server yourself. This guide shows how.
+The Claude Code plugin is the easiest install, but the index is served by a plain MCP server (`mda mcp`, stdio), so any MCP client can use it. Outside Claude Code you install the binary and add the server yourself; with `mda mcp --start` the server also starts the indexer for the folder, so you need not run `mda start` first. (Claude Desktop users can install the MCP bundle from the release page instead.) This guide shows how.
 
 ## Status of each client (2026-11-10, v0.2.0, macOS arm64)
 

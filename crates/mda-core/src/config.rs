@@ -16,6 +16,14 @@ pub const STATE_DIR: &str = ".markdownattractor";
 /// Name of the config file inside [`STATE_DIR`].
 pub const CONFIG_FILE: &str = "config.toml";
 
+/// Environment variable that allows a non-default `api_base_url` in `config.toml`: it must hold
+/// the same URL. Set by the user, never by a repository.
+pub const API_BASE_URL_ENV: &str = "MDA_API_BASE_URL";
+
+/// Environment variable that allows a non-default `api_key_env` in `config.toml`: it must hold
+/// the same variable name.
+pub const API_KEY_ENV_ENV: &str = "MDA_API_KEY_ENV";
+
 /// `<root>/.markdownattractor`, refusing a symlink in its place. A checked-out repository can
 /// carry a planted `.markdownattractor` link; following it would put the database, the pid
 /// file and the socket wherever the link points.
@@ -369,16 +377,50 @@ impl Config {
             })
     }
 
+    /// Refuse a config file that would send the API key somewhere the user did not choose:
+    /// `api_base_url` other than the default, or `api_key_env` other than the default, unless
+    /// the matching environment variable holds exactly the same value.
+    fn check_credential_target(&self) -> Result<()> {
+        let default = Self::default();
+        let allowed = |var: &str, value: &str| std::env::var(var).is_ok_and(|v| v.trim() == value);
+        if self.api_base_url.trim() != default.api_base_url
+            && !allowed(API_BASE_URL_ENV, self.api_base_url.trim())
+        {
+            return Err(Error::Config(format!(
+                "config.toml sets api_base_url = {:?}; the API key is sent only to {} unless you set {API_BASE_URL_ENV} to the same URL in your own environment (a repository's config cannot choose where your key goes)",
+                self.api_base_url, default.api_base_url
+            )));
+        }
+        if self.api_key_env.trim() != default.api_key_env
+            && !allowed(API_KEY_ENV_ENV, self.api_key_env.trim())
+        {
+            return Err(Error::Config(format!(
+                "config.toml sets api_key_env = {:?}; the key is read from {} unless you set {API_KEY_ENV_ENV} to the same name in your own environment (a repository's config cannot choose which secret is sent)",
+                self.api_key_env, default.api_key_env
+            )));
+        }
+        Ok(())
+    }
+
     /// Path of the config file for a given watched root.
     pub fn path_for(root: &Path) -> PathBuf {
         root.join(STATE_DIR).join(CONFIG_FILE)
     }
 
     /// Load the config for `root`, returning defaults if the file does not exist.
+    ///
+    /// The file lives inside the watched folder, so a checked-out repository can ship one. It
+    /// may not choose where the user's key goes: a non-default `api_base_url` or `api_key_env`
+    /// is accepted only when the user's own environment names the same value
+    /// ([`API_BASE_URL_ENV`], [`API_KEY_ENV_ENV`]).
     pub fn load(root: &Path) -> Result<Self> {
         let path = state_dir(root)?.join(CONFIG_FILE);
         match std::fs::read_to_string(&path) {
-            Ok(text) => Self::from_toml(&text),
+            Ok(text) => {
+                let cfg = Self::from_toml(&text)?;
+                cfg.check_credential_target()?;
+                Ok(cfg)
+            }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
             Err(e) => Err(Error::io(path, e)),
         }

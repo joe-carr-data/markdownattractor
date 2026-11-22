@@ -103,27 +103,7 @@ pub fn run(args: &Args, json: bool) -> anyhow::Result<ExitCode> {
         return super::daemon::run(&d, json);
     }
 
-    let log_dir = root.join(STATE_DIR).join("logs");
-    std::fs::create_dir_all(&log_dir).with_context(|| format!("creating {}", log_dir.display()))?;
-    let pid = spawn_detached(&root, &log_dir)?;
-
-    let deadline = Instant::now() + STARTUP_TIMEOUT;
-    let mut up = false;
-    while Instant::now() < deadline {
-        if super::block_on(is_running(&root))? {
-            up = true;
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
-    if !up {
-        let tail = tail_of(&log_dir.join("daemon.out"), 8);
-        anyhow::bail!(
-            "daemon (pid {pid}) did not answer within {}s; last log lines:\n{tail}\n(see {})",
-            STARTUP_TIMEOUT.as_secs(),
-            log_dir.display()
-        );
-    }
+    let (pid, log_dir) = launch(&root)?;
     let info = DaemonInfo::read(&root)?;
     let pid = info.as_ref().map_or(pid, |i| i.pid);
 
@@ -311,6 +291,55 @@ fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result
         println!("  {} mda status · mda watch · mda stop", st.dim("next:"));
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// Spawn the daemon for `root` in the background and wait until it answers its socket.
+/// Returns its pid and log folder. Prints nothing: `mda mcp --start` calls this while stdout
+/// is the protocol channel.
+fn launch(root: &Path) -> anyhow::Result<(u32, PathBuf)> {
+    // The state folder, its `logs` folder and `daemon.out` are refused when they are symlinks:
+    // a checked-out repository must not steer the daemon's writes outside the folder.
+    let log_dir = mda_core::config::state_dir(root)?.join("logs");
+    refuse_symlink(&log_dir)?;
+    std::fs::create_dir_all(&log_dir).with_context(|| format!("creating {}", log_dir.display()))?;
+    refuse_symlink(&log_dir.join("daemon.out"))?;
+    let pid = spawn_detached(root, &log_dir)?;
+
+    let deadline = Instant::now() + STARTUP_TIMEOUT;
+    while Instant::now() < deadline {
+        if super::block_on(is_running(root))? {
+            return Ok((pid, log_dir));
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    let tail = tail_of(&log_dir.join("daemon.out"), 8);
+    anyhow::bail!(
+        "daemon (pid {pid}) did not answer within {}s; last log lines:\n{tail}\n(see {})",
+        STARTUP_TIMEOUT.as_secs(),
+        log_dir.display()
+    );
+}
+
+/// Make sure a daemon watches `root`, starting one if none answers (`mda mcp --start`, for MCP
+/// clients that do not run the plugin's hooks). Same guard as `mda start`: the home folder and
+/// the filesystem root are refused unless named explicitly. Prints nothing; returns whether a
+/// daemon was started.
+pub(super) fn ensure_running(root: &Path, explicit: bool) -> anyhow::Result<bool> {
+    refuse_too_broad(root, explicit)?;
+    if super::block_on(is_running(root))? {
+        return Ok(false);
+    }
+    // The daemon creates the database under its own lock; opening it here too would race a
+    // second client starting at the same moment.
+    launch(root)?;
+    Ok(true)
+}
+
+fn refuse_symlink(path: &Path) -> anyhow::Result<()> {
+    if std::fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink()) {
+        anyhow::bail!("{} is a symlink; refusing to write through it", path.display());
+    }
+    Ok(())
 }
 
 /// Spawn `mda daemon` detached from this terminal, logging to `log_dir`.

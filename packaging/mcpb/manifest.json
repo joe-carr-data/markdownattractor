@@ -1,0 +1,92 @@
+{
+  "manifest_version": "0.3",
+  "name": "markdownattractor",
+  "display_name": "markdownattractor",
+  "version": "0.2.10",
+  "description": "A live, time-aware index of your markdown: search by section, with file, lines and when each section last changed.",
+  "long_description": "markdownattractor watches a folder of markdown and indexes every section the moment it is saved. Claude searches the index, reads a short card, and opens only the lines it needs; every hit carries the file, the line range and when the section was created and last changed (from git history, or file times). Search works with no API key and no model; local embeddings rank by meaning. Summary cards are available in the Claude Code plugin with your own API key or a local model. Local index, no telemetry, never writes to your files.",
+  "author": {
+    "name": "joe-carr-data",
+    "url": "https://github.com/joe-carr-data"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joe-carr-data/markdownattractor"
+  },
+  "homepage": "https://github.com/joe-carr-data/markdownattractor",
+  "documentation": "https://github.com/joe-carr-data/markdownattractor#readme",
+  "support": "https://github.com/joe-carr-data/markdownattractor/issues",
+  "license": "Apache-2.0",
+  "keywords": [
+    "markdown",
+    "docs",
+    "search",
+    "runbooks",
+    "adr",
+    "knowledge-base",
+    "local-first"
+  ],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/mda-launch",
+    "mcp_config": {
+      "command": "${__dirname}/server/mda-launch",
+      "args": [
+        "mcp",
+        "--start",
+        "--root",
+        "${user_config.docs_folder}"
+      ],
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/mda.exe"
+        }
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "mda_search",
+      "description": "Search the index: sections ranked by text, meaning and time, each with file, lines and dates"
+    },
+    {
+      "name": "mda_card",
+      "description": "The summary card of a section"
+    },
+    {
+      "name": "mda_open",
+      "description": "The exact source lines of a section, re-checked against the file"
+    },
+    {
+      "name": "mda_timeline",
+      "description": "What was created, changed or deleted, by day"
+    },
+    {
+      "name": "mda_recent",
+      "description": "The most recently changed documents"
+    },
+    {
+      "name": "mda_stale",
+      "description": "Documents whose index is not final yet"
+    },
+    {
+      "name": "mda_status",
+      "description": "What is indexed, pending and running"
+    }
+  ],
+  "user_config": {
+    "docs_folder": {
+      "type": "directory",
+      "title": "Docs folder",
+      "description": "The folder of markdown to index and search (a project, a docs folder, a notes vault).",
+      "required": true
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ]
+  }
+}
