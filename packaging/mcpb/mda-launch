@@ -1,0 +1,11 @@
+#!/bin/sh
+# Runs the mda binary built for this machine (MCP bundle, ADR-0012). Windows uses mda.exe directly.
+here="$(cd "$(dirname "$0")" && pwd)"
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64) bin="mda-darwin-arm64" ;;
+  Darwin-x86_64) bin="mda-darwin-x64" ;;
+  Linux-x86_64 | Linux-amd64) bin="mda-linux-x64" ;;
+  Linux-aarch64 | Linux-arm64) bin="mda-linux-arm64" ;;
+  *) echo "markdownattractor: no build for $(uname -s) $(uname -m)" >&2; exit 1 ;;
+esac
+exec "$here/$bin" "$@"

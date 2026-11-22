@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.joe-carr-data/markdownattractor",
+  "title": "markdownattractor",
+  "description": "A live, time-aware index of your markdown, with file, lines and dates on every hit",
+  "repository": {
+    "url": "https://github.com/joe-carr-data/markdownattractor",
+    "source": "github"
+  },
+  "version": "0.2.10",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/joe-carr-data/markdownattractor/releases/download/v0.2.10/markdownattractor-mcp-0.2.10.mcpb",
+      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
