@@ -1,6 +1,6 @@
 # ADR-0012 — List the MCP server in the official MCP Registry as an `mcpb` bundle
 
-Status: **Proposed** · 2026-11-23
+Status: **Accepted** · 2026-11-23 · Owner decision ("go registry")
 
 ## Context
 
@@ -10,11 +10,11 @@ The launch plan (2026-11-22) lists markdownattractor in the official MCP Registr
 
 One product gap: a client that installs the bundle (Claude Desktop today) runs `mda mcp`, which serves an existing index and starts nothing. In Claude Code the plugin's hooks start the daemon; outside it, nothing would, and the tools would answer from an empty index.
 
-## Decision (proposed)
+## Decision
 
 1. **`mda mcp --start`**: before serving, start the daemon for the root if none is running (the same path as `mda start`, without the first-run example), then serve. A public CLI flag, so it goes through a Codex review.
-2. **One `mcpb` bundle per release**, built in `release.yml` after the build matrix: `manifest.json` (MCPB 0.3, `server.type: "binary"`) with `user_config` for the docs folder passed as `MDA_ROOT`, `args: ["mcp", "--start"]`; macOS one universal binary (`lipo` of the arm64 and x64 builds), Linux a small launcher choosing x64 or arm64 by `uname -m`, Windows x64 through `platform_overrides`.
-3. **Publish from CI** with `mcp-publisher` (pinned version, verified download) and GitHub OIDC, after the release asset is live; `server.json` in the repository, its version, URL and `fileSha256` filled from the tag. Name `io.github.joe-carr-data/markdownattractor`.
+2. **One `mcpb` bundle per release**, built in `release.yml` after the build matrix: `manifest.json` (MCPB 0.3, `server.type: "binary"`) with `user_config` for the docs folder passed as `MDA_ROOT`, `args: ["mcp", "--start"]`; a small launcher (`packaging/mcpb/mda-launch`) runs the macOS or Linux build for the machine (`uname -s`, `uname -m`), and Windows runs `mda.exe` through `platform_overrides`; the bundle also offers an optional Anthropic API key field for the cards.
+3. **Publish from CI** with `mcp-publisher` (pinned v1.8.9, checksum-verified) and GitHub OIDC, after the release asset is live; `server.json` in the repository, its version, URL and `fileSha256` filled from the tag. Name `io.github.joe-carr-data/markdownattractor`.
 
 ## Consequences
 

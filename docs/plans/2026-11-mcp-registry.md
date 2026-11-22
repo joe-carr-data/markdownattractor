@@ -1,6 +1,6 @@
 # Plan — MCP Registry listing via an `mcpb` bundle (ADR-0012)
 
-Status: proposed, 2026-11-23. Waits for the owner's go (ADR-0012 adds a public CLI flag).
+Status: active, 2026-11-23 (owner: "go registry"). Deadline Thu 2026-11-26; if not green with its Codex review by then, it ships after the launch.
 
 ## Goal
 
@@ -8,10 +8,10 @@ markdownattractor appears in the official MCP Registry as `io.github.joe-carr-da
 
 ## Tasks
 
-- [ ] `mda mcp --start`: ensure a daemon for the root, then serve; integration test (no daemon → one started; one running → reused; `--start` absent → unchanged behaviour). Codex review.
-- [ ] `packaging/mcpb/manifest.json` (MCPB 0.3, binary server, `user_config` docs folder → `MDA_ROOT`, `args: ["mcp", "--start"]`, platform overrides) and `packaging/mcpb/mda-linux` launcher (`uname -m`).
-- [ ] `server.json` (schema 2025-12-11, description ≤ 100 characters, one `mcpb` package).
-- [ ] `release.yml`: a `bundle` job after `build` (universal macOS binary with `lipo`, the launcher, `mcpb validate`, `mcpb pack`, sha256) whose artifact joins the release; a `registry` job after `publish`, publishing runs only (`permissions: id-token: write, contents: read`; pinned, verified `mcp-publisher`; `login github-oidc`; `publish`).
+- [x] `mda mcp --start`: ensure a daemon for the root, then serve; integration test (no daemon → one started; one running → reused; `--start` absent → unchanged behaviour). Codex review.
+- [x] `packaging/mcpb/manifest.json` (MCPB 0.3, binary server, `user_config` docs folder → `MDA_ROOT` and an optional API key, `args: ["mcp", "--start"]`, a Windows override) and the `packaging/mcpb/mda-launch` launcher for macOS and Linux.
+- [x] `server.json` (schema 2025-12-11, description ≤ 100 characters, one `mcpb` package).
+- [x] `release.yml`: a `bundle` job after `build` (the five builds, the launcher, `mcpb validate`, `mcpb pack` with `@anthropic-ai/mcpb` 2.1.2, the bundle in SHA256SUMS) whose artifact joins the release; a `registry` job after `publish`, publishing runs only (`permissions: id-token: write, contents: read`; pinned, verified `mcp-publisher`; `login github-oidc`; `publish`).
 - [ ] Release dry run (`gh workflow run Release --ref main`): the bundle builds and validates; the registry job is skipped.
 - [ ] README: a one-line "Also in the MCP Registry" under Install, after the first listing is live.
 
