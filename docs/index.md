@@ -4,8 +4,9 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 
 | Date | Doc | What it is |
 |---|---|---|
-| 2026-11-22 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
+| 2026-11-23 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
 | 2026-11-19 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-11-23 | [plans/2026-11-mcp-registry.md](plans/2026-11-mcp-registry.md) | Status: active, 2026-11-23 (owner: "go registry"). Deadline Thu 2026-11-26; if not green with its… |
 | 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-18 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
 | 2026-11-10 | [plans/2026-11-git-times.md](plans/2026-11-git-times.md) | Date: 2026-11-10. Owner go: "go git times" (2026-11-10), with the requirement "not everything is … |
@@ -27,6 +28,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-10 | [design/search.md](design/search.md) | As built in Phase 1 (2026-09-22). Vectors are Phase 2 and slot in as a third ranked list. |
 | 2026-09-22 | [design/summarization.md](design/summarization.md) | As built in Phase 1 (2026-09-22). Source of truth for *why*: ADR-0001. This document describes *w… |
 | 2026-09-22 | [design/ingestion.md](design/ingestion.md) | As built for the benchmark plan's B0a (2026-09-22). This document describes *what the parser does… |
+| 2026-11-23 | [adr/0012-mcp-registry-listing-via-mcpb.md](adr/0012-mcp-registry-listing-via-mcpb.md) | Status: **Accepted** · 2026-11-23 · Owner decision ("go registry") |
 | 2026-11-22 | [adr/0011-license-apache-2-0.md](adr/0011-license-apache-2-0.md) | Status: **Accepted** · 2026-11-22 · Owner decision |
 | 2026-11-19 | [adr/0010-claude-subscription-backend-documented.md](adr/0010-claude-subscription-backend-documented.md) | Status: **Accepted** · 2026-11-19 · Supersedes decision 3 of ADR-0002 · Owner decision |
 | 2026-11-19 | [adr/0002-backends-and-login-policy.md](adr/0002-backends-and-login-policy.md) | Status: **Accepted** · 2026-09-22 · Amends ADR-0001 · Owner decision |
@@ -38,6 +40,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-09-22 | [adr/0004-phase2-vectors-embeddings-mcp.md](adr/0004-phase2-vectors-embeddings-mcp.md) | Status: **Accepted** · 2026-09-22 · Plan §5, §13 questions 1 and 3, §16 · Evidence: `docs/p… |
 | 2026-09-22 | [adr/0003-per-root-daemon-and-ipc.md](adr/0003-per-root-daemon-and-ipc.md) | Status: **Accepted** · 2026-09-22 · Plan §3.1, §13 question 4 · Evidence: `docs/plans/2026-0… |
 | 2026-09-22 | [adr/0001-worker-backend-claude-cli.md](adr/0001-worker-backend-claude-cli.md) | Status: **Accepted** · 2026-09-22 · Supersedes: — · Evidence: `docs/plans/2026-09-phase0-spi… |
+| 2026-11-23 | [reviews/codex/2026-11-23-mcp-start-bundle.md](reviews/codex/2026-11-23-mcp-start-bundle.md) | \| \| \| |
 | 2026-11-19 | [reviews/codex/2026-11-19-pr122-subscription-backend.md](reviews/codex/2026-11-19-pr122-subscription-backend.md) | Reviewer: Codex (`gpt-6.2-astra`, read-only). Scope: `git diff main...docs/subscription-backend` … |
 | 2026-11-18 | [reviews/codex/2026-11-18-mda-check-command.md](reviews/codex/2026-11-18-mda-check-command.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "GPT-6 Codex", exact variant unavailable; … |
 | 2026-11-18 | [reviews/codex/2026-11-18-keyless-raw-only.md](reviews/codex/2026-11-18-keyless-raw-only.md) | Reviewer: Codex (requested `gpt-6.2-astra`; it reports "Codex, GPT-6", exact variant not echoed; … |
@@ -90,8 +93,8 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | 2026-11-19 | [handoffs/2026-11-19-1718-auto.md](handoffs/2026-11-19-1718-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-19 | [handoffs/2026-11-19-1626-auto.md](handoffs/2026-11-19-1626-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
 | 2026-11-19 | [handoffs/2026-11-19-1604-auto.md](handoffs/2026-11-19-1604-auto.md) | Written by scripts/dev/session-end.sh. Narrative part (doing / intent / next step) comes from /ha… |
+| 2026-11-23 | [launch/2026-11-launch-drafts.md](launch/2026-11-launch-drafts.md) | Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every n… |
 | 2026-11-22 | [benchmarks.md](benchmarks.md) | Numbers measured on this repository, never tuned to look good. Corpora are fixed before results a… |
-| 2026-11-21 | [launch/2026-11-launch-drafts.md](launch/2026-11-launch-drafts.md) | Status: **drafts**. Nothing here is posted; the owner alone posts (growth plan, Phase 2). Every n… |
 | 2026-11-19 | [demo/README.md](demo/README.md) | Every video is a **real session on the public demo corpus**, recorded from a committed script. No… |
 | 2026-11-19 | [compare/graphify.md](compare/graphify.md) | [graphify](https://github.com/safishamsi/graphify) turns code, docs and media into a knowledge gr… |
 | 2026-11-19 | [backlog.md](backlog.md) | Ideas and work that are agreed in principle but not scheduled. One entry each: what, why, what we… |
