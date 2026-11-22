@@ -4,7 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- A code of conduct (Contributor Covenant 2.1), a feature-request issue template, and a link from new issues to GitHub Discussions for questions.
+
 ### Changed
+
+- `SECURITY.md` names the current summarization paths (your Anthropic key by default, a local model, or the opt-in `claude -p`).
 
 - **README: the benchmark guarantee shows the highlights.** The generated headline-claims table (`scripts/eval/t6.sh readme-row`, checked by `make check`) now lives on `docs/benchmarks.md` only; the README bullet names the 3.18×, 1.7 s and 98 % results and links the page. Every number and its method are unchanged.
 
