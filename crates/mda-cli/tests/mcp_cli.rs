@@ -200,3 +200,34 @@ async fn mcp_start_starts_the_daemon_then_serves() {
     assert_eq!(v["daemon"]["pid"].as_u64(), Some(pid), "{v}");
     client.cancel().await.unwrap();
 }
+
+/// Two clients run `mda mcp --start` on a never-indexed folder at the same moment: both
+/// initialise, and both end up served by the same single daemon.
+#[tokio::test]
+async fn two_simultaneous_first_starts_share_one_daemon() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().canonicalize().unwrap();
+    let _guard = StopGuard(root.clone());
+    write(&root, "notes.md", "# Notes\n\nThe deploy window is Tuesday.\n");
+    write(
+        &root,
+        ".markdownattractor/config.toml",
+        "backend = \"local\"\nlocal_base_url = \"http://127.0.0.1:1/v1\"\nembeddings = \"off\"\n",
+    );
+    let serve = || {
+        let mut cmd = tokio::process::Command::new(bin());
+        cmd.arg("mcp").arg("--start").arg("--root").arg(&root).env("NO_COLOR", "1");
+        TokioChildProcess::new(cmd).unwrap()
+    };
+    let (a, b) = tokio::join!(().serve(serve()), ().serve(serve()));
+    let (a, b) = (a.expect("first client initialises"), b.expect("second client initialises"));
+    let status: CallToolRequestParams =
+        serde_json::from_value(serde_json::json!({ "name": "mda_status", "arguments": {} }))
+            .unwrap();
+    let pa = a.call_tool(status.clone()).await.unwrap().structured_content.unwrap();
+    let pb = b.call_tool(status).await.unwrap().structured_content.unwrap();
+    let pid = pa["daemon"]["pid"].as_u64().expect("a daemon answers the first client");
+    assert_eq!(pb["daemon"]["pid"].as_u64(), Some(pid), "one daemon: {pa} {pb}");
+    a.cancel().await.unwrap();
+    b.cancel().await.unwrap();
+}

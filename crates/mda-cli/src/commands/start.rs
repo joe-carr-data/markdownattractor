@@ -297,8 +297,12 @@ fn report_already_running(root: &Path, json: bool, st: &Style) -> anyhow::Result
 /// Returns its pid and log folder. Prints nothing: `mda mcp --start` calls this while stdout
 /// is the protocol channel.
 fn launch(root: &Path) -> anyhow::Result<(u32, PathBuf)> {
-    let log_dir = root.join(STATE_DIR).join("logs");
+    // The state folder, its `logs` folder and `daemon.out` are refused when they are symlinks:
+    // a checked-out repository must not steer the daemon's writes outside the folder.
+    let log_dir = mda_core::config::state_dir(root)?.join("logs");
+    refuse_symlink(&log_dir)?;
     std::fs::create_dir_all(&log_dir).with_context(|| format!("creating {}", log_dir.display()))?;
+    refuse_symlink(&log_dir.join("daemon.out"))?;
     let pid = spawn_detached(root, &log_dir)?;
 
     let deadline = Instant::now() + STARTUP_TIMEOUT;
@@ -325,10 +329,17 @@ pub(super) fn ensure_running(root: &Path, explicit: bool) -> anyhow::Result<bool
     if super::block_on(is_running(root))? {
         return Ok(false);
     }
-    // Creates .markdownattractor/ and the database if this is the first run.
-    drop(Engine::open(root)?);
+    // The daemon creates the database under its own lock; opening it here too would race a
+    // second client starting at the same moment.
     launch(root)?;
     Ok(true)
+}
+
+fn refuse_symlink(path: &Path) -> anyhow::Result<()> {
+    if std::fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink()) {
+        anyhow::bail!("{} is a symlink; refusing to write through it", path.display());
+    }
+    Ok(())
 }
 
 /// Spawn `mda daemon` detached from this terminal, logging to `log_dir`.

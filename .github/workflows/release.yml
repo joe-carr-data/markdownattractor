@@ -138,8 +138,13 @@ jobs:
     name: MCP bundle
     needs: build
     runs-on: ubuntu-latest
+    # Runs third-party npm code: no write token, and checkout keeps no credential.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -210,7 +215,7 @@ jobs:
           name: SHA256SUMS
           path: dist/SHA256SUMS
       - name: publish the GitHub Release
-        if: github.ref_type == 'tag'
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -233,7 +238,7 @@ jobs:
   registry:
     name: MCP Registry
     needs: publish
-    if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main')
+    if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -257,7 +262,10 @@ jobs:
           f="markdownattractor-mcp-$v.mcpb"
           sha="$(sha256sum "out/$f" | awk '{print $1}')"
           url="https://github.com/${{ github.repository }}/releases/download/v$v/$f"
-          curl -fsSIL -o /dev/null "$url"   # the asset is live before the registry points at it
+          # The public asset is the file we built: the registry records this digest and
+          # installers check it.
+          curl -fsSL -o public.mcpb "$url"
+          [ "$(sha256sum public.mcpb | awk '{print $1}')" = "$sha" ] || { echo "the released $f differs from the built one" >&2; exit 1; }
           jq --arg v "$v" --arg url "$url" --arg sha "$sha" \
             '.version = $v | .packages[0].identifier = $url | .packages[0].fileSha256 = $sha' \
             server.json > server.release.json
