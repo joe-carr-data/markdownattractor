@@ -1,13 +1,33 @@
 # Launch drafts — for the owner to edit and post
 
-Status: **ready to post** (rewritten 2026-11-21 around the owner's two points). The owner alone posts. Every number is on `docs/benchmarks.md`, with its method; if one changes there, it changes here.
+Status: **in progress** (LinkedIn posted 2026-11-22; the main window is 2026-11-30 to 2026-12-02). The owner alone posts. Every number is on `docs/benchmarks.md`, with its method; if one changes there, it changes here.
+
+**Hacker News text is the owner's own.** HN's guidelines ban generated text and automated posting, so this file holds a fact sheet for HN, not prose, and Claude never fills in or submits an HN form. Reddit, X and LinkedIn drafts are starting points for the owner's voice.
+
+## The calendar
+
+| Date | Channel | What | Who |
+|---|---|---|---|
+| 2026-11-22 | LinkedIn | Posted, with the 54 s clip and the logo cover; link and install in the first comment | owner (done) |
+| by 2026-11-29 | HN | Check the account can post a Show HN; if not, take part in threads genuinely until it can | owner |
+| 2026-11-29 | Friends | Ask 10–15 Claude Code users to **try it and send feedback** (no star or vote request, no HN link) | owner |
+| Mon 2026-11-30 | r/ClaudeCode | "Built with Claude" text post (draft below) | Claude drafts, owner posts |
+| **Tue 2026-12-01** | **Show HN** | **8:30–9:30 ET (14:30–15:30 Barcelona)**, linking the repository; stay in the thread 6–8 hours, every reply by hand | **owner** |
+| Tue 2026-12-01 | X | The thread (below), about two hours after HN; no HN link, no vote ask | owner |
+| Wed 2026-12-02 | r/ClaudeAI | "Built with Claude" format (below) | owner |
+| Thu 2026-12-03 | r/LocalLLaMA | The local angle (below) | owner |
+| Fri 2026-12-04 | r/rust | The architecture post (below); This Week in Rust PR | owner / Claude |
+| Tue 2026-12-08 | HN (regular story) | The benchmark write-up on its own URL, rewritten in the owner's words | owner |
+| 2026-12-09 on | Lists, newsletters | awesome-claude-code web form (eligible: older than 14 days); claude.ai/directory/manage; newsletters | owner |
+
+Daily numbers: `scripts/dev/funnel.sh` (stars, views, visitors, referrers; GitHub keeps traffic 14 days). Checkpoints: 150 stars on HN day, 500 by 2026-12-06, 1,000 by 2026-12-13.
 
 ## The two points every post leads with (owner, 2026-11-19)
 
 1. **Indexed as it's written.** A Rust daemon indexes every markdown file the moment it is saved, including the docs, reports and plans Claude writes itself: searchable in about 2 seconds, no indexer to run.
 2. **Never lost in stale docs.** Every section carries when it was created and last changed (git history, or file times). Claude sees the dates, so it tells the current runbook from last year's, and the new decision from the one it replaced.
 
-Let the dates do the work: "Claude sees which version is newer" lands harder than any feature name, and it is exactly what the clip shows. Asked about links between documents: "next on the roadmap" (`supersedes`, `relates_to`).
+Asked about links between documents: "next on the roadmap" (`supersedes`, `relates_to`).
 
 ## The numbers we use
 
@@ -20,61 +40,78 @@ Let the dates do the work: "Claude sees which version is newer" lands harder tha
 | Against graphify, on docs | 3.18× fewer source tokens at the same answer quality; edits live in 1.7 s against 28.4 s; top-5 retrieval 0.41–0.70 against 0.02–0.10 | `docs/compare/graphify.md` |
 | Cost | $0.31 to summarise a 32-file docs folder; or no key at all; or your Claude subscription | README |
 
-## The clip
+Not a headline: "5× fewer tokens" is the project's goal (G3), not a measurement. Never post it.
 
-- README: 36 s cut (take 6, v0.2.10). Posts: the full 54 s clip, `mda-clip/markdownattractor-54s.mp4` on the owner's Desktop (not in the repository).
-- What it shows: Claude answers "ten minutes" with `runbooks/deploy.md:5-9`; the runbook is saved with "thirty minutes" (badge: "saved by a teammate, or by Claude itself"); Claude is only asked "Can you double-check?" and finds the edit itself: "I was wrong. The runbook now says thirty minutes… the file changed between my two reads". Then the "How it works" and "Measured" cards.
+## Hacker News fact sheet (facts only; the owner writes the text)
 
-## Show HN
+**Titles: plain, under 80 characters, no superlatives.** Ideas to rewrite, not to paste:
+- what it is: a live, time-aware index of your markdown for Claude Code, in Rust
+- what it fixes: Claude Code answering from whichever version of a doc it finds first
 
-**Title** (pick one):
+**Facts for the first comment**
+- Why: Claude Code writes much of the documentation now (plans, reports, ADRs, runbooks); after weeks the folder holds many versions, and grep-and-read answers from whichever file came first.
+- How it works: one Rust binary watches the folder, splits markdown into sections, indexes the raw text at once (SQLite FTS5), adds local embeddings and, optionally, a ~200-token summary card per section; three ranked lists fused. Every hit carries file, heading path, line range and when the section was created and last changed (git history, or file times). Claude reads the card, then opens only the lines it needs. MCP server and CLI in the same binary.
+- Numbers: the table above, each with its method on `docs/benchmarks.md`; gates were written before the runs and every number regenerates from committed artifacts.
+- Privacy: local index, no telemetry, never writes to the user's files; network only for summaries (their key, their local model, or their own `claude -p`) and the one-time embedding-model download.
+- Install: `/plugin marketplace add joe-carr-data/markdownattractor` then `/plugin install markdownattractor@markdownattractor`; `/mda start`.
+- Limits to state plainly: markdown only (no code); summaries need a key, a local model or the Claude plan (search works without); one-machine timings; links between documents not yet.
+- The ask: feedback on the questions their agent gets wrong.
 
-> Show HN: Markdownattractor – Claude Code always knows which doc is the latest
+**Likely questions, with the facts**
+- *vs qmd?* qmd is good local search. Same answering setup, golden set and `docs/`: answer quality level; mda's median source tokens lower (1,430 vs 1,908; 2,068 vs 3,831) but not every gate passed, so no savings are claimed against qmd. Differences: per-section dates, line-range citations, live watcher, summary cards. T1 retrieval: hybrid at or above qmd full on all four sites, intervals include zero.
+- *vs grep?* Golden set: +0.25 answer correctness with the answer contract; grep reads fewer tokens on the 32-file golden set.
+- *vs graphify?* `docs/compare/graphify.md`; use both: graphify for code, mda for the docs.
+- *API key cost?* $0.31 for 32 files with Haiku; an edit redoes one section; free local model or no key at all.
+- *Subscription terms?* ADR-0010, quoting Anthropic's page; opt-in, counts against plan limits.
+- *Why Rust?* One binary, no runtime, the watcher and the index in one process.
 
-> Show HN: A live, time-aware index of your markdown for Claude Code (Rust)
+## LinkedIn (posted 2026-11-22, as published)
 
-**First comment:**
+> Claude Code writes a lot of my documentation now: plans, reports, runbooks, decision records. A few weeks in, the folder is full of versions, and Claude has no idea which one is current. It answers from whichever file it finds first.
+>
+> So I built markdownattractor, a free, open-source plugin for Claude Code:
+>
+> ⚡ Indexed as it's written. A small Rust program watches your docs folder. Every markdown file is searchable about 2 seconds after it's saved, whether you wrote it, a teammate did, or Claude did. Nothing to re-run.
+>
+> 🕒 Never lost in stale docs. Every section carries when it was created and last changed, read from git history (or file times when there's no git). Claude sees those dates on every hit, so it tells this week's runbook from last year's, and cites the exact lines it used.
+>
+> In the clip, Claude answers a question, a teammate edits the runbook, and when I just ask "can you double-check?", Claude finds the change on its own and corrects itself.
+>
+> It runs locally, with no telemetry. It works with no API key at all, or with your own key or your Claude subscription.
+>
+> If your agents write docs as fast as mine do, this is the piece that keeps them honest.
+>
+> 🔗 Link in the first comment.
 
-Claude Code writes a lot of markdown for me: plans, reports, ADRs, runbook updates. After a few weeks the folder is full of versions, and when I ask a question Claude greps, reads a few files whole, and answers from whichever one it found first. It has no idea which is current.
+First comment: the repository link and the two install lines.
 
-markdownattractor fixes both halves:
-
-- **Indexed as it's written.** One Rust binary watches the folder and splits every markdown file into sections. A save is searchable in 1.7 seconds, whether you wrote it, a teammate did, or Claude did. There is no indexer to run, ever.
-- **Never lost in stale docs.** Every section knows when it was created and last changed, from git history (or file times). Claude gets the file, the line range and the date with every hit, so it can tell this week's runbook from last year's, and it cites the exact lines it used.
-
-The clip in the README shows it: Claude answers, a teammate changes the runbook, and when I just ask "can you double-check?", Claude finds the edit on its own and corrects itself, with the new lines and the time of the change.
-
-Numbers, with the method on the benchmark page:
-- 8 seconds from install to the first search hit, with no API key.
-- The right section in the top 5 for 98 % of test questions.
-- Against graphify on docs: 3.18× fewer tokens read per answer at the same quality, and edits live in 1.7 s instead of 28 s.
-
-Summaries are optional: your own API key ($0.31 for a 32-file docs folder), a free local model, or your Claude subscription. Local index, no telemetry, never writes to your files. Apache-2.0.
-
-    /plugin marketplace add joe-carr-data/markdownattractor
-    /plugin install markdownattractor@markdownattractor
-
-I'd love to hear what you'd point it at first.
-
-## X thread
+## X thread (Tue 2026-12-01, about two hours after HN)
 
 1. Claude writes a ton of markdown: plans, reports, runbooks, ADRs. A month later it can't tell which version is current. I built markdownattractor so it always can. 🧵 [54 s clip]
 2. ⚡ A Rust daemon indexes every markdown file the moment it's saved. Yours, your teammates', Claude's own. Searchable in 1.7 s. You never run an indexer.
-3. 🕒 Every section knows when it last changed (from git). Claude sees the dates on every hit, so it picks this week's runbook over last year's, and cites the exact lines.
+3. 🕒 Every section knows when it was created and last changed (from git, or file times). Claude sees the dates on every hit, so it picks this week's runbook over last year's, and cites the exact lines.
 4. In the clip: a teammate changes the runbook. I only ask "can you double-check?" Claude finds the edit itself: "I was wrong. The runbook now says thirty minutes."
-5. Measured: 8 s from install to first hit, no API key. 98 % right section in the top 5. 3.18× fewer tokens than graphify on docs. Free and local. Star it for your next on-call shift ⭐ github.com/joe-carr-data/markdownattractor
+5. Measured: 8 s from install to first hit, no API key. 98 % right section in the top 5. 3.18× fewer tokens than graphify on docs. Free and local. github.com/joe-carr-data/markdownattractor
 
-## r/ClaudeAI — "Built with Claude"
+## r/ClaudeCode (Mon 2026-11-30, "Built with Claude", text post)
 
-**Title:** I built a Claude Code plugin so Claude always knows which of your docs is the latest
+**Title:** I built a plugin so Claude Code always knows which of your docs is the latest
 
-**Body:** the Show HN first comment, then:
+**Body:** First line: "I built this, it's free and open source." Then: the problem (the pile of versions Claude writes), the two points, the clip, three numbers (1.7 s, 98 %, 8 s with no key), the install lines, the limits (markdown only; summaries need a key, a local model or the plan), and one question: "what question does your agent get wrong on your own docs?"
 
-> How it was built: entirely with Claude Code, with every Rust change reviewed by a second model and the benchmarks preregistered in the repo so anyone can regenerate them.
->
-> Try it on your own docs folder and tell me the question your agent usually gets wrong. I'll share the best ones.
+## r/ClaudeAI (Wed 2026-12-02, "Built with Claude" flair)
 
-## Launch write-up (outline, for the repository or a blog)
+The flair asks for what you built, how you built it, a demo and at least one prompt you used. **What:** the two points. **How:** built entirely with Claude Code; every Rust change reviewed by a second model; benchmarks preregistered in the repository. **Demo:** the 54 s clip. **Prompt:** "Can you double-check?" (the clip's second question), and the one the owner used most while building.
+
+## r/LocalLLaMA (Thu 2026-12-03)
+
+Angle: runs fully local. Raw-text search with no model at all (88 % right section in the top 5 on the golden set); local embeddings; summary cards from a llama.cpp server (`/mda backend local`, `docs/guides/local-model.md`); no telemetry; never writes to your files. Lead with the local setup, not with Claude.
+
+## r/rust (Fri 2026-12-04)
+
+Technical, not marketing: one binary as watcher, index, MCP server and CLI; `notify` events treated as hints and checked against the filesystem; hash-before-summarise so unchanged sections never reach a model; SQLite FTS5 + local embeddings (`fastembed`) + time, fused; per-root daemon with an OS file lock. Ask for review of the watcher and the differ. Same week: a This Week in Rust PR with the post.
+
+## Launch write-up (2026-12-08, its own URL)
 
 1. The pile: how much markdown Claude writes, and what happens a month later.
 2. The clip, frame by frame: answer, edit, "can you double-check?", self-correction.
@@ -83,15 +120,14 @@ I'd love to hear what you'd point it at first.
 5. The numbers (the table above).
 6. Next: links between documents (`supersedes`, `relates_to`).
 
-## Tactics
+## Rules for every channel
 
-- **Show HN:** post Tuesday to Thursday, morning US Eastern; stay in the thread for the first two hours and answer every comment.
-- **X:** upload the 54 s clip natively in post 1; pin the thread.
-- **r/ClaudeAI:** the "Built with Claude" flair; invite readers' hardest questions and quote the good results in a follow-up, with permission.
-- **The graphify crowd:** "use it next to graphify: graphify for the code, markdownattractor for the docs"; link `docs/compare/graphify.md` when someone asks why. Answer real questions in threads; one open note to its maintainer suggesting a "works well with" mention. No unsolicited messages to its stargazers.
-- **Discoverability:** GitHub topics set (claude-code, mcp, knowledge-graph, markdown, rag); submit to the Claude Code plugin directory and the awesome-claude-code lists.
+- Never ask for upvotes, on any site, from anyone; never share the HN link with a call to action; no second accounts; no identical cross-posts.
+- One modest star line at the end of a GitHub-facing text at most.
+- The graphify crowd: "graphify for the code, markdownattractor for the docs"; answer real questions; no unsolicited messages to its stargazers.
 
 ## Before posting (owner)
 
-- Account age and karma on HN and r/ClaudeAI.
-- Restart your Claude Code sessions so they run v0.2.10.
+- HN account able to post a Show HN.
+- Read each subreddit's sidebar the day before (rules change).
+- Restart your Claude Code sessions so they run the latest release.
