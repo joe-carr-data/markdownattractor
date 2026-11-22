@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "markdownattractor",
   "display_name": "markdownattractor",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "A live, time-aware index of your markdown: search by section, with file, lines and when each section last changed.",
   "long_description": "markdownattractor watches a folder of markdown and indexes every section the moment it is saved. Claude searches the index, reads a short card, and opens only the lines it needs; every hit carries the file, the line range and when the section was created and last changed (from git history, or file times). Search works with no API key and no model; local embeddings rank by meaning. Summary cards are available in the Claude Code plugin with your own API key or a local model. Local index, no telemetry, never writes to your files.",
   "author": {
