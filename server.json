@@ -7,11 +7,11 @@
     "url": "https://github.com/joe-carr-data/markdownattractor",
     "source": "github"
   },
-  "version": "0.2.10",
+  "version": "0.2.11",
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/joe-carr-data/markdownattractor/releases/download/v0.2.10/markdownattractor-mcp-0.2.10.mcpb",
+      "identifier": "https://github.com/joe-carr-data/markdownattractor/releases/download/v0.2.11/markdownattractor-mcp-0.2.11.mcpb",
       "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "transport": {
         "type": "stdio"
