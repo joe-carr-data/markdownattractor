@@ -159,6 +159,8 @@ Then start it in your project. No key and no account are needed for this step:
 /mda start
 ```
 
+Also in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=markdownattractor) as `io.github.joe-carr-data/markdownattractor`: Claude Desktop and other MCP clients can install the bundle from the [latest release](https://github.com/joe-carr-data/markdownattractor/releases/latest) ([other clients](docs/guides/mcp-clients.md)).
+
 The plugin downloads the binary for your platform from the GitHub release on the next session start and checks its checksum. `/mda start` indexes the folder, and search works at once on the raw text of every section, with file, line range and dates. On the 32-file demo corpus that alone finds the right section in the top five for 88% of 60 questions (`mda eval`).
 
 Cards (the short summaries) are the upgrade: with them and the local embeddings the same measure is 98%, and Claude can pick sections from summaries without opening them. Cards need a model, so give it one and restart:
