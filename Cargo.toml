@@ -34,7 +34,7 @@ toml = "1"
 schemars = { version = "1.2", features = ["jiff02"] }
 
 # markdown & files
-comrak = { version = "0.55", default-features = false }
+comrak = { version = "1.0", default-features = false }
 blake3 = "1.8"
 ignore = "0.4"
 
