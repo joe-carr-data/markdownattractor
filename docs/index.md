@@ -5,7 +5,7 @@ Newest first. One line each. Regenerated on every change under `docs/` by `scrip
 | Date | Doc | What it is |
 |---|---|---|
 | 2026-11-23 | [STATUS.md](STATUS.md) | **T0.** Current phase, active plan, done/next/blockers. Read this first. |
-| 2026-11-19 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
+| 2026-11-23 | [aha.md](aha.md) | **T1.** Dated one-liners of things learned the hard way. |
 | 2026-11-23 | [plans/2026-11-mcp-registry.md](plans/2026-11-mcp-registry.md) | Status: active, 2026-11-23 (owner: "go registry"). Deadline Thu 2026-11-26; if not green with its… |
 | 2026-11-18 | [plans/2026-11-v0.3-clear-advantage.md](plans/2026-11-v0.3-clear-advantage.md) | Owner's objective (2026-11-15): "create a project that beats any existing solution and provide cl… |
 | 2026-11-18 | [plans/2026-11-growth-launch.md](plans/2026-11-growth-launch.md) | Date: 2026-11-10. Owner: Joe Carr. Status: proposed, awaiting the owner's go. |
