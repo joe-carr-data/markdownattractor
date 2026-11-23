@@ -54,7 +54,7 @@ rmcp = { version = "3.4", features = ["server", "transport-io", "macros", "schem
 rusqlite = { version = "0.41", features = ["bundled", "jiff", "functions"] }
 
 # time
-jiff = { version = "0.2", features = ["serde"] }
+jiff = { version = "1.0", features = ["serde"] }
 
 # dev / test
 insta = { version = "1.48", features = ["yaml", "json", "redactions"] }
